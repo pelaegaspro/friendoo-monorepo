@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0a;
+  --surface: #111111;
+  --card: #1a1a1a;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
+  --border: #2a2a2a;
+  --accent: #a855f7;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  .crm-card {
+    @apply rounded-lg border bg-[var(--card)] border-[var(--border)];
+  }
+
+  .crm-surface {
+    @apply bg-[var(--surface)];
+  }
+}

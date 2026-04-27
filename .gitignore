@@ -1,0 +1,26 @@
+# Node
+node_modules/
+.next/
+.env
+.env.local
+.env*.local
+npm-debug.log*
+
+# Flutter
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
+*.g.dart
+.packages
+pubspec.lock
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
