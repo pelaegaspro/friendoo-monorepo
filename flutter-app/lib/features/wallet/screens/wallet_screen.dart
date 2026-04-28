@@ -11,410 +11,338 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userCoinsAsync = ref.watch(userCoinsProvider);
-    final transactionsAsync = ref.watch(userTransactionsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-              return;
-            }
-            context.go('/home');
-          },
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFE4E1), Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0.0, 0.3],
+          ),
         ),
-        title: const Text('Wallet'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        children: [
-          // Balance card
-          Container(
-            margin: const EdgeInsets.only(bottom: 24),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: AppColors.purpleGradient,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Your Balance',
-                  style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                userCoinsAsync.when(
-                  data: (coins) => Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Icon(
-                        Icons.monetization_on,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '$coins',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 6),
-                        child: Text('coins',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 16)),
-                      ),
-                    ],
-                  ),
-                  loading: () =>
-                      const CircularProgressIndicator(color: Colors.white),
-                  error: (_, __) => const Text('--',
-                      style: TextStyle(color: Colors.white, fontSize: 40)),
-                ),
-                const SizedBox(height: 4),
-                userCoinsAsync.when(
-                  data: (coins) => Text(
-                    '~ Rs. ${(coins * 0.196).toStringAsFixed(0)} worth',
-                    style: const TextStyle(color: Colors.white60, fontSize: 13),
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => context.push('/wallet/add-money'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.4)),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+                      onPressed: () => context.pop(),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: Colors.white, size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          'Add Coins',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Coin packages
-          const _SectionHeader(title: 'COIN PACKAGES'),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.3,
-            children: const [
-              _PackageCard(coins: 50, price: 29, isPopular: false),
-              _PackageCard(coins: 100, price: 49, isPopular: false),
-              _PackageCard(coins: 250, price: 99, isPopular: true),
-              _PackageCard(coins: 600, price: 199, isPopular: false),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Bonus package full width
-          GestureDetector(
-            onTap: () => context.push('/wallet/add-money'),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.card,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Row(
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '1500 + 200 BONUS coins',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Rs. 499',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.purpleGradient,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'BEST VALUE',
+                    const Text(
+                      'Wallet',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
+                        color: Colors.black,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/wallet/transactions'),
+                      icon: const Icon(Icons.swap_vert, size: 18),
+                      label: const Text('Transactions'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF6C63FF),
+                        side: const BorderSide(color: Color(0xFF6C63FF)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          // Transactions
-          const _SectionHeader(title: 'RECENT TRANSACTIONS'),
-          const SizedBox(height: 12),
-          transactionsAsync.when(
-            data: (txns) {
-              if (txns.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.receipt_long,
-                            size: 48, color: AppColors.textSecondary),
-                        SizedBox(height: 12),
-                        Text('No transactions yet',
-                            style: TextStyle(color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              return Column(
-                children: txns.map((txn) {
-                  final isCredit = txn.type == 'purchase' ||
-                      txn.type == 'topup' ||
-                      txn.type == 'bonus' ||
-                      txn.type == 'referral';
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: isCredit
-                                ? AppColors.success.withValues(alpha: 0.15)
-                                : AppColors.primary.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
+
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    const SizedBox(height: 16),
+                    // Balance Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          child: Icon(
-                            isCredit ? Icons.add : Icons.call,
-                            color: isCredit
-                                ? AppColors.success
-                                : AppColors.primary,
-                            size: 18,
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'My Balance',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                txn.description,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                          userCoinsAsync.when(
+                            data: (coins) => Text(
+                              '₹${coins.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Color(0xFF6C63FF),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            loading: () => const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            error: (_, __) => const Text('₹0.00'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Available Coupons',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Coupon Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6C63FF).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.local_offer_outlined, color: Color(0xFF6C63FF), size: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'IPL OFFER- 10% OFF',
+                                  style: TextStyle(
+                                    color: Color(0xFF6C63FF),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatDate(txn.timestamp),
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11),
-                              ),
+                                Text(
+                                  'on ₹300 & above packs',
+                                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('1/1', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                              Icon(Icons.circle, color: Colors.grey, size: 8),
                             ],
                           ),
-                        ),
-                        Text(
-                          '${isCredit ? '+' : '-'}${txn.coins} coins',
-                          style: TextStyle(
-                            color:
-                                isCredit ? AppColors.success : AppColors.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Add Balance to Wallet',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Grid of packages
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.8,
+                      children: const [
+                        _PackageCard(amount: 50, bonus: 6),
+                        _PackageCard(amount: 100, bonus: 15),
+                        _PackageCard(amount: 140, bonus: 20, badge: 'Value Pack'),
+                        _PackageCard(amount: 200, bonus: 25),
+                        _PackageCard(amount: 300, bonus: 35, badge: 'Popular'),
+                        _PackageCard(amount: 500, bonus: 35),
+                        _PackageCard(amount: 900, bonus: 35),
+                        _PackageCard(amount: 1900, bonus: 40),
+                        _PackageCard(amount: 9800, bonus: 40),
+                        _PackageCard(amount: 15000, bonus: 45),
                       ],
                     ),
-                  );
-                }).toList(),
-              );
-            },
-            loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.primary)),
-            error: (e, _) => Center(
-                child: Text('Error: $e',
-                    style: const TextStyle(color: AppColors.error))),
+
+                    const SizedBox(height: 32),
+                    // Trust Indicators
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _TrustItem(icon: Icons.person_outline, label: 'Verified Experts'),
+                        _TrustDivider(),
+                        _TrustItem(icon: Icons.verified_user_outlined, label: '100% Safe'),
+                        _TrustDivider(),
+                        _TrustItem(icon: Icons.account_balance_outlined, label: 'Bank Approved'),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+
+              // Bottom Button
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Get ₹28 Extra cashback on this pack',
+                      style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/wallet/add-money'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A69FF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        ),
+                        child: const Text(
+                          'Add Balance',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) {
-      return 'Today ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    }
-    if (diff.inDays == 1) return 'Yesterday';
-    return '${dt.day}/${dt.month}/${dt.year}';
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.textSecondary,
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
+        ),
       ),
     );
   }
 }
 
 class _PackageCard extends StatelessWidget {
-  final int coins;
-  final int price;
-  final bool isPopular;
-  const _PackageCard(
-      {required this.coins, required this.price, required this.isPopular});
+  final int amount;
+  final int bonus;
+  final String? badge;
+
+  const _PackageCard({required this.amount, required this.bonus, this.badge});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/wallet/add-money'),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: badge != null ? const Color(0xFF6C63FF) : Colors.grey.shade200, width: badge != null ? 1.5 : 1),
+      ),
       child: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isPopular ? AppColors.primary : AppColors.divider,
-                width: isPopular ? 1.5 : 1,
+          if (badge != null)
+            Positioned(
+              top: 10,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badge!,
+                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '$coins',
+                  '₹$amount',
                   style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(
-                  'coins',
-                  style:
-                      TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Rs. $price',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF6C63FF),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                Text(
+                  '+$bonus% Extra',
+                  style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w500),
+                ),
               ],
             ),
           ),
-          if (isPopular)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.purpleGradient,
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(16),
-                    bottomLeft: Radius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'POPULAR',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
+    );
+  }
+}
+
+class _TrustItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _TrustItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.black54, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+}
+
+class _TrustDivider extends StatelessWidget {
+  const _TrustDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24,
+      width: 1,
+      color: Colors.grey.shade300,
     );
   }
 }
