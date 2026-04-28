@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   const PhoneLoginScreen({super.key});
@@ -23,10 +25,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   void _sendOtp() async {
     final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Phone number is required';
+      });
+      return;
+    }
     if (phone.length != 10) {
       setState(() {
         _hasError = true;
-        _errorMessage = 'Enter a valid 10 digit number';
+        _errorMessage = 'Enter a valid 10-digit number';
       });
       return;
     }
@@ -44,226 +53,254 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: true,
-      body: Column(
-        children: [
-          // TOP PURPLE GRADIENT
-          Container(
-            height: size.height * 0.38,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF7C4DFF), Color(0xFFE040FB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header section with branding
+            Expanded(
+              flex: 2,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                    child: const Center(
-                      child: Text(
-                        'F',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Welcome to Friendoo 👋',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // BOTTOM DARK CARD
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              color: const Color(0xFF12121A),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                children: [
-                  const Text(
-                    'Enter your mobile number',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "We'll send you a verification code",
-                    style: TextStyle(
-                      color: Color(0xFF9E9E9E),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // PHONE INPUT
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A27),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _hasError
-                            ? const Color(0xFFFF1744)
-                            : const Color(0xFF7C4DFF),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Row(
-                            children: const [
-                              Text('🇮🇳', style: TextStyle(fontSize: 22)),
-                              SizedBox(width: 6),
-                              Text(
-                                '+91',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 28,
-                          color: const Color(0xFF2A2A3A),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Enter 10 digit number',
-                              hintStyle: TextStyle(
-                                color: Color(0xFF9E9E9E),
-                              ),
-                              border: InputBorder.none,
-                              counterText: '',
-                              contentPadding:
-                                  EdgeInsets.symmetric(horizontal: 14),
-                            ),
-                            onChanged: (val) {
-                              if (_hasError) {
-                                setState(() => _hasError = false);
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  if (_hasError)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 4),
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(
-                          color: Color(0xFFFF1744),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 28),
-
-                  // SEND OTP BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: DecoratedBox(
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo
+                    Container(
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C4DFF), Color(0xFFE040FB)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.15),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
+                      child: const Center(
+                        child: Text(
+                          'F',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Welcome to Friendoo',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Connect with friends and experts',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Form section
+            Expanded(
+              flex: 3,
+              child: Container(
+                color: AppColors.background,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  children: [
+                    Text(
+                      'Enter your mobile number',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "We'll send you a verification code to confirm your identity",
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Phone input field
+                    Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _hasError ? AppColors.error : AppColors.divider,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '🇮🇳',
+                                  style: GoogleFonts.inter(fontSize: 20),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '+91',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 28,
+                            color: AppColors.divider,
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              maxLength: 10,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              style: GoogleFonts.inter(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Enter 10-digit number',
+                                hintStyle: GoogleFonts.inter(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                                border: InputBorder.none,
+                                counterText: '',
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                              ),
+                              onChanged: (val) {
+                                if (_hasError) {
+                                  setState(() => _hasError = false);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Error message
+                    if (_hasError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 4),
+                        child: Text(
+                          _errorMessage,
+                          style: GoogleFonts.inter(
+                            color: AppColors.error,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 32),
+
+                    // Send OTP button
+                    SizedBox(
+                      height: 54,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _sendOtp,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
+                          backgroundColor: AppColors.primary,
+                          disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          elevation: 0,
                         ),
                         child: _isLoading
                             ? const SizedBox(
-                                width: 22,
-                                height: 22,
+                                width: 24,
+                                height: 24,
                                 child: CircularProgressIndicator(
                                   color: Colors.white,
                                   strokeWidth: 2.5,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Send OTP',
-                                style: TextStyle(
+                                style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  const Center(
-                    child: Text(
-                      'By continuing you agree to our Terms & Privacy Policy',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF9E9E9E),
-                        fontSize: 11,
+                    // Terms and conditions
+                    Center(
+                      child: Text(
+                        'By continuing, you agree to our\nTerms of Service & Privacy Policy',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

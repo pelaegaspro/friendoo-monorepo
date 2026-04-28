@@ -2,8 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../services/coin_service.dart';
 
 class AddMoneyScreen extends ConsumerStatefulWidget {
@@ -18,7 +20,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
   bool _isLoading = false;
   final _coinService = CoinService();
 
-  // Selected package details (hardcoded for now to match screenshot)
+  // Sample package data
   final double rechargeAmount = 140.0;
   final double taxes = 39.19;
   final double payableAmount = 179.2;
@@ -54,8 +56,8 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$coinsToGet coins added to your wallet!'),
-          backgroundColor: Colors.green,
+          content: Text('$coinsToGet coins added successfully!'),
+          backgroundColor: AppColors.success,
         ),
       );
       context.go('/wallet');
@@ -68,7 +70,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Payment failed: ${response.message}'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -84,13 +86,13 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
 
     final options = {
       'key': AppConstants.razorpayKeyId,
-      'amount': (payableAmount * 100).toInt(), // paise
+      'amount': (payableAmount * 100).toInt(),
       'name': 'Friendoo',
       'description': '$coinsToGet Coins',
       'prefill': {
         'contact': user?.phoneNumber ?? '',
       },
-      'theme': {'color': '#6C63FF'},
+      'theme': {'color': '#007AFF'},
     };
 
     try {
@@ -98,7 +100,7 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
       );
     }
   }
@@ -106,33 +108,35 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
   void _showTaxesBreakdown() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Taxes and other charges',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _SummaryRow(label: 'GST (18%)', value: '25.20', isBold: false),
-              const SizedBox(height: 8),
-              _SummaryRow(label: 'Platform Fee', value: '14.00', isBold: false),
-              const Divider(height: 32),
-              _SummaryRow(label: 'Total', value: '₹39.19', isBold: true, valueColor: const Color(0xFF6C63FF)),
-            ],
-          ),
+        title: Text(
+          'Charges Breakdown',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _BreakdownRow(label: 'GST (18%)', value: '₹25.20'),
+            const SizedBox(height: 12),
+            _BreakdownRow(label: 'Platform Fee', value: '₹14.00'),
+            const Divider(height: 24),
+            _BreakdownRow(
+              label: 'Total',
+              value: '₹39.19',
+              isBold: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: GoogleFonts.inter(color: AppColors.primary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -140,208 +144,173 @@ class _AddMoneyScreenState extends ConsumerState<AddMoneyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFE4E1), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: [0.0, 0.2],
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.card,
+        elevation: 0.5,
+        title: Text(
+          'Select Payment Method',
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-                      onPressed: () => context.pop(),
-                    ),
-                    const Text(
-                      'Select Payment Method',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Order Summary
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.divider),
               ),
-
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    const SizedBox(height: 16),
-                    // Summary Card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          _SummaryRow(label: 'Recharge Amount', value: '₹${rechargeAmount.toInt()}'),
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: _showTaxesBreakdown,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    border: Border(bottom: BorderSide(color: Colors.grey, style: BorderStyle.solid, width: 1)),
-                                  ),
-                                  child: const Text(
-                                    'Taxes and other charges',
-                                    style: TextStyle(color: Colors.black54, fontSize: 15),
-                                  ),
-                                ),
-                                Text('₹$taxes', style: const TextStyle(color: Colors.black, fontSize: 15)),
-                              ],
-                            ),
-                          ),
-                          const Divider(height: 32),
-                          _SummaryRow(
-                            label: 'Payable Amount',
-                            value: '₹$payableAmount',
-                            isBold: true,
-                            valueColor: const Color(0xFF6C63FF),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Coupons
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.local_offer_outlined, color: Color(0xFF6C63FF), size: 20),
-                          SizedBox(width: 12),
-                          Text('View All Coupons', style: TextStyle(fontWeight: FontWeight.w500)),
-                          Spacer(),
-                          Icon(Icons.chevron_right, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Promo Banner
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-                          const SizedBox(width: 12),
-                          Text(
-                            'You will get ₹$coinsToGet in this recharge',
-                            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    // UPI Options
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Text('UPI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontStyle: FontStyle.italic)),
-                              const SizedBox(width: 8),
-                              const Text('Pay by any UPI app', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                              const Spacer(),
-                              Text('⚡ Fastest', style: TextStyle(color: Colors.blue.shade700, fontSize: 12, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          const Text('Preferred by 95% Users', style: TextStyle(color: Colors.green, fontSize: 11)),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _PaymentIcon(label: 'Google Pay', icon: Icons.account_balance_wallet),
-                              _PaymentIcon(label: 'BHIM', icon: Icons.account_balance),
-                              _PaymentIcon(label: 'Amazon P...', icon: Icons.shopping_bag),
-                              _PaymentIcon(label: 'Mobikwik', icon: Icons.wallet),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-                    _ActionTile(icon: Icons.qr_code_scanner, label: 'QR to Scan & Pay'),
-                    const SizedBox(height: 12),
-                    _ActionTile(icon: Icons.credit_card, label: 'Pay using Credit/Debit Card'),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-
-              // Bottom Button
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _startPayment,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4A69FF),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            'Pay ₹$payableAmount',
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+              child: Column(
+                children: [
+                  _SummaryRow(
+                    label: 'Recharge Amount',
+                    value: '₹${rechargeAmount.toInt()}',
                   ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: _showTaxesBreakdown,
+                    child: _SummaryRow(
+                      label: 'Taxes & Charges',
+                      value: '₹$taxes',
+                      isClickable: true,
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  _SummaryRow(
+                    label: 'Payable Amount',
+                    value: '₹$payableAmount',
+                    isBold: true,
+                    valueColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Promo Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.success),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: AppColors.success),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'You will get ₹$coinsToGet in this recharge',
+                      style: GoogleFonts.inter(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Payment Methods
+            Text(
+              'Payment Methods',
+              style: GoogleFonts.inter(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // UPI
+            _PaymentMethodCard(
+              title: 'UPI',
+              subtitle: 'Pay by any UPI app',
+              badge: '⚡ Fastest',
+              icon: Icons.account_balance_wallet_outlined,
+              onTap: _startPayment,
+            ),
+            const SizedBox(height: 12),
+
+            // QR Code
+            _PaymentMethodCard(
+              title: 'QR Code',
+              subtitle: 'Scan & pay instantly',
+              icon: Icons.qr_code_2,
+              onTap: _startPayment,
+            ),
+            const SizedBox(height: 12),
+
+            // Card
+            _PaymentMethodCard(
+              title: 'Credit/Debit Card',
+              subtitle: 'Visa, Mastercard, Rupay',
+              icon: Icons.credit_card_outlined,
+              onTap: _startPayment,
+            ),
+
+            const SizedBox(height: 32),
+
+            // Pay Button
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _startPayment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : Text(
+                        'Pay ₹$payableAmount',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Terms
+            Center(
+              child: Text(
+                'Your payment is secure and encrypted',
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -353,12 +322,14 @@ class _SummaryRow extends StatelessWidget {
   final String value;
   final bool isBold;
   final Color? valueColor;
+  final bool isClickable;
 
   const _SummaryRow({
     required this.label,
     required this.value,
     this.isBold = false,
     this.valueColor,
+    this.isClickable = false,
   });
 
   @override
@@ -368,18 +339,61 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: isBold ? Colors.black : Colors.black54,
-            fontSize: 16,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          style: GoogleFonts.inter(
+            color: isBold ? AppColors.textPrimary : AppColors.textSecondary,
+            fontSize: isBold ? 16 : 14,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        Row(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                color: valueColor ?? AppColors.textPrimary,
+                fontSize: isBold ? 18 : 14,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+            if (isClickable) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isBold;
+
+  const _BreakdownRow({
+    required this.label,
+    required this.value,
+    this.isBold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
         Text(
           value,
-          style: TextStyle(
-            color: valueColor ?? Colors.black,
-            fontSize: isBold ? 18 : 16,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          style: GoogleFonts.inter(
+            color: isBold ? AppColors.primary : AppColors.textPrimary,
+            fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],
@@ -387,61 +401,93 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _PaymentIcon extends StatelessWidget {
-  final String label;
+class _PaymentMethodCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String? badge;
   final IconData icon;
+  final VoidCallback onTap;
 
-  const _PaymentIcon({required this.label, required this.icon});
+  const _PaymentMethodCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    this.badge,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Icon(icon, color: Colors.blue, size: 24),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54)),
-      ],
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _ActionTile({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF6C63FF), size: 24),
-          const SizedBox(width: 16),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
-          const Spacer(),
-          const Icon(Icons.chevron_right, color: Colors.grey),
-        ],
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                badge!,
+                style: GoogleFonts.inter(
+                  color: AppColors.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _OtpScreenState extends State<OtpScreen> {
       verificationFailed: (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'OTP failed')),
+            SnackBar(content: Text(e.message ?? 'OTP verification failed')),
           );
           setState(() => _loading = false);
         }
@@ -132,91 +133,153 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
+        backgroundColor: AppColors.card,
+        elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
           onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Verify OTP',
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              const Text(
-                'Verify OTP',
-                style: TextStyle(
+              Text(
+                'Enter verification code',
+                style: GoogleFonts.inter(
                   color: AppColors.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Text(
-                    widget.phoneNumber,
-                    style: const TextStyle(
-                        color: AppColors.textSecondary, fontSize: 14),
+                    'Sent to ${widget.phoneNumber}',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => context.pop(),
-                    child: const Icon(Icons.edit,
-                        color: AppColors.primary, size: 16),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 40),
               if (_loading)
-                const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(color: AppColors.primary),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Sending verification code...',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else ...[
-                // OTP boxes
+                // OTP input boxes
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
-                      6,
-                      (i) => _OtpBox(
-                            controller: _controllers[i],
-                            focusNode: _focusNodes[i],
-                            onChanged: (v) => _onDigitEntered(i, v),
-                            onBackspace: () => _onBackspace(i),
-                          )),
+                    6,
+                    (i) => _OtpBox(
+                      controller: _controllers[i],
+                      focusNode: _focusNodes[i],
+                      onChanged: (v) => _onDigitEntered(i, v),
+                      onBackspace: () => _onBackspace(i),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 32),
-                // Resend
+                const SizedBox(height: 40),
+                // Resend section
                 Center(
-                  child: _resendSeconds > 0
-                      ? Text(
+                  child: Column(
+                    children: [
+                      if (_resendSeconds > 0)
+                        Text(
                           'Resend OTP in ${_resendSeconds}s',
-                          style: const TextStyle(
-                              color: AppColors.textSecondary, fontSize: 14),
+                          style: GoogleFonts.inter(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         )
-                      : GestureDetector(
+                      else
+                        GestureDetector(
                           onTap: () {
                             _sendOtp();
                             _startResendTimer();
                           },
-                          child: const Text(
-                            'Resend OTP',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: AppColors.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              'Resend OTP',
+                              style: GoogleFonts.inter(
+                                color: AppColors.primary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
+                    ],
+                  ),
                 ),
               ],
               if (_verifying) ...[
                 const SizedBox(height: 32),
-                const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(color: AppColors.primary),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Verifying your code...',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],
@@ -257,8 +320,8 @@ class _OtpBoxState extends State<_OtpBox> {
     final isFilled = widget.controller.text.isNotEmpty;
 
     return Container(
-      width: 48,
-      height: 56,
+      width: 50,
+      height: 60,
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
@@ -268,8 +331,16 @@ class _OtpBoxState extends State<_OtpBox> {
               : isFocused
                   ? AppColors.primary
                   : AppColors.divider,
-          width: isFocused || isFilled ? 2 : 1.5,
+          width: isFilled || isFocused ? 2 : 1,
         ),
+        boxShadow: [
+          if (isFocused)
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+        ],
       ),
       child: KeyboardListener(
         focusNode: FocusNode(),
@@ -287,10 +358,10 @@ class _OtpBoxState extends State<_OtpBox> {
           keyboardType: TextInputType.number,
           maxLength: 1,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             color: AppColors.textPrimary,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
           ),
           decoration: const InputDecoration(
             border: InputBorder.none,

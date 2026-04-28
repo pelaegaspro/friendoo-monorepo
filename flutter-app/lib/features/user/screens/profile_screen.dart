@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -16,10 +17,17 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        title: const Text('My Profile'),
+        backgroundColor: AppColors.card,
+        elevation: 0.5,
+        title: Text(
+          'My Profile',
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -34,41 +42,55 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 16),
+            // Profile Avatar
             Container(
-              width: 90,
-              height: 90,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: AppColors.purpleGradient,
-                border: Border.all(color: AppColors.primary, width: 2.5),
+                color: AppColors.primary,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 20,
+                    spreadRadius: 4,
+                  ),
+                ],
               ),
               child: Center(
                 child: Text(
                   initials.toUpperCase(),
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: 20),
+            // User name
+            Text(
               'Friendoo User',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: AppColors.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            // Phone number
             Text(
               phone,
-              style:
-                  const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
+
+            // Menu items
             _ProfileMenuItem(
               icon: Icons.account_balance_wallet_outlined,
               label: 'Wallet',
@@ -84,14 +106,55 @@ class ProfileScreen extends StatelessWidget {
               label: 'Settings',
               onTap: () => context.push('/settings'),
             ),
-            const Divider(color: AppColors.divider, height: 32),
             _ProfileMenuItem(
-              icon: Icons.logout,
+              icon: Icons.help_outline,
+              label: 'Help & Support',
+              onTap: () {},
+            ),
+            _ProfileMenuItem(
+              icon: Icons.info_outline,
+              label: 'About',
+              onTap: () {},
+            ),
+            const Divider(height: 40),
+            // Logout
+            _ProfileMenuItem(
+              icon: Icons.logout_outlined,
               label: 'Logout',
               isDestructive: true,
               onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) context.go('/login');
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      'Logout',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
+                    content: Text(
+                      'Are you sure you want to logout?',
+                      style: GoogleFonts.inter(color: AppColors.textSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(color: AppColors.primary),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) context.go('/login');
+                        },
+                        child: Text(
+                          'Logout',
+                          style: GoogleFonts.inter(color: AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ],
@@ -120,22 +183,39 @@ class _ProfileMenuItem extends StatelessWidget {
     final iconColor = isDestructive ? AppColors.error : AppColors.primary;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
-        leading: Icon(icon, color: iconColor),
-        title: Text(label,
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.w500, fontSize: 15)),
+        leading: Icon(icon, color: iconColor, size: 22),
+        title: Text(
+          label,
+          style: GoogleFonts.inter(
+            color: color,
+            fontWeight: FontWeight.w500,
+            fontSize: 15,
+          ),
+        ),
         trailing: isDestructive
             ? null
-            : const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            : Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/wallet_provider.dart';
@@ -13,240 +14,191 @@ class WalletScreen extends ConsumerWidget {
     final userCoinsAsync = ref.watch(userCoinsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFE4E1), Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: [0.0, 0.3],
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.card,
+        elevation: 0.5,
+        title: Text(
+          'Wallet',
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
-                      onPressed: () => context.pop(),
-                    ),
-                    const Text(
-                      'Wallet',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    OutlinedButton.icon(
-                      onPressed: () => context.push('/wallet/transactions'),
-                      icon: const Icon(Icons.swap_vert, size: 18),
-                      label: const Text('Transactions'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF6C63FF),
-                        side: const BorderSide(color: Color(0xFF6C63FF)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                      ),
-                    ),
-                  ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/wallet/transactions'),
+                icon: const Icon(Icons.swap_vert, size: 18),
+                label: Text(
+                  'Transactions',
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),
               ),
-
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    const SizedBox(height: 16),
-                    // Balance Card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'My Balance',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          userCoinsAsync.when(
-                            data: (coins) => Text(
-                              '₹${coins.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: Color(0xFF6C63FF),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            loading: () => const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            error: (_, __) => const Text('₹0.00'),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Available Coupons',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Coupon Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6C63FF).withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.local_offer_outlined, color: Color(0xFF6C63FF), size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'IPL OFFER- 10% OFF',
-                                  style: TextStyle(
-                                    color: Color(0xFF6C63FF),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'on ₹300 & above packs',
-                                  style: TextStyle(color: Colors.black54, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text('1/1', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                              Icon(Icons.circle, color: Colors.grey, size: 8),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Add Balance to Wallet',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Grid of packages
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.8,
-                      children: const [
-                        _PackageCard(amount: 50, bonus: 6),
-                        _PackageCard(amount: 100, bonus: 15),
-                        _PackageCard(amount: 140, bonus: 20, badge: 'Value Pack'),
-                        _PackageCard(amount: 200, bonus: 25),
-                        _PackageCard(amount: 300, bonus: 35, badge: 'Popular'),
-                        _PackageCard(amount: 500, bonus: 35),
-                        _PackageCard(amount: 900, bonus: 35),
-                        _PackageCard(amount: 1900, bonus: 40),
-                        _PackageCard(amount: 9800, bonus: 40),
-                        _PackageCard(amount: 15000, bonus: 45),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-                    // Trust Indicators
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _TrustItem(icon: Icons.person_outline, label: 'Verified Experts'),
-                        _TrustDivider(),
-                        _TrustItem(icon: Icons.verified_user_outlined, label: '100% Safe'),
-                        _TrustDivider(),
-                        _TrustItem(icon: Icons.account_balance_outlined, label: 'Bank Approved'),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-
-              // Bottom Button
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Get ₹28 Extra cashback on this pack',
-                      style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/wallet/add-money'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4A69FF),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        ),
-                        child: const Text(
-                          'Add Balance',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Balance Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.divider),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Current Balance',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  userCoinsAsync.when(
+                    data: (coins) => Text(
+                      '₹${(coins * 0.196).toStringAsFixed(2)}',
+                      style: GoogleFonts.inter(
+                        color: AppColors.primary,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    loading: () => const SizedBox(
+                      height: 40,
+                      child: LinearProgressIndicator(),
+                    ),
+                    error: (_, __) => Text(
+                      '₹0.00',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  userCoinsAsync.when(
+                    data: (coins) => Text(
+                      '$coins coins available',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Add Balance Section
+            Text(
+              'Add Balance',
+              style: GoogleFonts.inter(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Package Grid
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.6,
+              children: const [
+                _PackageCard(amount: 50, bonus: 6),
+                _PackageCard(amount: 100, bonus: 15),
+                _PackageCard(amount: 140, bonus: 20, badge: 'Value Pack'),
+                _PackageCard(amount: 200, bonus: 25),
+                _PackageCard(amount: 300, bonus: 35, badge: 'Popular'),
+                _PackageCard(amount: 500, bonus: 35),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Trust Indicators
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _TrustItem(icon: Icons.verified_user_outlined, label: '100% Safe'),
+                  Container(width: 1, height: 40, color: AppColors.divider),
+                  _TrustItem(icon: Icons.account_balance_outlined, label: 'Bank Approved'),
+                  Container(width: 1, height: 40, color: AppColors.divider),
+                  _TrustItem(icon: Icons.lock_outline, label: 'Secure'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Add Balance Button
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: () => context.push('/wallet/add-money'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'Add Balance Now',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -262,52 +214,76 @@ class _PackageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: badge != null ? const Color(0xFF6C63FF) : Colors.grey.shade200, width: badge != null ? 1.5 : 1),
-      ),
-      child: Stack(
-        children: [
-          if (badge != null)
-            Positioned(
-              top: 10,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  badge!,
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '₹$amount',
-                  style: const TextStyle(
-                    color: Color(0xFF6C63FF),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () => context.push('/wallet/add-money'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: badge != null ? AppColors.primary : AppColors.divider,
+            width: badge != null ? 1.5 : 1,
+          ),
+          boxShadow: badge != null
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Stack(
+          children: [
+            if (badge != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                Text(
-                  '+$bonus% Extra',
-                  style: const TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w500),
-                ),
-              ],
+              ),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '₹$amount',
+                    style: GoogleFonts.inter(
+                      color: AppColors.primary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '+$bonus% Extra',
+                    style: GoogleFonts.inter(
+                      color: AppColors.success,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -322,27 +298,20 @@ class _TrustItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.black54, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, color: AppColors.primary, size: 24),
+        const SizedBox(height: 6),
         Text(
           label,
-          style: const TextStyle(color: Colors.black54, fontSize: 10, fontWeight: FontWeight.w500),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-}
-
-class _TrustDivider extends StatelessWidget {
-  const _TrustDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 24,
-      width: 1,
-      color: Colors.grey.shade300,
     );
   }
 }
