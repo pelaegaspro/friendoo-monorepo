@@ -2,7 +2,7 @@
 
 | Folder | Stack | Deployment |
 |--------|-------|------------|
-| flutter-app/ | Flutter + Dart | APK only |
+| android-app/ | Native Android (Kotlin) | APK/AAB |
 | admin/ | Next.js + Tailwind | Vercel |
 | crm/ | Next.js + Tailwind | Vercel |
 
