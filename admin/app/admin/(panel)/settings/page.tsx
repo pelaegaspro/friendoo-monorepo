@@ -131,10 +131,98 @@ export default function SettingsAdminPage() {
             </form>
           </SectionCard>
 
+          {/* AdMob Config */}
+          <SectionCard
+            title="AdMob Config"
+            description="Reward coin amount for watching a rewarded video ad in the app."
+          >
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4 text-sm text-zinc-300">
+                <p className="mb-3 font-medium text-white">Reward Ad Settings</p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-zinc-500">Coins per rewarded ad</p>
+                    <p className="mt-1 font-mono text-purple-300">5 coins (default)</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500">AdMob App ID env var</p>
+                    <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">NEXT_PUBLIC_ADMOB_APP_ID</code>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-zinc-500">
+                  Update <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">welcomeBonusCoins</code> in App Config to change reward amounts. AdMob unit IDs are configured inside the Android app.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Agora Config */}
+          <SectionCard
+            title="Agora Config"
+            description="RTC settings for voice and video calls."
+          >
+            <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4 text-sm text-zinc-300">
+              <p className="mb-3 font-medium text-white">Agora RTC Configuration</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-xs text-zinc-500">App ID env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">AGORA_APP_ID</code>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">App Certificate env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">AGORA_APP_CERTIFICATE</code>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Token Expiry (seconds)</p>
+                  <p className="mt-1 font-mono text-purple-300">3600 (1 hour)</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Region</p>
+                  <p className="mt-1 font-mono text-purple-300">asia-south1</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-zinc-500">
+                Tokens are generated server-side via Firebase Cloud Functions. Set the Agora credentials in your Firebase Functions environment config.
+              </p>
+            </div>
+          </SectionCard>
+
+          {/* Razorpay Config */}
+          <SectionCard
+            title="Razorpay Config"
+            description="Payment gateway for coin recharges."
+          >
+            <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4 text-sm text-zinc-300">
+              <p className="mb-3 font-medium text-white">Razorpay Payment Gateway</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <p className="text-xs text-zinc-500">Key ID env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_KEY_ID</code>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Key Secret env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_KEY_SECRET</code>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Webhook Secret env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_WEBHOOK_SECRET</code>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Mode</p>
+                  <p className="mt-1 font-mono text-yellow-300">Use <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">rzp_test_</code> prefix for test mode</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-zinc-500">
+                Set these in <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">admin/.env.local</code>. Switch to live keys (<code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">rzp_live_</code>) for production. Webhook URL: <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">/api/payments/webhook</code>.
+              </p>
+            </div>
+          </SectionCard>
+
           <SectionCard
             title="Admin Password"
             description="Environment-based configuration for the password-protected portal."
           >
+
             <div className="space-y-3 rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4 text-sm text-zinc-300">
               <p>
                 The admin password is controlled by <code className="rounded bg-[#101010] px-1.5 py-0.5 text-purple-200">ADMIN_PASSWORD</code> in

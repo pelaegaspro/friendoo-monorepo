@@ -21,6 +21,7 @@ export interface AdminHost {
   hostStatus: HostStatus
   isHost: boolean
   photoURL: string
+  idProofUrl?: string | null
   bio: string
   gender: string
   age: number | null
@@ -37,6 +38,7 @@ export interface HostApplicationRecord {
   city: string
   language: string
   photoURL: string
+  idProofUrl?: string | null
   status: 'pending' | 'approved' | 'rejected'
   notes: string
   submittedAt: string | null
@@ -100,4 +102,31 @@ export interface AppSettingsRecord {
   maxCallDurationMinutes: number
   maintenanceMode: boolean
   updatedAt: string | null
+}
+
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
+
+export interface WithdrawalRecord {
+  id: string
+  hostId: string
+  hostName: string
+  amount: number
+  upiId: string
+  status: WithdrawalStatus
+  requestedAt: string | null
+  processedAt: string | null
+  adminNote: string
+  razorpayPayoutId?: string | null
+  failureReason?: string | null
+}
+
+export interface HostEarningsRecord {
+  hostId: string
+  totalEarningsInr: number
+  totalCallMinutes: number
+  totalCalls: number
+  availableForWithdrawal: number
+  pendingWithdrawal: number
+  lifetimeEarnings: number
+  lastPayoutDate: string | null
 }

@@ -9,6 +9,7 @@ import Badge from '@/components/ui/Badge'
 import { adminFetch } from '@/lib/admin/client'
 import type { TransactionRow } from '@/lib/admin/types'
 import { formatDateTime, formatInr } from '@/lib/admin/format'
+import { Download } from 'lucide-react'
 
 type TransactionFilter = 'all' | 'topup' | 'calldebit' | 'bonus'
 
@@ -79,8 +80,10 @@ export default function TransactionsAdminPage() {
           <button
             type="button"
             onClick={() => downloadCsv(filteredTransactions)}
-            className="rounded-xl bg-purple-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-400"
+            disabled={filteredTransactions.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 disabled:opacity-40"
           >
+            <Download size={14} />
             Export CSV
           </button>
         }

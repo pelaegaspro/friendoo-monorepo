@@ -2,7 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, UserRound, Coins, ReceiptText, Phone, Settings, Menu } from 'lucide-react'
+import { 
+  LayoutDashboard, Users, UserRound, Coins, 
+  ReceiptText, Phone, Settings, Menu, Bell, 
+  ShieldAlert, CreditCard, Eye, 
+  MessageSquare, AlertCircle 
+} from 'lucide-react'
 
 interface AdminSidebarProps {
   open: boolean
@@ -16,15 +21,23 @@ const items = [
   { href: '/admin/packages', label: 'Packages', icon: Coins },
   { href: '/admin/transactions', label: 'Transactions', icon: ReceiptText },
   { href: '/admin/calls', label: 'Calls', icon: Phone },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/payments', label: 'Payouts', icon: CreditCard },
+  { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { href: '/admin/reports', label: 'Reports', icon: ShieldAlert },
+]
+
+const surveillanceItems = [
+  { href: '/admin/surveillance/users', label: 'User Activity', icon: Eye },
+  { href: '/admin/surveillance/chats', label: 'Chat Monitor', icon: MessageSquare },
+  { href: '/admin/surveillance/fraud', label: 'Fraud Alerts', icon: AlertCircle },
 ]
 
 function SidebarBody({ onClose }: { onClose: () => void }) {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full flex-col bg-[#121212]">
-      <div className="flex items-center gap-3 border-b border-[#242424] px-5 py-5">
+    <div className="flex h-full flex-col bg-[#121212] overflow-y-auto">
+      <div className="flex items-center gap-3 border-b border-[#242424] px-5 py-5 sticky top-0 bg-[#121212] z-10">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500 text-lg font-bold text-white">
           F
         </div>
@@ -35,6 +48,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
+        <p className="px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Management</p>
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href
           return (
@@ -42,7 +56,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
               key={href}
               href={href}
               onClick={onClose}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                 active
                   ? 'bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/30'
                   : 'text-zinc-400 hover:bg-[#1d1d1d] hover:text-white'
@@ -53,6 +67,44 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
             </Link>
           )
         })}
+
+        <div className="pt-6 pb-2">
+          <p className="px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Surveillance</p>
+        </div>
+        {surveillanceItems.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                active
+                  ? 'bg-red-500/15 text-red-300 ring-1 ring-red-500/30'
+                  : 'text-zinc-400 hover:bg-[#1d1d1d] hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{label}</span>
+            </Link>
+          )
+        })}
+
+        <div className="pt-6 pb-2">
+          <p className="px-3 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">System</p>
+        </div>
+        <Link
+          href="/admin/settings"
+          onClick={onClose}
+          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+            pathname === '/admin/settings'
+              ? 'bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/30'
+              : 'text-zinc-400 hover:bg-[#1d1d1d] hover:text-white'
+          }`}
+        >
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
+        </Link>
       </nav>
     </div>
   )
@@ -67,7 +119,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button className="absolute inset-0 bg-black/70" onClick={onClose} aria-label="Close navigation" />
-          <div className="absolute left-0 top-0 h-full w-72 border-r border-[#242424] shadow-2xl">
+          <div className="absolute left-0 top-0 h-full w-72 border-r border-[#242424] shadow-2xl z-50">
             <SidebarBody onClose={onClose} />
           </div>
         </div>

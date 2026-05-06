@@ -240,6 +240,7 @@ export async function listHosts(): Promise<AdminHost[]> {
           hostStatus === 'pending' || hostStatus === 'suspended' ? hostStatus : 'approved',
         isHost: asBoolean(data.isHost),
         photoURL: asString(data.photoURL),
+        idProofUrl: asString(data.idProofUrl),
         bio: asString(data.bio),
         gender: asString(data.gender),
         age: typeof data.age === 'number' ? data.age : null,
@@ -412,6 +413,7 @@ export async function listHostApplications(): Promise<HostApplicationRecord[]> {
       city: asString(data.city),
       language: asString(data.language, 'Hindi'),
       photoURL: asString(data.photoURL),
+      idProofUrl: asString(data.idProofUrl),
       status: asString(data.status, 'pending') as HostApplicationRecord['status'],
       notes: asString(data.notes),
       submittedAt: toIsoString(data.submittedAt),
@@ -793,6 +795,65 @@ export async function getAppSettings(): Promise<AppSettingsRecord> {
     maxCallDurationMinutes: asNumber(data.maxCallDurationMinutes, 60),
     maintenanceMode: asBoolean(data.maintenanceMode),
     updatedAt: toIsoString(data.updatedAt),
+  }
+}
+
+export async function listWithdrawals(): Promise<any[]> {
+  const db = getDb()
+  const [withdrawalsSnap, usersSnap] = await Promise.all([
+    db.collectionGroup('payoutHistory').get(),
+    db.collection('hosts').get(),
+  ])
+
+  const hosts = new Map(
+    usersSnap.docs.map((doc) => [doc.id, { 
+      alias: asString(doc.data().alias, 'Anonymous Host'),
+      walletBalance: asNumber(doc.data().walletBalance, 0)
+    }])
+  )
+
+  const rows = withdrawalsSnap.docs.map((doc) => {
+    const data = doc.data()
+    const hostId = doc.ref.parent.parent?.id || ''
+    const host = hosts.get(hostId)
+    return {
+      id: doc.id,
+      hostId,
+      hostName: host?.alias ?? 'Unknown Host',
+      walletBalance: host?.walletBalance ?? 0,
+      amount: asNumber(data.amount),
+      upiId: asString(data.upiId, 'Stored Encrypted'),
+      status: asString(data.status, 'pending') as any,
+      requestedAt: toIsoString(data.requestedAt),
+      processedAt: toIsoString(data.processedAt),
+      adminNote: asString(data.adminNote),
+      razorpayPayoutId: asString(data.razorpayPayoutId),
+      failureReason: asString(data.failureReason),
+    }
+  })
+
+  return rows.sort((left, right) => {
+    const leftValue = left.requestedAt ? new Date(left.requestedAt).getTime() : 0
+    const rightValue = right.requestedAt ? new Date(right.requestedAt).getTime() : 0
+    return rightValue - leftValue
+  })
+}
+
+export async function getHostEarnings(hostId: string): Promise<import('./types').HostEarningsRecord | null> {
+  const db = getDb()
+  const snap = await db.collection('hostEarnings').document(hostId).get()
+  if (!snap.exists) return null
+
+  const data = snap.data() ?? {}
+  return {
+    hostId,
+    totalEarningsInr: asNumber(data.totalEarningsInr),
+    totalCallMinutes: asNumber(data.totalCallMinutes),
+    totalCalls: asNumber(data.totalCalls),
+    availableForWithdrawal: asNumber(data.availableForWithdrawal),
+    pendingWithdrawal: asNumber(data.pendingWithdrawal),
+    lifetimeEarnings: asNumber(data.lifetimeEarnings),
+    lastPayoutDate: toIsoString(data.lastPayoutDate),
   }
 }
 

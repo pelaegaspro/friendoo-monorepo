@@ -10,6 +10,31 @@ import Badge from '@/components/ui/Badge'
 import { adminFetch } from '@/lib/admin/client'
 import type { CallRow, CallStatus } from '@/lib/admin/types'
 import { formatDateTime, formatDuration } from '@/lib/admin/format'
+import { Download } from 'lucide-react'
+
+function downloadCsv(rows: CallRow[]) {
+  const header = ['Caller', 'Host', 'Duration', 'Coins Spent', 'Status', 'Date']
+  const lines = rows.map((row) =>
+    [
+      row.callerName,
+      row.hostName,
+      formatDuration(row.durationSeconds),
+      row.coinsSpent,
+      row.status,
+      row.createdAt ?? '',
+    ]
+      .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
+      .join(',')
+  )
+
+  const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `friendoo-calls-${Date.now()}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function CallsAdminPage() {
   const [calls, setCalls] = useState<CallRow[]>([])
@@ -40,7 +65,21 @@ export default function CallsAdminPage() {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Call History" description="Monitor active, ended, and missed calls across the platform.">
+      <SectionCard
+        title="Call History"
+        description="Monitor active, ended, and missed calls across the platform."
+        actions={
+          <button
+            type="button"
+            onClick={() => downloadCsv(filteredCalls)}
+            disabled={filteredCalls.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 disabled:opacity-40"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        }
+      >
         <div className="flex flex-wrap gap-2">
           {(['all', 'active', 'ended', 'missed'] as const).map((status) => (
             <button

@@ -10,12 +10,21 @@ android {
     namespace = "com.friendoo.app"
     compileSdk = 34
 
+    val localProperties = java.util.Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.inputStream())
+    }
+
     defaultConfig {
         applicationId = "com.friendoo.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+
+        buildConfigField("String", "GEMINI_API_KEY", "\"${localProperties.getProperty("GEMINI_API_KEY") ?: ""}\"")
+        buildConfigField("String", "GROQ_API_KEY", "\"${localProperties.getProperty("GROQ_API_KEY") ?: ""}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -23,13 +32,24 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../friendoo-release.keystore")
+            storePassword = "your_keystore_password" // Replace with actual password
+            keyAlias = "friendoo"
+            keyPassword = "your_key_password" // Replace with actual password
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -80,7 +100,7 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     
     // Agora
-    implementation(libs.agora.rtc.voice)
+    implementation(libs.agora.rtc)
     
     // Razorpay
     implementation(libs.razorpay.checkout)
@@ -95,6 +115,9 @@ dependencies {
     
     // DataStore
     implementation(libs.androidx.datastore.preferences)
+
+    // Gemini AI
+    implementation(libs.generativeai)
 
     // Testing
     testImplementation(libs.junit)

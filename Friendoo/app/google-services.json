@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "6451131397",
+    "project_id": "friendoo-v1",
+    "storage_bucket": "friendoo-v1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6451131397:android:188701daa381169996d86c",
+        "android_client_info": {
+          "package_name": "com.friendoo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REDACTED_ANDROID_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

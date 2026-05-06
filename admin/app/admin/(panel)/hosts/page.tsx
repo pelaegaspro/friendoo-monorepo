@@ -10,7 +10,7 @@ import SideSheet from '@/components/admin/SideSheet'
 import { adminFetch } from '@/lib/admin/client'
 import type { AdminHost, HostApplicationRecord } from '@/lib/admin/types'
 import { formatDateTime } from '@/lib/admin/format'
-
+import { useRouter } from 'next/navigation'
 const languageOptions = [
   'Hindi',
   'English',
@@ -261,11 +261,10 @@ export default function HostsAdminPage() {
     })
   }, [filter, hosts, search])
 
+  const router = useRouter()
+
   const openCreate = () => {
-    setEditingHost(null)
-    setForm(emptyForm)
-    setPhotoFile(null)
-    setSheetOpen(true)
+    router.push('/admin/hosts/create')
   }
 
   const openEdit = (host: AdminHost) => {
@@ -587,6 +586,18 @@ export default function HostsAdminPage() {
                       <p className="mt-3 text-xs text-zinc-500">
                         Submitted {application.submittedAt ? formatDateTime(application.submittedAt) : '--'}
                       </p>
+                      {application.idProofUrl ? (
+                        <a
+                          href={application.idProofUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 transition hover:bg-blue-500/20"
+                        >
+                          📄 View ID Proof
+                        </a>
+                      ) : (
+                        <span className="mt-2 inline-block text-xs text-zinc-600">No ID uploaded</span>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
@@ -619,6 +630,22 @@ export default function HostsAdminPage() {
         description="Create or update a Friendoo host profile."
       >
         <form onSubmit={submitHost}>
+          {editingHost && (
+            <div className="mb-6 grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-purple-500/30 bg-purple-500/10 p-3 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-purple-300">Total Coins</p>
+                <p className="mt-1 text-lg font-bold text-white">{editingHost.coinsEarned.toLocaleString('en-IN')}</p>
+              </div>
+              <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-3 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-green-300">Earnings (₹)</p>
+                <p className="mt-1 text-lg font-bold text-white">₹{editingHost.coinsEarned.toLocaleString('en-IN')}</p>
+              </div>
+              <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-3 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-blue-300">Calls Made</p>
+                <p className="mt-1 text-lg font-bold text-white">{editingHost.callsMade.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+          )}
           <HostFormFields
             form={form}
             onChange={(patch) => setForm((current) => ({ ...current, ...patch }))}

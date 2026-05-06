@@ -1,0 +1,38 @@
+package com.friendoo.app.data.model
+
+import com.google.firebase.Timestamp
+
+data class HostEarnings(
+    val hostId: String = "",
+    val totalEarningsInr: Double = 0.0,
+    val totalCallMinutes: Int = 0,
+    val totalCalls: Int = 0,
+    val availableForWithdrawal: Double = 0.0,
+    val pendingWithdrawal: Double = 0.0,
+    val lifetimeEarnings: Double = 0.0,
+    val lastPayoutDate: Timestamp? = null
+) {
+    companion object {
+        fun fromMap(map: Map<String, Any?>): HostEarnings = HostEarnings(
+            hostId = map["hostId"] as? String ?: "",
+            totalEarningsInr = (map["totalEarningsInr"] as? Number)?.toDouble() ?: 0.0,
+            totalCallMinutes = (map["totalCallMinutes"] as? Number)?.toInt() ?: 0,
+            totalCalls = (map["totalCalls"] as? Number)?.toInt() ?: 0,
+            availableForWithdrawal = (map["availableForWithdrawal"] as? Number)?.toDouble() ?: 0.0,
+            pendingWithdrawal = (map["pendingWithdrawal"] as? Number)?.toDouble() ?: 0.0,
+            lifetimeEarnings = (map["lifetimeEarnings"] as? Number)?.toDouble() ?: 0.0,
+            lastPayoutDate = map["lastPayoutDate"] as? Timestamp
+        )
+    }
+
+    fun toMap(): Map<String, Any?> = mapOf(
+        "hostId" to hostId,
+        "totalEarningsInr" to totalEarningsInr,
+        "totalCallMinutes" to totalCallMinutes,
+        "totalCalls" to totalCalls,
+        "availableForWithdrawal" to availableForWithdrawal,
+        "pendingWithdrawal" to pendingWithdrawal,
+        "lifetimeEarnings" to lifetimeEarnings,
+        "lastPayoutDate" to lastPayoutDate
+    )
+}

@@ -10,6 +10,7 @@ import Badge from '@/components/ui/Badge'
 import { adminFetch } from '@/lib/admin/client'
 import type { AdminUserRow } from '@/lib/admin/types'
 import { formatDateTime } from '@/lib/admin/format'
+import { Download } from 'lucide-react'
 
 export default function UsersAdminPage() {
   const [users, setUsers] = useState<AdminUserRow[]>([])
@@ -85,11 +86,43 @@ export default function UsersAdminPage() {
     }
   }
 
+  const exportCsv = () => {
+    const headers = ['Name', 'Username', 'Phone', 'City', 'Coin Balance', 'Status', 'Joined']
+    const rows = filteredUsers.map((u) => [
+      u.displayName,
+      u.username,
+      u.phoneNumber,
+      u.city,
+      String(u.coinBalance),
+      u.status,
+      u.joinedAt ?? '',
+    ])
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `friendoo-users-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-6">
       <SectionCard
         title="User Management"
         description="Search users, adjust balances, and ban accounts when needed."
+        actions={
+          <button
+            type="button"
+            onClick={exportCsv}
+            disabled={filteredUsers.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/5 disabled:opacity-40"
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        }
       >
         <input
           value={search}
