@@ -48,7 +48,7 @@ export default function TermsOfServicePage() {
         <div className="bg-[#181818] border border-[#242424] p-8 rounded-3xl">
           <h2 className="text-xl font-bold text-white mb-4">5. Financial Transactions</h2>
           <p>
-            All financial transactions (host earnings and payouts) are processed via RazorpayX. Users and hosts agree 
+            All financial transactions (host earnings and payouts) are processed via Cashfree. Users and hosts agree
             to comply with all applicable tax and anti-money laundering (PMLA) regulations in India.
           </p>
         </div>

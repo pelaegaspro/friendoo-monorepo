@@ -32,8 +32,8 @@
         </activity>
 
         <meta-data
-            android:name="com.razorpay.ApiKey"
-            android:value="YOUR_RAZORPAY_KEY" />
+            android:name="com.cashfree.pg.ApiKey"
+            android:value="${CASHFREE_APP_ID}" />
 
         <service
             android:name=".core.notification.FriendooMessagingService"

@@ -5,7 +5,7 @@ export default function PayoutSettingsPage() {
     <div className="space-y-6">
       <SectionCard
         title="Payout Configuration"
-        description="Global settings for host salaries and RazorpayX payouts."
+        description="Global settings for host salaries and Cashfree payouts."
       >
         <div className="grid gap-6 py-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -35,22 +35,20 @@ export default function PayoutSettingsPage() {
           </div>
 
           <div className="border-t border-[#222222] pt-6 space-y-4">
-            <h4 className="text-sm font-semibold text-zinc-300">RazorpayX Credentials</h4>
+            <h4 className="text-sm font-semibold text-zinc-300">Cashfree Payouts Config</h4>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-zinc-500 uppercase">Account Number</label>
-                <input
-                  type="text"
-                  placeholder="23232300..."
-                  className="w-full rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-200 outline-none focus:border-purple-500"
-                />
+                <label className="text-xs font-medium text-zinc-500 uppercase">Transfer Mode</label>
+                <select className="w-full rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-200 outline-none focus:border-purple-500 appearance-none">
+                  <option value="upi">UPI (Direct Transfer)</option>
+                  <option value="banktransfer">Bank Transfer (IMPS/NEFT)</option>
+                </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-medium text-zinc-500 uppercase">Payout Mode</label>
+                <label className="text-xs font-medium text-zinc-500 uppercase">Environment</label>
                 <select className="w-full rounded-xl border border-[#343434] bg-[#111111] px-4 py-2 text-sm text-zinc-200 outline-none focus:border-purple-500 appearance-none">
-                  <option value="UPI">UPI (Direct Payout)</option>
-                  <option value="IMPS">Bank (IMPS)</option>
-                  <option value="NEFT">Bank (NEFT)</option>
+                  <option value="TEST">TEST (Sandbox)</option>
+                  <option value="PRODUCTION">PRODUCTION (Live)</option>
                 </select>
               </div>
             </div>

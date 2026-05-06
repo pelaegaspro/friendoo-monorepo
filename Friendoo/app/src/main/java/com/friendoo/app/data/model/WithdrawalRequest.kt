@@ -11,7 +11,7 @@ data class WithdrawalRequest(
     val requestedAt: Timestamp? = null,
     val processedAt: Timestamp? = null,
     val adminNote: String = "",
-    val razorpayPayoutId: String? = null,
+    val cashfreePayoutId: String? = null,
     val failureReason: String? = null
 ) {
     companion object {
@@ -24,7 +24,7 @@ data class WithdrawalRequest(
             requestedAt = map["requestedAt"] as? Timestamp,
             processedAt = map["processedAt"] as? Timestamp,
             adminNote = map["adminNote"] as? String ?: "",
-            razorpayPayoutId = map["razorpayPayoutId"] as? String,
+            cashfreePayoutId = map["cashfreePayoutId"] as? String,
             failureReason = map["failureReason"] as? String
         )
     }
@@ -37,7 +37,7 @@ data class WithdrawalRequest(
         "requestedAt" to requestedAt,
         "processedAt" to processedAt,
         "adminNote" to adminNote,
-        "razorpayPayoutId" to razorpayPayoutId,
+        "cashfreePayoutId" to cashfreePayoutId,
         "failureReason" to failureReason
     )
 }

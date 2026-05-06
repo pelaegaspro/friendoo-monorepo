@@ -4,7 +4,7 @@ import { getDb, adminFieldValue } from "@/lib/firebaseAdmin";
 import { revalidatePath } from "next/cache";
 import crypto from 'crypto';
 
-const RAZORPAYX_BASE_URL = "https://api.razorpay.com/v1";
+const CASHFREE_PAYOUT_URL = "https://payout-api.cashfree.com/payout/v1";
 
 // Same key as Kotlin app for end-to-end encryption
 const CRYPTO_KEY = Buffer.from("FRIENDOO_SECURE_KEY_2026_WALLET");
@@ -23,7 +23,7 @@ function decrypt(encryptedText: string): string | null {
 }
 
 /**
- * Approves a withdrawal and initiates a real RazorpayX Payout.
+ * Approves a withdrawal and initiates a real Cashfree Payout.
  */
 export async function approveWithdrawal(hostId: string, payoutId: string, adminNote: string = "") {
   const db = getDb();
@@ -51,75 +51,48 @@ export async function approveWithdrawal(hostId: string, payoutId: string, adminN
 
     const amount = payoutData.amount; // In INR
 
-    // 1. Update status to processing
+    // 1. Update status to approved
     await payoutRef.update({
       status: 'approved',
       adminNote,
       updatedAt: adminFieldValue.serverTimestamp()
     });
 
-    // 2. RazorpayX Integration
-    const auth = Buffer.from(`${process.env.RAZORPAYX_KEY_ID}:${process.env.RAZORPAYX_KEY_SECRET}`).toString('base64');
+    // 2. Cashfree Payouts Integration
+    const clientId = process.env.CASHFREE_APP_ID;
+    const clientSecret = process.env.CASHFREE_SECRET_KEY;
 
-    // A. Create/Find Contact
-    const contactResponse = await fetch(`${RAZORPAYX_BASE_URL}/contacts`, {
+    if (!clientId || !clientSecret) throw new Error("Cashfree credentials not configured");
+
+    // Direct Transfer (UPI)
+    const transferResponse = await fetch(`${CASHFREE_PAYOUT_URL}/directTransfer`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${auth}`
+            'X-Client-Id': clientId,
+            'X-Client-Secret': clientSecret
         },
         body: JSON.stringify({
-            name: `Host ${hostId.slice(0, 8)}`,
-            email: "support@friendoo.app",
-            type: "vendor",
-            reference_id: hostId
+            transferId: payoutId, // Use our document ID as transferId for idempotency
+            amount: amount.toFixed(2),
+            transferMode: "upi",
+            vpa: upiId,
+            remarks: "Friendoo Host Payout"
         })
     });
-    const contact = await contactResponse.json();
 
-    // B. Create Fund Account (UPI)
-    const fundAccountResponse = await fetch(`${RAZORPAYX_BASE_URL}/fund_accounts`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${auth}`
-        },
-        body: JSON.stringify({
-            account_type: "vpa",
-            contact_id: contact.id,
-            vpa: { address: upiId }
-        })
-    });
-    const fundAccount = await fundAccountResponse.json();
+    const cashfreeResult = await transferResponse.json();
 
-    // C. Create Payout
-    const payoutResponse = await fetch(`${RAZORPAYX_BASE_URL}/payouts`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${auth}`
-        },
-        body: JSON.stringify({
-            account_number: process.env.RAZORPAYX_ACCOUNT_NUMBER,
-            fund_account_id: fundAccount.id,
-            amount: amount * 100, // Paise
-            currency: "INR",
-            mode: "UPI",
-            purpose: "payout",
-            queue_if_low_balance: true,
-            reference_id: payoutId,
-            narration: "Friendoo Host Payout"
-        })
-    });
-    const razorpayPayout = await payoutResponse.json();
-    if (razorpayPayout.error) throw new Error(razorpayPayout.error.description);
+    if (cashfreeResult.status === "ERROR") {
+        throw new Error(cashfreeResult.message || "Cashfree transfer failed");
+    }
 
     // 3. Update status to completed on success
     await db.runTransaction(async (transaction) => {
       transaction.update(payoutRef, {
         status: 'completed',
         processedAt: adminFieldValue.serverTimestamp(),
-        razorpayPayoutId: razorpayPayout.id,
+        cashfreeReferenceId: cashfreeResult.data?.referenceId || null,
         updatedAt: adminFieldValue.serverTimestamp()
       });
 
@@ -134,7 +107,7 @@ export async function approveWithdrawal(hostId: string, payoutId: string, adminN
         type: 'payout',
         amount,
         hostAlias: hostData.alias || "Unknown Host",
-        razorpayPayoutId: razorpayPayout.id,
+        cashfreeReferenceId: cashfreeResult.data?.referenceId || null,
         timestamp: adminFieldValue.serverTimestamp()
       });
     });

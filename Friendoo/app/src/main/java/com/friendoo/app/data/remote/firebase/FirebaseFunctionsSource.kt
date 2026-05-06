@@ -68,4 +68,20 @@ class FirebaseFunctionsSource @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun callCreateCashfreeOrder(amount: Double): Result<Map<String, Any?>> {
+        return try {
+            val data = hashMapOf("amount" to amount)
+            val result = functions.getHttpsCallable("createCashfreeOrder")
+                .withTimeout(15, TimeUnit.SECONDS)
+                .call(data)
+                .await()
+            
+            @Suppress("UNCHECKED_CAST")
+            val resultMap = result.data as? Map<String, Any?> ?: emptyMap()
+            Result.success(resultMap)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

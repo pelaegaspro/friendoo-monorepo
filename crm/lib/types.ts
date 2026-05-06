@@ -86,7 +86,7 @@ export interface CoinTransactionRecord {
   balanceAfter?: number;
   packageId?: string;
   amountInr?: number;
-  razorpayOrderId?: string;
+  cashfreeOrderId?: string;
   status?: string;
   createdAt?: unknown;
 }

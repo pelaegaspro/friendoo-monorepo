@@ -827,7 +827,7 @@ export async function listWithdrawals(): Promise<any[]> {
       requestedAt: toIsoString(data.requestedAt),
       processedAt: toIsoString(data.processedAt),
       adminNote: asString(data.adminNote),
-      razorpayPayoutId: asString(data.razorpayPayoutId),
+      cashfreeReferenceId: asString(data.cashfreeReferenceId),
       failureReason: asString(data.failureReason),
     }
   })

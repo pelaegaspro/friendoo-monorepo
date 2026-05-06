@@ -116,7 +116,7 @@ export interface WithdrawalRecord {
   requestedAt: string | null
   processedAt: string | null
   adminNote: string
-  razorpayPayoutId?: string | null
+  cashfreeReferenceId?: string | null
   failureReason?: string | null
 }
 

@@ -56,7 +56,7 @@ export interface Booking {
 
 export interface Payment {
   id: string
-  razorpayId: string
+  cashfreeId: string
   userId: string
   userName: string
   amount: number

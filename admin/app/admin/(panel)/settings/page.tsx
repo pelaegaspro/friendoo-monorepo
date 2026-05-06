@@ -187,33 +187,29 @@ export default function SettingsAdminPage() {
             </div>
           </SectionCard>
 
-          {/* Razorpay Config */}
+          {/* Cashfree Config */}
           <SectionCard
-            title="Razorpay Config"
-            description="Payment gateway for coin recharges."
+            title="Cashfree Config"
+            description="Payment gateway for coin recharges and host payouts."
           >
             <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4 text-sm text-zinc-300">
-              <p className="mb-3 font-medium text-white">Razorpay Payment Gateway</p>
+              <p className="mb-3 font-medium text-white">Cashfree Payment Gateway</p>
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
-                  <p className="text-xs text-zinc-500">Key ID env var</p>
-                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_KEY_ID</code>
+                  <p className="text-xs text-zinc-500">App ID env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">CASHFREE_APP_ID</code>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Key Secret env var</p>
-                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_KEY_SECRET</code>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500">Webhook Secret env var</p>
-                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">RAZORPAY_WEBHOOK_SECRET</code>
+                  <p className="text-xs text-zinc-500">Secret Key env var</p>
+                  <code className="mt-1 block rounded bg-[#101010] px-2 py-1 text-xs text-purple-200">CASHFREE_SECRET_KEY</code>
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500">Mode</p>
-                  <p className="mt-1 font-mono text-yellow-300">Use <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">rzp_test_</code> prefix for test mode</p>
+                  <p className="mt-1 font-mono text-yellow-300">Test (use TEST prefix keys) / Production</p>
                 </div>
               </div>
               <p className="mt-3 text-xs text-zinc-500">
-                Set these in <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">admin/.env.local</code>. Switch to live keys (<code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">rzp_live_</code>) for production. Webhook URL: <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">/api/payments/webhook</code>.
+                Set these in <code className="rounded bg-[#101010] px-1 py-0.5 text-purple-200">admin/.env.local</code>. Ensure Payouts are enabled in your Cashfree dashboard.
               </p>
             </div>
           </SectionCard>

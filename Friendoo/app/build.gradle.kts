@@ -27,6 +27,8 @@ android {
         buildConfigField("String", "GROQ_API_KEY", "\"${localProperties.getProperty("GROQ_API_KEY") ?: ""}\"")
         buildConfigField("String", "AGORA_APP_ID", "\"${localProperties.getProperty("AGORA_APP_ID") ?: ""}\"")
         buildConfigField("String", "AGORA_APP_CERTIFICATE", "\"${localProperties.getProperty("AGORA_APP_CERTIFICATE") ?: ""}\"")
+        buildConfigField("String", "CASHFREE_APP_ID", "\"${localProperties.getProperty("CASHFREE_APP_ID") ?: ""}\"")
+        buildConfigField("String", "CASHFREE_SECRET_KEY", "\"${localProperties.getProperty("CASHFREE_SECRET_KEY") ?: ""}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -104,8 +106,8 @@ dependencies {
     // Agora
     implementation(libs.agora.rtc)
     
-    // Razorpay
-    implementation(libs.razorpay.checkout)
+    // Cashfree
+    implementation(libs.cashfree.pg)
     
     // Retrofit & OkHttp
     implementation(libs.retrofit)

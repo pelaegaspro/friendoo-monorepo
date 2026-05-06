@@ -78,7 +78,7 @@ export default async function HostEarningsPage({ params }: { params: { hostId: s
                     {item.requestedAt ? formatDateTime(item.requestedAt) : "N/A"}
                   </td>
                   <td className="py-4 text-zinc-500 font-mono text-xs">
-                    {item.razorpayPayoutId || "—"}
+                    {item.cashfreeReferenceId || "—"}
                   </td>
                 </tr>
               ))}

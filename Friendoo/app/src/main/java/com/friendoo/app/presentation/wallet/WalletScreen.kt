@@ -99,9 +99,10 @@ fun UserWalletContent(viewModel: WalletViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         
         // Example recharge packs
+        val context = androidx.compose.ui.platform.LocalContext.current
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RechargePackItem(coins = 100, price = 100) { viewModel.recharge(100, "tr_123") }
-            RechargePackItem(coins = 500, price = 450) { viewModel.recharge(500, "tr_456") }
+            RechargePackItem(coins = 100, price = 100) { viewModel.initiateRecharge(context, 100.0) }
+            RechargePackItem(coins = 500, price = 450) { viewModel.initiateRecharge(context, 450.0) }
         }
     }
 }

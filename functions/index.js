@@ -93,6 +93,98 @@ async function sendAdminAlert(msg) {
 }
 
 /**
+ * CASHFREE INTEGRATION:
+ * 1. createCashfreeOrder: Generates a payment session for the app.
+ * 2. rechargeWallet: Verifies payment and adds coins.
+ */
+exports.createCashfreeOrder = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User only');
+
+    const amount = data.amount;
+    const userId = context.auth.uid;
+    const orderId = `order_${userId.slice(0, 5)}_${Date.now()}`;
+
+    try {
+        const response = await axios.post(
+            'https://sandbox.cashfree.com/pg/orders', // sandbox for testing
+            {
+                order_id: orderId,
+                order_amount: amount,
+                order_currency: 'INR',
+                customer_details: {
+                    customer_id: userId,
+                    customer_email: 'user@friendoo.app',
+                    customer_phone: '9999999999'
+                }
+            },
+            {
+                headers: {
+                    'x-api-version': '2023-08-01',
+                    'x-client-id': functions.config().cashfree.app_id,
+                    'x-client-secret': functions.config().cashfree.secret_key
+                }
+            }
+        );
+
+        return {
+            orderId: response.data.order_id,
+            paymentSessionId: response.data.payment_session_id
+        };
+    } catch (error) {
+        console.error('Cashfree Order Error:', error.response?.data || error.message);
+        throw new functions.https.HttpsError('internal', 'Failed to create payment session');
+    }
+});
+
+exports.rechargeWallet = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User only');
+
+    const { paymentId, userId } = data; // paymentId is the Cashfree OrderId
+
+    try {
+        // 1. Verify with Cashfree
+        const response = await axios.get(
+            `https://sandbox.cashfree.com/pg/orders/${paymentId}`,
+            {
+                headers: {
+                    'x-api-version': '2023-08-01',
+                    'x-client-id': functions.config().cashfree.app_id,
+                    'x-client-secret': functions.config().cashfree.secret_key
+                }
+            }
+        );
+
+        if (response.data.order_status === 'PAID') {
+            const amount = response.data.order_amount;
+            const coins = Math.floor(amount); // 1 INR = 1 Coin for now
+
+            const userRef = db.collection('users').doc(userId);
+            await db.runTransaction(async (t) => {
+                t.update(userRef, {
+                    walletBalance: admin.firestore.FieldValue.increment(coins)
+                });
+
+                const txRef = db.collection('transactions').doc();
+                t.set(txRef, {
+                    userId,
+                    type: 'recharge',
+                    amount: coins,
+                    paymentId: paymentId,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            return { success: true, coinsAdded: coins };
+        }
+
+        return { success: false, message: 'Payment not successful' };
+    } catch (error) {
+        console.error('Verification Error:', error.response?.data || error.message);
+        throw new functions.https.HttpsError('internal', 'Failed to verify payment');
+    }
+});
+
+/**
  * RESOLUTION LOGIC: 
  * Marks report as resolved and updates thread status.
  */

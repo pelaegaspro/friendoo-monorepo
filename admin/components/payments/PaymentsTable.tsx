@@ -25,7 +25,8 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
 
   const filtered = useMemo(() => {
     return payments.filter((p) => {
-      if (search && !p.razorpayId.toLowerCase().includes(search.toLowerCase())) return false
+      const pId = (p as any).cashfreeId || (p as any).razorpayId || "";
+      if (search && !pId.toLowerCase().includes(search.toLowerCase())) return false
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
 
       const date = p.createdAt?.toDate()
@@ -44,7 +45,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
   function handleExport() {
     const rows = filtered.map((p) => ({
       ID: p.id,
-      'Razorpay ID': p.razorpayId,
+      'Payment ID': (p as any).cashfreeId || (p as any).razorpayId || "",
       User: p.userName,
       Amount: formatCurrency(p.amount),
       Date: formatDate(p.createdAt),
@@ -70,7 +71,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by Razorpay ID..."
+            placeholder="Search by Payment ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
@@ -146,8 +147,8 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-700 bg-gray-800/50">
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">Payment ID</th>
-                <th className="text-left px-4 py-3 text-gray-400 font-medium">Razorpay ID</th>
+                <th className="text-left px-4 py-3 text-gray-400 font-medium">Internal ID</th>
+                <th className="text-left px-4 py-3 text-gray-400 font-medium">Gateway ID</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">User</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Amount</th>
                 <th className="text-left px-4 py-3 text-gray-400 font-medium">Date / Time</th>
@@ -164,13 +165,15 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
                   </td>
                 </tr>
               ) : (
-                filtered.map((p) => (
+                filtered.map((p) => {
+                   const gId = (p as any).cashfreeId || (p as any).razorpayId || "—";
+                   return (
                   <tr key={p.id} className="border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3 text-gray-300 font-mono text-xs">
                       {p.id.slice(0, 12)}…
                     </td>
                     <td className="px-4 py-3 text-gray-300 font-mono text-xs">
-                      {p.razorpayId.slice(0, 16)}…
+                      {gId.length > 16 ? gId.slice(0, 16) + "…" : gId}
                     </td>
                     <td className="px-4 py-3 text-white">{p.userName}</td>
                     <td className="px-4 py-3 text-white font-medium">{formatCurrency(p.amount)}</td>
@@ -190,7 +193,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
                       </button>
                     </td>
                   </tr>
-                ))
+                )})
               )}
             </tbody>
           </table>
@@ -208,7 +211,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
           <div className="space-y-4">
             {[
               { label: 'Payment ID', value: selectedPayment.id },
-              { label: 'Razorpay ID', value: selectedPayment.razorpayId },
+              { label: 'Gateway ID', value: (selectedPayment as any).cashfreeId || (selectedPayment as any).razorpayId || "—" },
               { label: 'User', value: selectedPayment.userName },
               { label: 'Amount', value: formatCurrency(selectedPayment.amount) },
               { label: 'Date', value: formatDate(selectedPayment.createdAt) },
