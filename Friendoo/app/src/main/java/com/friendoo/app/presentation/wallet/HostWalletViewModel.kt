@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.friendoo.app.core.utils.TimeUtils
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.model.HostEarnings
 import com.friendoo.app.data.model.WithdrawalRequest
@@ -16,6 +17,7 @@ import javax.inject.Inject
 data class HostWalletUiState(
     val earnings: HostEarnings? = null,
     val history: List<WithdrawalRequest> = emptyList(),
+    val nextPayoutDate: String = TimeUtils.getNextPayoutDate(),
     val isLoading: Boolean = false,
     val isSubmitting: Boolean = false,
     val error: String? = null,

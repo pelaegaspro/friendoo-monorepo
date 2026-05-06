@@ -116,6 +116,26 @@ fun HostWalletContent(viewModel: HostWalletViewModel, onWithdrawClick: () -> Uni
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Weekly Cycle Banner
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.secondaryContainer
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Next Payout Cycle: ${uiState.nextPayoutDate}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
         // Earnings Gradient Card
         Surface(
             modifier = Modifier.fillMaxWidth(),

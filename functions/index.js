@@ -185,6 +185,57 @@ exports.rechargeWallet = functions.https.onCall(async (data, context) => {
 });
 
 /**
+ * WEEKLY AUTO-PAYOUT: Runs every Monday at 10 AM.
+ * Processes all 'pending' withdrawal requests using Cashfree.
+ */
+exports.weeklyAutoPayout = functions.pubsub.schedule('0 10 * * 1')
+  .timeZone('Asia/Kolkata')
+  .onRun(async (context) => {
+    const snapshots = await db.collection("withdrawalRequests")
+        .where("status", "==", "pending")
+        .get();
+
+    if (snapshots.empty) return console.log("No pending withdrawals.");
+
+    const clientId = functions.config().cashfree.app_id;
+    const clientSecret = functions.config().cashfree.secret_key;
+
+    for (const doc of snapshots.docs) {
+        const data = doc.data();
+        try {
+            const response = await axios.post(
+                'https://payout-api.cashfree.com/payout/v1/directTransfer',
+                {
+                    transferId: doc.id,
+                    amount: data.amount.toFixed(2),
+                    transferMode: "upi",
+                    vpa: data.upiId,
+                    remarks: "Friendoo Weekly Payout"
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Client-Id': clientId,
+                        'X-Client-Secret': clientSecret
+                    }
+                }
+            );
+
+            if (response.data.status === "SUCCESS") {
+                await doc.ref.update({
+                    status: "completed",
+                    processedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    cashfreeReferenceId: response.data.data.referenceId
+                });
+            }
+        } catch (e) {
+            console.error(`Failed to payout for ${doc.id}:`, e.message);
+        }
+    }
+    return null;
+});
+
+/**
  * RESOLUTION LOGIC: 
  * Marks report as resolved and updates thread status.
  */

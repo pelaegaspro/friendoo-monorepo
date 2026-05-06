@@ -38,9 +38,15 @@ class CashfreeManager @Inject constructor() {
                 .setSecondaryTextColor("#000000")
                 .build()
 
+            val cfComponents = CFComponents.CFComponentsBuilder()
+                .add(CFComponents.CFComponent.UPI)
+                .add(CFComponents.CFComponent.CARD)
+                .build()
+
             val cfDropCheckoutPayment = CFDropCheckoutPayment.CFDropCheckoutPaymentBuilder()
                 .setSession(session)
                 .setCFTheme(theme)
+                .setCFComponents(cfComponents)
                 .build()
 
             val gatewayService = CFPGService.getInstance()

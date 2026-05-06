@@ -22,7 +22,20 @@ object TimeUtils {
             diffInHours < 24 -> "$diffInHours hr ago"
             diffInDays == 1L -> "Yesterday"
             diffInDays < 7 -> "$diffInDays days ago"
-            else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date)
+    fun getNextPayoutDate(): String {
+        val calendar = java.util.Calendar.getInstance()
+        val today = calendar.get(java.util.Calendar.DAY_OF_WEEK)
+        
+        // Payout cycle: Every Monday
+        val daysUntilMonday = if (today == java.util.Calendar.MONDAY) {
+            7 // Next Monday if today is already Monday
+        } else if (today < java.util.Calendar.MONDAY) {
+            java.util.Calendar.MONDAY - today
+        } else {
+            7 - (today - java.util.Calendar.MONDAY)
         }
+        
+        calendar.add(java.util.Calendar.DAY_OF_YEAR, daysUntilMonday)
+        return SimpleDateFormat("EEEE, dd MMM", Locale.getDefault()).format(calendar.time)
     }
 }
