@@ -9,6 +9,7 @@ import com.cashfree.pg.core.api.exception.CFException
 import com.cashfree.pg.core.api.utils.CFComponents
 import com.cashfree.pg.ui.api.CFDropCheckoutPayment
 import com.cashfree.pg.ui.api.CFPaymentGatewayService as CFPGService
+import com.friendoo.app.BuildConfig
 import com.friendoo.app.core.utils.Constants
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,10 +24,16 @@ class CashfreeManager @Inject constructor() {
         callback: CFCheckoutResponseCallback
     ) {
         try {
+            val environment = if (BuildConfig.DEBUG) {
+                CFSession.CFSessionEnvironment.SANDBOX
+            } else {
+                CFSession.CFSessionEnvironment.PRODUCTION
+            }
+
             val session = CFSession.CFSessionBuilder()
                 .setOrderId(orderId)
                 .setPaymentSessionId(paymentSessionId)
-                .setEnvironment(CFSession.CFSessionEnvironment.SANDBOX) // Change to PRODUCTION for live
+                .setEnvironment(environment)
                 .build()
 
             val theme = CFTheme.CFThemeBuilder()

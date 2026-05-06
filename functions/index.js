@@ -1,9 +1,43 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const { RtcTokenBuilder, RtcRole } = require("agora-token");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+/**
+ * AGORA TOKEN GENERATION:
+ * Securely generates a token for call sessions.
+ */
+exports.getAgoraToken = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User only');
+
+    const channelName = data.channelName;
+    const uid = data.uid || 0;
+    const role = RtcRole.PUBLISHER;
+    const expirationTimeInSeconds = 3600;
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+    const appId = functions.config().agora.app_id;
+    const appCertificate = functions.config().agora.app_certificate;
+
+    if (!appId || !appCertificate) {
+        throw new functions.https.HttpsError('failed-precondition', 'Agora credentials not set');
+    }
+
+    const token = RtcTokenBuilder.buildTokenWithUid(
+        appId,
+        appCertificate,
+        channelName,
+        uid,
+        role,
+        privilegeExpiredTs
+    );
+
+    return { token: token };
+});
 
 /**
  * Report Creation Logic: 
@@ -259,4 +293,28 @@ exports.resolveReport = functions.https.onCall(async (data, context) => {
         }
         return { success: true };
     });
+});
+
+/**
+ * USER DATA DELETION (Compliance):
+ * Deletes all user data from Firestore and Auth.
+ */
+exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User only');
+    const uid = context.auth.uid;
+
+    try {
+        // 1. Delete Firestore data
+        await db.collection("users").doc(uid).delete();
+        await db.collection("hosts").doc(uid).delete();
+        // (Optional: add more collections like chat history if needed)
+
+        // 2. Delete from Firebase Auth
+        await admin.auth().deleteUser(uid);
+
+        return { success: true };
+    } catch (error) {
+        console.error("Account deletion error:", error);
+        throw new functions.https.HttpsError("internal", "Failed to delete account");
+    }
 });
