@@ -21,8 +21,8 @@ body:not(:has(.view:target)) #home-view{display:block}
 .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6vw 80px;position:relative;background:var(--dark);overflow:hidden}
 .hero-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(124,92,255,.22) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 20% 70%,rgba(255,122,182,.14) 0%,transparent 55%)}
 .hero-content{position:relative;z-index:2}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;font-size:13px;color:rgba(255,255,255,.7);margin-bottom:24px}
-.hero-eyebrow>span{width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:999px;font-size:13px;color:rgba(255,255,255,.7);margin-bottom:24px;line-height:1}
+.hero-eyebrow>span:first-child{width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0}
 .hero-heading{font-size:clamp(44px,9vw,110px);font-weight:800;line-height:1.05;letter-spacing:-2px;max-width:1100px}
 .cycle-wrapper{display:inline-block;overflow:hidden;vertical-align:baseline;height:1.1em;line-height:1.1em}
 .cycle-text{display:flex;flex-direction:column;animation:cycle 3.6s infinite ease-in-out}
