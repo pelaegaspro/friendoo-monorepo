@@ -552,72 +552,104 @@ export default function HostsAdminPage() {
           )}
         </SectionCard>
       ) : (
-        <SectionCard title="Pending Host Applications" description="Approve or reject incoming host requests.">
+        <SectionCard title="Host Applications" description="Approve or reject incoming host requests.">
           {applications.length === 0 ? (
             <DataState
-              title="No pending applications"
+              title="No applications found"
               body="New host applications will appear here as soon as they are submitted."
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {applications.map((application) => (
-                <div key={application.id} className="rounded-2xl border border-[#2d2d2d] bg-[#151515] p-4">
-                  <div className="flex items-start gap-4">
-                    {application.photoURL ? (
-                      <img
-                        src={application.photoURL}
-                        alt={application.name}
-                        className="h-16 w-16 rounded-2xl object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/15 text-lg font-semibold text-purple-200">
-                        {application.name.slice(0, 1).toUpperCase()}
+              {applications.map((application) => {
+                const waNumber = application.phone.replace(/\D/g, '')
+                const waMsg = encodeURIComponent(
+                  `Hi ${application.name}, your Friendoo host application has been received. Our team will review it shortly.`
+                )
+                const waLink = `https://wa.me/${waNumber}?text=${waMsg}`
+                const statusVariant =
+                  application.status === 'pending' ? 'pending' :
+                  application.status === 'approved' ? 'approved' : 'suspended'
+                return (
+                  <div key={application.id} className="rounded-2xl border border-[#2d2d2d] bg-[#151515] p-4">
+                    <div className="flex items-start gap-4">
+                      {application.photoURL ? (
+                        <img
+                          src={application.photoURL}
+                          alt={application.name}
+                          className="h-16 w-16 rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/15 text-lg font-semibold text-purple-200">
+                          {application.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="truncate text-base font-semibold text-white">{application.name}</h3>
+                          <Badge label={application.status} variant={statusVariant} />
+                        </div>
+                        <p className="mt-1 text-sm text-zinc-400">{application.phone}</p>
+                        <p className="mt-1 text-sm text-zinc-500">
+                          {application.city || '--'} | {application.language || 'Hindi'}
+                        </p>
+                        {application.about ? (
+                          <p className="mt-2 line-clamp-2 text-xs text-zinc-400 italic">&ldquo;{application.about}&rdquo;</p>
+                        ) : null}
+                        <p className="mt-2 text-xs text-zinc-500">
+                          Submitted {application.submittedAt ? formatDateTime(application.submittedAt) : '--'}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {application.idProofUrl ? (
+                            <a
+                              href={application.idProofUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 transition hover:bg-blue-500/20"
+                            >
+                              📄 View ID
+                            </a>
+                          ) : (
+                            <span className="text-xs text-zinc-600">No ID uploaded</span>
+                          )}
+                          {application.phone ? (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-300 transition hover:bg-green-500/20"
+                            >
+                              💬 WhatsApp
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                    {application.status === 'pending' && (
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => reviewApplication(application.id, 'approve')}
+                          className="flex-1 rounded-xl bg-purple-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-400"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => reviewApplication(application.id, 'reject')}
+                          className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300"
+                        >
+                          Reject
+                        </button>
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="truncate text-base font-semibold text-white">{application.name}</h3>
-                        <Badge label={application.status} variant={application.status === 'pending' ? 'pending' : 'approved'} />
-                      </div>
-                      <p className="mt-1 text-sm text-zinc-400">{application.phone}</p>
-                      <p className="mt-1 text-sm text-zinc-500">
-                        {application.city || '--'} | {application.language || 'Hindi'}
-                      </p>
+                    {application.status !== 'pending' && (
                       <p className="mt-3 text-xs text-zinc-500">
-                        Submitted {application.submittedAt ? formatDateTime(application.submittedAt) : '--'}
+                        Reviewed {application.reviewedAt ? formatDateTime(application.reviewedAt) : '--'}
                       </p>
-                      {application.idProofUrl ? (
-                        <a
-                          href={application.idProofUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300 transition hover:bg-blue-500/20"
-                        >
-                          📄 View ID Proof
-                        </a>
-                      ) : (
-                        <span className="mt-2 inline-block text-xs text-zinc-600">No ID uploaded</span>
-                      )}
-                    </div>
+                    )}
                   </div>
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => reviewApplication(application.id, 'approve')}
-                      className="flex-1 rounded-xl bg-purple-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-400"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => reviewApplication(application.id, 'reject')}
-                      className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </SectionCard>

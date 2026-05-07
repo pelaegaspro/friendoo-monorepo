@@ -399,9 +399,10 @@ export async function deleteHost(hostId: string) {
   }
 }
 
-export async function listHostApplications(): Promise<HostApplicationRecord[]> {
+export async function listHostApplications(statusFilter?: string): Promise<HostApplicationRecord[]> {
   const db = getDb()
-  const snap = await db.collection('hostApplications').where('status', '==', 'pending').get()
+  const ref = db.collection('hostApplications')
+  const snap = await (statusFilter ? ref.where('status', '==', statusFilter) : ref).get()
 
   const rows = snap.docs.map((doc) => {
     const data = doc.data()
@@ -412,6 +413,7 @@ export async function listHostApplications(): Promise<HostApplicationRecord[]> {
       age: typeof data.age === 'number' ? data.age : null,
       city: asString(data.city),
       language: asString(data.language, 'Hindi'),
+      about: asString(data.about),
       photoURL: asString(data.photoURL),
       idProofUrl: asString(data.idProofUrl),
       status: asString(data.status, 'pending') as HostApplicationRecord['status'],
@@ -467,10 +469,12 @@ export async function reviewHostApplication(applicationId: string, input: { acti
   const photoURL = photos[0] || asString(data.photoURL)
   const auth = getAuth()
 
+  const safePhone = phone && /^\+91\d{10}$/.test(phone) ? phone : undefined
+
   let approvedUid = userId
   if (!approvedUid) {
     const created = await auth.createUser({
-      phoneNumber: phone || undefined,
+      phoneNumber: safePhone,
       displayName,
     })
     approvedUid = created.uid
@@ -482,7 +486,7 @@ export async function reviewHostApplication(applicationId: string, input: { acti
       if (code === 'auth/user-not-found') {
         await auth.createUser({
           uid: approvedUid,
-          phoneNumber: phone || undefined,
+          phoneNumber: safePhone,
           displayName,
         })
       } else {

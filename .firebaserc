@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "friendoo-v1"
+  },
+  "targets": {
+    "friendoo-v1": {
+      "hosting": {
+        "landing": ["REPLACE_WITH_LANDING_SITE_ID"],
+        "admin": ["REPLACE_WITH_ADMIN_SITE_ID"]
+      }
+    }
+  }
+}

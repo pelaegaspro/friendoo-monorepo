@@ -37,6 +37,7 @@ export interface HostApplicationRecord {
   age: number | null
   city: string
   language: string
+  about: string
   photoURL: string
   idProofUrl?: string | null
   status: 'pending' | 'approved' | 'rejected'
