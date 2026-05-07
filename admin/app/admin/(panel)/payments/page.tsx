@@ -63,7 +63,7 @@ export default function PaymentsPage() {
         callsMade: h.callsMade,
         coinsEarned: h.coinsEarned,
         earningsInr: Math.round(h.coinsEarned * COINS_TO_INR),
-        payoutStatus: 'pending', // Would come from a payouts collection in production
+        payoutStatus: 'pending' as const, // Would come from a payouts collection in production
         lastPaidAt: null,
       }))
       .filter((h) => h.coinsEarned > 0)

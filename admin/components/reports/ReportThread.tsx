@@ -4,15 +4,34 @@ import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase"; // Assuming this path for firebase config
 import {
   collection, doc, onSnapshot, addDoc, updateDoc,
-  serverTimestamp, orderBy, query
+  serverTimestamp, orderBy, query, Timestamp
 } from "firebase/firestore";
 
-export default function ReportThread({ reportId }) {
-  const [messages, setMessages] = useState([]);
-  const [report, setReport] = useState(null);
+type ReportData = {
+  id: string;
+  status?: string;
+  reason?: string;
+  evidenceUrl?: string;
+  reportedId?: string;
+  [key: string]: unknown;
+};
+
+type MessageData = {
+  id: string;
+  text?: string;
+  senderType?: string;
+  createdAt?: Timestamp;
+  deliveredAt?: Timestamp | null;
+  readAt?: Timestamp | null;
+  [key: string]: unknown;
+};
+
+export default function ReportThread({ reportId }: { reportId: string }) {
+  const [messages, setMessages] = useState<MessageData[]>([]);
+  const [report, setReport] = useState<ReportData | null>(null);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // 1. REAL-TIME DATA SYNC
   useEffect(() => {
@@ -45,7 +64,7 @@ export default function ReportThread({ reportId }) {
         readAt: null
       });
 
-      if (report?.status === "pending") {
+      if (report && report.status === "pending") {
         await updateDoc(doc(db, "reports", reportId), { status: "under_review" });
       }
       setReplyText("");
@@ -86,7 +105,7 @@ export default function ReportThread({ reportId }) {
       </div>
 
       {/* Reply Area */}
-      {["resolved", "rejected"].includes(report?.status) ? (
+      {["resolved", "rejected"].includes(report?.status ?? "") ? (
         <div className="p-4 bg-gray-100 text-center text-sm font-medium text-gray-600">
           This report is closed. Reopen it to send more replies.
         </div>
@@ -122,8 +141,8 @@ export default function ReportThread({ reportId }) {
   );
 }
 
-function StatusDropdown({ reportId, currentStatus }) {
-  async function changeStatus(newStatus) {
+function StatusDropdown({ reportId, currentStatus }: { reportId: string; currentStatus?: string }) {
+  async function changeStatus(newStatus: string) {
     await updateDoc(doc(db, "reports", reportId), {
       status: newStatus,
       resolvedAt: ["resolved", "rejected"].includes(newStatus) ? serverTimestamp() : null
@@ -148,7 +167,7 @@ function StatusDropdown({ reportId, currentStatus }) {
   );
 }
 
-function QuickReplies({ onSelect }) {
+function QuickReplies({ onSelect }: { onSelect: (text: string) => void }) {
   const templates = [
     "We have reviewed your report and taken action against the host.",
     "Can you share a screenshot of the GPay/PhonePe payment proof?",
@@ -167,8 +186,9 @@ function QuickReplies({ onSelect }) {
   );
 }
 
-function ActionButtons({ reportId, report }) {
+function ActionButtons({ reportId, report }: { reportId: string; report: ReportData | null }) {
   const freezeHost = async () => {
+    if (!report?.reportedId) return;
     await updateDoc(doc(db, "hosts", report.reportedId), {
       payoutFrozen: true, isOnline: false, callStatus: "offline", freezeReason: "admin_manual"
     });
@@ -176,6 +196,7 @@ function ActionButtons({ reportId, report }) {
   };
 
   const banHost = async () => {
+    if (!report?.reportedId) return;
     await updateDoc(doc(db, "hosts", report.reportedId), { status: "banned" });
     await updateDoc(doc(db, "reports", reportId), { status: "resolved" });
     alert("Host banned ✅");
@@ -189,7 +210,7 @@ function ActionButtons({ reportId, report }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message }: { message: MessageData }) {
   const isAdmin = message.senderType === "admin";
   const time = message.createdAt?.toDate()?.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) || "";
   

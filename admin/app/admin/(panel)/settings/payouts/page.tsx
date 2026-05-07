@@ -1,4 +1,4 @@
-import { SectionCard } from "@/components/admin/SectionCard";
+import SectionCard from "@/components/admin/SectionCard";
 
 export default function PayoutSettingsPage() {
   return (

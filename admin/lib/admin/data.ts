@@ -249,7 +249,7 @@ export async function listHosts(): Promise<AdminHost[]> {
         createdAt: toIsoString(data.createdAt),
       } satisfies AdminHost
     })
-    .filter((row): row is AdminHost => Boolean(row))
+    .filter(Boolean) as AdminHost[]
 
   return sortByNewest(rows)
 }
@@ -845,7 +845,7 @@ export async function listWithdrawals(): Promise<any[]> {
 
 export async function getHostEarnings(hostId: string): Promise<import('./types').HostEarningsRecord | null> {
   const db = getDb()
-  const snap = await db.collection('hostEarnings').document(hostId).get()
+  const snap = await db.collection('hostEarnings').doc(hostId).get()
   if (!snap.exists) return null
 
   const data = snap.data() ?? {}

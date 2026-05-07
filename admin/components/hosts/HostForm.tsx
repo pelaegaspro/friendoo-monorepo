@@ -122,7 +122,7 @@ export default function HostForm() {
                         className="h-12 w-12 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white/20"
                         style={{ backgroundColor: watch("avatarColor") }}
                     >
-                        {currentAlias?.take(2).toUpperCase() || "??"}
+                        {currentAlias?.slice(0, 2).toUpperCase() || "??"}
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import { listWithdrawals } from "@/lib/admin/data";
-import { SectionCard } from "@/components/admin/SectionCard";
+import SectionCard from "@/components/admin/SectionCard";
 import { formatDateTime } from "@/lib/admin/format";
 import { WithdrawalActions } from "./WithdrawalActions";
 

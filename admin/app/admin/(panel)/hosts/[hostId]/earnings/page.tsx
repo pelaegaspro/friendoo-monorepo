@@ -1,7 +1,7 @@
 import { getHostEarnings, listWithdrawals } from "@/lib/admin/data";
-import { SectionCard } from "@/components/admin/SectionCard";
+import SectionCard from "@/components/admin/SectionCard";
 import { formatDateTime } from "@/lib/admin/format";
-import { CurrencyRupee, Clock, AccountBalanceWallet, TrendingUp } from "lucide-react";
+import { IndianRupee, Clock, Wallet, TrendingUp } from "lucide-react";
 
 export default async function HostEarningsPage({ params }: { params: { hostId: string } }) {
   const earnings = await getHostEarnings(params.hostId);
@@ -24,7 +24,7 @@ export default async function HostEarningsPage({ params }: { params: { hostId: s
         <StatCard
           title="Available Balance"
           value={`₹${earnings.availableForWithdrawal}`}
-          icon={<AccountBalanceWallet size={20} />}
+          icon={<Wallet size={20} />}
           color="text-blue-500"
         />
         <StatCard
@@ -36,7 +36,7 @@ export default async function HostEarningsPage({ params }: { params: { hostId: s
         <StatCard
           title="Total Minutes"
           value={`${earnings.totalCallMinutes} min`}
-          icon={<CurrencyRupee size={20} />}
+          icon={<IndianRupee size={20} />}
           color="text-purple-500"
         />
       </div>

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       targetLabel = `user:${userId}`
     } else if (target === 'topic' && topic) {
       // Send to topic
-      await messaging.sendToTopic(topic, { notification: { title, body } })
+      await messaging.send({ topic, notification: { title, body } })
       successCount = 1
       targetLabel = `topic:${topic}`
     } else {
