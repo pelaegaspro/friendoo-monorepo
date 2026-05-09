@@ -38,9 +38,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col bg-[#121212] overflow-y-auto">
       <div className="flex items-center gap-3 border-b border-[#242424] px-5 py-5 sticky top-0 bg-[#121212] z-10">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500 text-lg font-bold text-white">
-          F
-        </div>
+        <img src="/logo.png" alt="Friendoo" className="h-10 w-auto" />
         <div>
           <p className="text-sm font-semibold text-white">Friendoo Admin</p>
           <p className="text-xs text-zinc-500">Control center</p>

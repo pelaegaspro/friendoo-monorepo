@@ -35,8 +35,9 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <aside className="hidden w-64 shrink-0 border-r border-border bg-surface p-4 lg:flex lg:flex-col">
-        <div className="mb-6 text-xl font-semibold">
-          <span className="bg-gradient-to-r from-accent to-success bg-clip-text text-transparent">
+        <div className="mb-6 flex items-center gap-3">
+          <img src="/logo.png" alt="Friendoo" className="h-8 w-auto" />
+          <span className="text-xl font-semibold bg-gradient-to-r from-accent to-success bg-clip-text text-transparent">
             Friendoo CRM
           </span>
         </div>
