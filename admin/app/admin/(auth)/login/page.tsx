@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
-              placeholder="friendoo_admin_2025"
+              placeholder="Enter admin password"
               className="w-full rounded-2xl border border-[#343434] bg-[#101010] px-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-500"
               required
             />
