@@ -7,11 +7,12 @@
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:#fff;line-height:1.7;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.lang-bar{background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);padding:8px 6vw;display:flex;gap:12px;align-items:center;justify-content:flex-end}
-.lang-bar>span{color:var(--muted);font-size:12px}
-.lang-select{padding:6px 32px 6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.5)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:border-color .2s}
-.lang-select:hover,.lang-select:focus{border-color:var(--brand)}
-.lang-select option{background:#1a2040;color:#fff}
+.lang-bar{background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);padding:10px 6vw;display:flex;justify-content:center;overflow-x:auto}
+.lang-pills{display:flex;gap:8px;align-items:center;scrollbar-width:none}
+.lang-pills::-webkit-scrollbar{display:none}
+.lang-pill{padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;transition:all .2s}
+.lang-pill:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+.lang-pill.active{background:linear-gradient(135deg,var(--brand),var(--pink));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(124,92,255,.3)}
 nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 6vw;background:rgba(6,8,16,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px}.logo svg{width:36px;height:36px}
 .nav-right{display:flex;gap:22px;align-items:center}.nav-right a{color:var(--muted);font-size:14px}.nav-right a:hover{color:#fff}
@@ -129,16 +130,16 @@ footer .links{flex-wrap:wrap;gap:14px}
 .legal-hero{padding:40px 4vw 24px}
 .legal-content{padding:24px 4vw 52px}
 }
-</style></head><body><div class="lang-bar"><span>🌐 Language</span>
-<select class="lang-select" id="langBarSelect" onchange="switchLang(this.value)">
-<option value="en">🇬🇧 English</option>
-<option value="hi">🇮🇳 हिंदी</option>
-<option value="ta">🇮🇳 தமிழ்</option>
-<option value="te">🇮🇳 తెలుగు</option>
-<option value="kn">🇮🇳 ಕನ್ನಡ</option>
-<option value="ml">🇮🇳 മലയാളം</option>
-<option value="ur">🇮🇳 اردو</option>
-</select>
+</style></head><body><div class="lang-bar">
+  <div class="lang-pills" id="langPills">
+    <button class="lang-pill" data-lang="en" onclick="switchLang('en')">English</button>
+    <button class="lang-pill" data-lang="hi" onclick="switchLang('hi')">हिंदी</button>
+    <button class="lang-pill" data-lang="ta" onclick="switchLang('ta')">தமிழ்</button>
+    <button class="lang-pill" data-lang="te" onclick="switchLang('te')">తెలుగు</button>
+    <button class="lang-pill" data-lang="kn" onclick="switchLang('kn')">ಕನ್ನಡ</button>
+    <button class="lang-pill" data-lang="ml" onclick="switchLang('ml')">മലയാളം</button>
+    <button class="lang-pill" data-lang="ur" onclick="switchLang('ur')">اردو</button>
+  </div>
 </div>
 <nav>
 <a class="logo" href="#home"><svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="28" fill="url(#ng)"/><defs><linearGradient id="ng" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#ff7ab6"/></linearGradient></defs><circle cx="36" cy="42" r="13" fill="white"/><circle cx="64" cy="42" r="13" fill="white"/><path d="M50 80C68 80 82 66 82 50V46H18V50C18 66 32 80 50 80Z" fill="white"/><path d="M28 26C36 17 64 17 72 26" stroke="#18C6B8" stroke-width="7" stroke-linecap="round"/></svg>Friendoo</a>
@@ -347,8 +348,9 @@ function setHtml(sel,html){var el=document.querySelector(sel);if(el)el.innerHTML
 function switchLang(lang){
   if(!I18N[lang]) lang='en';
   currentLang=lang;
-  var sel=document.getElementById('langBarSelect');
-  if(sel) sel.value=lang;
+  document.querySelectorAll('.lang-pill').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  });
   localStorage.setItem('friendoo_lang',lang);
   applyTranslations();
 }
@@ -395,8 +397,9 @@ I18N.ur={"nav":{"features":"خصوصیات","tiers":"ہوسٹ لیولز","prici
 document.addEventListener('DOMContentLoaded',function(){
   var saved=localStorage.getItem('friendoo_lang');
   if(saved&&I18N[saved]) currentLang=saved;
-  var sel=document.getElementById('langBarSelect');
-  if(sel) sel.value=currentLang;
+  document.querySelectorAll('.lang-pill').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === currentLang);
+  });
   applyTranslations();
 });
 </script>
