@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const { RtcTokenBuilder, RtcRole } = require("agora-token");
+const { google } = require("googleapis");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -316,5 +317,168 @@ exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
     } catch (error) {
         console.error("Account deletion error:", error);
         throw new functions.https.HttpsError("internal", "Failed to delete account");
+    }
+});
+
+/**
+ * GOOGLE SHEETS SYNC:
+ * Whenever a new host application is added to Firestore,
+ * appends a row to the configured Google Sheet.
+ * 
+ * Setup:
+ *  1. Create a Google Cloud Service Account with Sheets API access.
+ *  2. Share your Google Sheet with the service account email (Editor).
+ *  3. Set Firebase config:
+ *       firebase functions:config:set \
+ *         sheets.spreadsheet_id="YOUR_SHEET_ID" \
+ *         sheets.client_email="sa@project.iam.gserviceaccount.com" \
+ *         sheets.private_key="-----BEGIN PRIVATE KEY-----\n..."
+ */
+exports.onHostApplicationCreated = functions.firestore
+  .document("hostApplications/{docId}")
+  .onCreate(async (snapshot, context) => {
+    const data = snapshot.data();
+
+    const spreadsheetId = functions.config().sheets?.spreadsheet_id;
+    const clientEmail    = functions.config().sheets?.client_email;
+    const privateKey     = (functions.config().sheets?.private_key || "").replace(/\\n/g, "\n");
+
+    if (!spreadsheetId || !clientEmail || !privateKey) {
+        console.error("Google Sheets config missing. Set sheets.spreadsheet_id, sheets.client_email, sheets.private_key.");
+        return null;
+    }
+
+    const auth = new google.auth.JWT(
+        clientEmail,
+        null,
+        privateKey,
+        ["https://www.googleapis.com/auth/spreadsheets"]
+    );
+
+    const sheets = google.sheets({ version: "v4", auth });
+
+    const submittedAt = data.submittedAt
+        ? data.submittedAt.toDate().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+        : "";
+
+    await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: "Sheet1!A:G",
+        valueInputOption: "USER_ENTERED",
+        requestBody: {
+            values: [[
+                context.params.docId,
+                data.name   || "",
+                data.city   || "",
+                data.phone  || "",
+                data.language || "",
+                data.about  || "",
+                submittedAt
+            ]]
+        }
+    });
+
+    console.log(`Host application ${context.params.docId} synced to Google Sheets.`);
+    return null;
+});
+
+/**
+ * CHECK USER ACTIVITY (For n8n Onboarding Automation):
+ * Returns user activity data for re-engagement workflow.
+ * Endpoint: POST /api/check-user-activity
+ * Body: { uid: string, checkPeriodDays: number }
+ */
+exports.checkUserActivity = functions.https.onRequest(async (req, res) => {
+    // CORS handling
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+
+    const { uid, checkPeriodDays = 3 } = req.body;
+
+    if (!uid) {
+        res.status(400).json({ error: 'Missing uid parameter' });
+        return;
+    }
+
+    try {
+        const now = admin.firestore.Timestamp.now();
+        const checkPeriodMs = checkPeriodDays * 24 * 60 * 60 * 1000;
+        const cutoffTime = admin.firestore.Timestamp.fromMillis(now.toMillis() - checkPeriodMs);
+
+        // 1. Get user document
+        const userDoc = await db.collection('users').doc(uid).get();
+        const userData = userDoc.exists ? userDoc.data() : {};
+
+        // 2. Check last login (from Firebase Auth)
+        let lastLoginAt = null;
+        let isActive = false;
+        try {
+            const userRecord = await admin.auth().getUser(uid);
+            lastLoginAt = userRecord.metadata.lastSignInTime;
+            if (lastLoginAt) {
+                const lastLoginDate = new Date(lastLoginAt);
+                isActive = lastLoginDate.getTime() > cutoffTime.toMillis();
+            }
+        } catch (authError) {
+            console.log('Auth record not found for uid:', uid);
+        }
+
+        // 3. Count calls in the period
+        const callsQuery = await db.collection('calls')
+            .where('participants', 'array-contains', uid)
+            .where('startedAt', '>', cutoffTime)
+            .get();
+        const callCount = callsQuery.size;
+
+        // 4. Count messages in the period
+        const messagesQuery = await db.collection('messages')
+            .where('senderId', '==', uid)
+            .where('createdAt', '>', cutoffTime)
+            .get();
+        const messageCount = messagesQuery.size;
+
+        // 5. Additional activity indicators
+        const hasWalletActivity = userData.lastWalletUpdate && 
+            userData.lastWalletUpdate.toMillis() > cutoffTime.toMillis();
+        
+        // Determine if user is active (any activity in the period)
+        isActive = isActive || callCount > 0 || messageCount > 0 || hasWalletActivity;
+
+        // 6. Get user's email and name for the response
+        const userEmail = userData.email || '';
+        const userName = userData.name || '';
+        const firstName = userName.split(' ')[0] || '';
+
+        res.status(200).json({
+            uid,
+            isActive,
+            lastLoginAt: lastLoginAt || userData.lastLoginAt || null,
+            callCount,
+            messageCount,
+            hasWalletActivity,
+            email: userEmail,
+            firstName,
+            name: userName,
+            checkPeriodDays,
+            checkedAt: now.toDate().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Check user activity error:', error);
+        res.status(500).json({ 
+            error: 'Failed to check user activity',
+            details: error.message 
+        });
     }
 });

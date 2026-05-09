@@ -76,7 +76,58 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand)}textarea{min-h
 footer{padding:32px 6vw 48px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
 footer .links{display:flex;gap:22px}footer .links a{color:var(--muted);font-size:14px}footer .links a:hover{color:#fff}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){.stats-row,.tier-grid,.steps-grid,.potential-grid,.calc-grid,.pricing-grid,.form-grid,.calc-output-row{grid-template-columns:1fr}.hero-heading{letter-spacing:-1.5px}.nav-right a:not(:last-child){display:none}.cta-band,.lang-bar{justify-content:center;text-align:center}}
+@media(max-width:900px){
+.stats-row,.tier-grid,.steps-grid,.potential-grid,.calc-grid,.pricing-grid,.form-grid,.calc-output-row{grid-template-columns:1fr}
+.hero-heading{letter-spacing:-1.5px}
+.nav-right a:not(:last-child){display:none}
+.cta-band,.lang-bar{justify-content:center;text-align:center}
+.trust-grid{grid-template-columns:1fr 1fr!important}
+.testimonial-grid{grid-template-columns:1fr!important}
+}
+@media(max-width:600px){
+nav{padding:12px 4vw}
+.logo{font-size:17px}.logo svg{width:28px;height:28px}
+#coinBalance{padding:5px 9px;font-size:11px}
+#coinBalance span:first-child{display:none}
+.nav-right{gap:10px}
+.lang-bar{padding:8px 4vw;gap:6px;justify-content:center}
+.lang-btn{padding:4px 9px;font-size:11px}
+section{padding:52px 4vw}
+.hero{padding:0 4vw 60px;min-height:92vh}
+.hero-heading{font-size:clamp(34px,10vw,56px);letter-spacing:-1px}
+.hero-eyebrow{font-size:11px;padding:8px 12px}
+.hero-sub{font-size:15px;margin-top:18px;margin-bottom:24px}
+.hero-actions{flex-direction:column;gap:10px}
+.hero-actions .btn{width:100%;text-align:center}
+.btn-lg{padding:14px 24px;font-size:15px}
+h2{font-size:clamp(26px,8vw,42px);letter-spacing:-1px}
+.section-lead{font-size:15px}
+.potential-section,.calc-section{padding:28px 18px;border-radius:20px}
+.form-section{padding:28px 18px;border-radius:20px}
+.cta-band{margin:0 4vw 52px;padding:36px 4vw;border-radius:20px;flex-direction:column;align-items:flex-start}
+.cta-band>div:last-child{flex-direction:column;width:100%}
+.cta-band>div:last-child .btn{width:100%;text-align:center}
+.stats-row{grid-template-columns:1fr 1fr}
+.trust-grid{grid-template-columns:1fr 1fr!important}
+.testimonial-grid{grid-template-columns:1fr!important}
+.stat-box{padding:20px 14px}
+.tier-card{padding:22px 18px}
+.earn{font-size:34px}
+.step-card{padding:18px 14px}
+.step-num{width:40px;height:40px;font-size:16px}
+.calc-output-row{grid-template-columns:1fr 1fr}
+.calc-out-box{padding:14px}
+.calc-out-box .num{font-size:22px}
+.price-card{padding:22px 18px}
+.price-card .amount{font-size:36px}
+.pricing-grid{grid-template-columns:1fr}
+.host-visual{padding:16px;border-radius:20px}
+.host-card{padding:14px}
+footer{flex-direction:column;align-items:flex-start;gap:10px;padding:24px 4vw 36px}
+footer .links{flex-wrap:wrap;gap:14px}
+.legal-hero{padding:40px 4vw 24px}
+.legal-content{padding:24px 4vw 52px}
+}
 </style></head><body><div class="lang-bar"><span>Select Language:</span>
 <button class="lang-btn active" data-lang="en" onclick="switchLang('en')">English</button>
 <button class="lang-btn" data-lang="hi" onclick="switchLang('hi')">&#2361;&#2367;&#2306;&#2342;&#2368;</button>
