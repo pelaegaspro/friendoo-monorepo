@@ -10,6 +10,9 @@ npm-debug.log*
 dist/
 *.tsbuildinfo
 
+# npm cache (Cloud Shell / CI artifacts)
+functions/pm-cache/
+
 # Firebase
 .firebase/
 firebase-debug.log
