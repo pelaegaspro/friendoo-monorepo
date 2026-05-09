@@ -197,7 +197,7 @@ footer .links{flex-wrap:wrap;gap:14px}
 <div><label class="form-label">Full name</label><input type="text" name="name" placeholder="Your full name" required></div>
 <div><label class="form-label">City</label><input type="text" name="city" placeholder="Mumbai, Chennai&#8230;" required></div>
 <div><label class="form-label">Phone / WhatsApp</label><input type="tel" name="phone" placeholder="+91XXXXXXXXXX" required></div>
-<div><label class="form-label">Primary language</label><select name="language" id="langSelect"><option>English</option><option>Hindi</option><option>Tamil</option><option>Telugu</option><option>Kannada</option><option>Malayalam</option><option>Urdu</option></select></div>
+<div class="form-full"><label class="form-label">Languages you can speak (select all that apply)</label><div id="langCheckboxes" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="English" style="width:auto"> English</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Hindi" style="width:auto"> हिंदी</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Tamil" style="width:auto"> தமிழ்</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Telugu" style="width:auto"> తెలుగు</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Kannada" style="width:auto"> ಕನ್ನಡ</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Malayalam" style="width:auto"> മലയാളം</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Urdu" style="width:auto"> اردو</label></div></div>
 <div class="form-full"><label class="form-label">Why do you want to join as a host?</label><textarea name="about" placeholder="I love talking about movies and music&#8230;"></textarea></div>
 <div class="form-full"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><input type="checkbox" id="confirm" required style="width:auto"><label for="confirm" style="display:inline;color:rgba(255,255,255,.7);font-size:14px">I confirm I am 18+ female and agree to the Terms of Service and Privacy Policy</label></div>
 <button type="submit" class="btn btn-lg" id="submitBtn" style="width:100%;text-align:center;border-radius:14px">Submit application</button>
@@ -270,11 +270,12 @@ document.getElementById('hostForm').addEventListener('submit', async function(e)
   try {
     await addDoc(collection(db, 'hostApplications'), {
       name: this.name.value.trim(), city: this.city.value.trim(),
-      phone: this.phone.value.trim(), language: this.language.value,
+      phone: this.phone.value.trim(),
+      languages: Array.from(this.querySelectorAll('input[name="language"]:checked')).map(c=>c.value),
       about: this.about.value.trim(), status: 'pending', submittedAt: serverTimestamp()
     });
     successMsg.style.display = 'block'; this.reset();
-  } catch(err) { console.error('Firestore write failed:', err); errorMsg.style.display = 'block'; }
+  } catch(err) { console.error('Firestore write failed:', err.code, err.message); errorMsg.textContent = '❌ Error: ' + (err.message || 'Something went wrong. Please try again or contact support@friendoo.app'); errorMsg.style.display = 'block'; }
   finally { btn.disabled = false; btn.textContent = 'Submit application'; }
 });
 </script><script>

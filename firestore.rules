@@ -30,6 +30,12 @@ service cloud.firestore {
       }
     }
 
+    // Host applications: allow anyone (no auth) to submit from the landing page
+    match /hostApplications/{docId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+
     // Reports: users can only create, no reading back
     match /reports/{reportId} {
       allow create: if request.auth != null;
