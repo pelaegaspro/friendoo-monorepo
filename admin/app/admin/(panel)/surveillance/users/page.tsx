@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getDb } from "@/lib/firebaseAdmin";
 import { format } from "date-fns";
 import { Eye, User, Clock, Smartphone } from "lucide-react";

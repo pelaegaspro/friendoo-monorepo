@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getDb } from "@/lib/firebaseAdmin";
 import { format } from "date-fns";
 import { MessageSquare, ShieldCheck, ShieldAlert, Clock, User } from "lucide-react";

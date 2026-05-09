@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getDb } from "@/lib/firebaseAdmin";
 import { format } from "date-fns";
 import { AlertCircle, ShieldAlert, Fingerprint, MapPin, Repeat, Ban } from "lucide-react";
