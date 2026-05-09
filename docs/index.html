@@ -308,7 +308,7 @@ document.getElementById('hostForm').addEventListener('submit', async function(e)
   finally { btn.disabled = false; btn.textContent = 'Submit application'; }
 });
 </script><script>
-const I18N={};let currentLang='en';
+var I18N={};var currentLang='en';
 function t(k,f){f=f||'';var keys=k.split('.'),val=I18N[currentLang];for(var i=0;i<keys.length;i++){if(val==null)break;val=val[keys[i]];}if(val!=null)return val;val=I18N['en'];for(i=0;i<keys.length;i++){if(val==null)break;val=val[keys[i]];}return val!=null?val:f;}
 function switchLang(lang){currentLang=lang;var sel=document.getElementById('langBarSelect');if(sel)sel.value=lang;applyTranslations();localStorage.setItem('friendoo_lang',lang);}
 function setText(sel,text){var el=document.querySelector(sel);if(el)el.textContent=text;}
