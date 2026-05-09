@@ -412,7 +412,7 @@ export async function listHostApplications(statusFilter?: string): Promise<HostA
       phone: asString(data.phone),
       age: typeof data.age === 'number' ? data.age : null,
       city: asString(data.city),
-      language: asString(data.language, 'Hindi'),
+      language: Array.isArray(data.languages) && data.languages.length ? data.languages.join(', ') : asString(data.language, 'Hindi'),
       about: asString(data.about),
       photoURL: asString(data.photoURL),
       idProofUrl: asString(data.idProofUrl),
