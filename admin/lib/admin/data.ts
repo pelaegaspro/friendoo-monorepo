@@ -142,26 +142,24 @@ function getUsernameFromPhone(phoneNumber: string) {
 
 export async function getAdminStats(): Promise<AdminStats> {
   const db = getDb()
-  const [usersSnap, callsSnap, transactionsSnap, packagesSnap, pendingAppsSnap] = await Promise.all([
-    db.collection('users').get(),
-    db.collection('calls').where('status', '==', 'active').get(),
-    db.collection('coinTransactions').where('type', '==', 'topup').get(),
+  const [totalUsersSnap, totalHostsSnap, callsSnap, packagesSnap, pendingAppsSnap] = await Promise.all([
+    db.collection('users').count().get(),
+    db.collection('users').where('isHost', '==', true).count().get(),
+    db.collection('calls').where('status', '==', 'active').count().get(),
     db.collection('coinPackages').get(),
-    db.collection('hostApplications').where('status', '==', 'pending').get(),
+    db.collection('hostApplications').where('status', '==', 'pending').count().get(),
   ])
 
-  let totalUsers = 0
-  let totalHosts = 0
-  let totalCoinsInCirculation = 0
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
 
-  usersSnap.forEach((doc) => {
-    totalUsers += 1
-    const data = doc.data()
-    if (asBoolean(data.isHost) || ['approved', 'pending', 'suspended'].includes(asString(data.hostStatus))) {
-      totalHosts += 1
-    }
-    totalCoinsInCirculation += asNumber(data.coinBalance)
-  })
+  const [transactionsSnap, coinsInCirculationSnap] = await Promise.all([
+    db.collection('coinTransactions')
+      .where('type', '==', 'topup')
+      .where('createdAt', '>=', startOfToday)
+      .get(),
+    db.collection('users').aggregate({ total: admin.firestore.AggregateField.sum('coinBalance') }).get()
+  ])
 
   const packageLookup = new Map(
     packagesSnap.docs.map((doc) => [
@@ -173,15 +171,9 @@ export async function getAdminStats(): Promise<AdminStats> {
     ])
   )
 
-  const startOfToday = new Date()
-  startOfToday.setHours(0, 0, 0, 0)
-
   let todaysRevenueInr = 0
   transactionsSnap.forEach((doc) => {
     const data = doc.data()
-    const createdAt = toDateValue(data.createdAt)
-    if (!createdAt || createdAt < startOfToday) return
-
     todaysRevenueInr +=
       asNumber(data.amountInr) ||
       asNumber(data.amount) ||
@@ -189,20 +181,20 @@ export async function getAdminStats(): Promise<AdminStats> {
   })
 
   return {
-    totalUsers,
-    totalHosts,
-    activeCalls: callsSnap.size,
+    totalUsers: totalUsersSnap.data().count,
+    totalHosts: totalHostsSnap.data().count,
+    activeCalls: callsSnap.data().count,
     todaysRevenueInr,
-    totalCoinsInCirculation,
-    pendingHostApplications: pendingAppsSnap.size,
+    totalCoinsInCirculation: coinsInCirculationSnap.data().total,
+    pendingHostApplications: pendingAppsSnap.data().count,
   }
 }
 
 export async function listHosts(): Promise<AdminHost[]> {
   const db = getDb()
   const [usersSnap, callsSnap] = await Promise.all([
-    db.collection('users').get(),
-    db.collection('calls').get(),
+    db.collection('users').where('isHost', '==', true).limit(500).get(),
+    db.collection('calls').limit(2000).get(),
   ])
 
   const callSummary = new Map<string, { callsMade: number; coinsEarned: number }>()
@@ -564,7 +556,7 @@ export async function reviewHostApplication(applicationId: string, input: { acti
 
 export async function listUsers(): Promise<AdminUserRow[]> {
   const db = getDb()
-  const snap = await db.collection('users').get()
+  const snap = await db.collection('users').where('isHost', '==', false).limit(500).get()
 
   const rows = snap.docs
     .map((doc) => {
@@ -696,9 +688,9 @@ export async function deletePackage(packageId: string) {
 export async function listTransactions(): Promise<TransactionRow[]> {
   const db = getDb()
   const [usersSnap, packagesSnap, transactionsSnap] = await Promise.all([
-    db.collection('users').get(),
+    db.collection('users').limit(500).get(),
     db.collection('coinPackages').get(),
-    db.collection('coinTransactions').get(),
+    db.collection('coinTransactions').orderBy('createdAt', 'desc').limit(200).get(),
   ])
 
   const users = new Map(
@@ -739,8 +731,8 @@ export async function listTransactions(): Promise<TransactionRow[]> {
 export async function listCalls(): Promise<CallRow[]> {
   const db = getDb()
   const [usersSnap, callsSnap] = await Promise.all([
-    db.collection('users').get(),
-    db.collection('calls').get(),
+    db.collection('users').limit(500).get(),
+    db.collection('calls').orderBy('createdAt', 'desc').limit(200).get(),
   ])
 
   const users = new Map(
