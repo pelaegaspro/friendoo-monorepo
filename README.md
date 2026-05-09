@@ -1,9 +1,20 @@
 # Friendoo Monorepo
 
-| Folder | Stack | Deployment |
-|--------|-------|------------|
-| android-app/ | Native Android (Kotlin) | APK/AAB |
-| admin/ | Next.js + Tailwind | Vercel |
-| crm/ | Next.js + Tailwind | Vercel |
+| Folder        | Stack                    | Deployment          |
+|---------------|--------------------------|---------------------|
+| `Friendoo/`   | Native Android (Kotlin)  | APK / Play Store    |
+| `admin/`      | Next.js + Tailwind       | Vercel              |
+| `crm/`        | Next.js + Tailwind       | Vercel              |
+| `docs/`       | Static HTML              | Vercel / GitHub Pages |
+| `functions/`  | Firebase Cloud Functions | Firebase            |
+| `src/`        | Vite + React + Tailwind  | —                   |
+| `scripts/`    | Node.js utilities        | Run locally         |
 
-Shared Firebase Project: friendoo-v1
+**Shared Firebase project:** `friendoo-v1`
+
+## Scripts
+
+```bash
+# Seed Firestore coin packs (run from repo root after npm install in functions/)
+node scripts/seed-coinpacks.cjs
+```
