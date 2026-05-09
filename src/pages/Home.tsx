@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
 import { Layout } from '@/components/Layout'
 import { HostCard } from '@/components/HostCard'
-import { CallModal } from '@/components/CallModal'
 import { useHostFeed } from '@/hooks/useHostFeed'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { requestCall } from '@/lib/callService'
@@ -10,7 +9,8 @@ import { useNavigate } from 'react-router-dom'
 import type { Host } from '@/types'
 import toast from 'react-hot-toast'
 
-const LANGUAGES = ['All', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Urdu', 'English']
+// Lazy load heavy components
+const CallModal = lazy(() => import('@/components/CallModal').then(m => ({ default: m.CallModal })))
 
 interface ActiveCall {
   host: Host
@@ -26,7 +26,9 @@ export function Home() {
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null)
   const navigate = useNavigate()
 
-  async function handleCall(host: Host) {
+  const languages = useMemo(() => ['All', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Urdu', 'English'], [])
+
+  const handleCall = useCallback(async (host: Host) => {
     if (!user || !profile) return
     const minBalance = 30
     if (profile.coinBalance < minBalance) {
@@ -45,9 +47,9 @@ export function Home() {
       const msg = err instanceof Error ? err.message : 'Could not start call'
       toast.error(msg)
     }
-  }
+  }, [user, profile])
 
-  async function handleChat(host: Host) {
+  const handleChat = useCallback(async (host: Host) => {
     if (!user) return
     try {
       const chatId = await getOrCreateChat(user.uid, host.id)
@@ -56,14 +58,14 @@ export function Home() {
       console.error(err)
       toast.error('Could not open chat')
     }
-  }
+  }, [user, navigate])
 
   return (
     <>
       <Layout title="Friendoo">
         <div className="px-4 py-3 sticky top-14 z-30 bg-[#060810]/95 backdrop-blur border-b border-white/[0.05]">
           <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-            {LANGUAGES.map((lang) => (
+            {languages.map((lang) => (
               <button
                 key={lang}
                 onClick={() => setLangFilter(lang === 'All' ? undefined : lang)}
@@ -110,13 +112,15 @@ export function Home() {
       </Layout>
 
       {activeCall && (
-        <CallModal
-          host={activeCall.host}
-          callId={activeCall.callId}
-          channel={activeCall.channel}
-          userId={activeCall.userId}
-          onClose={() => setActiveCall(null)}
-        />
+        <Suspense fallback={null}>
+          <CallModal
+            host={activeCall.host}
+            callId={activeCall.callId}
+            channel={activeCall.channel}
+            userId={activeCall.userId}
+            onClose={() => setActiveCall(null)}
+          />
+        </Suspense>
       )}
     </>
   )

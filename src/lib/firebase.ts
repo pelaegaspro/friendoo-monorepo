@@ -13,8 +13,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
+// Initialize Firebase app once
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
+// Export singleton instances (Lazy initialization is handled internally by Firebase SDKs usually, 
+// but we keep them ready for use).
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)

@@ -98,6 +98,9 @@ export function CallModal({ host, callId, channel, userId, onClose }: CallModalP
             src={host.photoURL}
             alt={host.displayName}
             className="w-28 h-28 rounded-full object-cover ring-4 ring-[#7c5cff]/40"
+            loading="lazy"
+            width="112"
+            height="112"
           />
         ) : (
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#7c5cff] to-[#ff7ab6] flex items-center justify-center text-3xl font-bold">

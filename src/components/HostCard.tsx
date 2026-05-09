@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Star, Phone, MessageCircle, Wifi } from 'lucide-react'
 import { initials } from '@/lib/utils'
 import type { Host } from '@/types'
@@ -18,7 +19,7 @@ const LANGUAGE_COLORS: Record<string, string> = {
   English: 'bg-white/10 text-white/70',
 }
 
-export function HostCard({ host, onCall, onChat }: HostCardProps) {
+export const HostCard = memo(function HostCard({ host, onCall, onChat }: HostCardProps) {
   const available = host.callStatus === 'available'
   const isStar = host.hostTier === 'star'
 
@@ -30,6 +31,9 @@ export function HostCard({ host, onCall, onChat }: HostCardProps) {
             src={host.photoURL}
             alt={host.displayName}
             className="w-full h-44 object-cover"
+            loading="lazy"
+            width="100%"
+            height="176"
           />
         ) : (
           <div className="w-full h-44 bg-gradient-to-br from-[#7c5cff]/30 to-[#ff7ab6]/20 flex items-center justify-center text-3xl font-bold text-white/60">
@@ -112,4 +116,4 @@ export function HostCard({ host, onCall, onChat }: HostCardProps) {
       </div>
     </div>
   )
-}
+})

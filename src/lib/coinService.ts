@@ -1,11 +1,11 @@
-import { collection, getDocs, where, query } from 'firebase/firestore'
+import { collection, getDocs, where, query, limit } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/lib/firebase'
 import type { CoinPack } from '@/types'
 
 export async function listActiveCoinPacks(): Promise<CoinPack[]> {
   const snap = await getDocs(
-    query(collection(db, 'coinPacks'), where('active', '==', true)),
+    query(collection(db, 'coinPacks'), where('active', '==', true), limit(20)),
   )
   return snap.docs.map((d) => ({
     id: d.id,
