@@ -503,7 +503,7 @@ exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
         port: 465,
         secure: true,
         auth: {
-            user: "noreply@friendoo.in",
+            user: "support@friendoo.in", // Authenticate with the primary account
             pass: mailPass
         }
     });
