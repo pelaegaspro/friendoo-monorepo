@@ -515,15 +515,28 @@ exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
         to: user.email,
         subject: "Welcome to Friendoo! 🎉",
         html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
-                <h2 style="color: #6C5DD3;">Welcome to Friendoo!</h2>
-                <p>Hi there,</p>
-                <p>We're thrilled to have you join our community! Friendoo is the best place to make real connections.</p>
-                <p>Get started by exploring our platform and discovering new friends today.</p>
-                <br>
-                <p>Need help? Our Trust & Safety team is available 24/7 at <a href="mailto:support@friendoo.in">support@friendoo.in</a>.</p>
-                <br>
-                <p>Cheers,<br>The Friendoo Team</p>
+            <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: auto; background-color: #121214; padding: 40px 20px; border-radius: 16px; color: #ffffff;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="display: inline-block; background-color: #ffffff; padding: 10px 24px; border-radius: 50px;">
+                        <img src="https://friendoo.in/logo.png" alt="Friendoo Logo" style="height: 30px; vertical-align: middle;">
+                    </div>
+                </div>
+                
+                <h2 style="color: #ffffff; text-align: center; font-size: 24px; margin-bottom: 20px;">Welcome to Friendoo! 🎉</h2>
+                
+                <p style="font-size: 16px; line-height: 1.6; color: #d1d5db;">Hi there,</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #d1d5db;">We're thrilled to have you join our community! Friendoo is the best place to make real, meaningful connections.</p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://friendoo.in" style="background-color: #6C5DD3; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">Open the App</a>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.6; color: #d1d5db;">Get started by exploring our platform and discovering new friends today.</p>
+                
+                <hr style="border: none; border-top: 1px solid #333333; margin: 30px 0;">
+                
+                <p style="font-size: 14px; color: #9ca3af; text-align: center;">Need help? Our Trust & Safety team is available 24/7 at <a href="mailto:support@friendoo.in" style="color: #6C5DD3; text-decoration: none;">support@friendoo.in</a>.</p>
+                <p style="font-size: 14px; color: #9ca3af; text-align: center; margin-top: 10px;">Cheers,<br>The Friendoo Team</p>
             </div>
         `
     };
