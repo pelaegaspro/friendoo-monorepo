@@ -3,6 +3,7 @@ const admin = require("firebase-admin");
 const axios = require("axios");
 const { RtcTokenBuilder, RtcRole } = require("agora-token");
 const { google } = require("googleapis");
+const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -481,4 +482,55 @@ exports.checkUserActivity = functions.https.onRequest(async (req, res) => {
             details: error.message 
         });
     }
+});
+
+/**
+ * WELCOME EMAIL AUTOMATION:
+ * Triggers when a new user signs up via Firebase Auth.
+ * Sends a welcome email using the Google Workspace noreply@friendoo.in account.
+ */
+exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
+    if (!user.email) return null;
+
+    const mailPass = functions.config().mail?.password;
+    if (!mailPass) {
+        console.error("Mail password not set in Firebase config. Run: firebase functions:config:set mail.password='YOUR_APP_PASSWORD'");
+        return null;
+    }
+
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+            user: "noreply@friendoo.in",
+            pass: mailPass
+        }
+    });
+
+    const mailOptions = {
+        from: '"Friendoo" <noreply@friendoo.in>',
+        to: user.email,
+        subject: "Welcome to Friendoo! 🎉",
+        html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+                <h2 style="color: #6C5DD3;">Welcome to Friendoo!</h2>
+                <p>Hi there,</p>
+                <p>We're thrilled to have you join our community! Friendoo is the best place to make real connections.</p>
+                <p>Get started by exploring our platform and discovering new friends today.</p>
+                <br>
+                <p>Need help? Our Trust & Safety team is available 24/7 at <a href="mailto:support@friendoo.in">support@friendoo.in</a>.</p>
+                <br>
+                <p>Cheers,<br>The Friendoo Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Welcome email sent to ${user.email}`);
+    } catch (error) {
+        console.error("Error sending welcome email:", error);
+    }
+    return null;
 });
