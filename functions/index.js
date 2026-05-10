@@ -220,10 +220,11 @@ exports.rechargeWallet = functions.https.onCall(async (data, context) => {
     }
 });
 
-/**
+/* 
  * WEEKLY AUTO-PAYOUT: Runs every Monday at 10 AM.
  * Processes all 'pending' withdrawal requests using Cashfree.
- */
+ * Temporarily commented out to bypass Google Cloud Billing requirement
+ *
 exports.weeklyAutoPayout = functions.pubsub.schedule('0 10 * * 1')
   .timeZone('Asia/Kolkata')
   .onRun(async (context) => {
@@ -270,6 +271,7 @@ exports.weeklyAutoPayout = functions.pubsub.schedule('0 10 * * 1')
     }
     return null;
 });
+*/
 
 /**
  * RESOLUTION LOGIC: 
