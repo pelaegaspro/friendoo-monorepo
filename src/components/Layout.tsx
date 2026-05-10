@@ -19,7 +19,9 @@ export function Layout({ children, title, hideNav }: LayoutProps) {
       {title && (
         <header className="sticky top-0 z-40 flex items-center justify-between px-4 h-14 bg-[#060810]/95 backdrop-blur border-b border-white/[0.07]">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Friendoo" className="h-7 w-auto" />
+            <div className="bg-white px-2.5 py-1 rounded-full flex items-center justify-center">
+              <img src="/logo.png" alt="Friendoo" className="h-5 w-auto object-contain" />
+            </div>
             <h1 className="text-base font-bold tracking-tight">{title}</h1>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-white/[0.07] border border-white/[0.08] px-3 py-1.5">

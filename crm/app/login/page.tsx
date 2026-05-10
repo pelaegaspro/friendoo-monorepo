@@ -39,7 +39,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex justify-center mb-2">
-            <img src="/logo.png" alt="Friendoo" className="h-12 w-auto" />
+            <div className="bg-white px-5 py-2.5 rounded-2xl">
+              <img src="/logo.png" alt="Friendoo" className="h-8 w-auto object-contain" />
+            </div>
           </div>
           <CardTitle className="flex items-center justify-center gap-2 text-xl">
             Friendoo CRM Login

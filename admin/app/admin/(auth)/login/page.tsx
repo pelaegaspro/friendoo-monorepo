@@ -31,7 +31,9 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
       <div className="w-full max-w-md rounded-3xl border border-[#2b2b2b] bg-[#161616] p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <img src="/logo.png" alt="Friendoo" className="mx-auto h-14 w-auto" />
+          <div className="mx-auto w-fit bg-white px-5 py-2.5 rounded-2xl mb-4">
+            <img src="/logo.png" alt="Friendoo" className="h-10 w-auto object-contain" />
+          </div>
           <h1 className="mt-5 text-2xl font-semibold text-white">Friendoo Admin</h1>
           <p className="mt-2 text-sm text-zinc-400">Enter the admin password to continue.</p>
         </div>
