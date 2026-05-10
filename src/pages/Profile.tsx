@@ -152,7 +152,7 @@ export function Profile() {
         </button>
 
         <p className="text-center text-white/20 text-xs mt-8">
-          Friendoo v0.1.0 · <a href="https://friendoo.app/privacy" className="underline hover:text-white/40">Privacy</a> · <a href="https://friendoo.app/terms" className="underline hover:text-white/40">Terms</a>
+          Friendoo v0.1.0 · <a href="https://friendoo.in/privacy" className="underline hover:text-white/40">Privacy</a> · <a href="https://friendoo.in/terms" className="underline hover:text-white/40">Terms</a>
         </p>
       </div>
     </Layout>

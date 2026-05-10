@@ -148,7 +148,7 @@ exports.createCashfreeOrder = functions.https.onCall(async (data, context) => {
                 order_currency: 'INR',
                 customer_details: {
                     customer_id: userId,
-                    customer_email: 'user@friendoo.app',
+                    customer_email: 'noreply@friendoo.in',
                     customer_phone: '9999999999'
                 }
             },
