@@ -9,8 +9,8 @@ import com.friendoo.app.core.payment.CashfreeManager
 import com.friendoo.app.core.utils.CryptoUtils
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.remote.firebase.FirebaseFunctionsSource
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
+import com.friendoo.app.data.repository.InsForgeRepository
+import com.friendoo.app.data.remote.api.dto.TransactionDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,21 +22,16 @@ data class WalletUiState(
     val balance: Double = 0.0,
     val totalEarned: Double = 0.0,
     val isUpiVerified: Boolean = false,
-    val transactions: List<Transaction> = emptyList(),
+    val transactions: List<TransactionDto> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
-data class Transaction(
-    val id: String,
-    val type: String, // "credit" | "payout"
-    val amount: Double,
-    val timestamp: Timestamp
-)
+// Using TransactionDto from repository
 
 @HiltViewModel
 class WalletViewModel @Inject constructor(
-    private val firestore: FirebaseFirestore,
+    private val insForgeRepository: InsForgeRepository,
     private val userPreferences: UserPreferences,
     private val functionsSource: FirebaseFunctionsSource,
     private val cashfreeManager: CashfreeManager
@@ -54,34 +49,25 @@ class WalletViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true)
             val userId = userPreferences.userIdFlow.first() ?: return@launch
             
-            // 1. Listen to Host Document for balance/status
-            firestore.collection("hosts").document(userId).addSnapshotListener { snapshot, _ ->
-                snapshot?.let {
-                    _state.value = _state.value.copy(
-                        balance = it.getDouble("walletBalance") ?: 0.0,
-                        totalEarned = it.getDouble("totalEarned") ?: 0.0,
-                        isUpiVerified = it.getBoolean("upiVerified") ?: false
-                    )
-                }
+            // Load wallet data from InsForge
+            insForgeRepository.getHostProfile(userId).onSuccess { hostDto ->
+                _state.value = _state.value.copy(
+                    balance = hostDto.earningsInr?.toDoubleOrNull() ?: 0.0,
+                    totalEarned = hostDto.totalMinutes * 3.0, // Approximate
+                    isUpiVerified = hostDto.upiId?.isNotBlank() ?: false,
+                    isLoading = false
+                )
+            }.onFailure {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Failed to load wallet: ${it.message}"
+                )
             }
 
-            // 2. Load Transactions
-            firestore.collection("transactions")
-                .whereEqualTo("hostId", userId)
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .addSnapshotListener { snapshot, _ ->
-                    snapshot?.let {
-                        val txs = it.docs.map { doc ->
-                            Transaction(
-                                id = doc.id,
-                                type = doc.getString("type") ?: "credit",
-                                amount = doc.getDouble("amount") ?: 0.0,
-                                timestamp = doc.getTimestamp("timestamp") ?: Timestamp.now()
-                            )
-                        }
-                        _state.value = _state.value.copy(transactions = txs, isLoading = false)
-                    }
-                }
+            // Load transactions from InsForge
+            insForgeRepository.getHostTransactions(userId).onSuccess { transactions ->
+                _state.value = _state.value.copy(transactions = transactions)
+            }
         }
     }
 
@@ -99,35 +85,15 @@ class WalletViewModel @Inject constructor(
                 return@launch
             }
 
-            val payoutData = mutableMapOf<String, Any>(
-                "amount" to amount,
-                "requestedAt" to Timestamp.now(),
-                "status" to "pending"
-            )
-
-            // If it's the first withdrawal, encrypt and save the UPI ID
-            if (!_state.value.isUpiVerified && upiId != null) {
-                val encryptedUpi = CryptoUtils.encrypt(upiId)
-                if (encryptedUpi != null) {
-                    firestore.collection("hosts").document(userId).update(
-                        mapOf(
-                            "upiEncrypted" to encryptedUpi,
-                            "upiVerified" to true,
-                            "upiId" to upiId // Also stored for ₹1 test credit check
-                        )
-                    )
-                    payoutData["upiId"] = upiId
-                }
+            // Submit withdrawal request via InsForge
+            insForgeRepository.requestWithdrawal(userId, amount, upiId).onSuccess {
+                _state.value = _state.value.copy(
+                    error = null,
+                    balance = _state.value.balance - amount
+                )
+            }.onFailure {
+                _state.value = _state.value.copy(error = "Withdrawal failed: ${it.message}")
             }
-
-            firestore.collection("hosts").document(userId)
-                .collection("payoutHistory").add(payoutData)
-                .addOnSuccessListener {
-                    _state.value = _state.value.copy(error = null)
-                }
-                .addOnFailureListener {
-                    _state.value = _state.value.copy(error = it.message)
-                }
         }
     }
 
@@ -161,7 +127,6 @@ class WalletViewModel @Inject constructor(
     private fun verifyRecharge(orderId: String) {
         viewModelScope.launch {
             val userId = userPreferences.userIdFlow.first() ?: return@launch
-            // amount here is a bit tricky, better to let backend handle it via orderId
             functionsSource.callRechargeWallet(userId, 0, orderId).onSuccess {
                 loadWalletData() // Refresh
             }.onFailure {
@@ -171,6 +136,6 @@ class WalletViewModel @Inject constructor(
     }
 
     fun recharge(amount: Int, paymentId: String) {
-        // Legacy method used in UI, can be redirected to initiateRecharge if context is available
+        // Legacy method used in UI
     }
 }

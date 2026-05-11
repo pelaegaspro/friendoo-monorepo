@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.CurrencyRupee
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -76,7 +76,7 @@ fun UserWalletContent(viewModel: WalletViewModel) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    Icons.Default.AccountBalanceWallet,
+                    Icons.Default.AccountBox,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.primary
@@ -126,7 +126,7 @@ fun HostWalletContent(viewModel: HostWalletViewModel, onWithdrawClick: () -> Uni
                 modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Next Payout Cycle: ${uiState.nextPayoutDate}",
@@ -164,7 +164,7 @@ fun HostWalletContent(viewModel: HostWalletViewModel, onWithdrawClick: () -> Uni
                     
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         EarningStat(label = "Minutes", value = "${uiState.earnings?.totalCallMinutes ?: 0}", icon = Icons.Default.Call)
-                        EarningStat(label = "Available", value = "₹${uiState.earnings?.availableForWithdrawal ?: 0.0}", icon = Icons.Default.CurrencyRupee)
+                        EarningStat(label = "Available", value = "₹${uiState.earnings?.availableForWithdrawal ?: 0.0}", icon = Icons.Default.KeyboardArrowRight)
                     }
                 }
             }
@@ -184,7 +184,7 @@ fun HostWalletContent(viewModel: HostWalletViewModel, onWithdrawClick: () -> Uni
         Spacer(modifier = Modifier.height(32.dp))
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Earnings History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
@@ -208,6 +208,7 @@ fun EarningStat(label: String, value: String, icon: androidx.compose.ui.graphics
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RechargePackItem(coins: Int, price: Int, onClick: () -> Unit) {
     ElevatedCard(

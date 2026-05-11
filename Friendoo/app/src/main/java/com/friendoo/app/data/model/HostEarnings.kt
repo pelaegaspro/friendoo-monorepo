@@ -1,8 +1,9 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
+import java.util.Date
 
 data class HostEarnings(
+    val id: String = "",
     val hostId: String = "",
     val totalEarningsInr: Double = 0.0,
     val totalCallMinutes: Int = 0,
@@ -10,7 +11,8 @@ data class HostEarnings(
     val availableForWithdrawal: Double = 0.0,
     val pendingWithdrawal: Double = 0.0,
     val lifetimeEarnings: Double = 0.0,
-    val lastPayoutDate: Timestamp? = null
+    val weeklyCallMinutes: Int = 0,
+    val updatedAt: Date? = null
 ) {
     companion object {
         fun fromMap(map: Map<String, Any?>): HostEarnings = HostEarnings(
@@ -21,7 +23,8 @@ data class HostEarnings(
             availableForWithdrawal = (map["availableForWithdrawal"] as? Number)?.toDouble() ?: 0.0,
             pendingWithdrawal = (map["pendingWithdrawal"] as? Number)?.toDouble() ?: 0.0,
             lifetimeEarnings = (map["lifetimeEarnings"] as? Number)?.toDouble() ?: 0.0,
-            lastPayoutDate = map["lastPayoutDate"] as? Timestamp
+            weeklyCallMinutes = (map["weeklyCallMinutes"] as? Number)?.toInt() ?: 0,
+            updatedAt = map["updatedAt"] as? Date
         )
     }
 
@@ -33,6 +36,7 @@ data class HostEarnings(
         "availableForWithdrawal" to availableForWithdrawal,
         "pendingWithdrawal" to pendingWithdrawal,
         "lifetimeEarnings" to lifetimeEarnings,
-        "lastPayoutDate" to lastPayoutDate
+        "weeklyCallMinutes" to weeklyCallMinutes,
+        "updatedAt" to updatedAt
     )
 }

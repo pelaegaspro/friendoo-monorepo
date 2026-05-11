@@ -1,7 +1,5 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
-
 data class User(
     val uid: String = "",
     val phoneNumber: String = "",
@@ -15,7 +13,7 @@ data class User(
     val interests: List<String> = emptyList(),
     val coins: Int = 0,
     val isHost: Boolean = false,
-    val createdAt: Timestamp? = null
+    val createdAt: String = ""
 ) {
     companion object {
         fun fromMap(map: Map<String, Any?>): User = User(
@@ -31,7 +29,7 @@ data class User(
             interests = (map["interests"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             coins = (map["coins"] as? Number)?.toInt() ?: 0,
             isHost = map["isHost"] as? Boolean ?: false,
-            createdAt = map["createdAt"] as? Timestamp
+            createdAt = map["createdAt"] as? String ?: ""
         )
     }
     fun toMap(): Map<String, Any?> = mapOf(

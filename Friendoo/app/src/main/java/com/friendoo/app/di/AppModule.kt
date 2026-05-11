@@ -5,11 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.friendoo.app.data.local.UserPreferences
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.storage.FirebaseStorage
+import com.friendoo.app.data.remote.api.InsForgeApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,26 +23,6 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    @Provides
-    @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideFirebaseFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideFirebaseFunctions(): FirebaseFunctions = FirebaseFunctions.getInstance("asia-south1")
-
-    @Provides
-    @Singleton
-    fun provideFirebaseMessaging(): FirebaseMessaging = FirebaseMessaging.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
     @Provides
     @Singleton
@@ -79,9 +55,15 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://localhost/") // TODO: Use BuildConfig
+            .baseUrl("https://7dhciy6x.functions.insforge.app/") // InsForge Edge Functions URL
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideInsForgeApiService(retrofit: Retrofit): InsForgeApiService {
+        return retrofit.create(InsForgeApiService::class.java)
     }
 }

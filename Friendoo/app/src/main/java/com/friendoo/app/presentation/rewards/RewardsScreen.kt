@@ -7,7 +7,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,23 +21,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RewardsScreen(onBack: () -> Unit) {
-    var userData by remember { mutableStateOf<Map<String, Any>?>(null) }
-    var hostData by remember { mutableStateOf<Map<String, Any>?>(null) }
-    val userId = FirebaseAuth.getInstance().currentUser?.uid
-    val db = FirebaseFirestore.getInstance()
-
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            db.collection("users").doc(userId).get().addOnSuccessListener { userData = it.data() }
-            db.collection("hosts").doc(userId).get().addOnSuccessListener { hostData = it.data() }
-        }
-    }
+    // Mock data - in production this would come from InsForge API
+    val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
+    val hostData = remember { mutableStateOf<Map<String, Any>?>(null) }
+    val userId = "mock-user-id"
 
     Scaffold(
         topBar = {
@@ -52,20 +47,20 @@ fun RewardsScreen(onBack: () -> Unit) {
             // User Section (Always visible for balance)
             item {
                 UserRewardsCard(
-                    freeMins = (userData?.get("freeMinutes") as? Long)?.toInt() ?: 0,
-                    totalSpent = (userData?.get("totalSpent") as? Number)?.toDouble() ?: 0.0,
-                    milestones = (userData?.get("milestones") as? List<String>) ?: emptyList()
+                    freeMins = (userData.value?.get("freeMinutes") as? Long)?.toInt() ?: 0,
+                    totalSpent = (userData.value?.get("totalSpent") as? Number)?.toDouble() ?: 0.0,
+                    milestones = (userData.value?.get("milestones") as? List<String>) ?: emptyList()
                 )
             }
 
             // Host Section (Only if user is a host)
-            if (hostData != null) {
+            if (hostData.value != null) {
                 item {
                     HostIncentiveCard(
-                        totalCalls = (hostData?.get("totalCalls") as? Long)?.toInt() ?: 0,
-                        badges = (hostData?.get("badges") as? List<String>) ?: emptyList(),
-                        isStarHost = hostData?.get("isStarHost") as? Boolean ?: false,
-                        starRank = (hostData?.get("starRank") as? Long)?.toInt() ?: 0
+                        totalCalls = (hostData.value?.get("totalCalls") as? Long)?.toInt() ?: 0,
+                        badges = (hostData.value?.get("badges") as? List<String>) ?: emptyList(),
+                        isStarHost = hostData.value?.get("isStarHost") as? Boolean ?: false,
+                        starRank = (hostData.value?.get("starRank") as? Long)?.toInt() ?: 0
                     )
                 }
             }
@@ -133,7 +128,7 @@ fun HostIncentiveCard(totalCalls: Int, badges: List<String>, isStarHost: Boolean
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color.Green)
+                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.Green)
                 Spacer(Modifier.width(8.dp))
                 Text("Host Growth", fontWeight = FontWeight.Bold, color = Color.White)
             }

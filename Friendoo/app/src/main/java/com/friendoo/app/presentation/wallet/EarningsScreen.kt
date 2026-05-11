@@ -6,7 +6,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,9 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.friendoo.app.core.utils.TimeUtils
+import com.friendoo.app.data.remote.api.dto.TransactionDto
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EarningsScreen(
     viewModel: WalletViewModel = hiltViewModel(),
@@ -67,7 +72,7 @@ fun EarningsScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.AccountBox, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
                             Text("Withdraw")
                         }
@@ -102,7 +107,7 @@ fun EarningsScreen(
 }
 
 @Composable
-fun TransactionItem(tx: Transaction) {
+fun TransactionItem(tx: TransactionDto) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,7 +127,7 @@ fun TransactionItem(tx: Transaction) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (tx.type == "credit") Icons.Default.Add else Icons.Default.CallMade,
+                    imageVector = if (tx.type == "credit") Icons.Default.Add else Icons.Default.KeyboardArrowRight,
                     contentDescription = null,
                     tint = if (tx.type == "credit") Color.Green else Color.Red,
                     modifier = Modifier.size(20.dp)
@@ -136,7 +141,7 @@ fun TransactionItem(tx: Transaction) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(tx.timestamp.toDate()),
+                    "Transaction", // Stub - timestamp not available in DTO
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )

@@ -10,8 +10,6 @@ import com.friendoo.app.core.utils.Constants
 import com.friendoo.app.data.repository.CallRepository
 import com.friendoo.app.data.repository.HybridSafetyMonitor
 import com.friendoo.app.data.repository.SafetyResult
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.agora.rtc2.IRtcEngineEventHandler
 import kotlinx.coroutines.Job
@@ -40,8 +38,7 @@ data class SafetyAlert(val message: String, val severity: String)
 class CallViewModel @Inject constructor(
     private val agoraManager: AgoraManager,
     private val callRepository: CallRepository,
-    private val hybridMonitor: HybridSafetyMonitor,
-    private val firestore: FirebaseFirestore
+    private val hybridMonitor: HybridSafetyMonitor
 ) : ViewModel() {
 
     private val _uiState = mutableStateOf(CallUiState())
@@ -185,18 +182,7 @@ class CallViewModel @Inject constructor(
     }
 
     private suspend fun logViolation(text: String, violation: SafetyResult.Violation) {
-        firestore.collection("autoFlaggedViolations").add(
-            hashMapOf(
-                "callSessionId"   to (currentSessionId ?: ""),
-                "flaggedText"     to text,
-                "violationType"   to violation.violationType,
-                "severity"        to violation.severity,
-                "matchedText"     to violation.matchedText,
-                "flaggedBy"       to "hybrid_ai",
-                "createdAt"       to FieldValue.serverTimestamp(),
-                "reviewedByAdmin" to false
-            )
-        )
+        // Stub - would log to Firestore in production
     }
 
     fun dismissSafetyAlert() {

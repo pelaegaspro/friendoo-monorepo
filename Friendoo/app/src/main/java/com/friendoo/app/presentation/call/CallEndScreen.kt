@@ -2,7 +2,9 @@ package com.friendoo.app.presentation.call
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,7 +43,7 @@ fun CallEndScreen(
         Row(modifier = Modifier.padding(vertical = 16.dp)) {
             repeat(5) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Star,
+                    imageVector = Icons.Default.Star,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(40.dp)
@@ -58,7 +60,7 @@ fun CallEndScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Flag,
+                    imageVector = Icons.Default.Close,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

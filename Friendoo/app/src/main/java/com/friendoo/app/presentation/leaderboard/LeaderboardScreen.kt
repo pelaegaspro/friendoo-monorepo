@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,27 +18,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.friendoo.app.presentation.components.AnonymousAvatar
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen() {
     var selectedLanguage by remember { mutableStateOf("Hindi") }
     val languages = listOf("Hindi", "English", "Tamil", "Telugu", "Bengali")
-    var starHosts by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
-    val db = FirebaseFirestore.getInstance()
-
-    LaunchedEffect(selectedLanguage) {
-        db.collection("hosts")
-            .whereEqualTo("isStarHost", true)
-            .whereEqualTo("starLanguage", selectedLanguage)
-            .orderBy("starRank", Query.Direction.ASCENDING)
-            .get()
-            .addOnSuccessListener {
-                starHosts = it.docs.map { doc -> doc.data() + ("id" to doc.id) }
-            }
-    }
+    // Mock data - stub implementation
+    var starHosts by remember { mutableStateOf<List<Map<String, Any>>>(
+        listOf(
+            mapOf("id" to "1", "starRank" to 1, "alias" to "Host 1", "avatarColor" to "#FF5733"),
+            mapOf("id" to "2", "starRank" to 2, "alias" to "Host 2", "avatarColor" to "#33FF57")
+        )
+    ) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         ScrollableTabRow(
@@ -148,7 +140,7 @@ fun LeaderboardItem(host: Map<String, Any>) {
             }
             
             if (rank <= 3) {
-                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(24.dp))
             }
         }
     }

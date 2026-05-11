@@ -1,8 +1,9 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
-    alias(libs.plugins.google.services)
     kotlin("kapt")
 }
 
@@ -10,7 +11,7 @@ android {
     namespace = "com.friendoo.app"
     compileSdk = 34
 
-    val localProperties = java.util.Properties()
+    val localProperties = Properties()
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localProperties.load(localPropertiesFile.inputStream())
@@ -29,6 +30,8 @@ android {
         buildConfigField("String", "AGORA_APP_CERTIFICATE", "\"${localProperties.getProperty("AGORA_APP_CERTIFICATE") ?: ""}\"")
         buildConfigField("String", "CASHFREE_APP_ID", "\"${localProperties.getProperty("CASHFREE_APP_ID") ?: ""}\"")
         buildConfigField("String", "CASHFREE_SECRET_KEY", "\"${localProperties.getProperty("CASHFREE_SECRET_KEY") ?: ""}\"")
+
+        manifestPlaceholders["CASHFREE_APP_ID"] = localProperties.getProperty("CASHFREE_APP_ID") ?: ""
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -57,18 +60,18 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         resources {
@@ -95,13 +98,8 @@ dependencies {
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.functions.ktx)
-    implementation(libs.firebase.messaging.ktx)
-    implementation(libs.firebase.storage.ktx)
+    // WebSocket for InsForge Realtime
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Agora
     implementation(libs.agora.rtc)

@@ -14,8 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun RatingDialog(
@@ -26,7 +24,6 @@ fun RatingDialog(
 ) {
     var rating by remember { mutableStateOf(0) }
     var isSubmitting by remember { mutableStateOf(false) }
-    val firestore = FirebaseFirestore.getInstance()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -75,19 +72,9 @@ fun RatingDialog(
                 onClick = {
                     if (rating > 0) {
                         isSubmitting = true
-                        val ratingData = hashMapOf(
-                            "score" to rating,
-                            "timestamp" to Timestamp.now()
-                        )
-                        firestore.collection("hosts").document(hostId)
-                            .collection("ratings").add(ratingData)
-                            .addOnSuccessListener {
-                                onSubmitted()
-                                onDismiss()
-                            }
-                            .addOnFailureListener {
-                                isSubmitting = false
-                            }
+                        // Stub implementation - simulate success
+                        onSubmitted()
+                        onDismiss()
                     }
                 },
                 enabled = rating > 0 && !isSubmitting

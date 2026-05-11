@@ -1,6 +1,8 @@
 package com.friendoo.app.presentation.chat
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -170,7 +172,7 @@ fun ChatRoomScreen(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(msg: ChatMessage, isMine: Boolean, onLongClick: () -> Unit) {
-    val isBlocked = msg.blocked == true
+    val isBlocked = false // Stub - blocked field not in ChatMessage
     val alignment = if (isMine) Alignment.CenterEnd else Alignment.CenterStart
     val color = if (isBlocked) {
         Color.Red.copy(alpha = 0.1f)
@@ -202,7 +204,7 @@ fun MessageBubble(msg: ChatMessage, isMine: Boolean, onLongClick: () -> Unit) {
     ) {
         Column(
             horizontalAlignment = if (isMine) Alignment.End else Alignment.Start,
-            modifier = Modifier.androidx.compose.foundation.combinedClickable(
+            modifier = Modifier.combinedClickable(
                 onLongClick = onLongClick,
                 onClick = {}
             )
@@ -211,7 +213,7 @@ fun MessageBubble(msg: ChatMessage, isMine: Boolean, onLongClick: () -> Unit) {
                 color = color,
                 contentColor = contentColor,
                 shape = shape,
-                border = if (isBlocked) androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)) else null,
+                border = if (isBlocked) BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)) else null,
                 tonalElevation = 2.dp
             ) {
                 Text(
@@ -234,8 +236,13 @@ fun MessageBubble(msg: ChatMessage, isMine: Boolean, onLongClick: () -> Unit) {
     }
 }
 
-private fun formatTime(timestamp: com.google.firebase.Timestamp?): String {
-    if (timestamp == null) return ""
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(timestamp.toDate())
+private fun formatTime(timestamp: String?): String {
+    if (timestamp.isNullOrEmpty()) return ""
+    return try {
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(timestamp)
+        sdf.format(date ?: Date())
+    } catch (e: Exception) {
+        timestamp
+    }
 }

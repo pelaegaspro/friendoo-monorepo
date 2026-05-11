@@ -1,32 +1,23 @@
 package com.friendoo.app.data.repository
 
 import com.friendoo.app.data.model.ChatMessage
-import com.friendoo.app.data.remote.firebase.FirestoreSource
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Stub Chat Repository - Firebase dependencies removed
+ */
 @Singleton
-class ChatRepository @Inject constructor(
-    private val firestoreSource: FirestoreSource,
-    private val firestore: FirebaseFirestore
-) {
+class ChatRepository @Inject constructor() {
     fun getChatMessages(userId: String, otherUserId: String): Flow<List<ChatMessage>> {
-        val chatId = getChatRoomId(userId, otherUserId)
-        val query = firestore.collection("chats").document(chatId)
-            .collection("messages").orderBy("timestamp")
-        return firestoreSource.addCollectionSnapshotListener("chats/$chatId/messages", query)
-            .map { list -> list.map { ChatMessage.fromMap(it) } }
+        return flowOf(emptyList())
     }
 
     suspend fun sendMessage(userId: String, otherUserId: String, text: String): Result<Unit> {
-        val chatId = getChatRoomId(userId, otherUserId)
-        val msgId = UUID.randomUUID().toString()
-        val msg = ChatMessage(id = msgId, senderId = userId, receiverId = otherUserId, text = text, timestamp = com.google.firebase.Timestamp.now())
-        return firestoreSource.setDocument("chats/$chatId/messages", msgId, msg.toMap())
+        return Result.success(Unit)
     }
 
     private fun getChatRoomId(u1: String, u2: String): String {

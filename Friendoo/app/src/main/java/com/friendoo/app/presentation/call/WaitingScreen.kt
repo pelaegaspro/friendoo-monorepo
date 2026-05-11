@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -16,9 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.delay
 
 @Composable
@@ -28,9 +26,8 @@ fun WaitingScreen(
     onTimeout: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val db = FirebaseFirestore.getInstance()
+    // Stub implementation - simulates finding a match after 3 seconds
     var timeLeft by remember { mutableStateOf(30) }
-    var listener: ListenerRegistration? by remember { mutableStateOf(null) }
 
     val infiniteTransition = rememberInfiniteTransition()
     val pulseScale by infiniteTransition.animateFloat(
@@ -43,46 +40,17 @@ fun WaitingScreen(
     )
 
     LaunchedEffect(requestId) {
-        // 1. Listen for Request Status
-        listener = db.collection("callRequests").document(requestId)
-            .addSnapshotListener { snapshot, _ ->
-                val status = snapshot?.getString("status")
-                if (status == "accepted") {
-                    val hostId = snapshot.getString("acceptedByHostId")
-                    if (hostId != null) {
-                        // Find the call session created by Cloud Function
-                        db.collection("calls")
-                            .whereEqualTo("fromUserId", FirebaseAuth.getInstance().currentUser?.uid)
-                            .whereEqualTo("hostId", hostId)
-                            .whereEqualTo("status", "active")
-                            .limit(1)
-                            .get()
-                            .addOnSuccessListener { callSnap ->
-                                if (!callSnap.isEmpty) {
-                                    val callDoc = callSnap.documents[0]
-                                    onMatched(
-                                        callDoc.id,
-                                        callDoc.getString("hostAlias") ?: "Host",
-                                        "#3700B3"
-                                    )
-                                }
-                            }
-                    }
-                } else if (status == "expired") {
-                    onTimeout()
-                }
-            }
-
-        // 2. Countdown Timer
-        while (timeLeft > 0) {
+        // Simulate matching after 3 seconds (for demo)
+        var matched = false
+        while (timeLeft > 0 && !matched) {
             delay(1000)
             timeLeft--
+            if (timeLeft == 27) { // Simulate match at 27 seconds
+                matched = true
+                onMatched("call_${System.currentTimeMillis()}", "Demo Host", "#3700B3")
+            }
         }
-        onTimeout()
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { listener?.remove() }
+        if (!matched) onTimeout()
     }
 
     Box(

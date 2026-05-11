@@ -1,15 +1,13 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
-
 data class CallLog(
     val id: String = "",
     val callerId: String = "",
     val receiverId: String = "",
     val durationSeconds: Int = 0,
     val costCoins: Int = 0,
-    val startedAt: Timestamp? = null,
-    val endedAt: Timestamp? = null,
+    val startedAt: String = "",
+    val endedAt: String = "",
     val status: String = "ended"
 ) {
     companion object {
@@ -19,8 +17,8 @@ data class CallLog(
             receiverId = map["receiverId"] as? String ?: "",
             durationSeconds = (map["durationSeconds"] as? Number)?.toInt() ?: 0,
             costCoins = (map["costCoins"] as? Number)?.toInt() ?: 0,
-            startedAt = map["startedAt"] as? Timestamp,
-            endedAt = map["endedAt"] as? Timestamp,
+            startedAt = map["startedAt"] as? String ?: "",
+            endedAt = map["endedAt"] as? String ?: "",
             status = map["status"] as? String ?: "ended"
         )
     }

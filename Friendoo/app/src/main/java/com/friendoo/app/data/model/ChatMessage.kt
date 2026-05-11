@@ -1,14 +1,12 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
-
 data class ChatMessage(
     val id: String = "",
     val senderId: String = "",
     val receiverId: String = "",
     val text: String = "",
     val imageUrl: String = "",
-    val timestamp: Timestamp? = null,
+    val timestamp: String = "",
     val isRead: Boolean = false,
     val type: String = "text"
 ) {
@@ -19,7 +17,7 @@ data class ChatMessage(
             receiverId = map["receiverId"] as? String ?: "",
             text = map["text"] as? String ?: "",
             imageUrl = map["imageUrl"] as? String ?: "",
-            timestamp = map["timestamp"] as? Timestamp,
+            timestamp = map["timestamp"] as? String ?: "",
             isRead = map["isRead"] as? Boolean ?: false,
             type = map["type"] as? String ?: "text"
         )

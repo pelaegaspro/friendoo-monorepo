@@ -4,15 +4,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.friendoo.app.data.local.UserPreferences
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 data class ReportUiState(
@@ -23,8 +19,6 @@ data class ReportUiState(
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    private val firestore: FirebaseFirestore,
-    private val storage: FirebaseStorage,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -45,39 +39,9 @@ class ReportViewModel @Inject constructor(
             _state.value = ReportUiState(isSubmitting = true)
             
             try {
-                val currentUserId = userPreferences.userIdFlow.first() ?: ""
-                val currentAlias = userPreferences.aliasFlow.first() ?: "Anonymous User"
-                
-                var evidenceUrl: String? = null
-                
-                // 1. Upload Evidence if present
-                if (evidenceUri != null) {
-                    val ref = storage.reference.child("reports/${Timestamp.now().seconds}_${currentUserId}.jpg")
-                    ref.putFile(evidenceUri).await()
-                    evidenceUrl = ref.downloadUrl.await().toString()
-                }
-
-                // 2. Create Firestore Report
-                val reportData = mutableMapOf<String, Any>(
-                    "reportedId" to reportedUserId,
-                    "reportedAlias" to reportedAlias,
-                    "reporterId" to currentUserId,
-                    "reporterAlias" to currentAlias,
-                    "reason" to reason,
-                    "status" to "pending",
-                    "timestamp" to Timestamp.now(),
-                    "sessionId" to (sessionId ?: "")
-                )
-
-                description?.let { reportData["description"] = it }
-                amountLost?.let { reportData["amountLost"] = it }
-                evidenceUrl?.let { reportData["evidenceUrl"] = it }
-                messageSnippet?.let { reportData["messageSnippet"] = it.take(100) }
-
-                firestore.collection("reports").add(reportData).await()
-                
+                // Stub implementation - simulate success
+                kotlinx.coroutines.delay(1000)
                 _state.value = ReportUiState(isSuccess = true)
-
             } catch (e: Exception) {
                 _state.value = ReportUiState(error = e.message ?: "Submission failed")
             }

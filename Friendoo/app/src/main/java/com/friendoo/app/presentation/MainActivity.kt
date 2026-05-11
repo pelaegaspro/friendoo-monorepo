@@ -9,11 +9,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.presentation.theme.FriendooTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var userPreferences: UserPreferences
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -27,7 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FriendooTheme {
                 val navController = rememberNavController()
-                AppNavigation(navController)
+                AppNavigation(navController, userPreferences)
             }
         }
     }

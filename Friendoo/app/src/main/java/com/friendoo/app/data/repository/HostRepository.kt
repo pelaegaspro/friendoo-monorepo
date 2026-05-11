@@ -1,20 +1,39 @@
 package com.friendoo.app.data.repository
 
 import com.friendoo.app.data.model.Host
-import com.friendoo.app.data.remote.firebase.FirestoreSource
-import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Stub Host Repository - returns mock data
+ */
 @Singleton
 class HostRepository @Inject constructor(
-    private val firestoreSource: FirestoreSource,
-    private val firestore: FirebaseFirestore
+    private val insForgeRepository: InsForgeRepository
 ) {
     suspend fun getHosts(): Result<List<Host>> {
-        val query = firestore.collection("users").whereEqualTo("isHost", true)
-        return firestoreSource.getCollection("users", query).map { list ->
-            list.map { Host.fromMap(it) }
+        return try {
+            // Stub - return mock hosts
+            Result.success(
+                listOf(
+                    Host(
+                        uid = "host1",
+                        alias = "Priya",
+                        bio = "Love to chat about movies and life",
+                        isStarHost = true,
+                        languages = listOf("Hindi", "English")
+                    ),
+                    Host(
+                        uid = "host2",
+                        alias = "Anjali",
+                        bio = "Friendly conversations await",
+                        isOnline = true,
+                        languages = listOf("Tamil", "English")
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
+import java.util.Date
 
 data class WithdrawalRequest(
     val id: String = "",
@@ -8,8 +8,8 @@ data class WithdrawalRequest(
     val amount: Double = 0.0,
     val upiId: String = "",
     val status: String = "pending", // pending, approved, rejected, completed, failed
-    val requestedAt: Timestamp? = null,
-    val processedAt: Timestamp? = null,
+    val requestedAt: Date? = null,
+    val processedAt: Date? = null,
     val adminNote: String = "",
     val cashfreePayoutId: String? = null,
     val failureReason: String? = null
@@ -21,8 +21,8 @@ data class WithdrawalRequest(
             amount = (map["amount"] as? Number)?.toDouble() ?: 0.0,
             upiId = map["upiId"] as? String ?: "",
             status = map["status"] as? String ?: "pending",
-            requestedAt = map["requestedAt"] as? Timestamp,
-            processedAt = map["processedAt"] as? Timestamp,
+            requestedAt = map["requestedAt"] as? Date,
+            processedAt = map["processedAt"] as? Date,
             adminNote = map["adminNote"] as? String ?: "",
             cashfreePayoutId = map["cashfreePayoutId"] as? String,
             failureReason = map["failureReason"] as? String

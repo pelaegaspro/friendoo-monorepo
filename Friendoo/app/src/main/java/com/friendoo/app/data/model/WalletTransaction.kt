@@ -1,6 +1,5 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
 
 data class WalletTransaction(
     val id: String = "",
@@ -8,7 +7,7 @@ data class WalletTransaction(
     val type: String = "recharge", // recharge, spend, earn
     val amount: Int = 0,
     val description: String = "",
-    val timestamp: Timestamp? = null,
+    val timestamp: String = "",
     val paymentId: String = ""
 ) {
     companion object {
@@ -18,7 +17,7 @@ data class WalletTransaction(
             type = map["type"] as? String ?: "recharge",
             amount = (map["amount"] as? Number)?.toInt() ?: 0,
             description = map["description"] as? String ?: "",
-            timestamp = map["timestamp"] as? Timestamp,
+            timestamp = map["timestamp"] as? String ?: "",
             paymentId = map["paymentId"] as? String ?: ""
         )
     }

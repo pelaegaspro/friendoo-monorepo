@@ -5,8 +5,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.friendoo.app.data.model.WithdrawalRequest
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +132,7 @@ fun WithdrawalBottomSheet(
                 shape = MaterialTheme.shapes.large
             ) {
                 if (uiState.isSubmitting) {
-                    CircularProgressIndicator(size = 20.dp, color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
                 } else {
                     Text("Submit Request")
                 }
@@ -140,7 +141,7 @@ fun WithdrawalBottomSheet(
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Menu, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Recent Withdrawals", fontWeight = FontWeight.SemiBold)
             }
@@ -181,7 +182,7 @@ fun WithdrawalHistoryItem(request: WithdrawalRequest) {
         Column {
             Text("₹${request.amount}", fontWeight = FontWeight.Bold)
             Text(
-                formatDate(request.requestedAt),
+                formatDate(request.requestedAt as? Date),
                 fontSize = 11.sp,
                 color = Color.Gray
             )
@@ -201,8 +202,8 @@ fun WithdrawalHistoryItem(request: WithdrawalRequest) {
     }
 }
 
-private fun formatDate(timestamp: com.google.firebase.Timestamp?): String {
-    if (timestamp == null) return ""
+private fun formatDate(date: Date?): String {
+    if (date == null) return ""
     val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-    return sdf.format(timestamp.toDate())
+    return sdf.format(date)
 }

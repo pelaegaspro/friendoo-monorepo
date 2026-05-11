@@ -13,7 +13,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -162,7 +166,7 @@ fun CallScreen(
                 .padding(24.dp)
                 .background(Color.Red.copy(alpha = 0.1f), CircleShape)
         ) {
-            Icon(Icons.Default.Shield, contentDescription = "Report", tint = Color.Red)
+            Icon(Icons.Default.AccountCircle, contentDescription = "Report", tint = Color.Red)
         }
 
         // Controls
@@ -175,7 +179,7 @@ fun CallScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CallControlButton(
-                icon = if (uiState.isMuted) Icons.Default.MicOff else Icons.Default.Mic,
+                icon = if (uiState.isMuted) Icons.Default.Close else Icons.Default.Check,
                 containerColor = if (uiState.isMuted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = if (uiState.isMuted) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = { viewModel.toggleMute() }
@@ -191,11 +195,11 @@ fun CallScreen(
                 shape = CircleShape,
                 modifier = Modifier.size(72.dp)
             ) {
-                Icon(Icons.Default.CallEnd, contentDescription = "End Call", modifier = Modifier.size(32.dp))
+                Icon(Icons.Default.Close, contentDescription = "End Call", modifier = Modifier.size(32.dp))
             }
 
             CallControlButton(
-                icon = if (uiState.isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
+                icon = if (uiState.isSpeakerOn) Icons.Default.Star else Icons.Default.Refresh,
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = { viewModel.toggleSpeaker() }

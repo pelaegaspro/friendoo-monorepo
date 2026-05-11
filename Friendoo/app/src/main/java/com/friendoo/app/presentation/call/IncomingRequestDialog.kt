@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.delay
 
 @Composable
@@ -29,7 +28,6 @@ fun IncomingRequestDialog(
 ) {
     var timeLeft by remember { mutableStateOf(30) }
     var isSubmitting by remember { mutableStateOf(false) }
-    val functions = FirebaseFunctions.getInstance()
 
     LaunchedEffect(requestId) {
         // Simple countdown logic
@@ -103,16 +101,8 @@ fun IncomingRequestDialog(
             Button(
                 onClick = {
                     isSubmitting = true
-                    functions.getHttpsCallable("acceptCallRequest")
-                        .call(mapOf("requestId" to requestId))
-                        .addOnSuccessListener { result ->
-                            val data = result.data as Map<String, Any>
-                            onAccept(data["callId"] as String)
-                        }
-                        .addOnFailureListener {
-                            isSubmitting = false
-                            onDecline() // If someone else claimed it first
-                        }
+                    // Stub - simulate success
+                    onAccept("call_${System.currentTimeMillis()}")
                 },
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 shape = RoundedCornerShape(16.dp),

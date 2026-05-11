@@ -104,7 +104,7 @@ fun ReportBottomSheet(
                     items(reasons) { reason ->
                         ListItem(
                             headlineContent = { Text(reason) },
-                            trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
+                            trailingContent = { Icon(Icons.Default.KeyboardArrowRight, contentDescription = null) },
                             modifier = Modifier.clickable {
                                 if (reason == "Off-Platform Fraud") {
                                     selectedReason = reason
@@ -195,7 +195,7 @@ fun FraudEvidenceFlow(
                 )
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.AttachFile, contentDescription = null)
+                    Icon(Icons.Default.Add, contentDescription = null)
                     Text("Attach Screenshot", fontSize = 12.sp)
                 }
             }
@@ -228,7 +228,7 @@ fun SuccessView(onDismiss: () -> Unit) {
             "We have received your report and screenshot. We will review and verify the host's UPI details within 48 hours.",
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             color = Color.Gray,
-            modifier = Modifier.padding(top = 8.dp, horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp)
         )
         Spacer(Modifier.height(32.dp))
         Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {

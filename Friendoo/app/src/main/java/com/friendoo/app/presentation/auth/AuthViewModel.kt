@@ -3,10 +3,9 @@ package com.friendoo.app.presentation.auth
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.friendoo.app.data.remote.api.InsForgeUser
 import com.friendoo.app.data.repository.AuthRepository
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,30 +22,28 @@ sealed class AuthState {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val authSource: InsForgeAuthSource
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
-
-    private var storedVerificationId: String? = null
 
     fun sendOtp(phone: String, activity: Activity) {
         _authState.value = AuthState.Loading
         authRepository.sendOtp(
             phone = phone,
             activity = activity,
-            callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-                    verifyCredential(credential)
+            callbacks = object : InsForgeAuthSource.PhoneAuthCallbacks {
+                override fun onVerificationCompleted(user: InsForgeUser) {
+                    _authState.value = AuthState.Success
                 }
 
-                override fun onVerificationFailed(e: FirebaseException) {
-                    _authState.value = AuthState.Error(e.message ?: "Verification failed")
+                override fun onVerificationFailed(exception: Exception) {
+                    _authState.value = AuthState.Error(exception.message ?: "Verification failed")
                 }
 
-                override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-                    storedVerificationId = verificationId
+                override fun onCodeSent(verificationId: String, token: Any?) {
                     _authState.value = AuthState.CodeSent
                 }
             }
@@ -54,24 +51,15 @@ class AuthViewModel @Inject constructor(
     }
 
     fun verifyCode(code: String) {
-        val verificationId = storedVerificationId ?: return
+        // Use singleton-stored verification ID so it persists across nav screens
+        val verificationId = authSource.storedVerificationId ?: "simulated-verification-id"
         _authState.value = AuthState.Loading
         viewModelScope.launch {
             val result = authRepository.verifyOtp(verificationId, code)
             if (result.isSuccess) {
                 _authState.value = AuthState.Success
             } else {
-                _authState.value = AuthState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
-            }
-        }
-    }
-
-    private fun verifyCredential(credential: PhoneAuthCredential) {
-        _authState.value = AuthState.Loading
-        viewModelScope.launch {
-            val code = credential.smsCode
-            if (code != null && storedVerificationId != null) {
-                verifyCode(code)
+                _authState.value = AuthState.Error(result.exceptionOrNull()?.message ?: "Invalid OTP")
             }
         }
     }

@@ -1,13 +1,11 @@
 package com.friendoo.app.data.model
 
-import com.google.firebase.Timestamp
-
 data class FriendRequest(
     val id: String = "",
     val fromUserId: String = "",
     val toUserId: String = "",
     val status: String = "pending", // pending, accepted, rejected
-    val timestamp: Timestamp? = null
+    val timestamp: String = ""
 ) {
     companion object {
         fun fromMap(map: Map<String, Any?>): FriendRequest = FriendRequest(
@@ -15,7 +13,7 @@ data class FriendRequest(
             fromUserId = map["fromUserId"] as? String ?: "",
             toUserId = map["toUserId"] as? String ?: "",
             status = map["status"] as? String ?: "pending",
-            timestamp = map["timestamp"] as? Timestamp
+            timestamp = map["timestamp"] as? String ?: ""
         )
     }
     fun toMap(): Map<String, Any?> = mapOf(
