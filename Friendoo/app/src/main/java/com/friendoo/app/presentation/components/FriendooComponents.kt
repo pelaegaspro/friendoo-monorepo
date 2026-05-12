@@ -62,9 +62,9 @@ fun FriendooButton(
         enabled = enabled && !isLoading,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(48.dp)
             .scale(scale),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             disabledContainerColor = if (isGradient) Color.Transparent else BorderLight
@@ -72,7 +72,7 @@ fun FriendooButton(
         border = if (isOutlined) androidx.compose.foundation.BorderStroke(1.5.dp, Coral) else null
     ) {
         Box(
-            modifier = if (brush != null) Modifier.background(brush, RoundedCornerShape(16.dp)) else Modifier,
+            modifier = if (brush != null) Modifier.background(brush, RoundedCornerShape(12.dp)) else Modifier,
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
@@ -85,7 +85,7 @@ fun FriendooButton(
                 Text(
                     text = text,
                     color = if (isOutlined) Coral else PureWhite,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                 )
             }
         }
@@ -105,7 +105,7 @@ fun FriendooCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             content()
         }
     }
@@ -258,7 +258,7 @@ fun FriendooHostCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(contentAlignment = Alignment.BottomEnd) {
-                FriendooAvatar(alias = alias, colorHex = avatarColor, size = 72.dp, fontSize = 20)
+                FriendooAvatar(alias = alias, colorHex = avatarColor, size = 56.dp, fontSize = 16)
                 if (isOnline) {
                     Box(
                         modifier = Modifier
@@ -269,7 +269,7 @@ fun FriendooHostCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = alias,
                 style = MaterialTheme.typography.titleMedium,
@@ -290,7 +290,7 @@ fun FriendooHostCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -308,7 +308,7 @@ fun FriendooHostCard(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -324,8 +324,8 @@ fun FriendooHostCard(
                     onClick = onCallClick,
                     shape = PillShape,
                     colors = ButtonDefaults.buttonColors(containerColor = Coral),
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp)
+                    modifier = Modifier.height(28.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
                     Text("Call", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
@@ -414,28 +414,27 @@ fun FriendooEmptyState(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(32.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Abstract illustration placeholder
         Box(
             modifier = Modifier
-                .size(120.dp)
+                .size(72.dp)
                 .clip(CircleShape)
                 .background(Coral.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "~",
-                fontSize = 48.sp,
+                fontSize = 32.sp,
                 color = Coral,
                 fontWeight = FontWeight.Light
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center
         )
         if (subtitle.isNotEmpty()) {
@@ -448,7 +447,7 @@ fun FriendooEmptyState(
             )
         }
         if (actionText.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = onAction,
                 shape = ButtonShape,
@@ -571,7 +570,7 @@ fun FriendooSectionHeader(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
         if (actionText.isNotEmpty()) {

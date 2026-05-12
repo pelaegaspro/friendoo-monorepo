@@ -82,15 +82,14 @@ fun ConsentScreen(onAccept: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OnboardingProgress(currentStep = 1)
 
-            // Illustration placeholder
             Box(
                 modifier = Modifier
-                    .size(140.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
                     .background(Teal.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
@@ -98,53 +97,52 @@ fun ConsentScreen(onAccept: () -> Unit) {
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = null,
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = Teal
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = "Your safety comes first",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = "Before you connect, here's how we keep you safe.",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = WarmGray,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 4 consent cards
             ConsentCard(
                 icon = Icons.Default.Lock,
                 iconColor = Teal,
                 title = "AI monitors for safety",
                 description = "Messages are scanned for policy violations automatically."
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             ConsentCard(
                 icon = Icons.Default.Info,
                 iconColor = Coral,
                 title = "100% Anonymous",
                 description = "No real name, photo, or ID required. Ever."
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             ConsentCard(
                 icon = Icons.Default.Phone,
                 iconColor = InfoBlue,
                 title = "Audio only, no cameras",
                 description = "We never request camera permissions."
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             ConsentCard(
                 icon = Icons.Default.Info,
                 iconColor = WarningAmber,
@@ -152,7 +150,7 @@ fun ConsentScreen(onAccept: () -> Unit) {
                 description = "Clicks and page views help us detect abuse."
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             FriendooButton(
                 text = "I Understand",
@@ -165,7 +163,7 @@ fun ConsentScreen(onAccept: () -> Unit) {
                 Text("Learn more", color = Coral, fontWeight = FontWeight.SemiBold)
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -179,23 +177,23 @@ fun ConsentCard(icon: ImageVector, iconColor: Color, title: String, description:
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(iconColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
+                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = WarmGray
                 )
             }
@@ -221,7 +219,7 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OnboardingProgress(currentStep = 2)
@@ -230,7 +228,7 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
 
             Text(
                 text = "This is your voice identity",
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
@@ -239,39 +237,37 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
 
             Text(
                 text = "Your alias keeps you anonymous on every call.",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = WarmGray,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Large animated avatar
             FriendooAvatar(
                 alias = state.alias,
                 colorHex = selectedColor,
-                size = 140.dp,
-                fontSize = 48,
+                size = 96.dp,
+                fontSize = 32,
                 showGlow = true
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Alias with shuffle
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = state.alias,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = Coral
                 )
                 IconButton(
                     onClick = { viewModel.generateNewAlias() },
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .background(SurfaceElevated)
                         .border(1.dp, BorderLight, CircleShape)
@@ -280,7 +276,7 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
                         Icons.Default.Refresh,
                         contentDescription = "Shuffle alias",
                         tint = Coral,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -293,9 +289,8 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
                 color = LightGray
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Color picker
             Text(
                 text = "Choose your color",
                 style = MaterialTheme.typography.labelLarge,
@@ -314,7 +309,7 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
                     val color = try { Color(android.graphics.Color.parseColor(colorHex)) } catch (_: Exception) { Coral }
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(color)
                             .border(
@@ -330,14 +325,14 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
                                 Icons.Default.Check,
                                 contentDescription = null,
                                 tint = PureWhite,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Your alias keeps you anonymous. You can change it anytime.",
@@ -346,14 +341,14 @@ fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewMode
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             FriendooButton(
                 text = "Get Started",
                 onClick = { viewModel.completeOnboarding() }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
