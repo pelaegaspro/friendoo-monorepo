@@ -1,25 +1,20 @@
 package com.friendoo.app.core.tracking
 
-import com.friendoo.app.data.local.UserPreferences
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Stub Analytics Tracker - Firebase dependencies removed
- */
 @Singleton
-class AnalyticsTracker @Inject constructor(
-    private val userPreferences: UserPreferences
-) {
+class AnalyticsTracker @Inject constructor() {
     fun logEvent(eventType: String, metadata: Map<String, Any?> = emptyMap()) {
-        // Stub - no-op
+        Log.d("Analytics", "$eventType: $metadata")
     }
 
     fun logPageView(screenName: String) {
-        // Stub - no-op
+        Log.d("Analytics", "PageView: $screenName")
     }
 
     fun logButtonClick(buttonName: String, screenName: String) {
-        // Stub - no-op
+        Log.d("Analytics", "ButtonClick: $buttonName on $screenName")
     }
 }

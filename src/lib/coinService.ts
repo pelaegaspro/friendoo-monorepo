@@ -5,7 +5,7 @@ import type { CoinPack } from '@/types'
 
 export async function listActiveCoinPacks(): Promise<CoinPack[]> {
   const snap = await getDocs(
-    query(collection(db, 'coinPacks'), where('active', '==', true), limit(20)),
+    query(collection(db, 'coinPackages'), where('active', '==', true), limit(20)),
   )
   return snap.docs.map((d) => ({
     id: d.id,
@@ -14,29 +14,16 @@ export async function listActiveCoinPacks(): Promise<CoinPack[]> {
 }
 
 export async function createPaymentOrder(
-  amount: number,
-): Promise<{ orderId: string; paymentSessionId: string }> {
+  packageId: string,
+): Promise<{ orderId: string; paymentSessionId: string; coins: number }> {
   const fn = httpsCallable<
-    { amount: number },
-    { orderId: string; paymentSessionId: string }
+    { packageId: string },
+    { orderId: string; paymentSessionId: string; coins: number }
   >(functions, 'createCashfreeOrder')
-  const result = await fn({ amount })
-  return result.data
-}
-
-export async function verifyAndRechargeWallet(
-  userId: string,
-  paymentId: string,
-): Promise<{ success: boolean; coinsAdded?: number }> {
-  const fn = httpsCallable<
-    { userId: string; paymentId: string },
-    { success: boolean; coinsAdded?: number }
-  >(functions, 'rechargeWallet')
-  const result = await fn({ userId, paymentId })
+  const result = await fn({ packageId })
   return result.data
 }
 
 export function coinsForPack(pack: CoinPack): number {
   return pack.coins + (pack.bonus ?? 0)
 }
-

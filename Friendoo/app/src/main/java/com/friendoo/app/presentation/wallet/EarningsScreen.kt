@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.friendoo.app.core.utils.TimeUtils
 import com.friendoo.app.data.remote.api.dto.TransactionDto
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,15 +26,15 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EarningsScreen(
-    viewModel: WalletViewModel = hiltViewModel(),
+    viewModel: HostWalletViewModel = hiltViewModel(),
     onBack: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.uiState
     var showWithdrawDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar(
                 title = { Text("Earnings", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -60,12 +59,12 @@ fun EarningsScreen(
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text("Your Balance", style = MaterialTheme.typography.labelLarge)
                     Text(
-                        "₹ ${String.format("%.2f", state.balance)}",
+                        "₹ ${String.format("%.2f", state.earnings?.availableForWithdrawal ?: 0.0)}",
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    
+
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
                             onClick = { showWithdrawDialog = true },
@@ -82,12 +81,47 @@ fun EarningsScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            Text("Transaction History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Withdrawal History", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(16.dp))
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(state.transactions) { tx ->
-                    TransactionItem(tx)
+            if (state.history.isEmpty()) {
+                Text("No withdrawal history", color = Color.Gray, fontSize = 14.sp)
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(state.history) { req ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    "₹${req.amount}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    req.status,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = when (req.status) {
+                                        "completed" -> Color.Green
+                                        "rejected", "failed" -> Color.Red
+                                        else -> Color.Gray
+                                    }
+                                )
+                            }
+                            Text(
+                                req.requestedAt?.let {
+                                    SimpleDateFormat("MMM dd", Locale.getDefault()).format(it)
+                                } ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -95,11 +129,11 @@ fun EarningsScreen(
 
     if (showWithdrawDialog) {
         WithdrawDialog(
-            isUpiVerified = state.isUpiVerified,
-            balance = state.balance,
+            isUpiVerified = false,
+            balance = state.earnings?.availableForWithdrawal ?: 0.0,
             onDismiss = { showWithdrawDialog = false },
             onConfirm = { amount, upi ->
-                viewModel.requestWithdrawal(amount, upi)
+                viewModel.requestWithdrawal(amount, upi ?: "")
                 showWithdrawDialog = false
             }
         )
@@ -141,7 +175,7 @@ fun TransactionItem(tx: TransactionDto) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Transaction", // Stub - timestamp not available in DTO
+                    "Transaction",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -206,7 +240,7 @@ fun WithdrawDialog(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
                 )
-                
+
                 Spacer(Modifier.height(16.dp))
                 Text(
                     "Payouts are processed within 24 hours.",
@@ -217,7 +251,7 @@ fun WithdrawDialog(
         },
         confirmButton = {
             Button(
-                onClick = { 
+                onClick = {
                     val amt = amount.toDoubleOrNull()
                     if (amt != null) onConfirm(amt, if (isUpiVerified) null else upiId)
                 }

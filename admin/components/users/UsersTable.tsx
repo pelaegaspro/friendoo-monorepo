@@ -19,9 +19,7 @@ const PAGE_SIZE = 20
 type FilterTab = 'all' | 'active' | 'banned' | 'suspended' | 'verified'
 type SortKey = 'createdAt' | 'name' | 'lastActive'
 
-function getInitials(name: string): string {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
-}
+import { getAvatarUrl } from '@/lib/avatar'
 
 export default function UsersTable({ users, onAction }: UsersTableProps) {
   const router = useRouter()
@@ -197,13 +195,11 @@ export default function UsersTable({ users, onAction }: UsersTableProps) {
                   {/* Avatar + Name */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {user.photoURL ? (
-                        <img src={user.photoURL} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                          {getInitials(user.name)}
-                        </div>
-                      )}
+                      <img
+                        src={user.avatarSeed ? getAvatarUrl(user.avatarSeed, 64) : user.photoURL || getAvatarUrl(user.uid, 64)}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
                       <span className="text-white font-medium">{user.name}</span>
                     </div>
                   </td>

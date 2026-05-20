@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Core user profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "gender": { "type": "string", "enum": ["male", "female", "non-binary", "prefer-not-to-say"] },
+        "age": { "type": "integer" },
+        "city": { "type": "string" },
+        "bio": { "type": "string" },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "onboarded": { "type": "boolean" },
+        "photoURL": { "type": "string" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "username", "onboarded"]
+    },
+    "FriendRequest": {
+      "title": "Friend Request",
+      "description": "Represents a request to connect between two users",
+      "type": "object",
+      "properties": {
+        "fromUid": { "type": "string" },
+        "toUid": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUid", "toUid", "status", "timestamp"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Metadata for a 1-on-1 chat",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "unreadCount": { "type": "object" }
+      },
+      "required": ["participants"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a conversation",
+      "type": "object",
+      "properties": {
+        "senderUid": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["text", "image", "voice"] }
+      },
+      "required": ["senderUid", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Authenticated user profiles"
+    },
+    "friendRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/FriendRequest" },
+      "description": "Pending and past friend requests"
+    },
+    "conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Active chat threads"
+    },
+    "conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages within a conversation"
+    }
+  }
+}

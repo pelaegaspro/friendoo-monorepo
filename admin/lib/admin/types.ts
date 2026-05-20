@@ -20,6 +20,7 @@ export interface AdminHost {
   ratePerMinute: number
   hostStatus: HostStatus
   isHost: boolean
+  avatarSeed: string
   photoURL: string
   idProofUrl?: string | null
   bio: string
@@ -51,6 +52,7 @@ export interface AdminUserRow {
   displayName: string
   username: string
   phoneNumber: string
+  avatarSeed: string
   photoURL: string
   city: string
   coinBalance: number

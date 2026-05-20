@@ -42,6 +42,7 @@ export async function createHostAction(data: z.infer<typeof hostSchema>) {
     // 2. Create users/{uid} document
     await db.collection('users').doc(uid).set({
       uid,
+      avatarSeed: uid,
       alias: validated.alias,
       avatarColor: validated.avatarColor,
       phoneNumber,
@@ -58,6 +59,7 @@ export async function createHostAction(data: z.infer<typeof hostSchema>) {
     // 3. Create hosts/{uid} document
     await db.collection('hosts').doc(uid).set({
       uid,
+      avatarSeed: uid,
       alias: validated.alias,
       avatarColor: validated.avatarColor,
       bio: validated.bio,

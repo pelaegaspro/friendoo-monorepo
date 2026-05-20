@@ -10,14 +10,14 @@ export function middleware(request: NextRequest) {
 
   const sessionValue = request.cookies.get(ADMIN_COOKIE_NAME)?.value
   const hasSession = isValidAdminSession(sessionValue)
-  const isLoginPage = pathname === '/admin/login'
+  const isAuthPage = pathname === '/admin/login' || pathname === '/admin/portal'
 
-  if (!hasSession && !isLoginPage) {
+  if (!hasSession && !isAuthPage) {
     return NextResponse.redirect(new URL('/admin/login', request.url))
   }
 
-  if (hasSession && isLoginPage) {
-    return NextResponse.redirect(new URL('/admin', request.url))
+  if (hasSession && pathname === '/admin/login') {
+    return NextResponse.redirect(new URL('/admin/portal', request.url))
   }
 
   return NextResponse.next()

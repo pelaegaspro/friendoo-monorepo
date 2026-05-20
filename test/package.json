@@ -1,0 +1,23 @@
+{
+  "name": "friendoo-rules-tests",
+  "private": true,
+  "scripts": {
+    "test": "jest --testPathPatterns=firestore_rules_test"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ]
+  },
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "firebase": "^12.13.0"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
+  }
+}

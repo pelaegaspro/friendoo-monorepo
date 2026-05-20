@@ -6,6 +6,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.remote.api.InsForgeApiService
+import com.friendoo.app.BuildConfig
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,7 +44,11 @@ object AppModule {
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BASIC
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
         
         return OkHttpClient.Builder()
@@ -65,5 +73,22 @@ object AppModule {
     @Singleton
     fun provideInsForgeApiService(retrofit: Retrofit): InsForgeApiService {
         return retrofit.create(InsForgeApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance().apply {
+            firestoreSettings = FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+                .build()
+        }
     }
 }

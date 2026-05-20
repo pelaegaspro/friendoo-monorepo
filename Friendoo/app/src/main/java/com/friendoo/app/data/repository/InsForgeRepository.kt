@@ -106,95 +106,6 @@ class InsForgeRepository @Inject constructor(
         }
     }
 
-    // Chat operations
-    suspend fun startConversation(userId: String, hostId: String): Result<ConversationResponse> {
-        return try {
-            val request = StartConversationRequest(userId, hostId)
-            val response = apiService.startConversation(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Start conversation failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun sendMessage(
-        conversationId: String,
-        senderId: String,
-        receiverId: String,
-        content: String,
-        type: String = "text",
-        metadata: Map<String, Any>? = null
-    ): Result<MessageResponse> {
-        return try {
-            val request = SendMessageRequest(conversationId, senderId, receiverId, type, content, metadata)
-            val response = apiService.sendMessage(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Send message failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getConversations(
-        userId: String,
-        role: String,
-        limit: Int = 20,
-        offset: Int = 0
-    ): Result<ConversationsResponse> {
-        return try {
-            val url = "chat?action=conversations&userId=$userId&role=$role&limit=$limit&offset=$offset"
-            val response = apiService.getConversations(url)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Get conversations failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getMessages(
-        conversationId: String,
-        limit: Int = 50,
-        before: String? = null
-    ): Result<MessagesResponse> {
-        return try {
-            val params = "conversationId=$conversationId&limit=$limit" + 
-                    (before?.let { "&before=$it" } ?: "")
-            val url = "chat?action=messages&$params"
-            val response = apiService.getMessages(url)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Get messages failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun endConversation(conversationId: String, userId: String): Result<ApiResponse> {
-        return try {
-            val request = EndConversationRequest(conversationId, userId)
-            val response = apiService.endConversation(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("End conversation failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     // Payment operations
     suspend fun getCoinPacks(): Result<CoinPacksResponse> {
         return try {
@@ -226,7 +137,7 @@ class InsForgeRepository @Inject constructor(
     suspend fun createPaymentOrder(
         userId: String,
         coinPackId: String,
-        paymentProvider: String = "razorpay"
+        paymentProvider: String = "cashfree"
     ): Result<PaymentOrderResponse> {
         return try {
             val request = CreateOrderRequest(userId, coinPackId, paymentProvider)
@@ -328,60 +239,6 @@ class InsForgeRepository @Inject constructor(
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Send typing indicator failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // AI operations
-    suspend fun suggestReply(
-        message: String,
-        conversationContext: String? = null,
-        userLanguage: String = "en"
-    ): Result<SuggestReplyResponse> {
-        return try {
-            val request = SuggestReplyRequest(message, conversationContext, userLanguage)
-            val response = apiService.suggestReply(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Suggest reply failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun moderateContent(
-        content: String,
-        contentType: String = "text"
-    ): Result<ModerationResponse> {
-        return try {
-            val request = ModerateContentRequest(content, contentType)
-            val response = apiService.moderateContent(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Moderate content failed: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun translateMessage(
-        message: String,
-        fromLanguage: String,
-        toLanguage: String
-    ): Result<TranslationResponse> {
-        return try {
-            val request = TranslateMessageRequest(message, fromLanguage, toLanguage)
-            val response = apiService.translateMessage(request)
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Translate message failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

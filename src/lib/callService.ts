@@ -10,7 +10,7 @@ import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/lib/firebase'
 import type { Call } from '@/types'
 
-export async function requestCall(userId: string, hostId: string): Promise<string> {
+export async function requestCall(userId: string, hostId: string): Promise<{ callId: string; channel: string }> {
   const hostSnap = await getDoc(doc(db, 'hosts', hostId))
   if (!hostSnap.exists()) throw new Error('Host not found')
   const hostData = hostSnap.data()
@@ -18,18 +18,21 @@ export async function requestCall(userId: string, hostId: string): Promise<strin
 
   const channel = `call_${userId.slice(0, 6)}_${hostId.slice(0, 6)}_${Date.now()}`
   const ref = await addDoc(collection(db, 'calls'), {
+    callerId: userId,
+    receiverId: hostId,
     fromUserId: userId,
-    hostId,
-    status: 'requesting',
+    toUserId: hostId,
+    status: 'ringing',
+    callType: 'audio',
     agoraChannel: channel,
     ratePerMinute: hostData.ratePerMinute ?? 5,
     coinsSpent: 0,
-    durationSeconds: 0,
+    anonymous: true,
     createdAt: serverTimestamp(),
-    acceptedAt: null,
-    endedAt: null,
+    ringingAt: serverTimestamp(),
   })
-  return ref.id
+  await updateDoc(ref, { agoraChannel: ref.id })
+  return { callId: ref.id, channel: ref.id }
 }
 
 export async function endCall(callId: string, durationSeconds: number, coinsSpent: number): Promise<void> {
@@ -41,13 +44,13 @@ export async function endCall(callId: string, durationSeconds: number, coinsSpen
   })
 }
 
-export async function getAgoraToken(channelName: string, uid: number): Promise<string> {
-  const fn = httpsCallable<{ channelName: string; uid: number }, { token: string }>(
+export async function getAgoraToken(callId: string): Promise<{ token: string; appId: string; channel: string }> {
+  const fn = httpsCallable<{ callId: string }, { token: string; appId: string; channel: string }>(
     functions,
     'getAgoraToken',
   )
-  const result = await fn({ channelName, uid })
-  return result.data.token
+  const result = await fn({ callId })
+  return result.data
 }
 
 export function callFromDoc(id: string, data: Record<string, unknown>): Call {

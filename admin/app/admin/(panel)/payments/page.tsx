@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import toast from 'react-hot-toast'
+import { getAvatarUrl } from '@/lib/avatar'
 import { adminFetch } from '@/lib/admin/client'
 import type { AdminHost } from '@/lib/admin/types'
 import SectionCard from '@/components/admin/SectionCard'
@@ -12,6 +13,11 @@ import { DollarSign, TrendingUp, Users, CreditCard } from 'lucide-react'
 
 // 1 Coin = ₹1 INR | Host salary = ₹3/minute
 const COINS_TO_INR = 1
+
+type PayoutModalState = {
+  host: PayoutRecord
+  submitting: boolean
+}
 
 type PayoutRecord = {
   hostId: string
@@ -25,15 +31,18 @@ type PayoutRecord = {
   lastPaidAt?: string | null
 }
 
-type PayoutModalState = {
-  host: PayoutRecord
-  utr: string
-  amount: string
-  submitting: boolean
+type PendingPayout = {
+  id: string
+  hostId: string
+  amount: number
+  upiId: string
+  status: string
+  requestedAt: string
 }
 
 export default function PaymentsPage() {
   const [hosts, setHosts] = useState<AdminHost[]>([])
+  const [pendingPayouts, setPendingPayouts] = useState<PendingPayout[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<PayoutModalState | null>(null)
@@ -41,10 +50,14 @@ export default function PaymentsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const res = await adminFetch<{ hosts: AdminHost[] }>('/api/admin/hosts/list')
-      setHosts(res.hosts)
+      const [resHosts, resPayouts] = await Promise.all([
+        adminFetch<{ hosts: AdminHost[] }>('/api/admin/hosts/list'),
+        adminFetch<{ pendingPayouts: PendingPayout[] }>('/api/admin/payouts/pending')
+      ])
+      setHosts(resHosts.hosts)
+      setPendingPayouts(resPayouts.pendingPayouts || [])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to load host data')
+      toast.error(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -52,55 +65,54 @@ export default function PaymentsPage() {
 
   useEffect(() => { void load() }, [])
 
-  const payouts: PayoutRecord[] = useMemo(() =>
-    hosts
-      .filter((h) => h.hostStatus === 'approved')
-      .map((h) => ({
-        hostId: h.id,
-        hostName: h.displayName,
-        photoURL: h.photoURL,
-        phoneNumber: h.phoneNumber,
-        callsMade: h.callsMade,
-        coinsEarned: h.coinsEarned,
-        earningsInr: Math.round(h.coinsEarned * COINS_TO_INR),
-        payoutStatus: 'pending' as const, // Would come from a payouts collection in production
-        lastPaidAt: null,
-      }))
-      .filter((h) => h.coinsEarned > 0)
-      .sort((a, b) => b.earningsInr - a.earningsInr),
-    [hosts]
-  )
+  const payouts: PayoutRecord[] = useMemo(() => {
+    return pendingPayouts.map(p => {
+      const host = hosts.find(h => h.id === p.hostId)
+      return {
+        id: p.id,
+        hostId: p.hostId,
+        hostName: host?.displayName || 'Unknown',
+        photoURL: host?.photoURL || '',
+        phoneNumber: host?.phoneNumber || '',
+        callsMade: host?.callsMade || 0,
+        coinsEarned: host?.coinsEarned || 0,
+        earningsInr: p.amount,
+        payoutStatus: p.status as 'pending',
+        upiId: p.upiId,
+        requestedAt: p.requestedAt
+      }
+    }).sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+  }, [hosts, pendingPayouts])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     if (!q) return payouts
     return payouts.filter(
-      (p) => p.hostName.toLowerCase().includes(q) || p.phoneNumber.includes(q)
+      (p) => p.hostName.toLowerCase().includes(q) || p.phoneNumber.includes(q) || p.upiId.toLowerCase().includes(q)
     )
   }, [payouts, search])
 
   const totalUnpaid = payouts.reduce((s, p) => s + p.earningsInr, 0)
-  const totalHosts = payouts.length
+  const totalHosts = new Set(payouts.map(p => p.hostId)).size
 
   const submitPayout = async () => {
     if (!modal) return
-    if (!modal.utr.trim()) { toast.error('UTR / Transaction ID is required'); return }
-    if (!modal.amount.trim() || isNaN(Number(modal.amount))) { toast.error('Valid amount required'); return }
     setModal((prev) => prev ? { ...prev, submitting: true } : null)
     try {
-      await adminFetch('/api/admin/payouts', {
-        method: 'POST',
-        body: JSON.stringify({
-          hostId: modal.host.hostId,
-          utr: modal.utr.trim(),
-          amountInr: Number(modal.amount),
-        }),
+      const { functions } = await import('@/lib/firebase')
+      const { httpsCallable } = await import('firebase/functions')
+      const approveWithdrawal = httpsCallable(functions, 'approveWithdrawal')
+      
+      await approveWithdrawal({
+        hostId: modal.host.hostId,
+        payoutId: modal.host.id,
       })
-      toast.success(`Payout of ₹${modal.amount} recorded for ${modal.host.hostName}`)
+      
+      toast.success(`Cashfree Payout of ₹${modal.host.earningsInr} initiated for ${modal.host.hostName}`)
       setModal(null)
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to record payout')
+      toast.error(err instanceof Error ? err.message : 'Failed to process payout')
       setModal((prev) => prev ? { ...prev, submitting: false } : null)
     }
   }
@@ -152,13 +164,11 @@ export default function PaymentsPage() {
                   <tr key={p.hostId} className="border-b border-[#202020] align-middle hover:bg-white/[0.02]">
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-3">
-                        {p.photoURL ? (
-                          <img src={p.photoURL} alt={p.hostName} className="h-9 w-9 rounded-full object-cover" />
-                        ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-500/20 text-sm font-bold text-purple-200">
-                            {p.hostName.slice(0, 1).toUpperCase()}
-                          </div>
-                        )}
+                        <img
+                          src={p.photoURL || getAvatarUrl(p.hostId, 72)}
+                          alt={p.hostName}
+                          className="h-9 w-9 rounded-full object-cover"
+                        />
                         <span className="font-medium text-white">{p.hostName}</span>
                       </div>
                     </td>
@@ -172,7 +182,7 @@ export default function PaymentsPage() {
                     <td className="px-3 py-3">
                       <button
                         type="button"
-                        onClick={() => setModal({ host: p, utr: '', amount: String(p.earningsInr), submitting: false })}
+                        onClick={() => setModal({ host: p, submitting: false })}
                         className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-300 transition hover:bg-purple-500/20"
                       >
                         Record Payout
@@ -196,24 +206,11 @@ export default function PaymentsPage() {
             </p>
 
             <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm text-zinc-400">Amount (₹)</label>
-                <input
-                  type="number"
-                  value={modal.amount}
-                  onChange={(e) => setModal((prev) => prev ? { ...prev, amount: e.target.value } : null)}
-                  className="w-full rounded-xl border border-[#343434] bg-[#111111] px-4 py-2.5 text-white outline-none focus:border-purple-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-zinc-400">UTR / Transaction ID *</label>
-                <input
-                  type="text"
-                  value={modal.utr}
-                  onChange={(e) => setModal((prev) => prev ? { ...prev, utr: e.target.value } : null)}
-                  placeholder="e.g. HDFC123456789"
-                  className="w-full rounded-xl border border-[#343434] bg-[#111111] px-4 py-2.5 text-white outline-none focus:border-purple-500"
-                />
+              <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4">
+                <p className="text-sm text-purple-200">
+                  You are about to initiate an automated Cashfree Payout for <strong className="text-white">₹{modal.host.earningsInr}</strong>. 
+                  The funds will be transferred to their registered UPI ID: <strong className="text-white">{modal.host.upiId}</strong>.
+                </p>
               </div>
             </div>
 

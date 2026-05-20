@@ -10,6 +10,7 @@ export interface AdminUser {
 
 export interface AppUser {
   uid: string
+  avatarSeed?: string
   name: string
   email?: string
   phone: string
@@ -26,6 +27,7 @@ export interface AppUser {
 export interface Host {
   id: string
   uid: string
+  avatarSeed?: string
   name: string
   phone: string
   email?: string

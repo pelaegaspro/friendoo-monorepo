@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
         method: 'POST',
         body: JSON.stringify({ password }),
       })
-      router.replace('/admin')
+      router.replace('/admin/portal')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login failed')
     } finally {
@@ -31,10 +31,18 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
       <div className="w-full max-w-md rounded-3xl border border-[#2b2b2b] bg-[#161616] p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <div className="mx-auto w-fit bg-white px-5 py-2.5 rounded-2xl mb-4">
-            <img src="/logo.png" alt="Friendoo" className="h-10 w-auto object-contain" />
+          <div className="mx-auto w-fit mb-4 select-none">
+            <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-auto">
+              <defs>
+                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7c5cff" />
+                  <stop offset="100%" stopColor="#ff7ab6" />
+                </linearGradient>
+              </defs>
+              <text x="0" y="22" fill="url(#logoGrad)" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 24, letterSpacing: '-0.05em' }}>friendoo</text>
+            </svg>
           </div>
-          <h1 className="mt-5 text-2xl font-semibold text-white">Friendoo Admin</h1>
+          <h1 className="mt-5 text-xl font-semibold text-zinc-200">Admin Control Center</h1>
           <p className="mt-2 text-sm text-zinc-400">Enter the admin password to continue.</p>
         </div>
 

@@ -22,7 +22,7 @@ import com.friendoo.app.presentation.theme.*
 @Composable
 fun OtpScreen(
     viewModel: AuthViewModel,
-    onSuccess: () -> Unit,
+    onSuccess: (onboardingCompleted: Boolean, isHost: Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     var code by remember { mutableStateOf("") }
@@ -31,14 +31,15 @@ fun OtpScreen(
     val authState by viewModel.authState.collectAsState()
     val isLoading = authState is AuthState.Loading
     val isError = authState is AuthState.Error
+    val friendooColors = LocalFriendooColors.current
 
     LaunchedEffect(authState) {
-        if (authState is AuthState.Success) {
-            onSuccess()
+        val state = authState
+        if (state is AuthState.Success) {
+            onSuccess(state.onboardingCompleted, state.isHost)
         }
     }
 
-    // Countdown timer
     LaunchedEffect(canResend) {
         if (!canResend) {
             timeLeft = 45
@@ -50,19 +51,17 @@ fun OtpScreen(
         }
     }
 
-    // Auto-fill test code for easier testing
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(800)
         code = "123456"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(WarmWhite)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
         ) {
-            // Back button
             IconButton(
                 onClick = onBack,
                 modifier = Modifier.padding(top = 16.dp)
@@ -70,31 +69,29 @@ fun OtpScreen(
                 Icon(
                     Icons.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = DeepNavy
+                    tint = friendooColors.textPrimary
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Headline
             Text(
                 text = "Enter the code",
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = friendooColors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Subtitle with masked phone
             Text(
                 text = "We sent a 6-digit code to\n+91 **** ****",
                 style = MaterialTheme.typography.bodyLarge,
-                color = WarmGray
+                color = friendooColors.textSecondary
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // 6 OTP boxes
             FriendooOtpInput(
                 otp = code,
                 onOtpChange = { code = it },
@@ -123,7 +120,6 @@ fun OtpScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Resend row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -132,33 +128,31 @@ fun OtpScreen(
                 if (canResend) {
                     TextButton(onClick = {
                         canResend = false
-                        // Trigger resend
                     }) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = Violet)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Resend code", color = Coral, fontWeight = FontWeight.SemiBold)
+                        Text("Resend code", color = Violet, fontWeight = FontWeight.SemiBold)
                     }
                 } else {
                     Text(
                         text = "Resend in 00:${timeLeft.toString().padStart(2, '0')}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = LightGray
+                        color = friendooColors.textHint
                     )
                 }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Demo code hint
             Surface(
                 shape = PillShape,
-                color = SurfaceElevated,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
                     "Demo code: 123456",
                     style = MaterialTheme.typography.labelMedium,
-                    color = LightGray,
+                    color = friendooColors.textHint,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }

@@ -19,9 +19,7 @@ type FilterTab = 'all' | 'pending' | 'active' | 'suspended'
 
 const PAGE_SIZE = 20
 
-function getInitials(name: string): string {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
-}
+import { getAvatarUrl } from '@/lib/avatar'
 
 export default function HostsTable({ hosts, onAction, initialFilter }: HostsTableProps) {
   const [filter, setFilter] = useState<FilterTab>(
@@ -129,13 +127,11 @@ export default function HostsTable({ hosts, onAction, initialFilter }: HostsTabl
                   {/* Avatar + Name */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      {host.photoURL ? (
-                        <img src={host.photoURL} alt={host.name} className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                          {getInitials(host.name)}
-                        </div>
-                      )}
+                      <img
+                        src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 64) : host.photoURL || getAvatarUrl(host.uid, 64)}
+                        alt={host.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
                       <span className="text-white font-medium">{host.name}</span>
                     </div>
                   </td>

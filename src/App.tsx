@@ -5,10 +5,9 @@ import { useAuthContext } from '@/contexts/AuthContext'
 // Lazy load pages
 const Login = lazy(() => import('@/pages/Login').then(m => ({ default: m.Login })))
 const Home = lazy(() => import('@/pages/Home').then(m => ({ default: m.Home })))
-const Chat = lazy(() => import('@/pages/Chat').then(m => ({ default: m.Chat })))
-const ChatList = lazy(() => import('@/pages/Chat').then(m => ({ default: m.ChatList })))
 const Wallet = lazy(() => import('@/pages/Wallet').then(m => ({ default: m.Wallet })))
 const Profile = lazy(() => import('@/pages/Profile').then(m => ({ default: m.Profile })))
+const PaymentCallback = lazy(() => import('@/pages/PaymentCallback').then(m => ({ default: m.PaymentCallback })))
 
 function PageLoader() {
   return (
@@ -38,22 +37,6 @@ export function App() {
           }
         />
         <Route
-          path="/chats"
-          element={
-            <RequireAuth>
-              <ChatList />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/chats/:chatId"
-          element={
-            <RequireAuth>
-              <Chat />
-            </RequireAuth>
-          }
-        />
-        <Route
           path="/wallet"
           element={
             <RequireAuth>
@@ -66,6 +49,14 @@ export function App() {
           element={
             <RequireAuth>
               <Profile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/payment/callback"
+          element={
+            <RequireAuth>
+              <PaymentCallback />
             </RequireAuth>
           }
         />

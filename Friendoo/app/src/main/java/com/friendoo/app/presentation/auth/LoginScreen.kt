@@ -5,7 +5,6 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Phone
@@ -35,6 +34,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val isLoading = authState is AuthState.Loading
     val isError = authState is AuthState.Error
+    val friendooColors = LocalFriendooColors.current
 
     LaunchedEffect(authState) {
         if (authState is AuthState.CodeSent) {
@@ -42,7 +42,7 @@ fun LoginScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(WarmWhite)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -51,68 +51,64 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(80.dp))
 
-            // Branded Hero Illustration
+            // Branded Hero Logo
             Box(
                 modifier = Modifier
                     .size(160.dp)
                     .clip(CircleShape)
-                    .background(Coral.copy(alpha = 0.1f))
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Violet.copy(alpha = 0.15f), Violet.copy(alpha = 0.03f))
+                        )
+                    )
                     .align(Alignment.CenterHorizontally),
                 contentAlignment = Alignment.Center
             ) {
-                // Abstract sound wave visual
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "~",
-                        fontSize = 72.sp,
-                        color = Coral,
-                        fontWeight = FontWeight.Light,
-                        modifier = Modifier.offset(y = 8.dp)
-                    )
-                }
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = com.friendoo.app.R.drawable.friendoo_logo),
+                    contentDescription = "Friendoo Logo",
+                    modifier = Modifier.size(130.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Wordmark
             Text(
                 text = "friendoo",
                 style = MaterialTheme.typography.displayLarge.copy(
-                    color = Coral,
-                    fontWeight = FontWeight.Bold
+                    color = Violet,
+                    fontWeight = FontWeight.ExtraBold
                 ),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Headline
             Text(
                 text = "Someone to talk to,\nanytime",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
+                color = friendooColors.textPrimary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Subtitle
             Text(
                 text = "Anonymous voice calls. No photos. No judgment.",
                 style = MaterialTheme.typography.bodyLarge,
-                color = WarmGray,
+                color = friendooColors.textSecondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Phone input with country code
             Text(
                 text = "Enter your phone number",
                 style = MaterialTheme.typography.labelLarge,
-                color = WarmGray,
+                color = friendooColors.textSecondary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -121,28 +117,26 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Country code selector
                 Surface(
                     shape = InputShape,
-                    color = SurfaceElevated,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.height(56.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text("+", style = MaterialTheme.typography.bodyLarge, color = DeepNavy)
-                        Text("91", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = DeepNavy)
+                        Text("+", style = MaterialTheme.typography.bodyLarge, color = friendooColors.textPrimary)
+                        Text("91", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = friendooColors.textPrimary)
                     }
                 }
 
-                // Phone input
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { if (it.length <= 10) phone = it.filter { c -> c.isDigit() } },
-                    placeholder = { Text("98765 43210", color = HintGray) },
+                    placeholder = { Text("98765 43210", color = friendooColors.textHint) },
                     modifier = Modifier.weight(1f),
                     shape = InputShape,
                     singleLine = true,
@@ -151,13 +145,13 @@ fun LoginScreen(
                         imeAction = ImeAction.Done
                     ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Coral,
-                        unfocusedBorderColor = BorderLight,
-                        focusedContainerColor = SurfaceElevated,
-                        unfocusedContainerColor = SurfaceElevated
+                        focusedBorderColor = Violet,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     leadingIcon = {
-                        Icon(Icons.Default.Phone, contentDescription = null, tint = WarmGray)
+                        Icon(Icons.Default.Phone, contentDescription = null, tint = friendooColors.textSecondary)
                     }
                 )
             }
@@ -183,11 +177,10 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Terms caption
             Text(
                 text = "By continuing, you agree to our Terms & Privacy Policy",
                 style = MaterialTheme.typography.bodySmall,
-                color = LightGray,
+                color = friendooColors.textHint,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -195,7 +188,7 @@ fun LoginScreen(
 
         // Test mode badge
         Surface(
-            color = SoftYellow.copy(alpha = 0.2f),
+            color = WarningAmber.copy(alpha = 0.15f),
             shape = PillShape,
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -205,6 +198,7 @@ fun LoginScreen(
                 "Test Mode",
                 style = MaterialTheme.typography.labelSmall,
                 color = WarningAmber,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }

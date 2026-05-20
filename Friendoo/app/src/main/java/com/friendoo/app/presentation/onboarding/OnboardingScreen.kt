@@ -1,354 +1,727 @@
 package com.friendoo.app.presentation.onboarding
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.friendoo.app.presentation.components.FriendooAvatar
-import com.friendoo.app.presentation.components.FriendooButton
-import com.friendoo.app.presentation.components.FriendooCard
-import com.friendoo.app.presentation.theme.*
+import com.friendoo.app.presentation.components.AvatarConfig
+import com.friendoo.app.presentation.profile.CustomizerTab
+import com.friendoo.app.presentation.profile.HairPanel
+import com.friendoo.app.presentation.profile.SkinPanel
+import com.friendoo.app.presentation.profile.EyesPanel
+import com.friendoo.app.presentation.profile.ClothesPanel
+import com.friendoo.app.presentation.profile.AccessoriesPanel
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import com.friendoo.app.presentation.theme.DarkBackground
+import com.friendoo.app.presentation.theme.DarkCard
+import com.friendoo.app.presentation.theme.DarkDivider
+import com.friendoo.app.presentation.theme.DarkSurface
+import com.friendoo.app.presentation.theme.DarkTextPrimary
+import com.friendoo.app.presentation.theme.DarkTextSecondary
+import com.friendoo.app.presentation.theme.FriendooGradients
+import com.friendoo.app.presentation.theme.LightBackground
+import com.friendoo.app.presentation.theme.LightCard
+import com.friendoo.app.presentation.theme.LightDivider
+import com.friendoo.app.presentation.theme.LightSurface
+import com.friendoo.app.presentation.theme.LightTextPrimary
+import com.friendoo.app.presentation.theme.LightTextSecondary
+import com.friendoo.app.presentation.theme.LocalFriendooColors
+import com.friendoo.app.presentation.theme.PureWhite
+import com.friendoo.app.presentation.theme.RosePink
+import com.friendoo.app.presentation.theme.SoftPurple
+import com.friendoo.app.presentation.theme.WarmCoral
 
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
-    onComplete: () -> Unit
+    onComplete: (Boolean) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(state.isComplete) {
         if (state.isComplete) {
-            onComplete()
+            onComplete(state.isHost)
         }
     }
 
-    if (state.showConsentScreen) {
-        ConsentScreen(onAccept = { viewModel.onAcceptConsent() })
+    ProfileSetupScreen(
+        state = state,
+        onNameChange = viewModel::onDisplayNameChange,
+        onAccountTypeChange = viewModel::setAccountType,
+        onAvatarSelected = viewModel::selectAvatar,
+        onAvatarConfigChanged = viewModel::updateSelectedAvatarConfig,
+        onRegenerate = viewModel::regenerateAvatars,
+        onContinue = viewModel::completeOnboarding
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun ProfileSetupScreen(
+    state: OnboardingUiState,
+    onNameChange: (String) -> Unit,
+    onAccountTypeChange: (Boolean) -> Unit,
+    onAvatarSelected: (AvatarSuggestion) -> Unit,
+    onAvatarConfigChanged: (AvatarConfig) -> Unit,
+    onRegenerate: () -> Unit,
+    onContinue: () -> Unit
+) {
+    val colors = LocalFriendooColors.current
+    val isDark = isSystemInDarkTheme()
+    val focusManager = LocalFocusManager.current
+    
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    val pageBrush = if (isDark) {
+        Brush.verticalGradient(listOf(DarkBackground, DarkSurface))
     } else {
-        AliasSelectionScreen(state = state, viewModel = viewModel)
+        Brush.verticalGradient(listOf(LightBackground, LightSurface))
     }
-}
+    val cardColor = if (isDark) DarkCard else LightCard
+    val borderColor = if (isDark) DarkDivider else LightDivider
 
-// === PROGRESS DOTS ===
-@Composable
-fun OnboardingProgress(currentStep: Int, totalSteps: Int = 2) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(vertical = 16.dp)
-    ) {
-        repeat(totalSteps) { index ->
-            val isActive = index < currentStep
-            val isCurrent = index == currentStep - 1
-            Box(
-                modifier = Modifier
-                    .width(if (isCurrent) 24.dp else 8.dp)
-                    .height(8.dp)
-                    .clip(PillShape)
-                    .background(if (isActive || isCurrent) Coral else BorderLight)
-            )
-        }
-    }
-}
-
-// === CONSENT SCREEN ===
-@Composable
-fun ConsentScreen(onAccept: () -> Unit) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmWhite)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(pageBrush)
+            .navigationBarsPadding()
+            .imePadding()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OnboardingProgress(currentStep = 1)
-
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Teal.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = Teal
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Your safety comes first",
-                style = MaterialTheme.typography.titleLarge,
+                text = "FRIENDOO",
+                style = MaterialTheme.typography.labelLarge,
+                color = SoftPurple,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                letterSpacing = 2.sp
             )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
+            
             Text(
-                text = "Before you connect, here's how we keep you safe.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = WarmGray,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ConsentCard(
-                icon = Icons.Default.Lock,
-                iconColor = Teal,
-                title = "AI monitors for safety",
-                description = "Messages are scanned for policy violations automatically."
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            ConsentCard(
-                icon = Icons.Default.Info,
-                iconColor = Coral,
-                title = "100% Anonymous",
-                description = "No real name, photo, or ID required. Ever."
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            ConsentCard(
-                icon = Icons.Default.Phone,
-                iconColor = InfoBlue,
-                title = "Audio only, no cameras",
-                description = "We never request camera permissions."
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            ConsentCard(
-                icon = Icons.Default.Info,
-                iconColor = WarningAmber,
-                title = "We log behavior, not content",
-                description = "Clicks and page views help us detect abuse."
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            FriendooButton(
-                text = "I Understand",
-                onClick = onAccept
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            TextButton(onClick = { /* Open bottom sheet or browser */ }) {
-                Text("Learn more", color = Coral, fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-    }
-}
-
-@Composable
-fun ConsentCard(icon: ImageVector, iconColor: Color, title: String, description: String) {
-    FriendooCard {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(iconColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WarmGray
-                )
-            }
-        }
-    }
-}
-
-// === ALIAS SELECTION SCREEN ===
-val avatarColors = listOf(
-    "#FF6B6B", "#4ECDC4", "#FFE66D", "#A78BFA",
-    "#F472B6", "#60A5FA", "#34D399", "#FB923C"
-)
-
-@Composable
-fun AliasSelectionScreen(state: OnboardingUiState, viewModel: OnboardingViewModel) {
-    var selectedColor by remember { mutableStateOf(state.avatarColor) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(WarmWhite)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            OnboardingProgress(currentStep = 2)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "This is your voice identity",
-                style = MaterialTheme.typography.titleLarge,
+                text = "Welcome to your space",
+                style = MaterialTheme.typography.headlineLarge,
+                color = colors.textPrimary,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp)
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            
             Text(
-                text = "Your alias keeps you anonymous on every call.",
+                text = "Let's set up a few quick details to customize your experience.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = WarmGray,
-                textAlign = TextAlign.Center
+                color = colors.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            FriendooAvatar(
-                alias = state.alias,
-                colorHex = selectedColor,
-                size = 96.dp,
-                fontSize = 32,
-                showGlow = true
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // SECTION 1: Display Name
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = cardColor),
+                border = BorderStroke(1.dp, borderColor)
             ) {
-                Text(
-                    text = state.alias,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Coral
-                )
-                IconButton(
-                    onClick = { viewModel.generateNewAlias() },
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(SurfaceElevated)
-                        .border(1.dp, BorderLight, CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = "Shuffle alias",
-                        tint = Coral,
-                        modifier = Modifier.size(16.dp)
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Display Name",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "This is what others will see in call rooms.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = state.displayName,
+                        onValueChange = onNameChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("Enter your name", color = colors.textHint) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = colors.textPrimary,
+                            unfocusedTextColor = colors.textPrimary,
+                            focusedContainerColor = if (isDark) DarkSurface else LightSurface,
+                            unfocusedContainerColor = if (isDark) DarkSurface else LightSurface,
+                            focusedBorderColor = SoftPurple,
+                            unfocusedBorderColor = borderColor,
+                            cursorColor = SoftPurple
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            Text(
-                text = "Tap the dice to get a new alias",
-                style = MaterialTheme.typography.bodySmall,
-                color = LightGray
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Choose your color",
-                style = MaterialTheme.typography.labelLarge,
-                color = WarmGray,
-                modifier = Modifier.align(Alignment.Start)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
+            // SECTION 2: Role Switcher Card
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = cardColor),
+                border = BorderStroke(1.dp, borderColor)
             ) {
-                avatarColors.take(6).forEach { colorHex ->
-                    val isSelected = selectedColor == colorHex
-                    val color = try { Color(android.graphics.Color.parseColor(colorHex)) } catch (_: Exception) { Coral }
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .border(
-                                width = if (isSelected) 3.dp else 0.dp,
-                                color = if (isSelected) DeepNavy else Color.Transparent,
-                                shape = CircleShape
-                            )
-                            .clickable { selectedColor = colorHex },
-                        contentAlignment = Alignment.Center
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "Choose Your Role",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Choose your role on Friendoo. This changes your avatar choices.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                        modifier = Modifier.padding(bottom = 14.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        if (isSelected) {
+                        // User Card
+                        AccountTypeCard(
+                            title = "User",
+                            subtitle = "Listen & chat",
+                            iconText = "💬",
+                            selected = !state.isHost,
+                            accentColor = SoftPurple,
+                            onClick = { onAccountTypeChange(false) },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Host Card
+                        AccountTypeCard(
+                            title = "Host",
+                            subtitle = "Stream & earn",
+                            iconText = "🎙️",
+                            selected = state.isHost,
+                            accentColor = RosePink,
+                            onClick = { onAccountTypeChange(true) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // SECTION 3: Avatar Selection
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = cardColor),
+                border = BorderStroke(1.dp, borderColor)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Select Avatar",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = colors.textPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (state.isHost) "Female options shown" else "Male options shown",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.textSecondary
+                            )
+                        }
+                        IconButton(
+                            onClick = onRegenerate,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(if (isDark) DarkSurface else LightSurface)
+                                .border(1.dp, borderColor, CircleShape)
+                                .size(36.dp)
+                        ) {
                             Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                tint = PureWhite,
-                                modifier = Modifier.size(16.dp)
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Regenerate options",
+                                tint = if (state.isHost) RosePink else SoftPurple,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AnimatedContent(
+                        targetState = state.avatars,
+                        label = "avatar_grid"
+                    ) { avatars ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(190.dp),
+                            userScrollEnabled = false,
+                            contentPadding = PaddingValues(2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(avatars, key = { it.seed }) { avatar ->
+                                AvatarTile(
+                                    avatar = avatar,
+                                    selected = avatar.seed == state.selectedAvatar?.seed,
+                                    accentColor = if (state.isHost) RosePink else SoftPurple,
+                                    onClick = { onAvatarSelected(avatar) },
+                                    modifier = Modifier.animateItemPlacement()
+                                )
+                            }
+                        }
+                    }
+
+                    if (state.selectedAvatar != null) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = { showBottomSheet = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(
+                                1.5.dp,
+                                if (state.isHost) RosePink.copy(alpha = 0.6f) else SoftPurple.copy(alpha = 0.6f)
+                            ),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = if (state.isHost) RosePink else SoftPurple
+                            )
+                        ) {
+                            Text(
+                                text = "🎨 Customize Selected Avatar",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            if (state.error != null) {
+                Text(
+                    text = state.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            GradientContinueButton(
+                enabled = !state.isProfileLoading && state.displayName.trim().length >= 2 && state.selectedAvatar != null,
+                loading = state.isLoading,
+                onClick = onContinue
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        if (showBottomSheet && state.selectedAvatar != null) {
+            ModalBottomSheet(
+                onDismissRequest = { showBottomSheet = false },
+                sheetState = sheetState,
+                containerColor = if (isDark) DarkCard else LightCard,
+                contentColor = colors.textPrimary,
+                dragHandle = { BottomSheetDefaults.DragHandle(color = colors.textSecondary.copy(alpha = 0.4f)) }
+            ) {
+                var activeTab by remember { mutableStateOf(CustomizerTab.Hair) }
+                val activeConfig = state.selectedAvatar.config
+                val seed = state.selectedAvatar.seed
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .navigationBarsPadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Customize Your Avatar",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = colors.textPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    // Circle preview with subtle neon gradient backing
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        if (state.isHost) RosePink.copy(alpha = 0.2f) else SoftPurple.copy(alpha = 0.2f),
+                                        Color.Transparent
+                                    )
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        FriendooAvatar(
+                            avatarSeed = seed,
+                            avatarUrl = state.selectedAvatar.url,
+                            size = 100.dp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Scrollable category tabs
+                    ScrollableTabRow(
+                        selectedTabIndex = activeTab.ordinal,
+                        containerColor = Color.Transparent,
+                        contentColor = if (state.isHost) RosePink else SoftPurple,
+                        edgePadding = 16.dp,
+                        divider = {},
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[activeTab.ordinal]),
+                                color = if (state.isHost) RosePink else SoftPurple,
+                                height = 3.dp
+                            )
+                        }
+                    ) {
+                        CustomizerTab.values().forEach { tab ->
+                            Tab(
+                                selected = activeTab == tab,
+                                onClick = { activeTab = tab },
+                                text = {
+                                    Text(
+                                        text = tab.name,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                },
+                                selectedContentColor = if (state.isHost) RosePink else SoftPurple,
+                                unselectedContentColor = colors.textSecondary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Panel content
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .padding(horizontal = 20.dp)
+                    ) {
+                        when (activeTab) {
+                            CustomizerTab.Hair -> HairPanel(
+                                config = activeConfig,
+                                isHost = state.isHost,
+                                onUpdate = onAvatarConfigChanged
+                            )
+                            CustomizerTab.Skin -> SkinPanel(
+                                config = activeConfig,
+                                onUpdate = onAvatarConfigChanged
+                            )
+                            CustomizerTab.Eyes -> EyesPanel(
+                                config = activeConfig,
+                                onUpdate = onAvatarConfigChanged
+                            )
+                            CustomizerTab.Clothes -> ClothesPanel(
+                                config = activeConfig,
+                                onUpdate = onAvatarConfigChanged
+                            )
+                            CustomizerTab.Accessories -> AccessoriesPanel(
+                                config = activeConfig,
+                                onUpdate = onAvatarConfigChanged
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Done Button
+                    Button(
+                        onClick = { showBottomSheet = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (state.isHost) RosePink else SoftPurple
+                        )
+                    ) {
+                        Text(
+                            text = "Looks Good!",
+                            color = PureWhite,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountTypeCard(
+    title: String,
+    subtitle: String,
+    iconText: String,
+    selected: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isSystemInDarkTheme()
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.03f else 1f,
+        label = "account_type_scale"
+    )
+    val cardBorderColor by animateColorAsState(
+        targetValue = if (selected) accentColor else if (isDark) DarkDivider else LightDivider,
+        label = "account_type_border"
+    )
+    val cardBgColor = if (selected) {
+        accentColor.copy(alpha = if (isDark) 0.12f else 0.06f)
+    } else {
+        if (isDark) DarkSurface else LightSurface
+    }
+
+    Box(
+        modifier = modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(20.dp))
+            .background(cardBgColor)
+            .border(
+                border = BorderStroke(if (selected) 2.dp else 1.dp, cardBorderColor),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp, horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
             Text(
-                text = "Your alias keeps you anonymous. You can change it anytime.",
+                text = iconText,
+                fontSize = 32.sp,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) accentColor else if (isDark) DarkTextPrimary else LightTextPrimary
+            )
+            Text(
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = LightGray,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (isDark) DarkTextSecondary else LightTextSecondary,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun AvatarTile(
+    avatar: AvatarSuggestion,
+    selected: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.05f else 1f,
+        label = "avatar_tile_scale"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (selected) accentColor else Color.Transparent,
+        label = "avatar_tile_border"
+    )
 
-            FriendooButton(
-                text = "Get Started",
-                onClick = { viewModel.completeOnboarding() }
-            )
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .scale(scale)
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isSystemInDarkTheme()) DarkSurface else LightSurface)
+            .border(if (selected) 2.5.dp else 0.dp, borderColor, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = avatar.url,
+            contentDescription = "Avatar option",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(if (isSystemInDarkTheme()) DarkCard else LightCard)
+        )
 
-            Spacer(modifier = Modifier.height(20.dp))
+        if (selected) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(20.dp),
+                shape = CircleShape,
+                color = accentColor
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = PureWhite,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GradientContinueButton(
+    enabled: Boolean,
+    loading: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            disabledContainerColor = if (isSystemInDarkTheme()) DarkCard else LightCard
+        ),
+        contentPadding = PaddingValues(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (enabled) FriendooGradients.primaryHorizontal
+                    else Brush.horizontalGradient(
+                        listOf(
+                            if (isSystemInDarkTheme()) DarkDivider else LightDivider,
+                            if (isSystemInDarkTheme()) DarkDivider else LightDivider
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = PureWhite,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = "Create Profile",
+                    color = if (enabled) PureWhite else if (isSystemInDarkTheme()) DarkTextSecondary else LightTextSecondary,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

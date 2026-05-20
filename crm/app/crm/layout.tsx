@@ -35,12 +35,18 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <aside className="hidden w-64 shrink-0 border-r border-border bg-surface p-4 lg:flex lg:flex-col">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="bg-white px-2.5 py-1.5 rounded-xl flex items-center justify-center">
-            <img src="/logo.png" alt="Friendoo" className="h-5 w-auto object-contain" />
-          </div>
-          <span className="text-xl font-semibold bg-gradient-to-r from-accent to-success bg-clip-text text-transparent">
-            Friendoo CRM
+        <div className="mb-6 flex items-center gap-2 select-none">
+          <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto">
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#7c5cff" />
+                <stop offset="100%" stopColor="#ff7ab6" />
+              </linearGradient>
+            </defs>
+            <text x="0" y="22" fill="url(#logoGrad)" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 24, letterSpacing: '-0.05em' }}>friendoo</text>
+          </svg>
+          <span className="text-sm font-bold tracking-wider text-muted ml-1 bg-muted/10 px-1.5 py-0.5 rounded">
+            CRM
           </span>
         </div>
         <nav className="space-y-1">

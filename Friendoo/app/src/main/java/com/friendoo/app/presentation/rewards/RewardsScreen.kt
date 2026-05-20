@@ -3,13 +3,11 @@ package com.friendoo.app.presentation.rewards
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
@@ -21,14 +19,38 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RewardsScreen(onBack: () -> Unit) {
-    // Mock data - in production this would come from InsForge API
+fun RewardsScreen(
+    userId: String?,
+    onBack: () -> Unit
+) {
     val userData = remember { mutableStateOf<Map<String, Any>?>(null) }
     val hostData = remember { mutableStateOf<Map<String, Any>?>(null) }
-    val userId = "mock-user-id"
+
+    LaunchedEffect(userId) {
+        if (userId == null) return@LaunchedEffect
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userSnap = db.collection("users").document(userId).get().await()
+            userData.value = userSnap.data
+
+            // Check if user is a host (same UID in hosts collection)
+            val isHost = userSnap.getBoolean("isHost") ?: false
+            if (isHost) {
+                val hostSnap = db.collection("hosts").document(userId).get().await()
+                if (hostSnap.exists()) {
+                    hostData.value = hostSnap.data
+                }
+            }
+        } catch (e: Exception) {
+            // Error loading data
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -44,21 +66,19 @@ fun RewardsScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // User Section (Always visible for balance)
             item {
                 UserRewardsCard(
                     freeMins = (userData.value?.get("freeMinutes") as? Long)?.toInt() ?: 0,
                     totalSpent = (userData.value?.get("totalSpent") as? Number)?.toDouble() ?: 0.0,
-                    milestones = (userData.value?.get("milestones") as? List<String>) ?: emptyList()
+                    milestones = (userData.value?.get("milestones") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
                 )
             }
 
-            // Host Section (Only if user is a host)
             if (hostData.value != null) {
                 item {
                     HostIncentiveCard(
                         totalCalls = (hostData.value?.get("totalCalls") as? Long)?.toInt() ?: 0,
-                        badges = (hostData.value?.get("badges") as? List<String>) ?: emptyList(),
+                        badges = (hostData.value?.get("badges") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                         isStarHost = hostData.value?.get("isStarHost") as? Boolean ?: false,
                         starRank = (hostData.value?.get("starRank") as? Long)?.toInt() ?: 0
                     )
@@ -83,9 +103,9 @@ fun UserRewardsCard(freeMins: Int, totalSpent: Double, milestones: List<String>)
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(Modifier.height(24.dp))
-            
+
             Text("Next Milestone", fontWeight = FontWeight.Bold)
             val nextGoal = when {
                 totalSpent < 100 -> 100.0
@@ -93,7 +113,7 @@ fun UserRewardsCard(freeMins: Int, totalSpent: Double, milestones: List<String>)
                 else -> 1000.0
             }
             val progress = (totalSpent / nextGoal).toFloat().coerceIn(0f, 1f)
-            
+
             LinearProgressIndicator(
                 progress = progress,
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
@@ -150,7 +170,7 @@ fun HostIncentiveCard(totalCalls: Int, badges: List<String>, isStarHost: Boolean
 
             Spacer(Modifier.height(24.dp))
             Text("Total Calls Completed: $totalCalls", color = Color.Gray)
-            
+
             val nextGoal = when {
                 totalCalls < 10 -> 10
                 totalCalls < 50 -> 50

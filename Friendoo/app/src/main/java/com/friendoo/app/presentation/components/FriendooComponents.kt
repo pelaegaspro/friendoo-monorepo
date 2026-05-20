@@ -48,13 +48,13 @@ fun FriendooButton(
     )
 
     val brush = if (isGradient && !isOutlined) {
-        Brush.horizontalGradient(listOf(CoralGradientStart, CoralGradientEnd))
+        Brush.horizontalGradient(listOf(GradientStart, GradientEnd))
     } else null
 
     val containerColor = when {
         isOutlined -> Color.Transparent
         isGradient -> Color.Transparent
-        else -> Coral
+        else -> Violet
     }
 
     Button(
@@ -62,30 +62,30 @@ fun FriendooButton(
         enabled = enabled && !isLoading,
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(52.dp)
             .scale(scale),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
-            disabledContainerColor = if (isGradient) Color.Transparent else BorderLight
+            disabledContainerColor = if (isGradient) Color.Transparent else MaterialTheme.colorScheme.outline
         ),
-        border = if (isOutlined) androidx.compose.foundation.BorderStroke(1.5.dp, Coral) else null
+        border = if (isOutlined) androidx.compose.foundation.BorderStroke(1.5.dp, Violet) else null
     ) {
         Box(
-            modifier = if (brush != null) Modifier.background(brush, RoundedCornerShape(12.dp)) else Modifier,
+            modifier = if (brush != null) Modifier.background(brush, RoundedCornerShape(16.dp)) else Modifier,
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
-                    color = if (isOutlined) Coral else PureWhite,
+                    color = if (isOutlined) Violet else PureWhite,
                     strokeWidth = 2.dp
                 )
             } else {
                 Text(
                     text = text,
-                    color = if (isOutlined) Coral else PureWhite,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                    color = if (isOutlined) Violet else PureWhite,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                 )
             }
         }
@@ -103,65 +103,10 @@ fun FriendooCard(
         shape = CardShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             content()
-        }
-    }
-}
-
-// === FRIENDOO AVATAR ===
-@Composable
-fun FriendooAvatar(
-    alias: String,
-    colorHex: String,
-    size: Dp = 80.dp,
-    fontSize: Int = 24,
-    showGlow: Boolean = false
-) {
-    val backgroundColor = try {
-        Color(android.graphics.Color.parseColor(colorHex))
-    } catch (_: Exception) { Coral }
-
-    val initials = alias.take(2).uppercase()
-
-    Box(
-        modifier = Modifier.size(size),
-        contentAlignment = Alignment.Center
-    ) {
-        if (showGlow) {
-            val infiniteTransition = rememberInfiniteTransition(label = "glow")
-            val glowScale by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.15f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000, easing = EaseInOutSine),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "glow_scale"
-            )
-            Box(
-                modifier = Modifier
-                    .size(size * glowScale)
-                    .clip(CircleShape)
-                    .background(backgroundColor.copy(alpha = 0.3f))
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(backgroundColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = initials,
-                color = PureWhite,
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
@@ -174,7 +119,7 @@ fun FriendooOtpInput(
     length: Int = 6,
     modifier: Modifier = Modifier
 ) {
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val friendooColors = LocalFriendooColors.current
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -206,19 +151,19 @@ fun FriendooOtpInput(
                     .weight(1f)
                     .aspectRatio(0.85f)
                     .scale(scale)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .background(
-                        if (char.isNotEmpty()) Coral.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
+                        if (char.isNotEmpty()) Violet.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
                     )
                     .border(
                         width = if (isFocused) 2.dp else 1.dp,
-                        color = if (isFocused) Coral else BorderLight,
-                        shape = RoundedCornerShape(12.dp)
+                        color = if (isFocused) Violet else MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(14.dp)
                     ),
                 textStyle = TextStyle(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = DeepNavy,
+                    color = friendooColors.textPrimary,
                     textAlign = TextAlign.Center
                 ),
                 singleLine = true,
@@ -226,7 +171,7 @@ fun FriendooOtpInput(
                     keyboardType = KeyboardType.Number,
                     imeAction = if (index == length - 1) ImeAction.Done else ImeAction.Next
                 ),
-                cursorBrush = SolidColor(Coral),
+                cursorBrush = SolidColor(Violet),
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -244,7 +189,7 @@ fun FriendooOtpInput(
 @Composable
 fun FriendooHostCard(
     alias: String,
-    avatarColor: String,
+    avatarSeed: String,
     tags: List<String>,
     pricePerMin: String,
     isOnline: Boolean = true,
@@ -252,20 +197,21 @@ fun FriendooHostCard(
     onCallClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val friendooColors = LocalFriendooColors.current
     FriendooCard(modifier = modifier) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
             Box(contentAlignment = Alignment.BottomEnd) {
-                FriendooAvatar(alias = alias, colorHex = avatarColor, size = 56.dp, fontSize = 16)
+                FriendooAvatar(avatarSeed = avatarSeed, size = 56.dp)
                 if (isOnline) {
                     Box(
                         modifier = Modifier
                             .size(14.dp)
                             .clip(CircleShape)
                             .background(SuccessGreen)
-                            .border(2.dp, PureWhite, CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
                     )
                 }
             }
@@ -273,12 +219,13 @@ fun FriendooHostCard(
             Text(
                 text = alias,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
+                color = friendooColors.textPrimary,
                 maxLines = 1
             )
             if (isStar) {
                 Surface(
-                    color = SoftYellow.copy(alpha = 0.2f),
+                    color = WarningAmber.copy(alpha = 0.15f),
                     shape = ChipShape,
                     modifier = Modifier.padding(top = 4.dp)
                 ) {
@@ -286,6 +233,7 @@ fun FriendooHostCard(
                         "Star Host",
                         style = MaterialTheme.typography.labelSmall,
                         color = WarningAmber,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
@@ -297,12 +245,13 @@ fun FriendooHostCard(
             ) {
                 tags.take(2).forEach { tag ->
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = Violet.copy(alpha = 0.08f),
                         shape = ChipShape
                     ) {
                         Text(
                             tag,
                             style = MaterialTheme.typography.labelSmall,
+                            color = Violet,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -318,14 +267,14 @@ fun FriendooHostCard(
                     text = pricePerMin,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Coral
+                    color = Violet
                 )
                 Button(
                     onClick = onCallClick,
                     shape = PillShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = Coral),
-                    modifier = Modifier.height(28.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = Violet),
+                    modifier = Modifier.height(30.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp)
                 ) {
                     Text("Call", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
@@ -342,6 +291,7 @@ fun FriendooMessageBubble(
     timestamp: String = "",
     modifier: Modifier = Modifier
 ) {
+    val friendooColors = LocalFriendooColors.current
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
@@ -354,14 +304,14 @@ fun FriendooMessageBubble(
                     bottomStart = if (isMine) 16.dp else 4.dp,
                     bottomEnd = if (isMine) 4.dp else 16.dp
                 ),
-                color = if (isMine) Coral else PureWhite,
+                color = if (isMine) Violet else MaterialTheme.colorScheme.surface,
                 modifier = Modifier.widthIn(max = 280.dp),
-                border = if (!isMine) androidx.compose.foundation.BorderStroke(1.dp, BorderLight) else null
+                border = if (!isMine) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = text,
-                        color = if (isMine) PureWhite else DeepNavy,
+                        color = if (isMine) PureWhite else friendooColors.textPrimary,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -371,7 +321,7 @@ fun FriendooMessageBubble(
                 Text(
                     text = timestamp,
                     style = MaterialTheme.typography.labelSmall,
-                    color = LightGray
+                    color = friendooColors.textHint
                 )
             }
         }
@@ -387,9 +337,9 @@ fun FriendooGradientHeader(
     content: @Composable BoxScope.() -> Unit
 ) {
     val brush = if (isMidnight) {
-        Brush.verticalGradient(listOf(Midnight, MidnightDeep))
+        Brush.verticalGradient(listOf(MidnightPlum, DeepIndigo))
     } else {
-        Brush.horizontalGradient(listOf(CoralGradientStart, CoralGradientEnd))
+        Brush.horizontalGradient(listOf(GradientStart, GradientEnd))
     }
 
     Box(
@@ -411,6 +361,7 @@ fun FriendooEmptyState(
     onAction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val friendooColors = LocalFriendooColors.current
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -421,13 +372,13 @@ fun FriendooEmptyState(
             modifier = Modifier
                 .size(72.dp)
                 .clip(CircleShape)
-                .background(Coral.copy(alpha = 0.1f)),
+                .background(Violet.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "~",
                 fontSize = 32.sp,
-                color = Coral,
+                color = Violet,
                 fontWeight = FontWeight.Light
             )
         }
@@ -435,6 +386,8 @@ fun FriendooEmptyState(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
+            color = friendooColors.textPrimary,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         if (subtitle.isNotEmpty()) {
@@ -442,7 +395,7 @@ fun FriendooEmptyState(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
-                color = WarmGray,
+                color = friendooColors.textSecondary,
                 textAlign = TextAlign.Center
             )
         }
@@ -451,7 +404,7 @@ fun FriendooEmptyState(
             Button(
                 onClick = onAction,
                 shape = ButtonShape,
-                colors = ButtonDefaults.buttonColors(containerColor = Coral)
+                colors = ButtonDefaults.buttonColors(containerColor = Violet)
             ) {
                 Text(actionText, fontWeight = FontWeight.Bold)
             }
@@ -466,9 +419,9 @@ fun FriendooShimmerItem(
     isCircle: Boolean = false
 ) {
     val shimmerColors = listOf(
-        BorderLight,
-        Coral.copy(alpha = 0.08f),
-        BorderLight
+        MaterialTheme.colorScheme.outline,
+        Violet.copy(alpha = 0.08f),
+        MaterialTheme.colorScheme.outline
     )
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnim by transition.animateFloat(
@@ -526,8 +479,8 @@ fun AudioWaveform(
                     .height(32.dp * heightFraction)
                     .clip(RoundedCornerShape(2.dp))
                     .background(
-                        if (isActive) Coral.copy(alpha = 0.6f + (index % 3) * 0.15f)
-                        else BorderLight
+                        if (isActive) Violet.copy(alpha = 0.6f + (index % 3) * 0.15f)
+                        else MaterialTheme.colorScheme.outline
                     )
             )
         }
@@ -540,15 +493,16 @@ fun FriendooPricePill(
     price: String,
     modifier: Modifier = Modifier
 ) {
+    val friendooColors = LocalFriendooColors.current
     Surface(
         shape = PillShape,
-        color = PureWhite.copy(alpha = 0.9f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         modifier = modifier
     ) {
         Text(
             text = price,
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = DeepNavy,
+            color = friendooColors.textPrimary,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
@@ -561,6 +515,7 @@ fun FriendooSectionHeader(
     actionText: String = "",
     onAction: () -> Unit = {}
 ) {
+    val friendooColors = LocalFriendooColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -571,11 +526,12 @@ fun FriendooSectionHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = friendooColors.textPrimary
         )
         if (actionText.isNotEmpty()) {
             TextButton(onClick = onAction) {
-                Text(actionText, color = Coral, fontWeight = FontWeight.SemiBold)
+                Text(actionText, color = Violet, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -589,6 +545,6 @@ fun FriendooOnlineDot(modifier: Modifier = Modifier, size: Dp = 10.dp) {
             .size(size)
             .clip(CircleShape)
             .background(SuccessGreen)
-            .border((size.value * 0.15f).dp, PureWhite, CircleShape)
+            .border((size.value * 0.15f).dp, MaterialTheme.colorScheme.surface, CircleShape)
     )
 }

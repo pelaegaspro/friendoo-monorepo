@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { X, Coins } from 'lucide-react'
-import { listActiveCoinPacks, createPaymentOrder, verifyAndRechargeWallet, coinsForPack } from '@/lib/coinService'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { listActiveCoinPacks, createPaymentOrder, coinsForPack } from '@/lib/coinService'
 import { useAuthContext } from '@/contexts/AuthContext'
 import type { CoinPack } from '@/types'
 import toast from 'react-hot-toast'
@@ -14,6 +16,7 @@ export function CoinPackModal({ onClose }: CoinPackModalProps) {
   const [packs, setPacks] = useState<CoinPack[]>([])
   const [loading, setLoading] = useState(true)
   const [buying, setBuying] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     listActiveCoinPacks().then(setPacks).finally(() => setLoading(false))
@@ -23,32 +26,53 @@ export function CoinPackModal({ onClose }: CoinPackModalProps) {
     if (!user) return
     setBuying(pack.id)
     try {
-      const { orderId, paymentSessionId } = await createPaymentOrder(pack.priceInr)
+      const { paymentSessionId, coins } = await createPaymentOrder(pack.id)
 
       if (typeof window.Cashfree === 'undefined') {
         toast.error('Payment gateway not loaded')
         return
       }
 
-      const cashfree = window.Cashfree({ mode: 'sandbox' })
+      const env = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox'
+      const cashfree = window.Cashfree({ mode: env })
       await cashfree.checkout({
         paymentSessionId,
         redirectTarget: '_modal',
       })
 
-      const result = await verifyAndRechargeWallet(user.uid, orderId)
-      if (result.success) {
-        toast.success(`+${result.coinsAdded} coins added!`)
+      // Payment submitted — webhook will credit coins async
+      setConfirming(true)
+      toast.loading('Confirming payment...', { id: 'payment-confirm' })
+
+      // Read balance before payment directly from Firestore
+      const userRef = doc(db, 'users', user.uid)
+      const balanceBefore = (await getDoc(userRef)).data()?.coinBalance ?? 0
+
+      // Poll for balance update (webhook credits within seconds)
+      let confirmed = false
+      for (let i = 0; i < 15; i++) {
+        await new Promise((r) => setTimeout(r, 2000))
         await refreshProfile()
-        onClose()
-      } else {
-        toast.error('Payment not verified. Contact support.')
+        const currentBalance = (await getDoc(userRef)).data()?.coinBalance ?? 0
+        if (currentBalance > balanceBefore) {
+          confirmed = true
+          break
+        }
       }
+
+      toast.dismiss('payment-confirm')
+      if (confirmed) {
+        toast.success(`+${coins} coins added!`)
+      } else {
+        toast('Payment is being processed. Coins will be credited shortly.')
+      }
+      onClose()
     } catch (err) {
       console.error('Payment error', err)
       toast.error('Payment failed. Please try again.')
     } finally {
       setBuying(null)
+      setConfirming(false)
     }
   }
 
@@ -65,6 +89,11 @@ export function CoinPackModal({ onClose }: CoinPackModalProps) {
         {loading ? (
           <div className="flex justify-center py-10">
             <div className="w-8 h-8 border-2 border-[#7c5cff]/40 border-t-[#7c5cff] rounded-full animate-spin" />
+          </div>
+        ) : confirming ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <div className="w-10 h-10 border-2 border-green-400/40 border-t-green-400 rounded-full animate-spin" />
+            <p className="text-sm text-white/60">Confirming your payment...</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

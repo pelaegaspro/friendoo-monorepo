@@ -25,7 +25,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
 
   const filtered = useMemo(() => {
     return payments.filter((p) => {
-      const pId = (p as any).cashfreeId || (p as any).razorpayId || "";
+      const pId = (p as any).cashfreeId || "";
       if (search && !pId.toLowerCase().includes(search.toLowerCase())) return false
       if (statusFilter !== 'all' && p.status !== statusFilter) return false
 
@@ -45,7 +45,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
   function handleExport() {
     const rows = filtered.map((p) => ({
       ID: p.id,
-      'Payment ID': (p as any).cashfreeId || (p as any).razorpayId || "",
+      'Payment ID': (p as any).cashfreeId || "",
       User: p.userName,
       Amount: formatCurrency(p.amount),
       Date: formatDate(p.createdAt),
@@ -166,7 +166,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
                 </tr>
               ) : (
                 filtered.map((p) => {
-                   const gId = (p as any).cashfreeId || (p as any).razorpayId || "—";
+                   const gId = (p as any).cashfreeId || "—";
                    return (
                   <tr key={p.id} className="border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
                     <td className="px-4 py-3 text-gray-300 font-mono text-xs">
@@ -211,7 +211,7 @@ export default function PaymentsTable({ payments }: PaymentsTableProps) {
           <div className="space-y-4">
             {[
               { label: 'Payment ID', value: selectedPayment.id },
-              { label: 'Gateway ID', value: (selectedPayment as any).cashfreeId || (selectedPayment as any).razorpayId || "—" },
+              { label: 'Gateway ID', value: (selectedPayment as any).cashfreeId || "—" },
               { label: 'User', value: selectedPayment.userName },
               { label: 'Amount', value: formatCurrency(selectedPayment.amount) },
               { label: 'Date', value: formatDate(selectedPayment.createdAt) },

@@ -4,8 +4,6 @@ import { HostCard } from '@/components/HostCard'
 import { useHostFeed } from '@/hooks/useHostFeed'
 import { useAuthContext } from '@/contexts/AuthContext'
 import { requestCall } from '@/lib/callService'
-import { getOrCreateChat } from '@/lib/chatService'
-import { useNavigate } from 'react-router-dom'
 import type { Host } from '@/types'
 import toast from 'react-hot-toast'
 
@@ -24,7 +22,6 @@ export function Home() {
   const [langFilter, setLangFilter] = useState<string | undefined>(undefined)
   const { hosts, loading } = useHostFeed(langFilter)
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null)
-  const navigate = useNavigate()
 
   const languages = useMemo(() => ['All', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Urdu', 'English'], [])
 
@@ -36,11 +33,11 @@ export function Home() {
       return
     }
     try {
-      const callId = await requestCall(user.uid, host.id)
+      const { callId, channel } = await requestCall(user.uid, host.id)
       setActiveCall({
         host,
         callId,
-        channel: `call_${user.uid.slice(0, 6)}_${host.id.slice(0, 6)}_${Date.now()}`,
+        channel,
         userId: Math.floor(Math.random() * 100000),
       })
     } catch (err) {
@@ -48,17 +45,6 @@ export function Home() {
       toast.error(msg)
     }
   }, [user, profile])
-
-  const handleChat = useCallback(async (host: Host) => {
-    if (!user) return
-    try {
-      const chatId = await getOrCreateChat(user.uid, host.id)
-      navigate(`/chats/${chatId}`)
-    } catch (err) {
-      console.error(err)
-      toast.error('Could not open chat')
-    }
-  }, [user, navigate])
 
   return (
     <>
@@ -103,7 +89,6 @@ export function Home() {
                   key={host.id}
                   host={host}
                   onCall={handleCall}
-                  onChat={handleChat}
                 />
               ))}
             </div>
@@ -116,7 +101,6 @@ export function Home() {
           <CallModal
             host={activeCall.host}
             callId={activeCall.callId}
-            channel={activeCall.channel}
             userId={activeCall.userId}
             onClose={() => setActiveCall(null)}
           />

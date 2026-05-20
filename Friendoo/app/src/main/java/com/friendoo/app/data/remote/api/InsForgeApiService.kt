@@ -27,22 +27,6 @@ interface InsForgeApiService {
     @GET
     suspend fun getHosts(@Url url: String): Response<HostsResponse>
 
-    // Chat endpoints
-    @POST("chat?action=start-conversation")
-    suspend fun startConversation(@Body request: StartConversationRequest): Response<ConversationResponse>
-
-    @POST("chat?action=send-message")
-    suspend fun sendMessage(@Body request: SendMessageRequest): Response<MessageResponse>
-
-    @GET
-    suspend fun getConversations(@Url url: String): Response<ConversationsResponse>
-
-    @GET
-    suspend fun getMessages(@Url url: String): Response<MessagesResponse>
-
-    @POST("chat?action=end-conversation")
-    suspend fun endConversation(@Body request: EndConversationRequest): Response<ApiResponse>
-
     // Payment endpoints
     @GET("payments?action=coin-packs")
     suspend fun getCoinPacks(): Response<CoinPacksResponse>
@@ -68,16 +52,6 @@ interface InsForgeApiService {
 
     @POST("realtime?action=typing")
     suspend fun sendTypingIndicator(@Body request: TypingIndicatorRequest): Response<ApiResponse>
-
-    // AI endpoints
-    @POST("ai-chat?action=suggest-reply")
-    suspend fun suggestReply(@Body request: SuggestReplyRequest): Response<SuggestReplyResponse>
-
-    @POST("ai-chat?action=moderate-content")
-    suspend fun moderateContent(@Body request: ModerateContentRequest): Response<ModerationResponse>
-
-    @POST("ai-chat?action=translate-message")
-    suspend fun translateMessage(@Body request: TranslateMessageRequest): Response<TranslationResponse>
 
     // Support endpoints
     @POST("support?action=create-ticket")

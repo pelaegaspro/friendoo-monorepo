@@ -10,9 +10,7 @@ interface HostProfileModalProps {
   onClose: () => void
 }
 
-function getInitials(name: string): string {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
-}
+import { getAvatarUrl } from '@/lib/avatar'
 
 export default function HostProfileModal({ host, isOpen, onClose }: HostProfileModalProps) {
   if (!host) return null
@@ -22,13 +20,11 @@ export default function HostProfileModal({ host, isOpen, onClose }: HostProfileM
       <div className="space-y-5">
         {/* Avatar + Name */}
         <div className="flex items-center gap-4">
-          {host.photoURL ? (
-            <img src={host.photoURL} alt={host.name} className="w-16 h-16 rounded-full object-cover" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl font-bold">
-              {getInitials(host.name)}
-            </div>
-          )}
+          <img
+            src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 128) : host.photoURL || getAvatarUrl(host.uid, 128)}
+            alt={host.name}
+            className="w-16 h-16 rounded-full object-cover"
+          />
           <div>
             <h3 className="text-white text-lg font-semibold">{host.name}</h3>
             <Badge label={host.status} variant={host.status} />

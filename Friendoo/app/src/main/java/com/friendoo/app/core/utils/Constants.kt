@@ -8,4 +8,6 @@ object Constants {
     val CASHFREE_APP_ID = BuildConfig.CASHFREE_APP_ID
     const val FIREBASE_REGION = "asia-south1"
     const val DEFAULT_CALL_RATE = 5
+    const val DEFAULT_AUDIO_RATE = 5
+    const val DEFAULT_VIDEO_RATE = 10
 }

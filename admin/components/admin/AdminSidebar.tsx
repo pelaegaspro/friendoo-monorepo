@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, Users, UserRound, Coins, 
-  ReceiptText, Phone, Settings, Menu, Bell, 
-  ShieldAlert, CreditCard, Eye, 
-  MessageSquare, AlertCircle 
+import {
+  LayoutDashboard, Users, UserRound, Coins,
+  ReceiptText, Phone, Settings, Menu, Bell,
+  ShieldAlert, CreditCard, Eye, AlertCircle
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -28,7 +27,6 @@ const items = [
 
 const surveillanceItems = [
   { href: '/admin/surveillance/users', label: 'User Activity', icon: Eye },
-  { href: '/admin/surveillance/chats', label: 'Chat Monitor', icon: MessageSquare },
   { href: '/admin/surveillance/fraud', label: 'Fraud Alerts', icon: AlertCircle },
 ]
 
@@ -38,12 +36,22 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col bg-[#121212] overflow-y-auto">
       <div className="flex items-center gap-3 border-b border-[#242424] px-5 py-5 sticky top-0 bg-[#121212] z-10">
-        <div className="bg-white px-2.5 py-1.5 rounded-xl flex items-center justify-center">
-          <img src="/logo.png" alt="Friendoo" className="h-6 w-auto object-contain" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-white">Friendoo Admin</p>
-          <p className="text-xs text-zinc-500">Control center</p>
+        <div className="flex flex-col gap-1 select-none">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto">
+              <defs>
+                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#7c5cff" />
+                  <stop offset="100%" stopColor="#ff7ab6" />
+                </linearGradient>
+              </defs>
+              <text x="0" y="22" fill="url(#logoGrad)" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 24, letterSpacing: '-0.05em' }}>friendoo</text>
+            </svg>
+            <span className="text-xs font-bold tracking-wider text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded uppercase">
+              Admin
+            </span>
+          </div>
+          <p className="text-[10px] text-zinc-500 tracking-wider font-semibold uppercase mt-0.5">Control Center</p>
         </div>
       </div>
 

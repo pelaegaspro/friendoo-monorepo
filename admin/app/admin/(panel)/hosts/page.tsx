@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { getAvatarUrl } from '@/lib/avatar'
 import Badge from '@/components/ui/Badge'
 import SectionCard from '@/components/admin/SectionCard'
 import DataState from '@/components/admin/DataState'
@@ -484,17 +485,11 @@ export default function HostsAdminPage() {
                   {filteredHosts.map((host) => (
                     <tr key={host.id} className="border-b border-[#202020] align-top">
                       <td className="px-3 py-4">
-                        {host.photoURL ? (
-                          <img
-                            src={host.photoURL}
-                            alt={host.displayName}
-                            className="h-11 w-11 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-purple-500/20 text-sm font-semibold text-purple-200">
-                            {host.displayName.slice(0, 1).toUpperCase()}
-                          </div>
-                        )}
+                        <img
+                          src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 88) : host.photoURL || getAvatarUrl(host.id, 88)}
+                          alt={host.displayName}
+                          className="h-11 w-11 rounded-full object-cover"
+                        />
                       </td>
                       <td className="px-3 py-4 text-white">
                         <div className="font-medium">{host.displayName}</div>
@@ -572,17 +567,11 @@ export default function HostsAdminPage() {
                 return (
                   <div key={application.id} className="rounded-2xl border border-[#2d2d2d] bg-[#151515] p-4">
                     <div className="flex items-start gap-4">
-                      {application.photoURL ? (
-                        <img
-                          src={application.photoURL}
-                          alt={application.name}
-                          className="h-16 w-16 rounded-2xl object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/15 text-lg font-semibold text-purple-200">
-                          {application.name.slice(0, 1).toUpperCase()}
-                        </div>
-                      )}
+                      <img
+                        src={application.photoURL || getAvatarUrl(application.id, 128)}
+                        alt={application.name}
+                        className="h-16 w-16 rounded-2xl object-cover"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <h3 className="truncate text-base font-semibold text-white">{application.name}</h3>

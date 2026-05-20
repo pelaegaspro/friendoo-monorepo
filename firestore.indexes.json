@@ -25,11 +25,52 @@
       ]
     },
     {
+      "collectionGroup": "coinTransactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "coinTransactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cashfreeOrderId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "hosts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isStarHost", "order": "ASCENDING" },
+        { "fieldPath": "starLanguage", "order": "ASCENDING" },
+        { "fieldPath": "starRank", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isHost", "order": "ASCENDING" },
+        { "fieldPath": "coins", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "withdrawalRequests",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "coinPackages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "sortOrder", "order": "ASCENDING" }
       ]
     }
   ],

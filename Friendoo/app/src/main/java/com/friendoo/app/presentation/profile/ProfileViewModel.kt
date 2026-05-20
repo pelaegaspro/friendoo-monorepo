@@ -9,6 +9,7 @@ import com.friendoo.app.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,9 +39,13 @@ class ProfileViewModel @Inject constructor(
             _state.value = ProfileState.Loading
             val uid = userPreferences.userIdFlow.firstOrNull()
             if (uid != null) {
-                userRepository.getUserFlow(uid).collect { user ->
-                    _state.value = ProfileState.Success(user)
-                }
+                userRepository.getUserFlow(uid)
+                    .catch { e ->
+                        _state.value = ProfileState.Error(e.message ?: "Failed to load profile stream")
+                    }
+                    .collect { user ->
+                        _state.value = ProfileState.Success(user)
+                    }
             } else {
                 _state.value = ProfileState.Error("User ID not found")
             }

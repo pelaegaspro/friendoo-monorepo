@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { getAvatarUrl } from '@/lib/avatar'
 import SectionCard from '@/components/admin/SectionCard'
 import LoadingBlock from '@/components/admin/LoadingBlock'
 import DataState from '@/components/admin/DataState'
@@ -161,17 +162,11 @@ export default function UsersAdminPage() {
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="border-b border-[#202020]">
                       <td className="px-3 py-4">
-                        {user.photoURL ? (
-                          <img
-                            src={user.photoURL}
-                            alt={user.displayName}
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20 text-sm font-semibold text-purple-200">
-                            {user.displayName.slice(0, 1).toUpperCase()}
-                          </div>
-                        )}
+                        <img
+                          src={user.avatarSeed ? getAvatarUrl(user.avatarSeed, 80) : user.photoURL || getAvatarUrl(user.id, 80)}
+                          alt={user.displayName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
                       </td>
                       <td className="px-3 py-4 font-medium text-white">{user.displayName}</td>
                       <td className="px-3 py-4 text-zinc-300">{user.username || '--'}</td>

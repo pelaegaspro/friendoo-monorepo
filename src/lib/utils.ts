@@ -1,3 +1,10 @@
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs))
+}
+
 /** Format seconds into m:ss */
 export function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60)

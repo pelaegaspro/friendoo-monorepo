@@ -1,22 +1,33 @@
 package com.friendoo.app.data.remote.firebase
 
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Stub FCM Token Source - Firebase dependencies removed
- */
 @Singleton
 class FcmTokenSource @Inject constructor() {
     suspend fun getToken(): String? {
-        return "stub-token"
+        return try {
+            FirebaseMessaging.getInstance().token.await()
+        } catch (e: Exception) {
+            null
+        }
     }
 
     suspend fun subscribeToTopic(topic: String) {
-        // Stub - no-op
+        try {
+            FirebaseMessaging.getInstance().subscribeToTopic(topic).await()
+        } catch (e: Exception) {
+            // Silent fail
+        }
     }
 
     suspend fun deleteToken() {
-        // Stub - no-op
+        try {
+            FirebaseMessaging.getInstance().deleteToken().await()
+        } catch (e: Exception) {
+            // Silent fail
+        }
     }
 }

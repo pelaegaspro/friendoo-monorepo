@@ -101,51 +101,11 @@ data class HostWithUserDto(
     @SerializedName("location") val location: String? = null
 )
 
-// Chat DTOs
-data class StartConversationRequest(
-    @SerializedName("userId") val userId: String,
-    @SerializedName("hostId") val hostId: String
-)
-
-data class ConversationResponse(
-    @SerializedName("message") val message: String,
-    @SerializedName("conversationId") val conversationId: String,
-    @SerializedName("createdAt") val createdAt: String? = null
-)
-
-data class SendMessageRequest(
-    @SerializedName("conversationId") val conversationId: String,
-    @SerializedName("senderId") val senderId: String,
-    @SerializedName("receiverId") val receiverId: String,
-    @SerializedName("type") val type: String = "text",
-    @SerializedName("content") val content: String,
-    @SerializedName("metadata") val metadata: Map<String, Any>? = null
-)
-
+// Chat DTOs (shared with support)
 data class MessageResponse(
     @SerializedName("message") val message: String,
     @SerializedName("messageId") val messageId: String,
     @SerializedName("createdAt") val createdAt: String
-)
-
-data class ConversationsResponse(
-    @SerializedName("conversations") val conversations: List<ConversationDto>
-)
-
-data class ConversationDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("user_id") val userId: String,
-    @SerializedName("host_id") val hostId: String,
-    @SerializedName("status") val status: String,
-    @SerializedName("last_message_at") val lastMessageAt: String? = null,
-    @SerializedName("created_at") val createdAt: String,
-    @SerializedName("updated_at") val updatedAt: String,
-    @SerializedName("other_user_id") val otherUserId: String,
-    @SerializedName("other_user_name") val otherUserName: String,
-    @SerializedName("other_user_avatar") val otherUserAvatar: String? = null,
-    @SerializedName("other_user_location") val otherUserLocation: String? = null,
-    @SerializedName("host_tier") val hostTier: String? = null,
-    @SerializedName("host_rating") val hostRating: Double? = null
 )
 
 data class MessagesResponse(
@@ -161,11 +121,6 @@ data class MessageDto(
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("sender_name") val senderName: String,
     @SerializedName("sender_avatar") val senderAvatar: String? = null
-)
-
-data class EndConversationRequest(
-    @SerializedName("conversationId") val conversationId: String,
-    @SerializedName("userId") val userId: String
 )
 
 // Payment DTOs
@@ -195,7 +150,7 @@ data class BalanceDto(
 data class CreateOrderRequest(
     @SerializedName("userId") val userId: String,
     @SerializedName("coinPackId") val coinPackId: String,
-    @SerializedName("paymentProvider") val paymentProvider: String = "razorpay"
+    @SerializedName("paymentProvider") val paymentProvider: String = "cashfree"
 )
 
 data class PaymentOrderResponse(
@@ -212,6 +167,7 @@ data class PaymentOrderDto(
 
 data class ProviderOrderDto(
     @SerializedName("orderId") val orderId: String,
+    @SerializedName("paymentSessionId") val paymentSessionId: String? = null,
     @SerializedName("amount") val amount: Int,
     @SerializedName("currency") val currency: String,
     @SerializedName("receipt") val receipt: String
@@ -262,42 +218,6 @@ data class TypingIndicatorRequest(
     @SerializedName("ticketId") val ticketId: String? = null,
     @SerializedName("userId") val userId: String,
     @SerializedName("isTyping") val isTyping: Boolean
-)
-
-// AI DTOs
-data class SuggestReplyRequest(
-    @SerializedName("message") val message: String,
-    @SerializedName("conversationContext") val conversationContext: String? = null,
-    @SerializedName("userLanguage") val userLanguage: String = "en"
-)
-
-data class SuggestReplyResponse(
-    @SerializedName("suggestions") val suggestions: List<String>
-)
-
-data class ModerateContentRequest(
-    @SerializedName("content") val content: String,
-    @SerializedName("contentType") val contentType: String = "text"
-)
-
-data class ModerationResponse(
-    @SerializedName("isSafe") val isSafe: Boolean,
-    @SerializedName("riskLevel") val riskLevel: String,
-    @SerializedName("reason") val reason: String,
-    @SerializedName("filteredContent") val filteredContent: String? = null
-)
-
-data class TranslateMessageRequest(
-    @SerializedName("message") val message: String,
-    @SerializedName("fromLanguage") val fromLanguage: String,
-    @SerializedName("toLanguage") val toLanguage: String
-)
-
-data class TranslationResponse(
-    @SerializedName("originalMessage") val originalMessage: String,
-    @SerializedName("translatedMessage") val translatedMessage: String,
-    @SerializedName("fromLanguage") val fromLanguage: String,
-    @SerializedName("toLanguage") val toLanguage: String
 )
 
 // Support DTOs

@@ -1,10 +1,14 @@
 package com.friendoo.app.data.remote.api
 
 import android.app.Activity
+import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.repository.InsForgeRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Provider
 import javax.inject.Singleton
 
 /**
@@ -12,7 +16,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class InsForgeAuthSource @Inject constructor(
-    private val insForgeRepository: InsForgeRepository
+    private val insForgeRepository: InsForgeRepository,
+    private val userPreferencesProvider: Provider<UserPreferences>
 ) {
     private var currentUserId: String? = null
     private var authToken: String? = null
@@ -53,6 +58,21 @@ class InsForgeAuthSource @Inject constructor(
     }
 
     fun getCurrentUser(): InsForgeUser? {
+        if (currentUserId == null) {
+            try {
+                runBlocking {
+                    val userPrefs = userPreferencesProvider.get()
+                    val savedUid = userPrefs.userIdFlow.first()
+                    val savedToken = userPrefs.authTokenFlow.first()
+                    if (savedUid != null) {
+                        currentUserId = savedUid
+                        authToken = savedToken
+                    }
+                }
+            } catch (e: Exception) {
+                // fallback
+            }
+        }
         return currentUserId?.let { InsForgeUser(it, "") }
     }
 
@@ -61,7 +81,22 @@ class InsForgeAuthSource @Inject constructor(
         authToken = null
     }
 
-    fun getIdToken(): String? = authToken
+    fun getIdToken(): String? {
+        if (authToken == null) {
+            try {
+                runBlocking {
+                    val userPrefs = userPreferencesProvider.get()
+                    val savedToken = userPrefs.authTokenFlow.first()
+                    if (savedToken != null) {
+                        authToken = savedToken
+                    }
+                }
+            } catch (e: Exception) {
+                // fallback
+            }
+        }
+        return authToken
+    }
 
     interface PhoneAuthCallbacks {
         fun onVerificationCompleted(user: InsForgeUser)

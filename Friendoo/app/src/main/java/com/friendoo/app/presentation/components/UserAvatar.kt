@@ -1,19 +1,24 @@
 package com.friendoo.app.presentation.components
 
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import coil.compose.AsyncImage
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
+/**
+ * @deprecated Use [FriendooAvatar] with avatarSeed instead.
+ * This composable is kept as a thin redirect for backward compatibility during migration.
+ */
 @Composable
 fun UserAvatar(
-    photoUrl: String,
-    modifier: Modifier = Modifier
+    userId: String,
+    modifier: Modifier = Modifier,
+    size: Dp = 48.dp,
+    avatarSeed: String = ""
 ) {
-    AsyncImage(
-        model = photoUrl.ifEmpty { "https://ui-avatars.com/api/?name=User" },
-        contentDescription = "User Avatar",
-        modifier = modifier.clip(CircleShape)
+    FriendooAvatar(
+        avatarSeed = avatarSeed.ifBlank { userId },
+        size = size,
+        modifier = modifier
     )
 }

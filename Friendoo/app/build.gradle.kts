@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     kotlin("kapt")
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -97,6 +98,17 @@ dependencies {
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.functions.ktx)
+    implementation(libs.firebase.storage.ktx)
+
+    // Material Icons Extended
+    implementation("androidx.compose.material:material-icons-extended")
     
     // WebSocket for InsForge Realtime
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

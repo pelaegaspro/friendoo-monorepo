@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
             <li><strong>Phone Number:</strong> Collected solely for account verification (OTP) and administrative oversight.</li>
             <li><strong>Call Metadata:</strong> We log call durations and timestamps for billing and quality assurance. We do NOT record or listen to live audio sessions.</li>
             <li><strong>Behavioral Analytics:</strong> If you provide consent, we track platform usage (clicks, page views) to improve our services and detect fraud.</li>
-            <li><strong>Financial Data:</strong> For hosts, we collect UPI IDs and encrypted KYC data as required by PMLA regulations for RazorpayX payouts.</li>
+            <li><strong>Financial Data:</strong> For hosts, we collect UPI IDs and encrypted KYC data as required by PMLA regulations for payouts.</li>
           </ul>
         </div>
 

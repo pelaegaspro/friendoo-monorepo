@@ -10,14 +10,7 @@ interface UserProfileModalProps {
   onAction: (action: string, uid: string) => void
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
+import { getAvatarUrl } from '@/lib/avatar'
 
 export default function UserProfileModal({ user, isOpen, onClose, onAction }: UserProfileModalProps) {
   if (!user) return null
@@ -32,17 +25,11 @@ export default function UserProfileModal({ user, isOpen, onClose, onAction }: Us
       <div className="space-y-6">
         {/* Avatar + name */}
         <div className="flex items-center gap-4">
-          {user.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt={user.name}
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white text-xl font-bold border-2 border-gray-600">
-              {getInitials(user.name)}
-            </div>
-          )}
+          <img
+            src={user.avatarSeed ? getAvatarUrl(user.avatarSeed, 128) : user.photoURL || getAvatarUrl(user.uid, 128)}
+            alt={user.name}
+            className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+          />
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-white text-lg font-semibold">{user.name}</h3>

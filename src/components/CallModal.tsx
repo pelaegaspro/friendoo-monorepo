@@ -9,12 +9,11 @@ import toast from 'react-hot-toast'
 interface CallModalProps {
   host: Host
   callId: string
-  channel: string
   userId: number
   onClose: () => void
 }
 
-export function CallModal({ host, callId, channel, userId, onClose }: CallModalProps) {
+export function CallModal({ host, callId, userId, onClose }: CallModalProps) {
   const clientRef = useRef<IAgoraRTCClient | null>(null)
   const [connected, setConnected] = useState(false)
   const [muted, setMuted] = useState(false)
@@ -41,17 +40,11 @@ export function CallModal({ host, callId, channel, userId, onClose }: CallModalP
     let cancelled = false
 
     async function join() {
-      const appId = import.meta.env.VITE_AGORA_APP_ID as string
-      if (!appId) {
-        toast.error('Agora App ID not configured')
-        onClose()
-        return
-      }
       try {
-        const token = await getAgoraToken(channel, userId)
+        const credentials = await getAgoraToken(callId)
         const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' })
         clientRef.current = client
-        await client.join(appId, channel, token, userId)
+        await client.join(credentials.appId, credentials.channel, credentials.token, userId)
 
         const track = await AgoraRTC.createMicrophoneAudioTrack()
         await client.publish(track)
@@ -75,7 +68,7 @@ export function CallModal({ host, callId, channel, userId, onClose }: CallModalP
       if (timerRef.current) clearInterval(timerRef.current)
       clientRef.current?.leave().catch(() => {})
     }
-  }, [channel, userId, onClose])
+  }, [callId, userId, onClose])
 
   async function toggleMute() {
     const client = clientRef.current

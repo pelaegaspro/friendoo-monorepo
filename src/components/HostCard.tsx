@@ -6,7 +6,7 @@ import type { Host } from '@/types'
 interface HostCardProps {
   host: Host
   onCall: (host: Host) => void
-  onChat: (host: Host) => void
+  onChat?: (host: Host) => void
 }
 
 const LANGUAGE_COLORS: Record<string, string> = {
@@ -92,13 +92,15 @@ export const HostCard = memo(function HostCard({ host, onCall, onChat }: HostCar
             <span className="text-white/25">/min</span>
           </span>
           <div className="flex gap-2">
-            <button
-              onClick={() => onChat(host)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] border border-white/[0.08] text-xs font-semibold transition hover:bg-white/10"
-            >
-              <MessageCircle size={13} />
-              Chat
-            </button>
+            {onChat ? (
+              <button
+                onClick={() => onChat(host)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] border border-white/[0.08] text-xs font-semibold transition hover:bg-white/10"
+              >
+                <MessageCircle size={13} />
+                Chat
+              </button>
+            ) : null}
             <button
               onClick={() => onCall(host)}
               disabled={!available}

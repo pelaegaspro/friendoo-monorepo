@@ -2,13 +2,16 @@ package com.friendoo.app.core.payment
 
 import android.content.Context
 import android.util.Log
+import com.cashfree.pg.core.api.CFSession
+import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
+import com.cashfree.pg.core.api.exception.CFException
+import com.cashfree.pg.core.api.webcheckout.CFWebCheckoutPayment
+import com.cashfree.pg.core.api.webcheckout.CFWebCheckoutTheme
+import com.cashfree.pg.api.CFPaymentGatewayService
+import com.friendoo.app.BuildConfig
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Stub Cashfree Manager - Cashfree SDK dependencies removed
- * In production, add Cashfree SDK and replace with actual implementation
- */
 @Singleton
 class CashfreeManager @Inject constructor() {
 
@@ -16,9 +19,37 @@ class CashfreeManager @Inject constructor() {
         context: Context,
         orderId: String,
         paymentSessionId: String,
-        callback: Any
+        callback: CFCheckoutResponseCallback
     ) {
-        Log.d("Cashfree", "Stub payment started for order: $orderId")
-        // Stub implementation - would normally call Cashfree SDK
+        try {
+            val environment = if (BuildConfig.DEBUG) {
+                CFSession.Environment.SANDBOX
+            } else {
+                CFSession.Environment.PRODUCTION
+            }
+
+            val session = CFSession.CFSessionBuilder()
+                .setOrderId(orderId)
+                .setPaymentSessionID(paymentSessionId) // Capitalized ID
+                .setEnvironment(environment)
+                .build()
+
+            val theme = CFWebCheckoutTheme.CFWebCheckoutThemeBuilder()
+                .setNavigationBarBackgroundColor("#7C6BFF")   // Friendoo SoftPurple
+                .setNavigationBarTextColor("#FFFFFF")
+                .build()
+
+            val cfWebCheckoutPayment = CFWebCheckoutPayment.CFWebCheckoutPaymentBuilder()
+                .setSession(session)
+                .setCFWebCheckoutUITheme(theme)
+                .build()
+
+            val gatewayService = CFPaymentGatewayService.getInstance()
+            gatewayService.setCheckoutCallback(callback)
+            gatewayService.doPayment(context, cfWebCheckoutPayment)
+        } catch (e: CFException) {
+            e.printStackTrace()
+            Log.e("Cashfree", "Payment initiation failed: ${e.message}")
+        }
     }
 }

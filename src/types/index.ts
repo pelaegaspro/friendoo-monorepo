@@ -16,7 +16,11 @@ export interface UserProfile {
   totalSpent: number
   status: 'active' | 'banned'
   joinedAt: string | null
+  lastActive?: string | null
 }
+
+export type User = UserProfile
+export type Gender = 'female' | 'male' | 'non-binary' | 'prefer-not-to-say'
 
 export interface Host {
   id: string

@@ -8,9 +8,6 @@ import javax.inject.Singleton
 class WalletRepository @Inject constructor(
     private val functionsSource: FirebaseFunctionsSource
 ) {
-    suspend fun rechargeWallet(userId: String, amount: Int, paymentId: String): Result<Boolean> {
-        return functionsSource.callRechargeWallet(userId, amount, paymentId).map {
-            it["success"] as? Boolean ?: false
-        }
-    }
+    // Payment crediting is now handled by the Cashfree webhook.
+    // The WalletViewModel directly calls createCashfreeOrder and polls for balance updates.
 }

@@ -2,12 +2,16 @@ package com.friendoo.app.presentation.discover
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.model.Host
 import com.friendoo.app.domain.usecase.GetDiscoverHostsUseCase
 import com.friendoo.app.domain.usecase.InitiateCallUseCase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,14 +35,38 @@ sealed class DiscoverState {
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
     private val getDiscoverHostsUseCase: GetDiscoverHostsUseCase,
-    private val initiateCallUseCase: InitiateCallUseCase
+    private val initiateCallUseCase: InitiateCallUseCase,
+    private val userPreferences: UserPreferences,
+    private val firestore: FirebaseFirestore
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<DiscoverState>(DiscoverState.Loading)
     val state: StateFlow<DiscoverState> = _state
 
+    private val _coinBalance = MutableStateFlow(0)
+    val coinBalance: StateFlow<Int> = _coinBalance
+    private var coinBalanceListener: ListenerRegistration? = null
+
     init {
         loadHosts()
+        observeCoinBalance()
+    }
+
+    private fun observeCoinBalance() {
+        viewModelScope.launch {
+            val userId = userPreferences.userIdFlow.first() ?: return@launch
+            coinBalanceListener?.remove()
+            coinBalanceListener = firestore.collection("users").document(userId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null && snapshot.exists()) {
+                        val balance = (snapshot.getLong("coinBalance") ?: 0).toInt()
+                        _coinBalance.value = balance
+                    }
+                }
+        }
     }
 
     fun loadHosts() {
@@ -78,10 +106,21 @@ class DiscoverViewModel @Inject constructor(
 
     private fun sortHosts(hosts: List<Host>): List<Host> {
         return hosts.sortedWith(
-            compareByDescending<Host> { it.isOnline }
-            .thenByDescending { it.avgRating ?: 0.0 }
+            compareByDescending<Host> { host ->
+                when {
+                    host.isOnline && host.callStatus == "available" -> 3
+                    host.isOnline && host.callStatus == "busy" -> 2
+                    else -> 1
+                }
+            }
+            .thenByDescending { it.avgRating ?: 5.0 }
             .thenByDescending { it.totalCalls }
         )
+    }
+
+    override fun onCleared() {
+        coinBalanceListener?.remove()
+        super.onCleared()
     }
 
     fun toggleAgeFilter(ageGroup: String) {
