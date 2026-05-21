@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 import { getFunctions } from 'firebase/functions'
 
@@ -19,6 +19,10 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 // Export singleton instances (Lazy initialization is handled internally by Firebase SDKs usually, 
 // but we keep them ready for use).
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+})
 export const storage = getStorage(app)
 export const functions = getFunctions(app, 'asia-south1')
