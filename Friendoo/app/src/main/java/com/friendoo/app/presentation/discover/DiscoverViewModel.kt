@@ -54,7 +54,6 @@ class DiscoverViewModel @Inject constructor(
 
     private val languageTitles = mapOf(
         "ta" to "Tamil Hosts",
-        "en" to "English Hosts",
         "hi" to "Hindi Hosts",
         "ml" to "Malayalam Hosts",
         "te" to "Telugu Hosts"

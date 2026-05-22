@@ -16,7 +16,7 @@ class GetDiscoverHostsUseCase @Inject constructor(
     }
 
     suspend fun allLanguages(): Result<Map<String, List<Host>>> {
-        val languages = listOf("ta", "en", "hi", "ml", "te")
+        val languages = listOf("ta", "hi", "ml", "te")
         val map = linkedMapOf<String, List<Host>>()
         for (code in languages) {
             val hosts = hostRepository.getHostsByLanguage(code).getOrDefault(emptyList())

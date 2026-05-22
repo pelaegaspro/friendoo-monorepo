@@ -1365,7 +1365,7 @@ fun DiscoverHostHorizontalCard(
         "hi" -> "Hindi"
         "ml" -> "Malayalam"
         "te" -> "Telugu"
-        else -> "English"
+        else -> "Hindi"
     }
 
     Card(

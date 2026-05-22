@@ -43,7 +43,7 @@ async function seed() {
     ratingCount: 124,
     ratePerAudioMinute: 5,
     ratePerVideoMinute: 10,
-    languages: ['Hindi', 'English'],
+    languages: ['Hindi', 'Tamil'],
     isOnline: true,
     callStatus: 'available',
     totalCalls: 154,
