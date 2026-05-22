@@ -8,6 +8,7 @@ import {
   subMonths,
 } from "date-fns";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { AggregateField, FieldPath } from "firebase-admin/firestore";
 import { sortAlerts } from "@/lib/fraudDetector";
 import {
   CallRecord,
@@ -115,7 +116,7 @@ export async function getDashboardData(now = new Date()) {
     adminDb.collection("calls").where("status", "==", "active").count().get(),
     adminDb.collection("users").count().get(),
     adminDb.collection("users").where("isHost", "==", true).count().get(),
-    adminDb.collection("users").aggregate({ total: admin.firestore.AggregateField.sum("coinBalance") }).get(),
+    adminDb.collection("users").aggregate({ total: AggregateField.sum("coinBalance") }).get(),
     adminDb.collection("users").where("isHost", "==", true).where("isOnline", "==", true).count().get(),
     adminDb.collection("users").where("createdAt", ">=", todayStart).where("createdAt", "<=", todayEnd).count().get(),
     adminDb
@@ -176,7 +177,7 @@ export async function getDashboardData(now = new Date()) {
   
   const hostNamesMap = new Map<string, string>();
   if (topHostUids.length > 0) {
-    const hostNamesSnap = await adminDb.collection("users").where(admin.firestore.FieldPath.documentId(), "in", topHostUids).get();
+    const hostNamesSnap = await adminDb.collection("users").where(FieldPath.documentId(), "in", topHostUids).get();
     hostNamesSnap.docs.forEach(doc => {
       const d = doc.data();
       hostNamesMap.set(doc.id, d.displayName || d.username || "Host");

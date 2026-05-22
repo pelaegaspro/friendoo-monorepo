@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.hilt.android)
     kotlin("kapt")
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
 }
 
 android {
@@ -18,6 +20,12 @@ android {
         localProperties.load(localPropertiesFile.inputStream())
     }
 
+    val prodCashfreeAppId = localProperties.getProperty("CASHFREE_APP_ID") ?: ""
+    // Sandbox keys bypass Cashfree Integrity (required for adb / IDE installs).
+    val sandboxCashfreeAppId = localProperties.getProperty("CASHFREE_SANDBOX_APP_ID")
+        ?: if (prodCashfreeAppId.startsWith("TEST")) prodCashfreeAppId
+        else "TEST10313170d7ee8f01b63567843407130101"
+
     defaultConfig {
         applicationId = "com.friendoo.app"
         minSdk = 24
@@ -29,10 +37,11 @@ android {
         buildConfigField("String", "GROQ_API_KEY", "\"${localProperties.getProperty("GROQ_API_KEY") ?: ""}\"")
         buildConfigField("String", "AGORA_APP_ID", "\"${localProperties.getProperty("AGORA_APP_ID") ?: ""}\"")
         buildConfigField("String", "AGORA_APP_CERTIFICATE", "\"${localProperties.getProperty("AGORA_APP_CERTIFICATE") ?: ""}\"")
-        buildConfigField("String", "CASHFREE_APP_ID", "\"${localProperties.getProperty("CASHFREE_APP_ID") ?: ""}\"")
+        buildConfigField("String", "CASHFREE_APP_ID", "\"$prodCashfreeAppId\"")
         buildConfigField("String", "CASHFREE_SECRET_KEY", "\"${localProperties.getProperty("CASHFREE_SECRET_KEY") ?: ""}\"")
+        buildConfigField("boolean", "CASHFREE_USE_SANDBOX", "false")
 
-        manifestPlaceholders["CASHFREE_APP_ID"] = localProperties.getProperty("CASHFREE_APP_ID") ?: ""
+        manifestPlaceholders["CASHFREE_APP_ID"] = prodCashfreeAppId
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -50,6 +59,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Sideloaded debug APKs cannot pass production Integrity checks.
+            buildConfigField("String", "CASHFREE_APP_ID", "\"$sandboxCashfreeAppId\"")
+            buildConfigField("boolean", "CASHFREE_USE_SANDBOX", "true")
+            manifestPlaceholders["CASHFREE_APP_ID"] = sandboxCashfreeAppId
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -84,6 +99,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -106,6 +122,9 @@ dependencies {
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.firebase.functions.ktx)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.crashlytics.ktx)
+    implementation(libs.firebase.perf.ktx)
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
 
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended")

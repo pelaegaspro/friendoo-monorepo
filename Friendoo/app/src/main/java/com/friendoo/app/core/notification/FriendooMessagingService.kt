@@ -1,19 +1,15 @@
 package com.friendoo.app.core.notification
 
 import android.util.Log
-import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class FriendooMessagingService : FirebaseMessagingService() {
-
-    @Inject
-    lateinit var authSource: InsForgeAuthSource
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -22,18 +18,25 @@ class FriendooMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        // Handle foreground notifications if needed
-        Log.d("FCM", "Message received: ${remoteMessage.data}")
+        val data = remoteMessage.data
+        when (data["type"]) {
+            "incoming_call" -> {
+                val callId = data["callId"] ?: return
+                val callerAlias = data["callerAlias"] ?: "Someone"
+                CallNotificationHelper.showIncomingCall(this, callId, callerAlias)
+            }
+            else -> Log.d("FCM", "Message: $data")
+        }
     }
 
     private fun sendRegistrationToServer(token: String) {
-        val userId = authSource.getCurrentUser()?.uid ?: return
-        val db = FirebaseFirestore.getInstance()
-        
-        db.collection("users").document(userId).update(
-            "fcmTokens", FieldValue.arrayUnion(token)
-        ).addOnFailureListener { e ->
-            Log.e("FCM", "Failed to send registration token to server: ${e.message}")
-        }
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(userId)
+            .update("fcmTokens", FieldValue.arrayUnion(token))
+            .addOnFailureListener { e ->
+                Log.e("FCM", "Failed to register token: ${e.message}")
+            }
     }
 }

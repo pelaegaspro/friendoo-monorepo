@@ -13,7 +13,6 @@ import type {
 
 const HOST_LANGUAGE_OPTIONS = [
   'Hindi',
-  'English',
   'Tamil',
   'Telugu',
   'Bengali',

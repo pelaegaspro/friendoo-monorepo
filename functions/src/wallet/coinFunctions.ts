@@ -104,8 +104,9 @@ export const addCoins = onCall(
       throw new HttpsError('unauthenticated', 'Login required.');
     }
 
-    const uid = request.auth.uid;
-    const { amount, description, paymentId, packageId } = request.data as {
+    const callerUid = request.auth.uid;
+    const { targetUserId, amount, description, paymentId, packageId } = request.data as {
+      targetUserId?: string;
       amount?: number;
       description?: string;
       paymentId?: string;
@@ -119,7 +120,15 @@ export const addCoins = onCall(
     const db = getDb();
 
     return db.runTransaction(async (transaction) => {
-      const userRef = db.collection('users').doc(uid);
+      // Verify caller is admin
+      const adminRef = db.collection('admins').doc(callerUid);
+      const adminDoc = await transaction.get(adminRef);
+      if (!adminDoc.exists) {
+        throw new HttpsError('permission-denied', 'Admin access required.');
+      }
+
+      const targetUid = targetUserId || callerUid;
+      const userRef = db.collection('users').doc(targetUid);
       const userDoc = await transaction.get(userRef);
 
       const currentBalance: number = userDoc.exists
@@ -146,11 +155,11 @@ export const addCoins = onCall(
       // Write transaction log
       const txRef = db.collection('coinTransactions').doc();
       transaction.set(txRef, {
-        userId: uid,
+        userId: targetUid,
         type: 'credit',
         amount,
         coins: amount,
-        description: description ?? 'Coins added',
+        description: description ?? 'Coins added by admin',
         ...(paymentId ? { paymentId } : {}),
         ...(packageId ? { packageId } : {}),
         balanceAfter: newBalance,

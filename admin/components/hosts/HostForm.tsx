@@ -161,7 +161,7 @@ export default function HostForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-1.5">Languages * (Comma separated)</label>
-          <input {...register("languages")} placeholder="Hindi, English" className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none" />
+          <input {...register("languages")} placeholder="Hindi, Tamil, Telugu" className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-1.5">Expertise Tags * (Comma separated)</label>

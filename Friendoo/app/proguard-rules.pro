@@ -19,3 +19,7 @@
 
 # Firebase
 -keep class com.google.firebase.** { *; }
+
+# Cashfree PG SDK
+-keep class com.cashfree.pg.** { *; }
+-keep interface com.cashfree.pg.** { *; }

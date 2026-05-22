@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import com.friendoo.app.presentation.theme.*
 
 // === FRIENDOO BUTTON ===
@@ -120,67 +122,105 @@ fun FriendooOtpInput(
     modifier: Modifier = Modifier
 ) {
     val friendooColors = LocalFriendooColors.current
+    val focusRequester = remember { FocusRequester() }
 
-    Row(
+    // Custom blinking cursor animation
+    val infiniteTransition = rememberInfiniteTransition(label = "otp_cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "otp_cursor_alpha"
+    )
+
+    Box(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        repeat(length) { index ->
-            val char = otp.getOrNull(index)?.toString() ?: ""
-            val isFocused = index == otp.length
+        // Hidden BasicTextField that captures all inputs
+        BasicTextField(
+            value = otp,
+            onValueChange = { newVal ->
+                if (newVal.length <= length && newVal.all { it.isDigit() }) {
+                    onOtpChange(newVal)
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            ),
+            // Hide the text and system cursor
+            textStyle = TextStyle(color = Color.Transparent),
+            cursorBrush = SolidColor(Color.Transparent),
+            decorationBox = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(length) { index ->
+                        val char = otp.getOrNull(index)?.toString() ?: ""
+                        val isFocused = index == otp.length
 
-            val scale by animateFloatAsState(
-                targetValue = if (isFocused) 1.05f else 1f,
-                label = "otp_scale_$index"
-            )
+                        val scale by animateFloatAsState(
+                            targetValue = if (isFocused) 1.05f else 1f,
+                            label = "otp_scale_$index"
+                        )
 
-            BasicTextField(
-                value = char,
-                onValueChange = { newChar ->
-                    if (newChar.length <= 1 && newChar.all { it.isDigit() }) {
-                        val newOtp = if (index < otp.length) {
-                            otp.take(index) + newChar + otp.drop(index + 1)
-                        } else {
-                            otp + newChar
-                        }.take(length)
-                        onOtpChange(newOtp)
-                    }
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .aspectRatio(0.85f)
-                    .scale(scale)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        if (char.isNotEmpty()) Violet.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    .border(
-                        width = if (isFocused) 2.dp else 1.dp,
-                        color = if (isFocused) Violet else MaterialTheme.colorScheme.outline,
-                        shape = RoundedCornerShape(14.dp)
-                    ),
-                textStyle = TextStyle(
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = friendooColors.textPrimary,
-                    textAlign = TextAlign.Center
-                ),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = if (index == length - 1) ImeAction.Done else ImeAction.Next
-                ),
-                cursorBrush = SolidColor(Violet),
-                decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        innerTextField()
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(0.85f)
+                                .scale(scale)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (char.isNotEmpty()) Violet.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .border(
+                                    width = if (isFocused) 2.dp else 1.dp,
+                                    color = if (isFocused) Violet else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(14.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isFocused) {
+                                // Draw a blinking vertical cursor
+                                Box(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                        .height(24.dp)
+                                        .background(Violet.copy(alpha = cursorAlpha))
+                                )
+                            } else {
+                                Text(
+                                    text = char,
+                                    style = TextStyle(
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = friendooColors.textPrimary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
-            )
+            }
+        )
+    }
+
+    // Auto-focus the hidden field on display
+    LaunchedEffect(Unit) {
+        try {
+            focusRequester.requestFocus()
+        } catch (e: Exception) {
+            // Ignore focus failures during startup layout
         }
     }
 }

@@ -1,8 +1,10 @@
 import express, { type Request, type Response } from 'express';
-import { CloudTasksClient } from '@google-cloud/tasks';
-import { OAuth2Client } from 'google-auth-library';
 import { onRequest } from 'firebase-functions/v2/https';
 import { admin, getDb } from '../firebaseAdmin';
+import { readCallState } from './callState';
+
+type CloudTasksClientType = import('@google-cloud/tasks').CloudTasksClient;
+type OAuth2ClientType = import('google-auth-library').OAuth2Client;
 
 type BillingTickBody = {
   callId: string;
@@ -21,22 +23,25 @@ type ActiveBillingJob = {
   durationSeconds: number;
 };
 
-type CallDocLite = {
-  status?: string;
-};
-
 type UserBillingDoc = {
   coinBalance?: number;
 };
 
-let tasksClient: CloudTasksClient | undefined;
-function getTasksClient() {
-  if (!tasksClient) tasksClient = new CloudTasksClient();
+let tasksClient: CloudTasksClientType | undefined;
+function getTasksClient(): CloudTasksClientType {
+  if (!tasksClient) {
+    // Lazy-load: @google-cloud/tasks is heavy and slows Firebase deploy discovery.
+    const { CloudTasksClient } = require('@google-cloud/tasks') as typeof import('@google-cloud/tasks');
+    tasksClient = new CloudTasksClient();
+  }
   return tasksClient;
 }
-let oidcClient: OAuth2Client | undefined;
-function getOidcClient() {
-  if (!oidcClient) oidcClient = new OAuth2Client();
+let oidcClient: OAuth2ClientType | undefined;
+function getOidcClient(): OAuth2ClientType {
+  if (!oidcClient) {
+    const { OAuth2Client } = require('google-auth-library') as typeof import('google-auth-library');
+    oidcClient = new OAuth2Client();
+  }
   return oidcClient;
 }
 
@@ -146,9 +151,27 @@ async function runTickTransaction(args: { callId: string; jobRef: admin.firestor
         const job = jobSnap.exists ? (jobSnap.data() as ActiveBillingJob | undefined) : undefined;
         if (!job || job.status !== 'running') return { result: 'stop' as const, callerId: null as string | null };
 
+        // Max duration limit check: 120 minutes (7200 seconds)
+        const MAX_DURATION_SECONDS = 120 * 60;
+        if (job.durationSeconds >= MAX_DURATION_SECONDS) {
+          t.set(
+            args.callRef,
+            {
+              state: 'ended',
+              status: 'ended',
+              endReason: 'max_duration_limit',
+              endedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+          t.set(args.jobRef, { status: 'stopped', stoppedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          return { result: 'stop' as const, callerId: null as string | null };
+        }
+
         const callSnap = await t.get(args.callRef);
-        const call = callSnap.exists ? (callSnap.data() as CallDocLite | undefined) : undefined;
-        if (!call || call.status !== 'active') {
+        const callData = callSnap.exists ? callSnap.data() : undefined;
+        const callState = readCallState(callData as Record<string, unknown>);
+        if (callState !== 'active') {
           t.set(args.jobRef, { status: 'stopped', stoppedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
           return { result: 'stop' as const, callerId: null as string | null };
         }
@@ -320,8 +343,9 @@ app.post('/billingTick', express.json(), async (req: Request, res: Response) => 
     return res.status(200).send('ok');
   }
 
-  const call = callSnap.data() as CallDocLite | undefined;
-  if (!call || call.status !== 'active') {
+  const callData = callSnap.data();
+  const callState = readCallState(callData as Record<string, unknown>);
+  if (callState !== 'active') {
     await jobRef.set({ status: 'stopped', stoppedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     return res.status(200).send('ok');
   }

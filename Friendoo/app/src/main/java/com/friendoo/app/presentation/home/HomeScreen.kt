@@ -66,10 +66,9 @@ fun HomeScreen(
     onHostClick: (Host, CallType) -> Unit,
     onLogoutSuccess: () -> Unit,
     onNavigateToRewards: () -> Unit,
-    onNavigateToLeaderboard: () -> Unit,
     onNavigateToEarnings: () -> Unit = {},
     onNavigateToAvatarPicker: (String) -> Unit = {},
-    onNavigateToWaiting: () -> Unit = {}
+    onQuickMatch: () -> Unit = {}
 ) {
     val tabs = listOf(
         BottomTab("discover", "Home", Icons.Filled.Home),
@@ -141,7 +140,7 @@ fun HomeScreen(
                         DiscoverScreen(
                             viewModel = viewModel,
                             onHostClick = onHostClick,
-                            onQuickMatch = onNavigateToWaiting,
+                            onQuickMatch = onQuickMatch,
                             onWalletClick = { selectedTab = "wallet" }
                         )
                     }
@@ -159,7 +158,6 @@ fun HomeScreen(
                             viewModel = profileViewModel,
                             onLogoutSuccess = onLogoutSuccess,
                             onNavigateToRewards = onNavigateToRewards,
-                            onNavigateToLeaderboard = onNavigateToLeaderboard,
                             onNavigateToRecents = { selectedTab = "history" },
                             onNavigateToEarnings = onNavigateToEarnings,
                             onNavigateToAvatarPicker = onNavigateToAvatarPicker

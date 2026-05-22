@@ -70,7 +70,6 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onLogoutSuccess: () -> Unit,
     onNavigateToRewards: () -> Unit = {},
-    onNavigateToLeaderboard: () -> Unit = {},
     onNavigateToRecents: () -> Unit = {},
     onNavigateToEarnings: () -> Unit = {},
     onNavigateToAvatarPicker: (String) -> Unit = {}
@@ -101,7 +100,6 @@ fun ProfileScreen(
                     user = currentState.user,
                     onEditProfile = { onNavigateToAvatarPicker(currentState.user.avatarSeed.ifBlank { currentState.user.uid }) },
                     onRewards = onNavigateToRewards,
-                    onLeaderboard = onNavigateToLeaderboard,
                     onRecents = onNavigateToRecents,
                     onEarnings = onNavigateToEarnings,
                     onLogout = {
@@ -119,7 +117,6 @@ private fun ProfileContent(
     user: User,
     onEditProfile: () -> Unit,
     onRewards: () -> Unit,
-    onLeaderboard: () -> Unit,
     onRecents: () -> Unit,
     onEarnings: () -> Unit,
     onLogout: () -> Unit

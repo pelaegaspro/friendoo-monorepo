@@ -1,14 +1,12 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { admin, getDb } from '../firebaseAdmin';
-import { enqueueBillingTick } from './billingScheduler';
-
-type CallStatus = 'ringing' | 'active' | 'ended' | 'missed' | 'rejected';
+import { CallState, TERMINAL_CALL_STATES, readCallState } from './callState';
 
 type CallDoc = {
   id: string;
   fromUserId: string;
   toUserId: string;
-  status: CallStatus;
+  status: CallState;
   callType?: string; // 'audio' | 'video'
   agoraChannel: string;
   agoraToken?: string;
@@ -47,14 +45,14 @@ function toCall(data: admin.firestore.DocumentData | undefined): CallDoc | null 
   if (!data) return null;
   const fromUserId = typeof data.fromUserId === 'string' ? data.fromUserId : null;
   const toUserId = typeof data.toUserId === 'string' ? data.toUserId : null;
-  const status = typeof data.status === 'string' ? data.status : null;
+  const status = readCallState(data as Record<string, unknown>);
   const ratePerMinute = typeof data.ratePerMinute === 'number' ? data.ratePerMinute : null;
   if (!fromUserId || !toUserId || !status || !ratePerMinute) return null;
   return {
     id: typeof data.id === 'string' ? data.id : '',
     fromUserId,
     toUserId,
-    status: status as CallDoc['status'],
+    status,
     callType: typeof data.callType === 'string' ? data.callType : 'audio',
     agoraChannel: typeof data.agoraChannel === 'string' ? data.agoraChannel : '',
     agoraToken: typeof data.agoraToken === 'string' ? data.agoraToken : undefined,
@@ -74,8 +72,8 @@ function toCall(data: admin.firestore.DocumentData | undefined): CallDoc | null 
   };
 }
 
-function isTerminalStatus(status: CallDoc['status']) {
-  return status === 'ended' || status === 'missed' || status === 'rejected';
+function isTerminalStatus(status: CallState) {
+  return TERMINAL_CALL_STATES.includes(status);
 }
 
 export const callBillingTrigger = onDocumentUpdated(
@@ -121,6 +119,7 @@ export const callBillingTrigger = onDocumentUpdated(
 
         await jobRef.create(job);
 
+        const { enqueueBillingTick } = await import('./billingScheduler');
         await enqueueBillingTick({
           callId,
           scheduleTime: nextBillAt,
@@ -166,16 +165,8 @@ export const callBillingTrigger = onDocumentUpdated(
           : undefined;
         const durationSeconds = typeof jobData?.durationSeconds === 'number' ? jobData.durationSeconds : 0;
         const totalDeducted = typeof jobData?.totalDeducted === 'number' ? jobData.totalDeducted : 0;
-        const acceptedAtDate =
-          afterCall.acceptedAt && typeof (afterCall.acceptedAt as { toDate?: unknown }).toDate === 'function'
-            ? (afterCall.acceptedAt as { toDate: () => Date }).toDate()
-            : null;
-        const elapsedSeconds = acceptedAtDate
-          ? Math.max(0, Math.floor((Date.now() - acceptedAtDate.getTime()) / 1000))
-          : durationSeconds;
-        const remainingSeconds = Math.max(0, elapsedSeconds - durationSeconds);
-        const ratePerMinute = typeof jobData?.ratePerMinute === 'number' ? jobData.ratePerMinute : afterCall.ratePerMinute;
-        const remainingCoins = Math.max(0, Math.floor((ratePerMinute * remainingSeconds) / 60));
+        const remainingSeconds = 0;
+        const remainingCoins = 0;
 
         let additionalDebited = 0;
         if (remainingCoins > 0) {

@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.presentation.components.AvatarConfig
-import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.friendoo.app.data.remote.firebase.FirebaseFunctionsSource
+import com.friendoo.app.data.repository.AuthRepository
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -41,7 +42,8 @@ data class OnboardingUiState(
 class OnboardingViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val firestore: FirebaseFirestore,
-    private val authSource: InsForgeAuthSource
+    private val authRepository: AuthRepository,
+    private val functionsSource: FirebaseFunctionsSource
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingUiState())
@@ -50,7 +52,7 @@ class OnboardingViewModel @Inject constructor(
     private var userListener: ListenerRegistration? = null
 
     init {
-        val uid = authSource.getCurrentUser()?.uid.orEmpty()
+        val uid = authRepository.getCurrentUserId().orEmpty()
         _state.value = _state.value.copy(uid = uid)
         generateAvatarSet()
         observeLoggedInProfile(uid)
@@ -70,6 +72,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun setAccountType(isHost: Boolean) {
         val current = _state.value
+        if (!current.isHost && isHost) return
         _state.value = current.copy(
             isHost = isHost,
             accountType = if (isHost) "host" else "user",
@@ -88,7 +91,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun completeOnboarding() {
         val current = _state.value
-        val userId = authSource.getCurrentUser()?.uid
+        val userId = authRepository.getCurrentUserId()
         val displayName = current.displayName.trim()
         val avatar = current.selectedAvatar
 
@@ -112,53 +115,34 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val accountType = if (_state.value.isHost) "host" else "user"
-                val data = mapOf(
-                    "uid" to safeUserId,
-                    "displayName" to displayName,
-                    "alias" to displayName,
-                    "accountType" to accountType,
-                    "isHost" to _state.value.isHost,
-                    "gender" to if (_state.value.isHost) "female" else "male",
-                    "avatarSeed" to selectedAvatar.seed,
-                    "avatarUrl" to selectedAvatar.url,
-                    "avatarConfig" to selectedAvatar.config.toMap(),
-                    "avatarVersion" to 1,
-                    "onboardingCompleted" to true,
-                    "onboardingComplete" to true,
-                    "updatedAt" to FieldValue.serverTimestamp(),
-                    "createdAt" to FieldValue.serverTimestamp()
-                )
-
-                firestore.collection("users")
-                    .document(safeUserId)
-                    .set(data, SetOptions.merge())
-                    .await()
-
-                if (_state.value.isHost) {
-                    val hostData = mapOf(
-                        "uid" to safeUserId,
+                val serverIsHost = _state.value.isHost
+                if (serverIsHost) {
+                    val profile = mapOf(
+                        "displayName" to displayName,
                         "alias" to displayName,
                         "avatarSeed" to selectedAvatar.seed,
                         "avatarUrl" to selectedAvatar.url,
                         "avatarConfig" to selectedAvatar.config.toMap(),
                         "avatarVersion" to 1,
-                        "gender" to "female",
                         "onboardingCompleted" to true,
                         "onboardingComplete" to true,
-                        "isOnline" to false,
-                        "callStatus" to "offline",
-                        "updatedAt" to FieldValue.serverTimestamp(),
-                        "createdAt" to FieldValue.serverTimestamp()
+                        "updatedAt" to FieldValue.serverTimestamp()
                     )
-                    firestore.collection("hosts")
-                        .document(safeUserId)
-                        .set(hostData, SetOptions.merge())
-                        .await()
+                    firestore.collection("users").document(safeUserId).set(profile, SetOptions.merge()).await()
+                } else {
+                    val result = functionsSource.callCompleteUserOnboarding(
+                        displayName = displayName,
+                        avatarUrl = selectedAvatar.url,
+                        avatarSeed = selectedAvatar.seed,
+                        avatarConfig = selectedAvatar.config.toMap(),
+                        avatarVersion = 1,
+                        gender = "male"
+                    )
+                    result.getOrElse { throw it }
                 }
 
                 userPreferences.saveUserId(safeUserId)
-                userPreferences.setIsHost(_state.value.isHost)
+                userPreferences.setIsHost(serverIsHost)
                 userPreferences.setOnboardingCompleted(true)
                 _state.value = _state.value.copy(isComplete = true, isLoading = false)
             } catch (e: Exception) {
@@ -178,44 +162,44 @@ class OnboardingViewModel @Inject constructor(
 
         userListener = firestore.collection("users").document(uid)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    _state.value = _state.value.copy(
-                        isProfileLoading = false,
-                        error = error.message ?: "Failed to load profile details."
-                    )
-                    return@addSnapshotListener
-                }
-
-                val data = snapshot?.data.orEmpty()
-                val isHost = data["isHost"] as? Boolean
-                    ?: (data["accountType"] as? String).equals("host", ignoreCase = true)
-                val accountType = if (isHost) "host" else "user"
-                val completed = data["onboardingCompleted"] as? Boolean
-                    ?: data["onboardingComplete"] as? Boolean
-                    ?: false
-                val remoteDisplayName = data["displayName"] as? String
-                    ?: data["alias"] as? String
-                    ?: authSource.getCurrentUser()?.phoneNumber
-                    ?: ""
-
-                _state.value = _state.value.copy(
-                    displayName = _state.value.displayName.ifBlank { remoteDisplayName },
-                    isHost = isHost,
-                    accountType = accountType,
-                    isProfileLoading = false
-                )
-
                 viewModelScope.launch {
+                    if (error != null) {
+                        _state.value = _state.value.copy(
+                            isProfileLoading = false,
+                            error = error.message ?: "Failed to load profile details."
+                        )
+                        return@launch
+                    }
+
+                    val data = snapshot?.data.orEmpty()
+                    val isHost = data["isHost"] as? Boolean
+                        ?: (data["accountType"] as? String).equals("host", ignoreCase = true)
+                    val accountType = if (isHost) "host" else "user"
+                    val completed = data["onboardingCompleted"] as? Boolean
+                        ?: data["onboardingComplete"] as? Boolean
+                        ?: false
+                    val remoteDisplayName = data["displayName"] as? String
+                        ?: data["alias"] as? String
+                        ?: authRepository.getCurrentUserPhone()
+                        ?: ""
+
+                    _state.value = _state.value.copy(
+                        displayName = _state.value.displayName.ifBlank { remoteDisplayName },
+                        isHost = isHost,
+                        accountType = accountType,
+                        isProfileLoading = false
+                    )
+
                     userPreferences.setIsHost(isHost)
                     if (completed) {
                         userPreferences.setOnboardingCompleted(true)
                         _state.value = _state.value.copy(isComplete = true)
                     }
-                }
 
-                val gender = if (isHost) "female" else "male"
-                if (_state.value.avatars.firstOrNull()?.url?.contains("gender=$gender") != true) {
-                    generateAvatarSet()
+                    val gender = if (isHost) "female" else "male"
+                    if (_state.value.avatars.firstOrNull()?.url?.contains("gender=$gender") != true) {
+                        generateAvatarSet()
+                    }
                 }
             }
     }

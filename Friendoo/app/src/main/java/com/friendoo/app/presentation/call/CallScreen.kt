@@ -34,6 +34,7 @@ fun CallScreen(
     ratePerMinute: Int = 5,
     otherUserColor: String = "#3700B3",
     callType: CallType = CallType.AUDIO,
+    existingCallId: String? = null,
     onEndCall: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -48,19 +49,22 @@ fun CallScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] == true
-        val videoGranted = if (callType == CallType.VIDEO) permissions[Manifest.permission.CAMERA] == true else true
+        val videoGranted = permissions[Manifest.permission.CAMERA] == true
 
         if (audioGranted && videoGranted) {
-            viewModel.startCall(context, receiverId, otherUserAlias, ratePerMinute, callType)
+            if (!existingCallId.isNullOrBlank()) {
+                viewModel.joinExistingCall(context, existingCallId, ratePerMinute, callType)
+            } else {
+                viewModel.startCall(context, receiverId, otherUserAlias, ratePerMinute, callType)
+            }
         }
     }
 
-    LaunchedEffect(key1 = receiverId) {
-        val perms = if (callType == CallType.VIDEO) {
-            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
-        } else {
-            arrayOf(Manifest.permission.RECORD_AUDIO)
-        }
+    LaunchedEffect(key1 = receiverId, key2 = existingCallId) {
+        val perms = arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA
+        )
         permissionLauncher.launch(perms)
     }
 

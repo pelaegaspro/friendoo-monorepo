@@ -25,8 +25,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.friendoo.app.presentation.profile.ProfileScreen
-import com.friendoo.app.presentation.leaderboard.LeaderboardScreen
 import com.friendoo.app.presentation.wallet.EarningsScreen
+import com.friendoo.app.core.model.CallType
+import com.friendoo.app.presentation.call.IncomingRequestDialog
 import com.friendoo.app.presentation.profile.ProfileViewModel
 import com.friendoo.app.presentation.theme.*
 
@@ -34,13 +35,13 @@ import com.friendoo.app.presentation.theme.*
 fun HostHomeScreen(
     onLogoutSuccess: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToPerformance: () -> Unit
+    onNavigateToPerformance: () -> Unit,
+    onJoinIncomingCall: (callId: String, callerAlias: String, ratePerMinute: Int, callType: CallType) -> Unit
 ) {
     var selectedItem by remember { mutableIntStateOf(0) }
     val items = listOf(
         NavigationItem("Home", Icons.Outlined.Dashboard, Icons.Filled.Dashboard),
         NavigationItem("History", Icons.Outlined.History, Icons.Filled.History),
-        NavigationItem("Leaderboard", Icons.Outlined.EmojiEvents, Icons.Filled.EmojiEvents),
         NavigationItem("Earnings", Icons.Outlined.TrendingUp, Icons.Filled.TrendingUp),
         NavigationItem("Profile", Icons.Outlined.Person, Icons.Filled.Person)
     )
@@ -122,21 +123,19 @@ fun HostHomeScreen(
             key(selectedItem) {
                 when (selectedItem) {
                     0 -> HostDashboardScreen(
-                        onNavigateToEarnings = { selectedItem = 3 },
+                        onNavigateToEarnings = { selectedItem = 2 },
                         onNavigateToHistory = { selectedItem = 1 },
-                        onNavigateToLeaderboard = { selectedItem = 2 },
                         onNavigateToPerformance = onNavigateToPerformance,
                         onNavigateToSettings = onNavigateToSettings,
-                        onNavigateToProfile = { selectedItem = 4 }
+                        onNavigateToProfile = { selectedItem = 3 },
+                        onJoinIncomingCall = onJoinIncomingCall
                     )
                     1 -> CallHistoryScreen(onBack = { selectedItem = 0 })
-                    2 -> LeaderboardScreen()
-                    3 -> EarningsScreen(onBack = { selectedItem = 0 })
-                    4 -> ProfileScreen(
+                    2 -> EarningsScreen(onBack = { selectedItem = 0 })
+                    3 -> ProfileScreen(
                         viewModel = hiltViewModel(key = "host_profile"),
                         onLogoutSuccess = onLogoutSuccess,
-                        onNavigateToLeaderboard = { selectedItem = 2 },
-                        onNavigateToEarnings = { selectedItem = 3 }
+                        onNavigateToEarnings = { selectedItem = 2 }
                     )
                 }
             }
@@ -148,14 +147,51 @@ fun HostHomeScreen(
 private fun HostDashboardScreen(
     onNavigateToEarnings: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    onNavigateToLeaderboard: () -> Unit,
     onNavigateToPerformance: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    viewModel: HostDashboardViewModel = hiltViewModel()
+    onJoinIncomingCall: (callId: String, callerAlias: String, ratePerMinute: Int, callType: CallType) -> Unit,
+    viewModel: HostDashboardViewModel = hiltViewModel(),
+    incomingCallViewModel: IncomingCallViewModel = hiltViewModel()
 ) {
     val isOnline by viewModel.isOnline.collectAsState()
-    
+    val incoming by incomingCallViewModel.incoming.collectAsState()
+    val isAccepting by incomingCallViewModel.isAccepting.collectAsState()
+    val incomingAction by incomingCallViewModel.action.collectAsState()
+
+    LaunchedEffect(isOnline) {
+        if (isOnline) incomingCallViewModel.startListening() else incomingCallViewModel.stopListening()
+    }
+
+    LaunchedEffect(incomingAction) {
+        when (val action = incomingAction) {
+            is IncomingCallAction.Join -> {
+                onJoinIncomingCall(
+                    action.result.callId,
+                    action.callerAlias,
+                    action.ratePerMinute,
+                    action.callType
+                )
+                incomingCallViewModel.clearAction()
+            }
+            is IncomingCallAction.Dismissed -> incomingCallViewModel.clearAction()
+            null -> Unit
+        }
+    }
+
+    incoming?.let { offer ->
+        IncomingRequestDialog(
+            callId = offer.callId,
+            callerAlias = offer.callerAlias,
+            ratePerMinute = offer.ratePerMinute,
+            callTypeLabel = if (offer.callType == CallType.VIDEO) "video" else "audio",
+            secondsLeft = offer.secondsLeft,
+            isSubmitting = isAccepting,
+            onAccept = { incomingCallViewModel.acceptIncoming() },
+            onDecline = { incomingCallViewModel.declineIncoming() }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -273,12 +309,6 @@ private fun HostDashboardScreen(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        ActionRow(
-            label = "Leaderboard",
-            icon = Icons.Default.EmojiEvents,
-            color = SoftYellow,
-            onClick = onNavigateToLeaderboard
-        )
         ActionRow(
             label = "Settings",
             icon = Icons.Default.Settings,

@@ -9,6 +9,7 @@ import com.friendoo.app.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -29,13 +30,15 @@ class ProfileViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<ProfileState>(ProfileState.Loading)
     val state: StateFlow<ProfileState> = _state
+    private var profileLoadJob: Job? = null
 
     init {
         loadProfile()
     }
 
     fun loadProfile() {
-        viewModelScope.launch {
+        profileLoadJob?.cancel()
+        profileLoadJob = viewModelScope.launch {
             _state.value = ProfileState.Loading
             val uid = userPreferences.userIdFlow.firstOrNull()
             if (uid != null) {

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.data.model.Host
 import com.friendoo.app.domain.usecase.GetDiscoverHostsUseCase
-import com.friendoo.app.domain.usecase.InitiateCallUseCase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,9 +21,16 @@ data class DiscoverFilters(
     val onlineOnly: Boolean = false
 )
 
+data class LanguageSection(
+    val code: String,
+    val title: String,
+    val hosts: List<Host>
+)
+
 sealed class DiscoverState {
     object Loading : DiscoverState()
     data class Success(
+        val sections: List<LanguageSection>,
         val allHosts: List<Host>,
         val filteredHosts: List<Host>,
         val filters: DiscoverFilters = DiscoverFilters()
@@ -35,7 +41,6 @@ sealed class DiscoverState {
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
     private val getDiscoverHostsUseCase: GetDiscoverHostsUseCase,
-    private val initiateCallUseCase: InitiateCallUseCase,
     private val userPreferences: UserPreferences,
     private val firestore: FirebaseFirestore
 ) : ViewModel() {
@@ -46,6 +51,14 @@ class DiscoverViewModel @Inject constructor(
     private val _coinBalance = MutableStateFlow(0)
     val coinBalance: StateFlow<Int> = _coinBalance
     private var coinBalanceListener: ListenerRegistration? = null
+
+    private val languageTitles = mapOf(
+        "ta" to "Tamil Hosts",
+        "en" to "English Hosts",
+        "hi" to "Hindi Hosts",
+        "ml" to "Malayalam Hosts",
+        "te" to "Telugu Hosts"
+    )
 
     init {
         loadHosts()
@@ -58,12 +71,9 @@ class DiscoverViewModel @Inject constructor(
             coinBalanceListener?.remove()
             coinBalanceListener = firestore.collection("users").document(userId)
                 .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        return@addSnapshotListener
-                    }
+                    if (error != null) return@addSnapshotListener
                     if (snapshot != null && snapshot.exists()) {
-                        val balance = (snapshot.getLong("coinBalance") ?: 0).toInt()
-                        _coinBalance.value = balance
+                        _coinBalance.value = (snapshot.getLong("coinBalance") ?: 0L).toInt()
                     }
                 }
         }
@@ -72,17 +82,34 @@ class DiscoverViewModel @Inject constructor(
     fun loadHosts() {
         _state.value = DiscoverState.Loading
         viewModelScope.launch {
-            val result = getDiscoverHostsUseCase()
+            val result = getDiscoverHostsUseCase.allLanguages()
             if (result.isSuccess) {
-                val hosts = result.getOrDefault(emptyList())
-                // Default sorting: Online first -> Avg Rating -> Total Calls
-                val sortedHosts = sortHosts(hosts)
+                val byLang = result.getOrDefault(emptyMap())
+                val allHosts = byLang.values.flatten().distinctBy { it.uid }
+                val sections = languageTitles.mapNotNull { (code, title) ->
+                    val hosts = sortHosts(byLang[code].orEmpty())
+                    if (hosts.isEmpty()) null else LanguageSection(code, title, hosts)
+                }
+                val sortedAll = sortHosts(allHosts)
                 _state.value = DiscoverState.Success(
-                    allHosts = sortedHosts,
-                    filteredHosts = sortedHosts
+                    sections = sections,
+                    allHosts = sortedAll,
+                    filteredHosts = sortedAll
                 )
             } else {
-                _state.value = DiscoverState.Error(result.exceptionOrNull()?.message ?: "Unknown error")
+                val fallback = getDiscoverHostsUseCase()
+                if (fallback.isSuccess) {
+                    val hosts = sortHosts(fallback.getOrDefault(emptyList()))
+                    _state.value = DiscoverState.Success(
+                        sections = listOf(LanguageSection("all", "All Hosts", hosts)),
+                        allHosts = hosts,
+                        filteredHosts = hosts
+                    )
+                } else {
+                    _state.value = DiscoverState.Error(
+                        fallback.exceptionOrNull()?.message ?: "Failed to load hosts"
+                    )
+                }
             }
         }
     }
@@ -97,8 +124,15 @@ class DiscoverViewModel @Inject constructor(
                 val matchesOnline = !newFilters.onlineOnly || host.isOnline
                 matchesAge && matchesVibe && matchesStar && matchesOnline
             }
+            val sorted = sortHosts(filtered)
+            val sortedIds = sorted.map { it.uid }.toSet()
+            val filteredSections = currentState.sections.map { section ->
+                section.copy(hosts = sortHosts(section.hosts.filter { it.uid in sortedIds }))
+            }.filter { it.hosts.isNotEmpty() }
+
             _state.value = currentState.copy(
-                filteredHosts = sortHosts(filtered),
+                filteredHosts = sorted,
+                sections = if (newFilters == DiscoverFilters()) currentState.sections else filteredSections,
                 filters = newFilters
             )
         }
@@ -113,8 +147,8 @@ class DiscoverViewModel @Inject constructor(
                     else -> 1
                 }
             }
-            .thenByDescending { it.avgRating ?: 5.0 }
-            .thenByDescending { it.totalCalls }
+                .thenByDescending { it.avgRating ?: 5.0 }
+                .thenByDescending { it.totalCalls }
         )
     }
 
@@ -125,14 +159,12 @@ class DiscoverViewModel @Inject constructor(
 
     fun toggleAgeFilter(ageGroup: String) {
         val currentFilters = (state.value as? DiscoverState.Success)?.filters ?: DiscoverFilters()
-        val nextAge = if (currentFilters.ageGroup == ageGroup) null else ageGroup
-        updateFilters(currentFilters.copy(ageGroup = nextAge))
+        updateFilters(currentFilters.copy(ageGroup = if (currentFilters.ageGroup == ageGroup) null else ageGroup))
     }
 
     fun toggleVibeFilter(vibe: String) {
         val currentFilters = (state.value as? DiscoverState.Success)?.filters ?: DiscoverFilters()
-        val nextVibe = if (currentFilters.vibeTag == vibe) null else vibe
-        updateFilters(currentFilters.copy(vibeTag = nextVibe))
+        updateFilters(currentFilters.copy(vibeTag = if (currentFilters.vibeTag == vibe) null else vibe))
     }
 
     fun toggleStarOnly() {

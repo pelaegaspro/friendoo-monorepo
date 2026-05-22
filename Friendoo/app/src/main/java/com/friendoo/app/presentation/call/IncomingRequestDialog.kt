@@ -16,27 +16,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 
 @Composable
 fun IncomingRequestDialog(
-    requestId: String,
-    isPriority: Boolean,
-    expiresAtIso: String,
-    onAccept: (String) -> Unit, // callId
+    callId: String,
+    callerAlias: String,
+    ratePerMinute: Int,
+    callTypeLabel: String,
+    secondsLeft: Int,
+    isSubmitting: Boolean,
+    onAccept: () -> Unit,
     onDecline: () -> Unit
 ) {
-    var timeLeft by remember { mutableStateOf(30) }
-    var isSubmitting by remember { mutableStateOf(false) }
-
-    LaunchedEffect(requestId) {
-        // Simple countdown logic
-        while (timeLeft > 0) {
-            delay(1000)
-            timeLeft--
-        }
-        onDecline()
-    }
 
     AlertDialog(
         onDismissRequest = { /* Force action */ },
@@ -50,13 +41,13 @@ fun IncomingRequestDialog(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = if (isPriority) Color(0xFFFFD700).copy(alpha = 0.1f) else Color.Green.copy(alpha = 0.1f),
+                    color = Color.Green.copy(alpha = 0.1f),
                     modifier = Modifier.size(80.dp)
                 ) {
                     Icon(
                         Icons.Default.Call,
                         contentDescription = null,
-                        tint = if (isPriority) Color(0xFFFFD700) else Color.Green,
+                        tint = Color.Green,
                         modifier = Modifier.padding(20.dp).size(40.dp)
                     )
                 }
@@ -64,14 +55,14 @@ fun IncomingRequestDialog(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    if (isPriority) "⭐ Priority Request!" else "📞 Someone wants to talk!",
+                    "📞 Incoming $callTypeLabel call",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center
                 )
 
                 Text(
-                    "Anonymous User · ₹3/min earnings",
+                    "$callerAlias · $ratePerMinute coins/min",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 8.dp)
@@ -86,7 +77,7 @@ fun IncomingRequestDialog(
                 )
 
                 Text(
-                    "$timeLeft seconds left",
+                    "$secondsLeft seconds left",
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Light,
                     fontSize = 48.sp
@@ -99,11 +90,7 @@ fun IncomingRequestDialog(
         },
         confirmButton = {
             Button(
-                onClick = {
-                    isSubmitting = true
-                    // Stub - simulate success
-                    onAccept("call_${System.currentTimeMillis()}")
-                },
+                onClick = onAccept,
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Green, contentColor = Color.White),

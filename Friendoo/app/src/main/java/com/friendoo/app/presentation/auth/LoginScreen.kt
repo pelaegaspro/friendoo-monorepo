@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import com.friendoo.app.core.utils.findComponentActivity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -170,7 +171,12 @@ fun LoginScreen(
 
             FriendooButton(
                 text = "Continue",
-                onClick = { viewModel.sendOtp(phone, context as Activity) },
+                onClick = {
+                    val activity = context.findComponentActivity()
+                    if (activity != null) {
+                        viewModel.sendOtp(phone, activity)
+                    }
+                },
                 enabled = phone.length >= 10 && !isLoading,
                 isLoading = isLoading
             )

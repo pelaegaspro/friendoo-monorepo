@@ -24,11 +24,38 @@ class FirebaseAuthSource @Inject constructor(
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
 
-    suspend fun verifyOtp(verificationId: String, code: String): Result<Any> {
+    fun resendOtp(
+        phone: String,
+        activity: Activity,
+        resendToken: PhoneAuthProvider.ForceResendingToken,
+        callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
+    ) {
+        val options = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phone)
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(activity)
+            .setCallbacks(callbacks)
+            .setForceResendingToken(resendToken)
+            .build()
+        PhoneAuthProvider.verifyPhoneNumber(options)
+    }
+
+    suspend fun verifyOtp(verificationId: String, code: String): Result<com.google.firebase.auth.FirebaseUser> {
         return try {
             val credential = PhoneAuthProvider.getCredential(verificationId, code)
             val result = auth.signInWithCredential(credential).await()
-            Result.success(result.user ?: "unknown")
+            val user = result.user ?: return Result.failure(IllegalStateException("Sign-in returned no user"))
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun signInWithCredential(credential: PhoneAuthCredential): Result<com.google.firebase.auth.FirebaseUser> {
+        return try {
+            val result = auth.signInWithCredential(credential).await()
+            val user = result.user ?: return Result.failure(IllegalStateException("Sign-in returned no user"))
+            Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)
         }

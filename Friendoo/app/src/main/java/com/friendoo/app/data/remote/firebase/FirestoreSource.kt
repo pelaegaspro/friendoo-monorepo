@@ -2,6 +2,7 @@ package com.friendoo.app.data.remote.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -16,7 +17,13 @@ class FirestoreSource @Inject constructor(
 ) {
     suspend fun getDocument(collection: String, docId: String): Result<Map<String, Any?>> {
         return try {
-            val snap = firestore.collection(collection).document(docId).get().await()
+            val docRef = firestore.collection(collection).document(docId)
+            val snap = try {
+                val cacheSnap = docRef.get(Source.CACHE).await()
+                if (cacheSnap.exists()) cacheSnap else docRef.get(Source.SERVER).await()
+            } catch (e: Exception) {
+                docRef.get(Source.SERVER).await()
+            }
             if (snap.exists()) {
                 Result.success(snap.data ?: emptyMap())
             } else {
@@ -47,7 +54,13 @@ class FirestoreSource @Inject constructor(
 
     suspend fun getCollection(collection: String): Result<List<Map<String, Any?>>> {
         return try {
-            val snap = firestore.collection(collection).get().await()
+            val query = firestore.collection(collection)
+            val snap = try {
+                val cacheSnap = query.get(Source.CACHE).await()
+                if (!cacheSnap.isEmpty) cacheSnap else query.get(Source.SERVER).await()
+            } catch (e: Exception) {
+                query.get(Source.SERVER).await()
+            }
             Result.success(snap.documents.map { it.data ?: emptyMap() })
         } catch (e: Exception) {
             Result.failure(e)
@@ -77,9 +90,9 @@ class FirestoreSource @Inject constructor(
             .addSnapshotListener { snap, error ->
                 if (error != null) {
                     close(error)
-                    return@addSnapshotListener
+                } else {
+                    trySend(snap?.data ?: emptyMap())
                 }
-                trySend(snap?.data ?: emptyMap())
             }
         awaitClose { listener.remove() }
     }
@@ -89,9 +102,9 @@ class FirestoreSource @Inject constructor(
             .addSnapshotListener { snap, error ->
                 if (error != null) {
                     close(error)
-                    return@addSnapshotListener
+                } else {
+                    trySend(snap?.documents?.map { it.data ?: emptyMap() } ?: emptyList())
                 }
-                trySend(snap?.documents?.map { it.data ?: emptyMap() } ?: emptyList())
             }
         awaitClose { listener.remove() }
     }

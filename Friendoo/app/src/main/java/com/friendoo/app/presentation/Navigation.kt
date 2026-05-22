@@ -3,6 +3,7 @@ package com.friendoo.app.presentation
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +13,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.presentation.auth.AuthViewModel
 import com.friendoo.app.presentation.auth.LoginScreen
@@ -21,31 +23,95 @@ import com.friendoo.app.core.model.CallType
 import com.friendoo.app.presentation.call.CallEndScreen
 import com.friendoo.app.presentation.call.CallScreen
 import com.friendoo.app.presentation.call.CallViewModel
-import com.friendoo.app.presentation.call.WaitingScreen
 import com.friendoo.app.presentation.host.HostHomeScreen
 import com.friendoo.app.presentation.home.HomeScreen
-import com.friendoo.app.presentation.leaderboard.LeaderboardScreen
 import com.friendoo.app.presentation.onboarding.OnboardingScreen
 import com.friendoo.app.presentation.onboarding.OnboardingViewModel
 import com.friendoo.app.presentation.profile.AvatarPickerScreen
-import com.friendoo.app.presentation.report.ReportThreadScreen
 import com.friendoo.app.presentation.rewards.RewardsScreen
 import com.friendoo.app.presentation.wallet.EarningsScreen
 import com.friendoo.app.presentation.wallet.HostWalletViewModel
 import com.friendoo.app.presentation.wallet.UserTransactionsScreen
 import com.friendoo.app.presentation.wallet.WalletViewModel
 import javax.inject.Inject
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    userPreferences: UserPreferences
+    userPreferences: UserPreferences,
+    pendingIncomingCallId: String? = null
 ) {
     // Determine start destination based on persisted login state
     val authToken by userPreferences.authTokenFlow.collectAsState(initial = null)
     val onboardingCompleted by userPreferences.onboardingCompletedFlow.collectAsState(initial = false)
     val isHost by userPreferences.isHostFlow.collectAsState(initial = false)
     val userId by userPreferences.userIdFlow.collectAsState(initial = null)
+
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    var activeCallRoute by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(userId) {
+        val uid = userId ?: return@DisposableEffect onDispose {}
+        val activeStates = listOf("ringing", "connecting", "accepted", "active")
+
+        // Listen for calls where current user is the CALLER
+        val callerListener = firestore.collection("calls")
+            .whereEqualTo("callerId", uid)
+            .whereIn("state", activeStates)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                val docs = snapshot?.documents ?: return@addSnapshotListener
+                for (doc in docs) {
+                    val data = doc.data ?: continue
+                    val peerAlias = data["toDisplayName"] as? String ?: "Host"
+                    val rate = (data["ratePerMinute"] as? Long)?.toInt() ?: 5
+                    val callTypeVal = data["callType"] as? String ?: "audio"
+                    val peerAvatarSeed = data["hostId"] as? String ?: ""
+                    activeCallRoute = "call/${Uri.encode(peerAvatarSeed)}/${Uri.encode(peerAlias)}/$rate/$callTypeVal/${Uri.encode(peerAvatarSeed)}"
+                    return@addSnapshotListener
+                }
+                activeCallRoute = null
+            }
+
+        // Listen for calls where current user is the HOST
+        val hostListener = firestore.collection("calls")
+            .whereEqualTo("hostId", uid)
+            .whereIn("state", activeStates)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                val docs = snapshot?.documents ?: return@addSnapshotListener
+                for (doc in docs) {
+                    val data = doc.data ?: continue
+                    val callId = doc.id
+                    val peerAlias = data["fromDisplayName"] as? String ?: "User"
+                    val rate = (data["ratePerMinute"] as? Long)?.toInt() ?: 5
+                    val callTypeVal = data["callType"] as? String ?: "audio"
+                    val peerAvatarSeed = data["callerId"] as? String ?: ""
+                    activeCallRoute = "call/join/${Uri.encode(callId)}/${Uri.encode(peerAlias)}/$rate/$callTypeVal/${Uri.encode(peerAvatarSeed)}"
+                    return@addSnapshotListener
+                }
+                // Only clear if no active call found as caller either
+                if (activeCallRoute?.startsWith("call/join") == true) {
+                    activeCallRoute = null
+                }
+            }
+
+        onDispose {
+            callerListener.remove()
+            hostListener.remove()
+        }
+    }
+
+    LaunchedEffect(activeCallRoute) {
+        val route = activeCallRoute ?: return@LaunchedEffect
+        val currentRoute = navController.currentBackStackEntry?.destination?.route
+        if (currentRoute != null && !currentRoute.startsWith("call")) {
+            navController.navigate(route) {
+                popUpTo("splash") { inclusive = true }
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -59,12 +125,12 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToOnboarding = {
-                    navController.navigate("onboarding") {
+                    navController.navigate("home") {
                         popUpTo("splash") { inclusive = true }
                     }
                 },
                 onNavigateToLogin = {
-                    navController.navigate("login") {
+                    navController.navigate("auth") {
                         popUpTo("splash") { inclusive = true }
                     }
                 },
@@ -75,30 +141,35 @@ fun AppNavigation(
                 }
             )
         }
-        composable("login") {
-            val viewModel: AuthViewModel = hiltViewModel()
-            LoginScreen(viewModel) {
-                navController.navigate("otp")
-            }
-        }
-        composable("otp") {
-            val viewModel: AuthViewModel = hiltViewModel()
-            OtpScreen(
-                viewModel = viewModel,
-                onSuccess = { onboardingCompleted, isHost ->
-                    val destination = when {
-                        !onboardingCompleted -> "onboarding"
-                        isHost -> "host_home"
-                        else -> "home"
-                    }
-                    navController.navigate(destination) {
-                        popUpTo("login") { inclusive = true }
-                    }
-                },
-                onBack = {
-                    navController.popBackStack()
+        navigation(startDestination = "login", route = "auth") {
+            composable("login") { backStackEntry ->
+                val authEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("auth")
                 }
-            )
+                val viewModel: AuthViewModel = hiltViewModel(authEntry)
+                LoginScreen(viewModel) {
+                    navController.navigate("otp")
+                }
+            }
+            composable("otp") { backStackEntry ->
+                val authEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("auth")
+                }
+                val viewModel: AuthViewModel = hiltViewModel(authEntry)
+                OtpScreen(
+                    viewModel = viewModel,
+                    onSuccess = { onboardingCompleted, isHost ->
+                        val destination = when {
+                            isHost -> "host_home"
+                            else -> "home"
+                        }
+                        navController.navigate(destination) {
+                            popUpTo("auth") { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
         composable("onboarding") {
             val viewModel: OnboardingViewModel = hiltViewModel()
@@ -122,53 +193,43 @@ fun AppNavigation(
                     )
                 },
                 onLogoutSuccess = {
-                    navController.navigate("login") {
+                    navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToRewards = { navController.navigate("rewards") },
-                onNavigateToLeaderboard = { navController.navigate("leaderboard") },
                 onNavigateToEarnings = { navController.navigate("earnings") },
                 onNavigateToAvatarPicker = { seed ->
                     navController.navigate("avatar_picker/${Uri.encode(seed)}")
                 },
-                onNavigateToWaiting = {
+                onQuickMatch = {
                     navController.navigate("waiting")
                 }
             )
         }
         composable("host_home") {
+            LaunchedEffect(pendingIncomingCallId) {
+                if (!pendingIncomingCallId.isNullOrBlank()) {
+                    // Host home IncomingCallViewModel picks up ringing doc from Firestore listener.
+                }
+            }
             HostHomeScreen(
                 onLogoutSuccess = {
-                    navController.navigate("login") {
+                    navController.navigate("auth") {
                         popUpTo(0) { inclusive = true }
                     }
                 },
                 onNavigateToSettings = { /* Settings screen not yet built */ },
-                onNavigateToPerformance = { /* Performance screen not yet built */ }
-            )
-        }
-        composable("waiting") {
-            WaitingScreen(
-                requestId = "quick_match_${System.currentTimeMillis()}",
-                onMatched = { callId, hostAlias, hostColor ->
-                    navController.navigate("call/quick/$hostAlias/5/audio/default") {
-                        popUpTo("waiting") { inclusive = true }
-                    }
-                },
-                onTimeout = {
-                    navController.popBackStack()
-                },
-                onCancel = {
-                    navController.popBackStack()
+                onNavigateToPerformance = { /* Performance screen not yet built */ },
+                onJoinIncomingCall = { callId, callerAlias, rate, callType ->
+                    navController.navigate(
+                        "call/join/${Uri.encode(callId)}/${Uri.encode(callerAlias)}/$rate/${callType.value}/${Uri.encode(callerAlias)}"
+                    )
                 }
             )
         }
         composable("rewards") {
             RewardsScreen(userId = userId, onBack = { navController.popBackStack() })
-        }
-        composable("leaderboard") {
-            LeaderboardScreen(onBack = { navController.popBackStack() })
         }
 
         composable("earnings") {
@@ -176,7 +237,7 @@ fun AppNavigation(
                 val viewModel: HostWalletViewModel = hiltViewModel()
                 EarningsScreen(viewModel) { navController.popBackStack() }
             } else {
-                val viewModel: WalletViewModel = hiltViewModel()
+                val viewModel: WalletViewModel = hiltViewModel(key = "home_wallet_user")
                 UserTransactionsScreen(viewModel) { navController.popBackStack() }
             }
         }
@@ -187,13 +248,7 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() }
             )
         }
-        composable("report_thread/{reportId}") { backStackEntry ->
-            val reportId = backStackEntry.arguments?.getString("reportId") ?: return@composable
-            ReportThreadScreen(
-                reportId = reportId,
-                onBack = { navController.popBackStack() }
-            )
-        }
+
         composable("call_end/{hostAlias}/{hostId}/{sessionId}") { backStackEntry ->
             val hostAlias = backStackEntry.arguments?.getString("hostAlias") ?: "Host"
             val hostId = backStackEntry.arguments?.getString("hostId") ?: ""
@@ -206,6 +261,42 @@ fun AppNavigation(
                     navController.navigate("home") {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+            )
+        }
+        composable("call/join/{callId}/{peerAlias}/{ratePerMinute}/{callType}/{peerAvatarSeed}") { backStackEntry ->
+            val callId = Uri.decode(backStackEntry.arguments?.getString("callId") ?: return@composable)
+            val peerAlias = Uri.decode(backStackEntry.arguments?.getString("peerAlias") ?: "Caller")
+            val ratePerMinute = backStackEntry.arguments?.getString("ratePerMinute")?.toIntOrNull() ?: 5
+            val callType = CallType.fromString(backStackEntry.arguments?.getString("callType") ?: "audio")
+            val peerSeed = Uri.decode(backStackEntry.arguments?.getString("peerAvatarSeed") ?: peerAlias)
+            val viewModel: CallViewModel = hiltViewModel()
+            CallScreen(
+                viewModel = viewModel,
+                receiverId = "caller",
+                otherUserAlias = peerAlias,
+                otherUserAvatarSeed = peerSeed,
+                ratePerMinute = ratePerMinute,
+                callType = callType,
+                existingCallId = callId,
+                onEndCall = { sessionId ->
+                    navController.navigate("host_home") {
+                        popUpTo("host_home") { inclusive = false }
+                    }
+                }
+            )
+        }
+        composable("waiting") {
+            com.friendoo.app.presentation.call.WaitingScreen(
+                onMatched = { hostUid, hostAlias, ratePerMinute, callType, hostAvatarSeed ->
+                    navController.navigate(
+                        "call/${Uri.encode(hostUid)}/${Uri.encode(hostAlias)}/$ratePerMinute/$callType/${Uri.encode(hostAvatarSeed)}"
+                    ) {
+                        popUpTo("waiting") { inclusive = true }
+                    }
+                },
+                onCancel = {
+                    navController.popBackStack()
                 }
             )
         }

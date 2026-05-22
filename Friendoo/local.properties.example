@@ -1,0 +1,10 @@
+sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
+
+# Production (release / Play Store builds)
+CASHFREE_APP_ID=your_production_app_id
+CASHFREE_SECRET_KEY=your_production_secret_key
+
+# Sandbox (debug builds installed via adb / Android Studio)
+# Required because Cashfree Integrity blocks sideloaded production payments.
+CASHFREE_SANDBOX_APP_ID=TEST10313170d7ee8f01b63567843407130101
+CASHFREE_SANDBOX_SECRET_KEY=cfsk_ma_sbox_...

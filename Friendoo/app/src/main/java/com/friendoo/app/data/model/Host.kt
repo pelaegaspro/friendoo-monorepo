@@ -17,6 +17,7 @@ data class Host(
     val ratePerVideoMinute: Int = 10,
     val supportsVideo: Boolean = false,
     val languages: List<String> = emptyList(),
+    val primaryLanguage: String = "en",
     val isOnline: Boolean = false,
     val callStatus: String = "offline", // available, busy, offline
     val totalCalls: Int = 0,
@@ -45,6 +46,9 @@ data class Host(
                     ?: map["videoEnabled"] as? Boolean
                     ?: false,
                 languages = (map["languages"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                primaryLanguage = (map["primaryLanguage"] as? String)
+                    ?: (map["starLanguage"] as? String)
+                    ?: "en",
                 isOnline = map["isOnline"] as? Boolean ?: false,
                 callStatus = map["callStatus"] as? String ?: "offline",
                 totalCalls = (map["totalCalls"] as? Number)?.toInt() ?: 0,

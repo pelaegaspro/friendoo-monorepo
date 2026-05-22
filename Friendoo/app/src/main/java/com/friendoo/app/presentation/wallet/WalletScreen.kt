@@ -57,7 +57,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import com.friendoo.app.core.utils.findComponentActivity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -144,13 +147,16 @@ fun UserWalletContent(
 ) {
     val uiState by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedPackageId by remember { mutableStateOf<String?>(null) }
     var previousBalance by remember { mutableStateOf(uiState.balance) }
+    var balanceInitialized by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successCoins by remember { mutableStateOf(0) }
     var showPaymentSheet by remember { mutableStateOf<CoinPackage?>(null) }
+    var payInitiated by remember { mutableStateOf(false) }
 
     val selectedPackage = uiState.coinPackages.firstOrNull { it.id == selectedPackageId }
         ?: uiState.coinPackages.firstOrNull()
@@ -161,12 +167,26 @@ fun UserWalletContent(
         }
     }
 
-    LaunchedEffect(uiState.balance, uiState.isProcessingPayment) {
-        if (!uiState.isProcessingPayment && uiState.balance > previousBalance) {
+    LaunchedEffect(uiState.isCreatingOrder, payInitiated) {
+        if (payInitiated && !uiState.isCreatingOrder) {
+            showPaymentSheet = null
+            payInitiated = false
+        }
+    }
+
+    LaunchedEffect(uiState.balance, uiState.isAwaitingCoinCredit) {
+        if (!balanceInitialized) {
+            previousBalance = uiState.balance
+            balanceInitialized = true
+            return@LaunchedEffect
+        }
+        if (uiState.isAwaitingCoinCredit && uiState.balance > previousBalance) {
             successCoins = uiState.balance - previousBalance
             showSuccessDialog = true
+            previousBalance = uiState.balance
+        } else if (!uiState.isAwaitingCoinCredit) {
+            previousBalance = uiState.balance
         }
-        previousBalance = uiState.balance
     }
 
     LaunchedEffect(uiState.error) {
@@ -217,7 +237,7 @@ fun UserWalletContent(
         selectedPackage?.let { pkg ->
             AddBalanceBar(
                 pkg = pkg,
-                isProcessing = uiState.isProcessingPayment,
+                isProcessing = uiState.isCreatingOrder,
                 onClick = { showPaymentSheet = pkg },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
@@ -233,17 +253,29 @@ fun UserWalletContent(
         showPaymentSheet?.let { pkg ->
             SelectPaymentMethodScreen(
                 pkg = pkg,
-                isProcessing = uiState.isProcessingPayment,
-                onBackClick = { showPaymentSheet = null },
+                isProcessing = uiState.isCreatingOrder,
+                onBackClick = {
+                    if (!uiState.isCreatingOrder) showPaymentSheet = null
+                },
                 onPayClick = {
-                    viewModel.initiateRecharge(context, pkg.id)
-                    showPaymentSheet = null
+                    val activity = context.findComponentActivity()
+                    if (activity == null) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "Unable to start payment. Please reopen the wallet.",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    } else {
+                        payInitiated = true
+                        viewModel.initiateRecharge(activity, pkg.id)
+                    }
                 }
             )
         }
 
-        if (uiState.isProcessingPayment && showPaymentSheet == null) {
-            PaymentLoadingOverlay()
+        if (uiState.isAwaitingCoinCredit) {
+            PaymentCreditingOverlay()
         }
     }
 }
@@ -541,7 +573,7 @@ private fun PackageSkeletonGrid() {
 
 @Composable
 fun ShimmerPackageCard() {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = false
     val shimmerColor = if (isDark) DarkCard else LightCard
     Card(
         modifier = Modifier
@@ -553,27 +585,44 @@ fun ShimmerPackageCard() {
 }
 
 @Composable
-fun PaymentLoadingOverlay() {
+fun PaymentCreditingOverlay() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.42f)),
-        contentAlignment = Alignment.Center
+            .background(Color.Black.copy(alpha = 0.18f)),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Card(
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(12.dp)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            shadowElevation = 8.dp
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 34.dp, vertical = 30.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CircularProgressIndicator(color = ConnectoBlue, strokeWidth = 4.dp, modifier = Modifier.size(44.dp))
-                Spacer(modifier = Modifier.height(18.dp))
-                Text("Processing payment", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = ConnectoText)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text("Waiting for Cashfree confirmation", color = ConnectoMuted, fontSize = 14.sp)
+                CircularProgressIndicator(
+                    color = ConnectoBlue,
+                    strokeWidth = 2.5.dp,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Adding coins…",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = ConnectoText
+                    )
+                    Text(
+                        "This usually takes a second",
+                        color = ConnectoMuted,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

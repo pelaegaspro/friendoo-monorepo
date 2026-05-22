@@ -14,7 +14,6 @@ import { formatDateTime } from '@/lib/admin/format'
 import { useRouter } from 'next/navigation'
 const languageOptions = [
   'Hindi',
-  'English',
   'Tamil',
   'Telugu',
   'Bengali',

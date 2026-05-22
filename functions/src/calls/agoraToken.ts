@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 import { getDb, admin } from "../firebaseAdmin";
 import { RtcTokenBuilder, RtcRole } from "agora-token";
+import { dualStateWrite, readCallState } from "./callState";
 
 /**
  * getAgoraToken — called by the Flutter app before joining a call.
@@ -11,8 +13,10 @@ import { RtcTokenBuilder, RtcRole } from "agora-token";
  * Response: { token: string, appId: string, channel: string }
  */
 export const getAgoraToken = onCall(
-  { region: "asia-south1" },
+  { region: "asia-south1", minInstances: 1, concurrency: 80, enforceAppCheck: false },
   async (request) => {
+    const startTime = Date.now();
+
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -48,13 +52,20 @@ export const getAgoraToken = onCall(
       );
     }
 
-    // Accept "active" or "ringing" status
-    const validStatuses = ["ringing", "active"];
-    if (!validStatuses.includes(callData["status"])) {
+    const state = readCallState(callData as Record<string, unknown>);
+    const joinable = ["accepted", "connecting", "active", "ringing"];
+    if (!joinable.includes(state)) {
       throw new HttpsError(
         "failed-precondition",
-        `Call status "${callData["status"]}" is not valid for joining.`
+        `Call state "${state}" is not valid for joining.`
       );
+    }
+
+    if (state === "accepted" || state === "ringing") {
+      await callRef.update({
+        ...dualStateWrite("connecting"),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     }
 
     // Read Agora credentials from environment
@@ -85,7 +96,14 @@ export const getAgoraToken = onCall(
       privilegeExpiredTs
     );
 
-    // Log token generation
+    // Log token generation with structured payload
+    logger.info("Agora token generated successfully", {
+      uid,
+      callId,
+      channelName,
+      latencyMs: Date.now() - startTime,
+    });
+
     await db.collection("call_logs").add({
       callerUid: uid,
       callId,

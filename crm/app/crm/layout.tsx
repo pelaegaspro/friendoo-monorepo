@@ -10,6 +10,7 @@ import {
   Ticket,
   Users,
   Wallet,
+  PhoneCall,
 } from "lucide-react";
 import { LogoutButton } from "@/components/crm/LogoutButton";
 import { isAuthedServer } from "@/lib/session";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/crm/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/crm/fraud", label: "Fraud", icon: ShieldAlert },
   { href: "/crm/funnel", label: "Funnel", icon: AlertTriangle },
+  { href: "/crm/call-logs", label: "Call Logs", icon: PhoneCall },
   { href: "/crm/settings", label: "Settings", icon: Settings },
 ];
 

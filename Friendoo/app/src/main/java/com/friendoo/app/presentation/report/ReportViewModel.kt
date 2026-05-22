@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.friendoo.app.data.local.UserPreferences
-import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.friendoo.app.data.repository.AuthRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +25,7 @@ data class ReportUiState(
 class ReportViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val firestore: FirebaseFirestore,
-    private val authSource: InsForgeAuthSource
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ReportUiState())
@@ -45,7 +45,7 @@ class ReportViewModel @Inject constructor(
             _state.value = ReportUiState(isSubmitting = true)
 
             try {
-                val reporterId = authSource.getCurrentUser()?.uid
+                val reporterId = authRepository.getCurrentUserId()
                     ?: throw IllegalStateException("User not authenticated")
 
                 val reportData = hashMapOf(

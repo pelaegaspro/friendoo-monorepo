@@ -20,6 +20,7 @@ type PayoutModalState = {
 }
 
 type PayoutRecord = {
+  id: string
   hostId: string
   hostName: string
   photoURL: string
@@ -28,6 +29,8 @@ type PayoutRecord = {
   coinsEarned: number
   earningsInr: number
   payoutStatus: 'pending' | 'paid'
+  upiId: string
+  requestedAt: string
   lastPaidAt?: string | null
 }
 

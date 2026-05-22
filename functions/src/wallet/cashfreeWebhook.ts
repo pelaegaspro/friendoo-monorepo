@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import express, { type Request, type Response } from 'express';
 import { onRequest } from 'firebase-functions/v2/https';
 import { admin, getDb } from '../firebaseAdmin';
+import { creditTopupFromOrder } from './creditTopupFromOrder';
 
 // ── Types ──
 
@@ -72,12 +73,21 @@ function badRequest(res: Response, msg: string) {
 
 const app = express();
 
-// Preserve raw body for signature verification. Accept any path so the deployed
-// function URL works directly and also tolerates a trailing webhook path.
-app.post('*', express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
-  const rawBody = req.body as Buffer;
+// Firebase Cloud Functions automatically preserve the raw request body as
+// req.rawBody (a Buffer) before any JSON parsing occurs. We rely on this
+// for HMAC-SHA256 signature verification against Cashfree webhook payloads.
+app.post('*', express.json(), async (req: Request, res: Response) => {
+  // Firebase exposes the raw body buffer on req.rawBody
+  const rawBody: Buffer = (req as any).rawBody as Buffer;
   const signature = req.header('x-webhook-signature') ?? req.header('X-Webhook-Signature');
   const timestamp = req.header('x-webhook-timestamp') ?? req.header('X-Webhook-Timestamp');
+
+  console.log(`cashfreeWebhook: received rawBody type=${typeof rawBody}, isBuffer=${Buffer.isBuffer(rawBody)}, length=${Buffer.isBuffer(rawBody) ? rawBody.length : 'N/A'}`);
+  if (Buffer.isBuffer(rawBody) && process.env.NODE_ENV !== 'production') {
+    console.log(`cashfreeWebhook: rawBody content="${rawBody.toString('utf8')}"`);
+  }
+  console.log(`cashfreeWebhook: secret configured=${!!process.env.CASHFREE_WEBHOOK_SECRET}`);
+  console.log(`cashfreeWebhook: header signature="${signature}", timestamp="${timestamp}"`);
 
   // 1. Verify signature — return 200 even on failure to prevent Cashfree retries
   if (!verifySignature(rawBody, signature, timestamp)) {
@@ -85,9 +95,17 @@ app.post('*', express.raw({ type: 'application/json' }), async (req: Request, re
     return res.status(200).json({ status: 'signature_invalid' });
   }
 
+  // Parse event from the already-parsed body (express.json() ran before this handler)
+  // or fall back to manual parse from rawBody if body is not already an object
   let event: CashfreeWebhookEvent;
   try {
-    event = JSON.parse(rawBody.toString('utf8'));
+    if (req.body && typeof req.body === 'object') {
+      event = req.body as CashfreeWebhookEvent;
+    } else if (Buffer.isBuffer(rawBody)) {
+      event = JSON.parse(rawBody.toString('utf8'));
+    } else {
+      return badRequest(res, 'No parseable body');
+    }
   } catch {
     return badRequest(res, 'Invalid JSON');
   }
@@ -112,84 +130,30 @@ app.post('*', express.raw({ type: 'application/json' }), async (req: Request, re
       // ── Payment Success ──
       case 'PAYMENT_SUCCESS':
       case 'PAYMENT_CHARGES': {
-        // Find pending transaction by cashfreeOrderId
-        const txSnap = await db.collection('coinTransactions')
-          .where('cashfreeOrderId', '==', orderId)
-          .where('status', '==', 'pending')
-          .limit(1)
-          .get();
-
-        if (txSnap.empty) {
-          console.warn(`cashfreeWebhook: No pending transaction for orderId=${orderId}`);
-          // Idempotent: if already succeeded, just acknowledge
-          const existingSnap = await db.collection('coinTransactions')
+        if (customerId) {
+          const txSnap = await db.collection('coinTransactions')
             .where('cashfreeOrderId', '==', orderId)
-            .where('status', '==', 'success')
             .limit(1)
             .get();
-          if (!existingSnap.empty) {
-            console.log(`cashfreeWebhook: Already processed orderId=${orderId}, skipping`);
-            return res.status(200).json({ status: 'already_processed' });
+          const txUserId = txSnap.empty ? null : (txSnap.docs[0].data() as PendingTransaction).userId;
+          if (txUserId && customerId !== txUserId) {
+            console.error(`cashfreeWebhook: Customer mismatch! cashfree=${customerId}, firestore=${txUserId}`);
+            return badRequest(res, 'Customer mismatch');
           }
-          return res.status(200).json({ status: 'no_pending_transaction' });
         }
 
-        const txDoc = txSnap.docs[0];
-        const txData = txDoc.data() as PendingTransaction;
-
-        // Verify customer_id matches userId on the transaction
-        if (customerId && customerId !== txData.userId) {
-          console.error(`cashfreeWebhook: Customer mismatch! cashfree=${customerId}, firestore=${txData.userId}`);
-          return badRequest(res, 'Customer mismatch');
-        }
-
-        // Run Firestore transaction to credit coins
-        await db.runTransaction(async (t) => {
-          const userRef = db.collection('users').doc(txData.userId);
-          const userDoc = await t.get(userRef);
-
-          const currentBalance: number = userDoc.exists
-            ? typeof userDoc.data()?.coinBalance === 'number'
-              ? (userDoc.data()!.coinBalance as number)
-              : 0
-            : 0;
-
-          const newBalance = currentBalance + txData.amountCoins;
-
-          // Credit coins — set both fields for backward compatibility
-          t.set(userRef, {
-            coinBalance: newBalance,
-            coins: newBalance,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
-
-          // Update transaction to success
-          t.update(txDoc.ref, {
-            status: 'success',
-            balanceBefore: currentBalance,
-            balanceAfter: newBalance,
-            cashfreePaymentId: data?.payment?.cf_payment_id ?? null,
-            paymentMethod: data?.payment?.payment_method ?? null,
-            processedAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          t.set(db.collection('transactions').doc(txDoc.id), {
-            userId: txData.userId,
-            type: 'topup',
-            status: 'success',
-            cashfreeOrderId: orderId,
-            cashfreePaymentId: data?.payment?.cf_payment_id ?? null,
-            packageId: txData.packageId,
-            amountCoins: txData.amountCoins,
-            balanceBefore: currentBalance,
-            balanceAfter: newBalance,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          }, { merge: true });
+        const result = await creditTopupFromOrder(orderId, customerId, {
+          cashfreePaymentId: data?.payment?.cf_payment_id ?? null,
+          paymentMethod: data?.payment?.payment_method ?? null,
         });
 
-        console.log(`cashfreeWebhook: Credited ${txData.amountCoins} coins to user=${txData.userId}, orderId=${orderId}`);
-        return res.status(200).json({ status: 'credited', coins: txData.amountCoins });
+        if (result.credited) {
+          console.log(`cashfreeWebhook: Credited orderId=${orderId}, coins=${result.coins}`);
+          return res.status(200).json({ status: 'credited', coins: result.coins });
+        }
+
+        console.warn(`cashfreeWebhook: Could not credit orderId=${orderId}, reason=${result.reason}`);
+        return res.status(200).json({ status: result.reason ?? 'not_credited' });
       }
 
       // ── Payment Failed ──

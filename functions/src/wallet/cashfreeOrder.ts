@@ -1,8 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import axios from 'axios';
 import { getDb, admin } from '../firebaseAdmin';
-
-// ── Types ──
+import { getCashfreeBaseUrl, getCashfreeHeaders, resolveCashfreeEnv } from './cashfreeConfig';
 
 type CoinPackageDoc = {
   active?: boolean;
@@ -13,42 +12,21 @@ type CoinPackageDoc = {
   displayName?: string;
 };
 
-// ── Cashfree API Config ──
-
-function getCashfreeBaseUrl(): string {
-  const env = process.env.CASHFREE_ENV || 'sandbox';
-  return env === 'production'
-    ? 'https://api.cashfree.com/pg'
-    : 'https://sandbox.cashfree.com/pg';
-}
-
-function getCashfreeHeaders() {
-  const appId = process.env.CASHFREE_APP_ID;
-  const secretKey = process.env.CASHFREE_SECRET_KEY;
-  if (!appId || !secretKey) {
-    throw new Error('Missing Cashfree env vars: CASHFREE_APP_ID / CASHFREE_SECRET_KEY');
-  }
-  return {
-    'x-api-version': '2023-08-01',
-    'x-client-id': appId,
-    'x-client-secret': secretKey,
-    'Content-Type': 'application/json',
-  };
-}
-
-// ── Cloud Function ──
-
 export const createCashfreeOrder = onCall(
   { region: 'asia-south1' },
   async (request) => {
-    const { packageId, userId: requestedUserId } = request.data as {
+    const { packageId, userId: requestedUserId, cashfreeEnv } = request.data as {
       packageId?: string;
       userId?: string;
+      cashfreeEnv?: string;
     };
-    const userId = request.auth?.uid ?? requestedUserId;
-
-    if (!userId || typeof userId !== 'string') {
+    if (!request.auth?.uid) {
       throw new HttpsError('unauthenticated', 'Login required');
+    }
+    const userId = request.auth.uid;
+
+    if (requestedUserId && requestedUserId !== userId) {
+      throw new HttpsError('permission-denied', 'userId mismatch');
     }
 
     if (!packageId || typeof packageId !== 'string') {
@@ -57,7 +35,6 @@ export const createCashfreeOrder = onCall(
 
     const db = getDb();
 
-    // 1. Read coin package from Firestore
     const pkgRef = db.collection('coinPackages').doc(packageId);
     const pkgSnap = await pkgRef.get();
 
@@ -79,10 +56,10 @@ export const createCashfreeOrder = onCall(
       throw new HttpsError('failed-precondition', 'Invalid package pricing');
     }
 
-    // 2. Create Cashfree order
     const orderId = `order_${userId.slice(0, 8)}_${Date.now()}`;
-    const baseUrl = getCashfreeBaseUrl();
-    const headers = getCashfreeHeaders();
+    const env = resolveCashfreeEnv(cashfreeEnv);
+    const baseUrl = getCashfreeBaseUrl(env);
+    const headers = getCashfreeHeaders(env);
 
     try {
       const response = await axios.post(
@@ -100,7 +77,7 @@ export const createCashfreeOrder = onCall(
             return_url: `https://friendoo.in/payment/callback?order_id=${orderId}`,
           },
         },
-        { headers }
+        { headers, timeout: 8_000 }
       );
 
       const cashfreeOrderId = response.data.order_id;
@@ -110,7 +87,7 @@ export const createCashfreeOrder = onCall(
         throw new Error('Cashfree response missing order_id or payment_session_id');
       }
 
-      // 3. Create pending transaction in Firestore (idempotency key)
+      // Must complete before webhook / confirm can find pending transaction
       const txRef = db.collection('coinTransactions').doc();
       await txRef.set({
         userId,
@@ -125,7 +102,7 @@ export const createCashfreeOrder = onCall(
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      console.log(`createCashfreeOrder: userId=${userId}, orderId=${cashfreeOrderId}, coins=${totalCoins}, price=${priceInr}`);
+      console.log(`createCashfreeOrder: env=${env}, userId=${userId}, orderId=${cashfreeOrderId}, coins=${totalCoins}, price=${priceInr}`);
 
       return {
         orderId: cashfreeOrderId,

@@ -13,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import com.cashfree.pg.api.CFPaymentGatewayService
 import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
 import com.cashfree.pg.core.api.utils.CFErrorResponse
+import com.friendoo.app.core.notification.CallNotificationHelper
+import com.friendoo.app.core.payment.CashfreePaymentCallbackRegistry
 import com.friendoo.app.data.local.UserPreferences
 import com.friendoo.app.presentation.theme.FriendooTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,6 +26,9 @@ class MainActivity : ComponentActivity(), CFCheckoutResponseCallback {
     @Inject
     lateinit var userPreferences: UserPreferences
 
+    @Inject
+    lateinit var cashfreeCallbackRegistry: CashfreePaymentCallbackRegistry
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _: Boolean ->
@@ -32,24 +37,28 @@ class MainActivity : ComponentActivity(), CFCheckoutResponseCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        askNotificationPermission()
-        setContent {
-            FriendooTheme {
-                val navController = rememberNavController()
-                AppNavigation(navController, userPreferences)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Re-register Cashfree callback on every resume so the SDK can deliver
-        // payment results even if the Activity was recreated during checkout.
         try {
             CFPaymentGatewayService.getInstance().setCheckoutCallback(this)
         } catch (e: Exception) {
             Log.w("Cashfree", "Could not register checkout callback: ${e.message}")
         }
+        askNotificationPermission()
+        val pendingIncomingCallId = intent?.getStringExtra(CallNotificationHelper.EXTRA_INCOMING_CALL_ID)
+        setContent {
+            FriendooTheme {
+                val navController = rememberNavController()
+                AppNavigation(
+                    navController = navController,
+                    userPreferences = userPreferences,
+                    pendingIncomingCallId = pendingIncomingCallId
+                )
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 
     // ── CFCheckoutResponseCallback ───────────────────────────────────────────
@@ -60,11 +69,23 @@ class MainActivity : ComponentActivity(), CFCheckoutResponseCallback {
      * handler acts as a safety fallback for orphaned callbacks.
      */
     override fun onPaymentVerify(orderId: String) {
-        Log.d("Cashfree", "MainActivity.onPaymentVerify: orderId=$orderId")
+        val delegate = cashfreeCallbackRegistry.callback
+        if (delegate != null) {
+            delegate.onPaymentVerify(orderId)
+            cashfreeCallbackRegistry.callback = null
+        } else {
+            Log.d("Cashfree", "MainActivity.onPaymentVerify: orderId=$orderId (no delegate)")
+        }
     }
 
     override fun onPaymentFailure(error: CFErrorResponse?, orderId: String?) {
-        Log.w("Cashfree", "MainActivity.onPaymentFailure: orderId=$orderId, error=${error?.message}")
+        val delegate = cashfreeCallbackRegistry.callback
+        if (delegate != null) {
+            delegate.onPaymentFailure(error, orderId)
+            cashfreeCallbackRegistry.callback = null
+        } else {
+            Log.w("Cashfree", "MainActivity.onPaymentFailure: orderId=$orderId, error=${error?.message}")
+        }
     }
 
     private fun askNotificationPermission() {

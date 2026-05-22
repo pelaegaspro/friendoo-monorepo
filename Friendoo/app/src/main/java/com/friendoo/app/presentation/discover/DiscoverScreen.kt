@@ -98,6 +98,10 @@ fun DiscoverScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         item {
+                            HeroQuickMatchCard(onClick = onQuickMatch)
+                        }
+
+                        item {
                             Column(modifier = Modifier.padding(horizontal = 4.dp)) {
                                 Text(
                                     text = "Featured Experts",
@@ -141,12 +145,37 @@ fun DiscoverScreen(
                                     onAction = { viewModel.updateFilters(DiscoverFilters()) }
                                 )
                             }
-                        } else {
+                        } else if (hasActiveFilters) {
                             items(filteredHosts) { host ->
                                 DiscoverExpertListCard(
                                     host = host,
                                     onCallClick = { selectedHostForCall = host }
                                 )
+                            }
+                        } else {
+                            currentState.sections.forEach { section ->
+                                item {
+                                    Text(
+                                        text = section.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF15151A),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                    )
+                                }
+                                item {
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp)
+                                    ) {
+                                        items(section.hosts, key = { it.uid }) { host ->
+                                            DiscoverHostHorizontalCard(
+                                                host = host,
+                                                onCallClick = { selectedHostForCall = host }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1318,6 +1347,73 @@ fun CoinBalancePill(coins: Int, modifier: Modifier = Modifier, onClick: () -> Un
                     contentDescription = "Add coins",
                     tint = Color(0xFF4F8EF7),
                     modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DiscoverHostHorizontalCard(
+    host: Host,
+    onCallClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isAvailable = host.isOnline && host.callStatus == "available"
+    val langLabel = when (host.primaryLanguage) {
+        "ta" -> "Tamil"
+        "hi" -> "Hindi"
+        "ml" -> "Malayalam"
+        "te" -> "Telugu"
+        else -> "English"
+    }
+
+    Card(
+        onClick = onCallClick,
+        modifier = modifier.width(160.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ExpertAvatar(host = host, isAvailable = isAvailable)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = host.alias.ifBlank { "Host" },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            Text(
+                text = langLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF8A8490)
+            )
+            Text(
+                text = "${host.ratePerAudioMinute} coins/min",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFFE05B96),
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Surface(
+                color = if (isAvailable) Color(0xFFE8F8EE) else Color(0xFFF3F3F5),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = when {
+                        isAvailable -> "Online"
+                        host.callStatus == "busy" -> "Busy"
+                        else -> "Offline"
+                    },
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isAvailable) Color(0xFF1B8A4C) else Color(0xFF8A8490),
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

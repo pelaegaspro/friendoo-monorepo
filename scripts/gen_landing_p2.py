@@ -42,7 +42,7 @@ body_html = """<div class="lang-bar"><span>Select Language:</span>
 <div><label class="form-label">Full name</label><input type="text" name="name" placeholder="Your full name" required></div>
 <div><label class="form-label">City</label><input type="text" name="city" placeholder="Mumbai, Chennai&#8230;" required></div>
 <div><label class="form-label">Phone / WhatsApp</label><input type="tel" name="phone" placeholder="+91XXXXXXXXXX" required></div>
-<div><label class="form-label">Primary language</label><select name="language" id="langSelect"><option>English</option><option>Hindi</option><option>Tamil</option><option>Telugu</option><option>Kannada</option><option>Malayalam</option><option>Urdu</option></select></div>
+<div><label class="form-label">Primary language</label><select name="language" id="langSelect"><option>Hindi</option><option>Tamil</option><option>Telugu</option><option>Kannada</option><option>Malayalam</option><option>Urdu</option></select></div>
 <div class="form-full"><label class="form-label">Why do you want to join as a host?</label><textarea name="about" placeholder="I love talking about movies and music&#8230;"></textarea></div>
 <div class="form-full"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><input type="checkbox" id="confirm" required style="width:auto"><label for="confirm" style="display:inline;color:rgba(255,255,255,.7);font-size:14px">I confirm I am 18+ female and agree to the Terms of Service and Privacy Policy</label></div>
 <button type="submit" class="btn btn-lg" id="submitBtn" style="width:100%;text-align:center;border-radius:14px">Submit application</button>

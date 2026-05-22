@@ -1,0 +1,22 @@
+appId: com.friendoo.app
+---
+- launchApp:
+    clearState: false # Keep the logged-in state from previous tests
+
+- assertVisible: "Contacts" # Example tab or section name
+- tapOn: "Contacts"
+
+# Tap on a mock user or the first user in the list
+- tapOn:
+    id: "contact_item_0" # Example compose test tag or resource ID
+
+- assertVisible: "Start Call" # Adjust to match your call button text
+- tapOn: "Start Call"
+
+# Verify that the WebRTC connecting UI appears
+- assertVisible: "Connecting..."
+- extendedWaitUntil:
+    visible: "Active Call" # Adjust this to what appears when call connects (or wait for timeout if testing ringing)
+    timeout: 5000
+
+- tapOn: "End Call" # Clean up

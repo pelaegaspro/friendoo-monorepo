@@ -12,6 +12,8 @@ navigationCompose = "2.7.6"
 hilt = "2.50"
 hiltNavigationCompose = "1.1.0"
 googleServices = "4.4.0"
+firebaseCrashlyticsPlugin = "2.9.9"
+firebasePerfPlugin = "1.4.2"
 firebaseBom = "32.7.1"
 agoraRtc = "4.2.2"
 cashfree = "2.3.3"
@@ -48,6 +50,8 @@ firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-fires
 firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx" }
 firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
+firebase-perf-ktx = { group = "com.google.firebase", name = "firebase-perf-ktx" }
 
 agora-rtc = { group = "io.agora.rtc", name = "full-sdk", version.ref = "agoraRtc" }
 cashfree-pg = { group = "com.cashfree.pg", name = "api", version.ref = "cashfree" }
@@ -65,3 +69,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "firebasePerfPlugin" }

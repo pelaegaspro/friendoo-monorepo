@@ -14,7 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.friendoo.app.BuildConfig
+import com.friendoo.app.core.utils.findComponentActivity
 import com.friendoo.app.presentation.components.FriendooButton
 import com.friendoo.app.presentation.components.FriendooOtpInput
 import com.friendoo.app.presentation.theme.*
@@ -28,10 +31,15 @@ fun OtpScreen(
     var code by remember { mutableStateOf("") }
     var timeLeft by remember { mutableStateOf(45) }
     var canResend by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val authState by viewModel.authState.collectAsState()
     val isLoading = authState is AuthState.Loading
     val isError = authState is AuthState.Error
     val friendooColors = LocalFriendooColors.current
+    val maskedPhone = remember(viewModel.lastPhone) {
+        val digits = viewModel.lastPhone.filter { it.isDigit() }
+        if (digits.length >= 4) "+91 ****${digits.takeLast(4)}" else "+91 **********"
+    }
 
     LaunchedEffect(authState) {
         val state = authState
@@ -51,10 +59,6 @@ fun OtpScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(800)
-        code = "123456"
-    }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
@@ -85,7 +89,7 @@ fun OtpScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "We sent a 6-digit code to\n+91 **** ****",
+                text = "We sent a 6-digit code to\n$maskedPhone",
                 style = MaterialTheme.typography.bodyLarge,
                 color = friendooColors.textSecondary
             )
@@ -127,7 +131,11 @@ fun OtpScreen(
             ) {
                 if (canResend) {
                     TextButton(onClick = {
-                        canResend = false
+                        val activity = context.findComponentActivity()
+                        if (activity != null && viewModel.lastPhone.isNotBlank()) {
+                            canResend = false
+                            viewModel.resendOtp(viewModel.lastPhone, activity)
+                        }
                     }) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp), tint = Violet)
                         Spacer(modifier = Modifier.width(4.dp))
@@ -144,20 +152,21 @@ fun OtpScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Surface(
-                shape = PillShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text(
-                    "Demo code: 123456",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = friendooColors.textHint,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+            if (BuildConfig.DEBUG) {
+                Surface(
+                    shape = PillShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text(
+                        "Debug: use the SMS OTP from Firebase",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = friendooColors.textHint,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(32.dp))
             }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

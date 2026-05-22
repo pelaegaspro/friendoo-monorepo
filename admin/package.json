@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@tanstack/react-table": "^8.20.5",
-    "agora-rtc-sdk-ng": "^4.22.2",
     "date-fns": "^3.6.0",
     "fast-check": "^3.22.0",
     "firebase": "^11.6.0",

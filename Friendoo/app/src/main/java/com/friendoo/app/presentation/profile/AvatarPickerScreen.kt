@@ -7,7 +7,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -45,7 +44,7 @@ import com.friendoo.app.presentation.components.AvatarConfig
 import com.friendoo.app.presentation.components.AvatarSize
 import com.friendoo.app.presentation.components.FriendooAvatar
 import com.friendoo.app.presentation.theme.*
-import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.friendoo.app.data.repository.AuthRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,6 +54,9 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+
+@Composable
+private fun isSystemInDarkTheme(): Boolean = false
 
 data class AvatarPickerUiState(
     val isLoading: Boolean = true,
@@ -70,7 +72,7 @@ data class AvatarPickerUiState(
 @HiltViewModel
 class AvatarPickerViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val authSource: InsForgeAuthSource,
+    private val authRepository: AuthRepository,
     private val firestore: FirebaseFirestore,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
@@ -83,7 +85,7 @@ class AvatarPickerViewModel @Inject constructor(
     }
 
     private fun loadUserProfile() {
-        val uid = authSource.getCurrentUser()?.uid.orEmpty()
+        val uid = authRepository.getCurrentUserId().orEmpty()
         if (uid.isBlank()) {
             _state.value = _state.value.copy(isLoading = false, error = "User not logged in.")
             return
@@ -127,7 +129,7 @@ class AvatarPickerViewModel @Inject constructor(
 
     fun saveAvatar() {
         val current = _state.value
-        val uid = authSource.getCurrentUser()?.uid ?: return
+        val uid = authRepository.getCurrentUserId() ?: return
         
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null)

@@ -5,37 +5,29 @@ import com.friendoo.app.data.repository.AgoraCredentials
 import com.friendoo.app.data.repository.CallRepository
 import javax.inject.Inject
 
-/**
- * Result of initiating a call — contains everything needed to join the Agora channel.
- */
 data class CallInitResult(
     val callId: String,
+    val ratePerMinute: Int = 5,
     val credentials: AgoraCredentials
 )
 
 /**
- * Orchestrates the full call initiation flow:
- * 1. Creates a call document in Firestore (status = "ringing")
- * 2. Requests an Agora RTC token from the Cloud Function
- * 3. Returns the credentials needed to join the Agora channel
+ * Caller flow: server creates ringing call + locks host, then fetches Agora token only after host accepts.
+ * For outbound, token is fetched when host has accepted (discover flow waits on host accept via separate path).
  */
 class InitiateCallUseCase @Inject constructor(
     private val callRepository: CallRepository
 ) {
-    suspend operator fun invoke(
+    /** Step 1 only — creates ringing call on server. */
+    suspend fun createRingingCall(
         receiverId: String,
-        receiverAlias: String,
-        ratePerMinute: Int,
         callType: CallType = CallType.AUDIO
     ): Result<CallInitResult> {
-        // Step 1: Create the call document in Firestore
-        val callIdResult = callRepository.createCall(receiverId, receiverAlias, ratePerMinute, callType)
-        val callId = callIdResult.getOrElse { return Result.failure(it) }
+        return callRepository.initiateCall(receiverId, callType)
+    }
 
-        // Step 2: Request an Agora token for this call
-        val credentialsResult = callRepository.getAgoraToken(callId)
-        val credentials = credentialsResult.getOrElse { return Result.failure(it) }
-
-        return Result.success(CallInitResult(callId, credentials))
+    /** Step 2 — after host accepts, caller joins. */
+    suspend fun joinAfterAccept(callId: String): Result<CallInitResult> {
+        return callRepository.getJoinCredentials(callId)
     }
 }

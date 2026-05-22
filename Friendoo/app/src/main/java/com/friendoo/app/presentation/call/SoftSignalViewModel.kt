@@ -2,7 +2,7 @@ package com.friendoo.app.presentation.call
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.friendoo.app.data.remote.api.InsForgeAuthSource
+import com.friendoo.app.data.repository.AuthRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SoftSignalViewModel @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val authSource: InsForgeAuthSource
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     fun submitSoftSignal(
@@ -23,7 +23,7 @@ class SoftSignalViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                val userId = authSource.getCurrentUser()?.uid ?: return@launch
+                val userId = authRepository.getCurrentUserId() ?: return@launch
                 val signalData = hashMapOf(
                     "userId" to userId,
                     "hostId" to hostId,

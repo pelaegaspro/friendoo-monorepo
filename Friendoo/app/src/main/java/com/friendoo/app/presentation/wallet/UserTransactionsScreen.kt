@@ -3,7 +3,6 @@ package com.friendoo.app.presentation.wallet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +34,9 @@ import com.friendoo.app.presentation.theme.DarkCard
 import com.friendoo.app.presentation.theme.LightCard
 import java.text.SimpleDateFormat
 import java.util.*
+
+@Composable
+private fun isSystemInDarkTheme(): Boolean = false
 
 private val ConnectoBlue = Color(0xFF4A7DF0)
 private val ConnectoGreen = Color(0xFF27C044)

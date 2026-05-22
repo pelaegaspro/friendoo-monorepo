@@ -95,7 +95,7 @@ import axios from 'axios';
  * Processes a pending payout through the Cashfree Payouts API.
  */
 export const approveWithdrawal = onCall(
-  { region: 'asia-south1', secrets: ['CASHFREE_PAYOUTS_CLIENT_ID', 'CASHFREE_PAYOUTS_PUBLIC_KEY'] },
+  { region: 'asia-south1' },
   async (request) => {
     // 1. Ensure caller is authenticated and is an admin
     if (!request.auth || !request.auth.token.admin) {
