@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
 
   const session = request.cookies.get(CRM_SESSION_COOKIE)?.value;
   if (!session) {
-    const url = new URL("/admin/login", request.url);
+    const url = new URL("/login", request.url);
     return NextResponse.redirect(url);
   }
 

@@ -51,9 +51,8 @@ function dateKey(date: Date) {
 }
 
 function startOfDayIst(date: Date) {
-  const utc = date.getTime() + date.getTimezoneOffset() * 60_000;
   const istOffset = 5.5 * 60 * 60 * 1000;
-  const istDate = new Date(utc + istOffset);
+  const istDate = new Date(date.getTime() + istOffset);
   istDate.setHours(0, 0, 0, 0);
   return new Date(istDate.getTime() - istOffset);
 }
@@ -150,7 +149,7 @@ export async function getDashboardData(now = new Date()) {
 
   const totalUsers = totalUsersSnap.data().count;
   const totalHosts = totalHostsSnap.data().count;
-  const coinsInCirculation = coinsInCirculationSnap.data().total;
+  const coinsInCirculation = coinsInCirculationSnap.data()?.total || 0;
 
   const topHostsMap = new Map<string, number>();
   const hourlyCalls = Array.from({ length: 24 }, (_, hour) => ({ hour, calls: 0 }));
