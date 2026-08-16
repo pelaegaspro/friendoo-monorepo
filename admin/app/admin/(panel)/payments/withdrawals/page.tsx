@@ -67,3 +67,4 @@ export default async function WithdrawalsPage() {
     </div>
   );
 }
+export const dynamic = "force-dynamic";

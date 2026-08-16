@@ -3,7 +3,6 @@ import { requireAdminApi } from '@/lib/admin/guard'
 import { getApp } from 'firebase-admin/app'
 import { getFunctions } from 'firebase-admin/functions'
 import { getAuth } from 'firebase-admin/auth'
-import axios from 'axios'
 
 export async function POST(req: NextRequest) {
   const unauthorized = requireAdminApi()
