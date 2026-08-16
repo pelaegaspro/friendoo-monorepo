@@ -9,7 +9,8 @@ This package adds a privacy-first avatar workflow to Friendoo. Users receive a d
 | `20260816_000009_avatar_system.sql` | Live Supabase schema, Storage bucket/policies, private submission RPC, and auditable administrative review RPC. |
 | `flutter/lib/widgets/friendoo_avatar.dart` | Deterministic generated avatar, approved-image display, call-only audio-orb mode, and online/busy indicator. |
 | `flutter/lib/services/avatar_review_service.dart` | Authenticated Flutter upload and review-submission service; it never embeds a service-role key. |
-| `assets/*.png` | Reference starter avatars for visual QA, onboarding previews, and design documentation. These are not required by the generated-avatar Flutter renderer. |
+| `assets/*.png` | Contemporary Desi-inspired reference starter avatars for visual QA, onboarding previews, and design documentation. These are not required by the deterministic Flutter renderer. |
+| `FRIENDOO_DESI_AVATAR_ART_DIRECTION.md` | Inclusive art direction for extending the Desi-inspired illustrated pack without stereotypes or real-person likenesses. |
 
 ## Local installation
 
@@ -77,3 +78,7 @@ The RPC writes `admin_audit_logs` before/after state and `operational_events` fo
 ## Important privacy behavior
 
 The app displays an uploaded image only when `avatar_kind = uploaded` and `avatar_status = approved`. In every other state, including pending and rejected submissions, it renders the deterministic generated avatar from `avatar_seed`. This protects hosts and users from unreviewed image exposure.
+
+## Desi-inspired visual pack
+
+The default visual starter pack is contemporary Desi-inspired, using gulabi, marigold, indigo, peacock teal, and electric purple. Flutter’s deterministic `FriendooAvatar` palette aligns to those colors, while the supplied illustrated files are useful for onboarding previews and design QA. See `FRIENDOO_DESI_AVATAR_ART_DIRECTION.md` before producing additional assets.

@@ -154,17 +154,17 @@ class AvatarRecipe {
   static AvatarRecipe fromSeed(String seed) {
     final value = _stableHash(seed);
     const gradients = <List<Color>>[
-      [Color(0xFF7C3AED), Color(0xFFD8B4FE)],
-      [Color(0xFF334155), Color(0xFF8B5CF6)],
-      [Color(0xFF0F766E), Color(0xFFC4B5FD)],
-      [Color(0xFFF59E0B), Color(0xFF8B5CF6)],
-      [Color(0xFF1B1B1F), Color(0xFFA78BFA)],
+      [Color(0xFFC026D3), Color(0xFF7C3AED)], // Gulabi to purple
+      [Color(0xFF172554), Color(0xFFF59E0B)], // Indigo to marigold
+      [Color(0xFF0F766E), Color(0xFF7C3AED)], // Peacock teal to purple
+      [Color(0xFFF59E0B), Color(0xFF7E22CE)], // Turmeric to plum
+      [Color(0xFF111827), Color(0xFF6D28D9)], // Charcoal night to violet
     ];
     const accents = <Color>[
       Color(0xFFA78BFA),
-      Color(0xFF8B5CF6),
-      Color(0xFF2DD4BF),
-      Color(0xFFFBBF24),
+      Color(0xFFDB2777),
+      Color(0xFF14B8A6),
+      Color(0xFFF59E0B),
       Color(0xFFE9D5FF),
     ];
     const faceTones = <Color>[
