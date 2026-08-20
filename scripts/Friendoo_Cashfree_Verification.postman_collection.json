@@ -1,0 +1,302 @@
+{
+  "info": {
+    "name": "Friendoo Cashfree Payment Verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Create Cashfree Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (pm.response.code === 200) {",
+              "    pm.collectionVariables.set(\"orderId\", response.order_id);",
+              "    pm.collectionVariables.set(\"paymentSessionId\", response.payment_session_id);",
+              "    console.log(\"✅ Order Created Successfully: \" + response.order_id);",
+              "} else {",
+              "    console.error(\"❌ Failed to create order\", response);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-version",
+            "value": "2023-08-01",
+            "type": "text"
+          },
+          {
+            "key": "x-client-id",
+            "value": "{{appId}}",
+            "type": "text"
+          },
+          {
+            "key": "x-client-secret",
+            "value": "{{secretKey}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"order_id\": \"order_pm_sim_{{$randomInt}}\",\n  \"order_amount\": 199.00,\n  \"order_currency\": \"INR\",\n  \"customer_details\": {\n    \"customer_id\": \"cust_pm_123\",\n    \"customer_phone\": \"9999999999\",\n    \"customer_email\": \"postman@friendoo.in\"\n  },\n  \"order_meta\": {\n    \"return_url\": \"https://friendoo.in/payment/callback?order_id={order_id}\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://sandbox.cashfree.com/pg/orders",
+          "protocol": "https",
+          "host": [
+            "sandbox",
+            "cashfree",
+            "com"
+          ],
+          "path": [
+            "pg",
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Initiate UPI Sandbox Payment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (pm.response.code === 200) {",
+              "    pm.collectionVariables.set(\"cfPaymentId\", response.cf_payment_id);",
+              "    console.log(\"✅ Payment Transaction Registered: \" + response.cf_payment_id);",
+              "} else {",
+              "    console.error(\"❌ Failed to initiate payment\", response);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-version",
+            "value": "2023-08-01",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payment_session_id\": \"{{paymentSessionId}}\",\n  \"payment_method\": {\n    \"upi\": {\n      \"channel\": \"collect\",\n      \"upi_id\": \"success@gocash\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://sandbox.cashfree.com/pg/orders/pay",
+          "protocol": "https",
+          "host": [
+            "sandbox",
+            "cashfree",
+            "com"
+          ],
+          "path": [
+            "pg",
+            "orders",
+            "pay"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Simulate Sandbox Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (pm.response.code === 200) {",
+              "    console.log(\"🚀 Simulation API Triggered - Marked SUCCESS\");",
+              "    pm.collectionVariables.set(\"pollAttempts\", 0);",
+              "} else {",
+              "    console.error(\"❌ Simulation Failed\", response);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-api-version",
+            "value": "2023-08-01",
+            "type": "text"
+          },
+          {
+            "key": "x-client-id",
+            "value": "{{appId}}",
+            "type": "text"
+          },
+          {
+            "key": "x-client-secret",
+            "value": "{{secretKey}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"entity\": \"PAYMENTS\",\n  \"entity_id\": \"{{orderId}}\",\n  \"entity_simulation\": {\n    \"payment_status\": \"SUCCESS\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://sandbox.cashfree.com/pg/simulate",
+          "protocol": "https",
+          "host": [
+            "sandbox",
+            "cashfree",
+            "com"
+          ],
+          "path": [
+            "pg",
+            "simulate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Poll Order Status Until Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "let attempts = parseInt(pm.collectionVariables.get(\"pollAttempts\") || 0) + 1;",
+              "pm.collectionVariables.set(\"pollAttempts\", attempts);",
+              "",
+              "console.log(\"🔍 Polling Attempt #\" + attempts + \" | Order Status: \" + response.order_status);",
+              "",
+              "if (response.order_status === \"PAID\") {",
+              "    console.log(\"🎉 SUCCESS! Payment is verified and completed!\");",
+              "    pm.test(\"Verify Order is PAID\", function () {",
+              "        pm.expect(response.order_status).to.eql(\"PAID\");",
+              "    });",
+              "} else if (attempts >= 10) {",
+              "    console.error(\"⚠️ Max polling attempts reached without SUCCESS.\");",
+              "} else {",
+              "    console.log(\"⏳ Status is \" + response.order_status + \". Retrying in 3 seconds...\");",
+              "    setTimeout(function() {}, 3000);",
+              "    postman.setNextRequest(\"4. Poll Order Status Until Success\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-version",
+            "value": "2023-08-01",
+            "type": "text"
+          },
+          {
+            "key": "x-client-id",
+            "value": "{{appId}}",
+            "type": "text"
+          },
+          {
+            "key": "x-client-secret",
+            "value": "{{secretKey}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://sandbox.cashfree.com/pg/orders/{{orderId}}",
+          "protocol": "https",
+          "host": [
+            "sandbox",
+            "cashfree",
+            "com"
+          ],
+          "path": [
+            "pg",
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "appId",
+      "value": "YOUR_CASHFREE_APP_ID",
+      "type": "string"
+    },
+    {
+      "key": "secretKey",
+      "value": "YOUR_CASHFREE_SECRET_KEY",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentSessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cfPaymentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pollAttempts",
+      "value": "0",
+      "type": "string"
+    }
+  ]
+}

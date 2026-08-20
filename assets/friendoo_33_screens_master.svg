@@ -1,0 +1,1679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8460 1950" width="8460" height="1950">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Global Canvas Background -->
+  <rect width="8460" height="1950" fill="#070913"/>
+
+  <!-- Row 1 Header: USER APP FLOW (19 Screens) -->
+  <g transform="translate(60, 50)">
+    <rect width="420" height="44" rx="22" fill="#7347EB" fill-opacity="0.2" stroke="#7347EB" stroke-width="1.5"/>
+    <text x="24" y="28" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="18" font-weight="800">📱 USER APP FLOW (Screens U1 – U19)</text>
+  </g>
+
+  <!-- Row 1 Screens -->
+  
+    <!-- Screen: U1. Splash / Phone Login -->
+    <g id="screen-U1" transform="translate(60, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">AUTH</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U1. Splash / Phone Login</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Welcome to Friendoo 🎙️</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Brand Logo Mark</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  +91 Mobile Number Input</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Country Flag Pill (+91)</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Send OTP</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U2. OTP Verification -->
+    <g id="screen-U2" transform="translate(490, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">AUTH</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U2. OTP Verification</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Verify Phone Number</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  6-Digit PIN Boxes</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  OTP sent to +91 98765 43210</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Resend Timer (00:45)</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Verify &amp; Continue</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U3. Language Selection -->
+    <g id="screen-U3" transform="translate(920, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">ONBOARDING</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U3. Language Selection</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Select Preferred Languages</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  2-Column Language Grid</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Regional Script Tags (Hindi, Tamil, etc.)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Multi-selection Pills</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Save &amp; Proceed</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U4. Discover Lounge -->
+    <g id="screen-U4" transform="translate(1350, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">MAIN</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U4. Discover Lounge</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Friendoo Regional Lounge</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Coin Balance: 1,250 🪙</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Language Filter Chips</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Verified Host Grid Cards</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Start Audio Call</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U5. Host Profile Details -->
+    <g id="screen-U5" transform="translate(1780, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">PROFILE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U5. Host Profile Details</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Priya Sharma, 23 👑</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Avatar &amp; Bio</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  ⭐ 4.9 Rating Badge (1.2k calls)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Languages: Hindi, English</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Call Now (5 coins/min)</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U6. Connecting Call -->
+    <g id="screen-U6" transform="translate(2210, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U6. Connecting Call</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Connecting to Priya...</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Pulsing Ring Animation</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Audio Ringing Indicator</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Rate: 5 coins/min</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Cancel Call</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U7. Live Audio Call Room -->
+    <g id="screen-U7" transform="translate(2640, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U7. Live Audio Call Room</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Live Voice Session 🎙️</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Host Pulsing Avatar</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Ambient Audio Waveform</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Timer 04:28 | Rate: 5 coins/min</text>
+        <text x="44" y="258" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Controls: Mute | Speaker | Gift</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">End Call</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U8. Gift Selection Sheet -->
+    <g id="screen-U8" transform="translate(3070, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">OVERLAY</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U8. Gift Selection Sheet</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Send Gift 🎁</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Rose (10 🪙)</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Crown (50 🪙)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Diamond (100 🪙)</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#FFD700"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#FFD700"/>
+      <text x="195" y="672" fill="#0D0F1D" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Send Gift</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U9. Call Ended / Summary -->
+    <g id="screen-U9" transform="translate(3500, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U9. Call Ended / Summary</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Call Completed 🎉</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Duration: 12 mins</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Cost: 60 Coins</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  5-Star Rating Selector</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Done</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U10. Call History -->
+    <g id="screen-U10" transform="translate(3930, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HISTORY</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U10. Call History</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Recent Conversations</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  List of Past Calls</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Host Avatars &amp; Timestamps</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Call Duration &amp; Coin Spend</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Call Again</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U11. Coin Wallet -->
+    <g id="screen-U11" transform="translate(4360, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">WALLET</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U11. Coin Wallet</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Available Balance: 1,250 🪙</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Gradient Balance Card</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Transaction History Link</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Bonus Offers Banner</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#FFD700"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#FFD700"/>
+      <text x="195" y="672" fill="#0D0F1D" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Top-up Coins</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U12. Recharge Package Selection -->
+    <g id="screen-U12" transform="translate(4790, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">WALLET</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U12. Recharge Package Selection</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Recharge Coin Packs</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Trial: ₹29 (50 Coins)</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Starter: ₹50 (100 Coins)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Value: ₹249 (+20% Bonus)</text>
+        <text x="44" y="258" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Premium: ₹499 (+30% Bonus)</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#FFD700"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#FFD700"/>
+      <text x="195" y="672" fill="#0D0F1D" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Select Pack</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U13. Payment Method -->
+    <g id="screen-U13" transform="translate(5220, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">CHECKOUT</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U13. Payment Method</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Choose Payment Method</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  UPI: Google Pay, PhonePe, Paytm</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Credit / Debit Card Form</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  100% Secure Checkout Badge</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#10B981"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#10B981"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Pay ₹249</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U14. Payment Success -->
+    <g id="screen-U14" transform="translate(5650, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">CHECKOUT</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U14. Payment Success</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Payment Successful! 🎉</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  +300 Coins Added</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Ref ID: #TXN849201</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Confetti Graphic Badge</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Start Audio Calls</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U15. User Profile & Settings -->
+    <g id="screen-U15" transform="translate(6080, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">SETTINGS</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U15. User Profile &amp; Settings</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Friendoo User Profile</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Phone: +91 98765 43210</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  App Language Preferences</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Safety &amp; Support Links</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Sign Out</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U16. Edit Profile -->
+    <g id="screen-U16" transform="translate(6510, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">SETTINGS</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U16. Edit Profile</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Update Personal Details</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Name &amp; Avatar Picker</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Bio Input Field</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  City &amp; Gender Selection</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Save Changes</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U17. Change Language -->
+    <g id="screen-U17" transform="translate(6940, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">SETTINGS</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U17. Change Language</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">App Interface Language</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Radio Selection List</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  English, Hindi, Tamil, Telugu</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Instant Refresh Pill</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Apply Language</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U18. Safety Guidelines -->
+    <g id="screen-U18" transform="translate(7370, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">SAFETY</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U18. Safety Guidelines</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Safety &amp; Privacy First 🛡️</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  100% Anonymous Calls</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Community Guidelines</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Report &amp; Block Instructions</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#10B981"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#10B981"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">I Understand</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: U19. Support Center -->
+    <g id="screen-U19" transform="translate(7800, 120)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#7347EB" fill-opacity="0.18" stroke="#7347EB" stroke-width="1"/>
+      <text x="34" y="68" fill="#7347EB" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">SUPPORT</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">U19. Support Center</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">24/7 Help &amp; Support</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  FAQ Accordion List</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Live Chat Care Button</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Ticket Submission Form</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#7347EB"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#7347EB"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#7347EB"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#7347EB"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Submit Ticket</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+  <!-- Row 2 Header: HOST APP FLOW (14 Screens) -->
+  <g transform="translate(60, 1030)">
+    <rect width="420" height="44" rx="22" fill="#F43F5E" fill-opacity="0.2" stroke="#F43F5E" stroke-width="1.5"/>
+    <text x="24" y="28" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="18" font-weight="800">🎧 HOST APP FLOW (Screens H1 – H14)</text>
+  </g>
+
+  <!-- Row 2 Screens -->
+  
+    <!-- Screen: H1. Host Application -->
+    <g id="screen-H1" transform="translate(60, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST ONBOARDING</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H1. Host Application</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Become a Verified Host 🌟</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  ID Upload (Aadhaar/PAN)</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Video Verification Check</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Earnings Estimator Calculator</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Submit Application</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H2. Approval Pending -->
+    <g id="screen-H2" transform="translate(490, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST ONBOARDING</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H2. Approval Pending</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Application Under Review ⏳</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Estimated Approval: 24-48 hrs</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Verification Checklist</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Support Chat Link</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Check Status</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H3. Host Dashboard -->
+    <g id="screen-H3" transform="translate(920, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST MAIN</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H3. Host Dashboard</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Host Control Center 🟢</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Online / Offline Switch</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Today: ₹1,850 (14 Calls)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Rating: ⭐ 4.9 (1.2k reviews)</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">View Earnings</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H4. Incoming Call Request -->
+    <g id="screen-H4" transform="translate(1350, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H4. Incoming Call Request</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Incoming Voice Call 📞</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Caller: User #8492</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Rate: 5 coins/min</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  15s Countdown Ring Timer</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#10B981"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#10B981"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Accept Call</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H5. Active Voice Call -->
+    <g id="screen-H5" transform="translate(1780, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H5. Active Voice Call</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Active Audio Session 🎙️</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Session Timer: 18:42</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Accumulator: 90 Coins (₹45)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Mute &amp; Speaker Controls</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">End Session</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H6. Call Summary -->
+    <g id="screen-H6" transform="translate(2210, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST CALL</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H6. Call Summary</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Session Completed ✅</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Duration: 18 min</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Earned: 90 Coins = ₹45.00</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Caller Feedback Note</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">Live Voice Audio Waveform 🎙️</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Back to Dashboard</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H7. Earnings Dashboard -->
+    <g id="screen-H7" transform="translate(2640, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST FINANCE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H7. Earnings Dashboard</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Earnings &amp; Wallet 💰</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Available Balance: ₹14,500</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Weekly Payout Schedule</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Weekly Goal Progress</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#10B981"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#10B981"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Withdraw to UPI</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H8. Earnings Ledger -->
+    <g id="screen-H8" transform="translate(3070, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST FINANCE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H8. Earnings Ledger</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Call Transaction History</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Call #8492: +90 Coins (₹45)</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Platform Split Details</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Daily Earnings Breakdown</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Filter History</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H9. Withdrawal Request -->
+    <g id="screen-H9" transform="translate(3500, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST FINANCE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H9. Withdrawal Request</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Instant UPI Payout</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  UPI ID: name@upi</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Amount Field (Min ₹500)</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Instant Settlement Pill</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#10B981"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#10B981"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Request Payout</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H10. Withdrawal Status -->
+    <g id="screen-H10" transform="translate(3930, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST FINANCE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H10. Withdrawal Status</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Payout History &amp; Status</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  ₹5,000 via UPI</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Status: COMPLETED ✅</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Bank Ref #UPI98471</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#7347EB"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#7347EB"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Done</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H11. Host Profile -->
+    <g id="screen-H11" transform="translate(4360, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST PROFILE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H11. Host Profile</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Priya Sharma 👑 (Star Host)</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  1,420+ Calls Completed</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  ⭐ 4.9 Rating</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Languages: Hindi, English, Punjabi</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Edit Host Profile</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H12. Edit Host Profile -->
+    <g id="screen-H12" transform="translate(4790, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST PROFILE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H12. Edit Host Profile</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Update Bio &amp; Audio Preview</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Profile Avatar Upload</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Voice Greeting Recorder</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Bio &amp; Interests Tags</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Save Profile</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H13. Host Languages -->
+    <g id="screen-H13" transform="translate(5220, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST PROFILE</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H13. Host Languages</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Spoken Languages</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Select Languages You Speak</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Fluency Level Badges</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Regional Preference</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Update Languages</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+
+    <!-- Screen: H14. Host Support Desk -->
+    <g id="screen-H14" transform="translate(5650, 1100)">
+      <!-- Screen Outer Frame (390 x 844) -->
+      <rect width="390" height="844" rx="40" fill="#0D0F1D" stroke="#232742" stroke-width="4"/>
+      
+      <!-- Top Status Bar -->
+      <text x="32" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">9:41</text>
+      <text x="310" y="32" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12">📶  🔋</text>
+      
+      <!-- Flow Tag Badge -->
+      <rect x="24" y="52" width="120" height="24" rx="12" fill="#F43F5E" fill-opacity="0.18" stroke="#F43F5E" stroke-width="1"/>
+      <text x="34" y="68" fill="#F43F5E" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">HOST SUPPORT</text>
+      
+      <!-- Screen Title -->
+      <text x="24" y="104" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="19" font-weight="800">H14. Host Support Desk</text>
+      
+      <!-- Main Content Card Container -->
+      <rect x="20" y="120" width="350" height="600" rx="20" fill="#191C30" stroke="#2A2F4C" stroke-width="1.5"/>
+      
+      <!-- Card Subtitle -->
+      <text x="44" y="152" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="16" font-weight="700">Priority Host Care</text>
+      
+      <!-- Details Items -->
+      <text x="44" y="180" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Dedicated Host Manager</text>
+        <text x="44" y="206" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Payment Dispute Resolution</text>
+        <text x="44" y="232" fill="#94A3B8" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="13">✦  Community Guidelines</text>
+      
+      <!-- Graphic Mock / Waveform Container -->
+      <rect x="40" y="330" width="310" height="200" rx="16" fill="#131627" stroke="#232742" stroke-width="1.5"/>
+      
+      <!-- Simulated Waveform Bars -->
+      <g transform="translate(140, 410)">
+        <rect x="0" y="-15" width="6" height="30" rx="3" fill="#F43F5E"/>
+        <rect x="12" y="-25" width="6" height="50" rx="3" fill="#F43F5E"/>
+        <rect x="24" y="-35" width="6" height="70" rx="3" fill="#F43F5E"/>
+        <rect x="36" y="-20" width="6" height="40" rx="3" fill="#F43F5E"/>
+        <rect x="48" y="-10" width="6" height="20" rx="3" fill="#F43F5E"/>
+      </g>
+      <text x="95" y="470" fill="#94A3B8" font-family="'Plus Jakarta Sans', sans-serif" font-size="12" font-weight="600">High-Fidelity Mobile Component 📱</text>
+      
+      <!-- Action CTA Button -->
+      <rect x="40" y="640" width="310" height="52" rx="26" fill="#F43F5E"/>
+      <text x="195" y="672" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="15" font-weight="800" text-anchor="middle">Contact Desk</text>
+      
+      <!-- Prototype Footer Link Badge -->
+      <rect x="20" y="736" width="350" height="36" rx="12" fill="#101322" stroke="#232742" stroke-width="1"/>
+      <text x="40" y="759" fill="#10B981" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="700">⚡ Prototype Interaction Active  ➔  Next Screen</text>
+    </g>
+  
+</svg>

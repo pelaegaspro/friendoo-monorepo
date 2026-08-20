@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friendoo - 33 Mobile Screens UI Design Specification & Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070913;
+      --bg-surface: #0D0F1D;
+      --card-bg: #191C30;
+      --card-border: #2A2F4C;
+      --primary-purple: #7347EB;
+      --accent-coral: #F43F5E;
+      --gold-star: #FFD700;
+      --success-green: #10B981;
+      --text-main: #FFFFFF;
+      --text-muted: #94A3B8;
+      --font: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, rgba(115, 71, 235, 0.2), rgba(244, 63, 94, 0.1));
+      border-bottom: 1px solid var(--card-border);
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary-purple), var(--accent-coral));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 20px rgba(115, 71, 235, 0.4);
+    }
+    .brand-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .brand-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-radius: 30px;
+      padding: 4px;
+      border: 1px solid var(--card-border);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 24px;
+      border-radius: 25px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn.active-user {
+      background: var(--primary-purple);
+      color: white;
+      box-shadow: 0 4px 14px rgba(115, 71, 235, 0.4);
+    }
+    .tab-btn.active-host {
+      background: var(--accent-coral);
+      color: white;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+    }
+
+    .layout-container {
+      display: flex;
+      flex: 1;
+      padding: 32px;
+      gap: 32px;
+    }
+
+    .screens-sidebar {
+      width: 320px;
+      background: var(--bg-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      max-height: calc(100vh - 160px);
+      overflow-y: auto;
+    }
+    .sidebar-heading {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .screen-item {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid transparent;
+    }
+    .screen-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .screen-item.selected {
+      background: var(--card-bg);
+      border-color: var(--primary-purple);
+    }
+    .screen-item.selected.host {
+      border-color: var(--accent-coral);
+    }
+    .screen-num {
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--primary-purple);
+    }
+    .screen-item.host .screen-num { color: var(--accent-coral); }
+    .screen-title-text {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .preview-viewport {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .phone-mockup {
+      width: 390px;
+      height: 844px;
+      background: var(--bg-surface);
+      border-radius: 48px;
+      border: 10px solid #232742;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(115, 71, 235, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-notch {
+      width: 140px;
+      height: 28px;
+      background: #232742;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      z-index: 100;
+    }
+
+    .status-bar {
+      padding: 12px 24px 8px 24px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      z-index: 90;
+    }
+
+    .phone-screen-content {
+      flex: 1;
+      padding: 16px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .screen-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      width: max-content;
+    }
+    .badge-user { background: rgba(115, 71, 235, 0.2); color: var(--primary-purple); border: 1px solid var(--primary-purple); }
+    .badge-host { background: rgba(244, 63, 94, 0.2); color: var(--accent-coral); border: 1px solid var(--accent-coral); }
+
+    .ui-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ui-card-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .ui-detail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ui-detail-item {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .visual-graphic-box {
+      background: linear-gradient(135deg, #13172B, #1C203B);
+      border-radius: 14px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 1px dashed var(--card-border);
+    }
+
+    .waveform-bars {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 40px;
+    }
+    .bar {
+      width: 6px;
+      background: var(--accent-coral);
+      border-radius: 3px;
+      animation: pulseBar 1.2s infinite ease-in-out alternate;
+    }
+    .bar:nth-child(2) { animation-delay: 0.2s; height: 35px; }
+    .bar:nth-child(3) { animation-delay: 0.4s; height: 50px; }
+    .bar:nth-child(4) { animation-delay: 0.1s; height: 25px; }
+    .bar:nth-child(5) { animation-delay: 0.5s; height: 40px; }
+
+    @keyframes pulseBar {
+      0% { transform: scaleY(0.4); opacity: 0.6; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--primary-purple), #5B30D8);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 30px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(115, 71, 235, 0.4);
+      margin-top: auto;
+    }
+    .btn-action.host {
+      background: linear-gradient(135deg, var(--accent-coral), #D92643);
+      box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+    }
+    .btn-action.gold {
+      background: linear-gradient(135deg, var(--gold-star), #E5C100);
+      color: #0D0F1D;
+      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .spec-details-panel {
+      width: 320px;
+      background: var(--bg-surface);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .spec-header { font-size: 15px; font-weight: 700; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; }
+    .flow-badge { background: rgba(16, 185, 129, 0.15); color: var(--success-green); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-title">
+      <div class="brand-logo">🎙️</div>
+      <div class="brand-text">
+        <h1>Friendoo Master UI Spec</h1>
+        <p>33-Screen Mobile Wireframe & Prototype System</p>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active-user" id="tabUser" onclick="switchRole('USER')">📱 User App (19 Screens)</button>
+      <button class="tab-btn" id="tabHost" onclick="switchRole('HOST')">🎧 Host App (14 Screens)</button>
+    </div>
+  </header>
+
+  <div class="layout-container">
+    <!-- Sidebar Screen List -->
+    <div class="screens-sidebar">
+      <div class="sidebar-heading" id="sidebarHeading">User Flow Screens</div>
+      <div id="screenList"></div>
+    </div>
+
+    <!-- Mobile Device Preview Viewport -->
+    <div class="preview-viewport">
+      <div class="phone-mockup">
+        <div class="phone-notch"></div>
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>📶 5G  🔋 98%</span>
+        </div>
+
+        <div class="phone-screen-content" id="screenContent">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen Specification Panel -->
+    <div class="spec-details-panel">
+      <div class="spec-header">Screen Spec & Prototype Link</div>
+      <div id="specTarget">
+        <div class="flow-badge">PROTOTYPE INTERACTION</div>
+        <h3 style="margin-top: 8px;" id="specTitle">U1. Splash / Phone Login</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px;" id="specDesc">Initial landing and authentication entry screen.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const userScreens = [
+      { id: "U1", name: "Splash / Phone Login", tag: "USER AUTH", subtitle: "Welcome to Friendoo 🎙️", cta: "Send OTP", ctaType: "primary", desc: "Phone authentication screen (+91 entry and country code pill).", details: ["Brand Logo & Tagline", "+91 Mobile Input Box", "Terms & Privacy Consent Check"] },
+      { id: "U2", name: "OTP Verification", tag: "USER AUTH", subtitle: "Verify Phone", cta: "Verify & Continue", ctaType: "primary", desc: "6-digit OTP verification pin boxes.", details: ["OTP sent to +91 98765 43210", "6 Box PIN Entry", "Resend SMS Timer (00:45)"] },
+      { id: "U3", name: "Language Selection", tag: "ONBOARDING", subtitle: "Preferred Languages", cta: "Save & Proceed", ctaType: "primary", desc: "Regional language selection grid.", details: ["Hindi, Tamil, Telugu, Kannada, Bengali", "Regional Script Badges", "Multi-Select Toggle Pills"] },
+      { id: "U4", name: "Discover Lounge", tag: "MAIN LOUNGE", subtitle: "Friendoo Lounge 👑", cta: "Start Audio Call", ctaType: "primary", desc: "Primary discovery feed with host cards.", details: ["Coin Balance: 1,250 🪙", "Language Filter Chips", "Online Verified Host Cards"] },
+      { id: "U5", name: "Host Profile Details", tag: "PROFILE", subtitle: "Priya Sharma, 23 ⭐ 4.9", cta: "Call Now (5 coins/min)", ctaType: "primary", desc: "Detailed host bio, reviews, and audio intro.", details: ["Avatar & Online Status Badge", "Rate: 5 coins/min", "1.2k Verified Voice Calls"] },
+      { id: "U6", name: "Connecting Call", tag: "CALL FLOW", subtitle: "Connecting to Priya...", cta: "Cancel", ctaType: "host", desc: "Connecting screen with audio ring animation.", details: ["Pulsing Avatar Rings", "Ringing Sound Waveform", "Rate: 5 coins/min Banner"] },
+      { id: "U7", name: "Live Audio Call Room", tag: "CALL FLOW", subtitle: "Live Voice Call 🎙️", cta: "End Call", ctaType: "host", desc: "Active voice room with controls.", details: ["Realtime Call Timer (04:28)", "5 coins/min Rate Pill", "Controls: Mute | Speaker | Gift"] },
+      { id: "U8", name: "Gift Selection Sheet", tag: "OVERLAY", subtitle: "Send Gift 🎁", cta: "Send Gift", ctaType: "gold", desc: "Bottom sheet grid of virtual gifts.", details: ["Rose (10 🪙)", "Crown (50 🪙)", "Diamond (100 🪙)"] },
+      { id: "U9", name: "Call Summary", tag: "CALL FLOW", subtitle: "Call Ended", cta: "Done", ctaType: "primary", desc: "Post-call duration & coin cost summary.", details: ["Spoke for 12 mins", "Coin Cost: 60 Coins", "5-Star Rating Feedback"] },
+      { id: "U10", name: "Call History", tag: "USER MAIN", subtitle: "Recent Conversations", cta: "Call Again", ctaType: "primary", desc: "Call logs list with past hosts.", details: ["Past Calls List", "Timestamp & Duration", "Call Again Quick Action"] },
+      { id: "U11", name: "Coin Wallet", tag: "WALLET", subtitle: "Coin Wallet 🪙", cta: "Top-up Coins", ctaType: "gold", desc: "Wallet balance card and bonus banners.", details: ["Available Balance: 1,250 Coins", "Transaction History Link", "Bonus Coins Promo Banner"] },
+      { id: "U12", name: "Recharge Packs", tag: "WALLET", subtitle: "Select Coin Pack", cta: "Proceed to Pay", ctaType: "gold", desc: "Coin recharge tiers grid.", details: ["Trial: ₹29 (50 Coins)", "Starter: ₹50 (100 Coins)", "Value: ₹249 (+20% Bonus)", "Premium: ₹499 (+30% Bonus)"] },
+      { id: "U13", name: "Payment Method", tag: "CHECKOUT", subtitle: "Choose Payment Method", cta: "Pay ₹249", ctaType: "primary", desc: "UPI and Card payment options.", details: ["Google Pay, PhonePe, Paytm", "Debit / Credit Card Option", "100% Secure Checkout Pill"] },
+      { id: "U14", name: "Payment Success", tag: "CHECKOUT", subtitle: "Payment Successful! 🎉", cta: "Start Audio Calls", ctaType: "primary", desc: "Payment success confirmation.", details: ["+300 Coins Added", "Ref ID: #TXN948102", "Confetti Graphic"] },
+      { id: "U15", name: "User Profile & Settings", tag: "SETTINGS", subtitle: "Friendoo Profile", cta: "Sign Out", ctaType: "host", desc: "Account settings and language choice.", details: ["+91 98765 43210 Badge", "Language Preferences", "Safety Guidelines Link"] },
+      { id: "U16", name: "Edit Profile", tag: "SETTINGS", subtitle: "Edit Details", cta: "Save Changes", ctaType: "primary", desc: "Update user avatar, bio, and city.", details: ["Name & Avatar Picker", "Bio Input Field", "City & Gender Tags"] },
+      { id: "U17", name: "Change Language", tag: "SETTINGS", subtitle: "App Language", cta: "Apply", ctaType: "primary", desc: "Interface language selector.", details: ["Radio Checkmark List", "Instant App Language Swap"] },
+      { id: "U18", name: "Safety Guidelines", tag: "SAFETY", subtitle: "Safety & Privacy 🛡️", cta: "I Understand", ctaType: "primary", desc: "Community rules and safety guarantees.", details: ["100% Private & Anonymous", "Zero Tolerance Harassment Rule", "Instant Report & Block"] },
+      { id: "U19", name: "Support Center", tag: "SUPPORT", subtitle: "Help & Support", cta: "Submit Ticket", ctaType: "primary", desc: "FAQ accordions and care desk.", details: ["24/7 Customer Care Chat", "FAQ Accordion Search", "Ticket Submission Form"] }
+    ];
+
+    const hostScreens = [
+      { id: "H1", name: "Host Application", tag: "HOST APPLY", subtitle: "Host Application 🌟", cta: "Submit Application", ctaType: "host", desc: "Onboarding form for prospective hosts.", details: ["Aadhaar / PAN Verification", "Voice Sample Recorder", "Payout Bank Account Setup"] },
+      { id: "H2", name: "Approval Pending", tag: "HOST APPLY", subtitle: "Under Review ⏳", cta: "Check Status", ctaType: "primary", desc: "Application status clock indicator.", details: ["Estimated Review: 24-48 hrs", "Verification Checklist", "Host Support Desk Link"] },
+      { id: "H3", name: "Host Dashboard", tag: "HOST MAIN", subtitle: "Host Control Center", cta: "View Earnings", ctaType: "host", desc: "Online toggle and daily earnings card.", details: ["Status: ONLINE 🟢 Toggle", "Today: ₹1,850 (14 Calls)", "Rating: ⭐ 4.9 (1.2k reviews)"] },
+      { id: "H4", name: "Incoming Call Request", tag: "HOST CALL", subtitle: "Incoming Call 📞", cta: "Accept Call", ctaType: "primary", desc: "Ringing incoming call overlay with 15s timer.", details: ["User #8492 Calling", "Rate: 5 coins/min", "Accept / Decline CTAs"] },
+      { id: "H5", name: "Active Voice Call", tag: "HOST CALL", subtitle: "Active Audio Session 🎙️", cta: "End Session", ctaType: "host", desc: "Active voice room with coin counter.", details: ["Duration: 18:42", "Earned: 90 Coins (₹45)", "Mute & Speaker Controls"] },
+      { id: "H6", name: "Call Summary", tag: "HOST CALL", subtitle: "Session Completed ✅", cta: "Back to Dashboard", ctaType: "host", desc: "Host earnings summary per call.", details: ["Duration: 18 mins", "Earned: ₹45.00 Net", "Caller Rating Badge"] },
+      { id: "H7", name: "Earnings Dashboard", tag: "HOST FINANCE", subtitle: "Earnings & Payouts 💰", cta: "Withdraw via UPI", ctaType: "primary", desc: "Total wallet balance and payout schedule.", details: ["Available Balance: ₹14,500", "Weekly Payout Schedule", "Earnings Goal Progress Bar"] },
+      { id: "H8", name: "Earnings Ledger", tag: "HOST FINANCE", subtitle: "Call Transactions", cta: "Export Ledger", ctaType: "primary", desc: "Call credit transaction log.", details: ["Call #8492: +90 Coins (₹45)", "Platform Commission Split", "Daily Earnings Breakdown"] },
+      { id: "H9", name: "Withdrawal Request", tag: "HOST FINANCE", subtitle: "UPI Withdrawal", cta: "Request Payout", ctaType: "primary", desc: "UPI payout request form.", details: ["UPI ID Input (name@upi)", "Min Withdrawal: ₹500", "Instant Transfer Pill"] },
+      { id: "H10", name: "Withdrawal Status", tag: "HOST FINANCE", subtitle: "Payout History", cta: "Done", ctaType: "primary", desc: "Payout history and status badges.", details: ["₹5,000 via UPI", "Status: COMPLETED ✅", "Bank Ref #UPI98471"] },
+      { id: "H11", name: "Host Profile", tag: "HOST PROFILE", subtitle: "Priya Sharma 👑 (Star Host)", cta: "Edit Host Profile", ctaType: "host", desc: "Host public profile view.", details: ["1,420+ Calls Completed", "⭐ 4.9 Rating (1.2k reviews)", "Languages: Hindi, English, Punjabi"] },
+      { id: "H12", name: "Edit Host Profile", tag: "HOST PROFILE", subtitle: "Edit Bio & Audio", cta: "Save Profile", ctaType: "host", desc: "Update bio and audio intro recording.", details: ["Profile Avatar Upload", "Voice Greeting Recorder", "Bio & Interest Tags"] },
+      { id: "H13", name: "Host Languages", tag: "HOST PROFILE", subtitle: "Spoken Languages", cta: "Update Languages", ctaType: "host", desc: "Regional languages checkmarks.", details: ["Select Conversational Languages", "Fluency Level Badges"] },
+      { id: "H14", name: "Host Support Desk", tag: "HOST SUPPORT", subtitle: "Priority Host Care", cta: "Contact Desk", ctaType: "host", desc: "Host helpdesk and support tickets.", details: ["Dedicated Host Manager", "Payment Dispute Resolution", "Community Safety Desk"] }
+    ];
+
+    let currentRole = 'USER';
+    let selectedIndex = 0;
+
+    function switchRole(role) {
+      currentRole = role;
+      selectedIndex = 0;
+      document.getElementById('tabUser').className = `tab-btn ${role === 'USER' ? 'active-user' : ''}`;
+      document.getElementById('tabHost').className = `tab-btn ${role === 'HOST' ? 'active-host' : ''}`;
+      document.getElementById('sidebarHeading').innerText = role === 'USER' ? 'User Flow Screens (19)' : 'Host Flow Screens (14)';
+      renderSidebar();
+      renderScreenContent();
+    }
+
+    function renderSidebar() {
+      const list = currentRole === 'USER' ? userScreens : hostScreens;
+      const container = document.getElementById('screenList');
+      container.innerHTML = list.map((s, idx) => `
+        <div class="screen-item ${currentRole === 'HOST' ? 'host' : ''} ${idx === selectedIndex ? 'selected' : ''}" onclick="selectScreen(${idx})">
+          <span class="screen-num">${s.id}</span>
+          <span class="screen-title-text">${s.name}</span>
+        </div>
+      `).join('');
+    }
+
+    function selectScreen(idx) {
+      selectedIndex = idx;
+      renderSidebar();
+      renderScreenContent();
+    }
+
+    function renderScreenContent() {
+      const list = currentRole === 'USER' ? userScreens : hostScreens;
+      const s = list[selectedIndex];
+
+      const ctaClass = s.ctaType === 'host' ? 'host' : (s.ctaType === 'gold' ? 'gold' : '');
+
+      document.getElementById('screenContent').innerHTML = `
+        <div class="screen-header-badge ${currentRole === 'USER' ? 'badge-user' : 'badge-host'}">${s.tag}</div>
+        <h2 style="font-size: 20px; font-weight: 800;">${s.id}. ${s.name}</h2>
+
+        <div class="ui-card">
+          <div class="ui-card-title">${s.subtitle}</div>
+          <div class="ui-detail-list">
+            ${s.details.map(d => `<div class="ui-detail-item"><span>✨</span> ${d}</div>`).join('')}
+          </div>
+        </div>
+
+        <div class="visual-graphic-box">
+          <div class="waveform-bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+            ${s.name.includes('Call') ? '🎙️ Active Voice Waveform' : '📱 Mobile Component Container'}
+          </span>
+        </div>
+
+        <button class="btn-action ${ctaClass}">${s.cta}</button>
+      `;
+
+      document.getElementById('specTitle').innerText = `${s.id}. ${s.name}`;
+      document.getElementById('specDesc').innerText = `${s.desc}\n\nKey UI Elements:\n` + s.details.join('\n');
+    }
+
+    // Initialize
+    switchRole('USER');
+  </script>
+
+</body>
+</html>

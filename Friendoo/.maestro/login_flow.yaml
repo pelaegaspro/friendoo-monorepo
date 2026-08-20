@@ -1,0 +1,17 @@
+appId: com.friendoo.app
+---
+- launchApp:
+    clearState: true
+
+- assertVisible: "Sign In" # Adjust this text if your button says something else
+- tapOn: "Sign In"
+
+# If using Google Sign-In, wait for the account picker
+- extendedWaitUntil:
+    visible: ".*@gmail.com"
+    timeout: 10000
+
+- tapOn: ".*@gmail.com"
+
+# Assert that we reached the home screen
+- assertVisible: "Home" # Adjust this to a visible element on your home screen

@@ -1,0 +1,30 @@
+# Redacted snapshot of C:\Users\pelae\.codex\config.toml.
+# Live credentials and machine-specific paths are intentionally omitted.
+
+[features]
+js_repl = false
+
+[mcp_servers.node_repl]
+command = "<CODEX_RUNTIME>\\cua_node\\<runtime>\\bin\\node_repl.exe"
+startup_timeout_sec = 120.0
+
+[mcp_servers.node_repl.env]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "<CODEX_APP_VERSION>"
+CODEX_CLI_PATH = "<CODEX_CLI_PATH>"
+CODEX_HOME = "<CODEX_HOME>"
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "<NODE_MODULE_DIRS>"
+NODE_REPL_NODE_PATH = "<NODE_PATH>"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "<TRUSTED_CLIENT_HASH>"
+NODE_REPL_TRUSTED_CODE_PATHS = "<TRUSTED_CODE_PATHS>"
+SKY_CUA_NATIVE_PIPE = "1"
+SKY_CUA_NATIVE_PIPE_DIRECTORY = "<CODEX_NATIVE_PIPE>"
+
+[mcp_servers.penpot]
+url = "<PENPOT_MCP_URL_WITH_USER_TOKEN_REDACTED>"
+
+[mcp_servers.pixso-oauth-mcp]
+url = "https://pixso.net/mcp"
+http_headers.Token = "<PIXSO_TOKEN_REDACTED>"
