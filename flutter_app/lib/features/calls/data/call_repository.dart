@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../profile/data/profile_repository.dart';
 
 final callRepositoryProvider = Provider<CallRepository>(
   (ref) => CallRepository(ref.watch(supabaseProvider)),
@@ -34,25 +36,28 @@ class CallRepository {
     } catch (_) {
       final callerId = _client.auth.currentUser?.id ??
           '00000000-0000-0000-0000-008870947891';
+      final newCallId = const Uuid().v4();
       try {
         final inserted = await _client
             .from('calls')
             .insert({
+              'id': newCallId,
               'caller_id': callerId,
               'host_id': cleanHostId,
               'call_type': 'audio',
               'status': 'ringing',
               'rate_per_minute': 5,
+              'rtc_channel': 'friendoo_$newCallId',
             })
             .select()
             .single();
         return CallSession.fromMap(inserted);
       } catch (_) {
         return CallSession(
-          id: 'test_call_${DateTime.now().millisecondsSinceEpoch}',
+          id: newCallId,
           callerId: callerId,
           hostId: cleanHostId,
-          channelName: 'friendoo_test_call',
+          channelName: 'friendoo_$newCallId',
           callType: CallType.audio,
           status: CallStatus.ringing,
           ratePerMinute: 5,
@@ -162,7 +167,11 @@ class CallRepository {
   }
 
   Stream<List<CallSession>> watchIncomingCalls() {
-    final userId = _client.auth.currentUser?.id;
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final userId = _client.auth.currentUser?.id ??
+        (activeProfile?.isHost == true
+            ? '00000000-0000-0000-0000-007604991136'
+            : null);
     if (userId == null) {
       return Stream.value(const <CallSession>[]);
     }
@@ -187,6 +196,19 @@ class CallRepository {
   }
 
   Stream<CallSession> watchCall(String callId) {
+    if (!RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(callId)) {
+      return Stream.value(
+        CallSession(
+          id: callId,
+          callerId: '00000000-0000-0000-0000-008870947891',
+          hostId: '00000000-0000-0000-0000-007604991136',
+          channelName: 'friendoo_$callId',
+          callType: CallType.audio,
+          status: CallStatus.ringing,
+          ratePerMinute: 5,
+        ),
+      );
+    }
     try {
       return _client
           .from('calls')
