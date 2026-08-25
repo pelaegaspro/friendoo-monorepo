@@ -110,7 +110,26 @@ class WalletRepository {
   Stream<WalletSnapshot> watchCurrentWallet() async* {
     final initial = await fetchCurrentWallet();
     yield initial;
-    yield* _walletChangeNotifier.stream;
+    final userId = _client.auth.currentUser?.id;
+    if (userId != null) {
+      try {
+        final realtimeStream = _client
+            .from('wallets')
+            .stream(primaryKey: ['id'])
+            .eq('user_id', userId)
+            .map((rows) {
+              if (rows.isNotEmpty) {
+                return WalletSnapshot.fromMap(rows.first);
+              }
+              return initial;
+            });
+        yield* realtimeStream;
+      } catch (_) {
+        yield* _walletChangeNotifier.stream;
+      }
+    } else {
+      yield* _walletChangeNotifier.stream;
+    }
   }
 
   Future<List<CoinPackage>> fetchCoinPackages() async {

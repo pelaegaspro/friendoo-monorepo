@@ -74,21 +74,46 @@ class CallRepository {
     );
   }
 
-  Stream<List<CallSession>> watchIncomingCalls() async* {
-    yield const <CallSession>[];
+  Stream<List<CallSession>> watchIncomingCalls() {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return Stream.value(const <CallSession>[]);
+    }
+    try {
+      return _client
+          .from('calls')
+          .stream(primaryKey: ['id'])
+          .eq('host_id', userId)
+          .map((rows) {
+            return rows
+                .where((r) =>
+                    r['status'] == 'ringing' ||
+                    r['status'] == 'connecting' ||
+                    r['status'] == 'initiated')
+                .map((r) => CallSession.fromMap(r))
+                .toList();
+          })
+          .handleError((_) => const <CallSession>[]);
+    } catch (_) {
+      return Stream.value(const <CallSession>[]);
+    }
   }
 
-  Stream<CallSession> watchCall(String callId) async* {
+  Stream<CallSession> watchCall(String callId) {
     try {
-      final row = await _client
+      return _client
           .from('calls')
-          .select()
+          .stream(primaryKey: ['id'])
           .eq('id', callId)
-          .maybeSingle();
-      if (row != null) {
-        yield CallSession.fromMap(row);
-      }
-    } catch (_) {}
+          .map((rows) {
+            if (rows.isNotEmpty) {
+              return CallSession.fromMap(rows.first);
+            }
+            throw StateError('Call not found');
+          });
+    } catch (_) {
+      return Stream.empty();
+    }
   }
 
   Future<List<CallHistoryItem>> fetchCallHistory({bool? isHostFlow}) async {
