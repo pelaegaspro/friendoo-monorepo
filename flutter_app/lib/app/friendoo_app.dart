@@ -206,10 +206,12 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
       final isTesterUser = fullPhone.contains('8870947891');
       final isKnownHost = fullPhone.contains('7604991136');
       final testProfile = UserProfile(
-        id: isKnownHost ? 'host_7604991136' : 'tester_8870947891',
+        id: isKnownHost
+            ? '00000000-0000-0000-0000-007604991136'
+            : '00000000-0000-0000-0000-008870947891',
         phone: fullPhone,
         displayName: isKnownHost
-            ? 'Host 7604991136'
+            ? 'Testing Host'
             : (isTesterUser ? 'VIP Tester' : 'Friendoo User'),
         preferredLanguages: const ['Tamil', 'Hindi', 'English'],
         avatarUrl: 'user_01',

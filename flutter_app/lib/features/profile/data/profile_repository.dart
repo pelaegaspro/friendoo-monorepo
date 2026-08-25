@@ -48,7 +48,9 @@ class ProfileRepository {
 
       final phone = user.phone ?? '';
       final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-      final isTesterUserPhone = phone.replaceAll(' ', '').contains('8870947891');
+      final isTesterUserPhone = phone
+          .replaceAll(' ', '')
+          .contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
@@ -63,8 +65,8 @@ class ProfileRepository {
               displayName: metaName?.trim().isNotEmpty == true
                   ? metaName!.trim()
                   : (isKnownHostPhone
-                      ? 'Host 7604991136'
-                      : (isTesterUserPhone ? 'VIP Tester' : 'User')),
+                        ? 'Testing Host'
+                        : (isTesterUserPhone ? 'VIP Tester' : 'User')),
               preferredLanguages: _fallbackLanguages,
               avatarUrl: 'user_01',
               isHost: isKnownHostPhone && !isTesterUserPhone,
@@ -79,13 +81,25 @@ class ProfileRepository {
           !isTesterUserPhone &&
           (prof.isHost ||
               finalPhone.replaceAll(' ', '').contains('7604991136'));
-      final finalProf = prof.copyWith(phone: finalPhone, isHost: finalIsHost);
+      final finalDisplayName =
+          (prof.displayName.isNotEmpty &&
+              prof.displayName != 'User' &&
+              !prof.displayName.contains('7604991136'))
+          ? prof.displayName
+          : (isKnownHostPhone ? 'Testing Host' : prof.displayName);
+      final finalProf = prof.copyWith(
+        phone: finalPhone,
+        isHost: finalIsHost,
+        displayName: finalDisplayName,
+      );
       currentActiveProfile = finalProf;
       return finalProf;
     } catch (_) {
       final phone = user.phone ?? '';
       final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-      final isTesterUserPhone = phone.replaceAll(' ', '').contains('8870947891');
+      final isTesterUserPhone = phone
+          .replaceAll(' ', '')
+          .contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
@@ -98,8 +112,8 @@ class ProfileRepository {
             displayName: metaName?.trim().isNotEmpty == true
                 ? metaName!.trim()
                 : (isKnownHostPhone
-                    ? 'Host 7604991136'
-                    : (isTesterUserPhone ? 'VIP Tester' : 'User')),
+                      ? 'Testing Host'
+                      : (isTesterUserPhone ? 'VIP Tester' : 'User')),
             preferredLanguages: _fallbackLanguages,
             avatarUrl: 'user_01',
             isHost: isKnownHostPhone && !isTesterUserPhone,

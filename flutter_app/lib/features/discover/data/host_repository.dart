@@ -87,13 +87,16 @@ class HostRepository {
 
     // Always ensure live host 7604991136 is available in Discover Lounge for audio calls
     final has7604Host = hosts.any(
-      (h) => h.id == 'host_7604991136' || h.displayName.contains('7604991136'),
+      (h) =>
+          h.id == '00000000-0000-0000-0000-007604991136' ||
+          h.displayName.toLowerCase().contains('testing host') ||
+          h.displayName.contains('7604991136'),
     );
     if (!has7604Host) {
       hosts.add(
         const HostProfile(
-          id: 'host_7604991136',
-          displayName: 'Host 7604991136',
+          id: '00000000-0000-0000-0000-007604991136',
+          displayName: 'Testing Host',
           bio: 'Verified Friendoo Host · Live & Ready for Audio Calls',
           ratePerAudioMinute: 5,
           isAvailable: true,
