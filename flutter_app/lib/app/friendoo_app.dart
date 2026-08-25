@@ -205,26 +205,17 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
     final fullPhone = '+91$phoneDigits';
 
-    if (otp == '123456') {
-      final isTesterUser = fullPhone.contains('8870947891');
-      final isKnownHost = fullPhone.contains('7604991136');
+    final isTesterUser = fullPhone.contains('8870947891');
+    final isKnownHost = fullPhone.contains('7604991136');
+    final isTestNumber = isTesterUser || isKnownHost;
+
+    if (isTestNumber && otp == '123456') {
       final isHostRole = _selectedIsHost || isKnownHost;
       final hostId = '00000000-0000-0000-0000-007604991136';
-
-      final String userId;
-      final String displayName;
-
-      if (isKnownHost) {
-        userId = hostId;
-        displayName = 'Testing Host';
-      } else if (isTesterUser) {
-        userId = '00000000-0000-0000-0000-008870947891';
-        displayName = 'VIP Tester';
-      } else {
-        // Any other random phone number entered
-        userId = Uuid().v4();
-        displayName = '';
-      }
+      final userId = isKnownHost
+          ? hostId
+          : '00000000-0000-0000-0000-008870947891';
+      final displayName = isKnownHost ? 'Testing Host' : 'VIP Tester';
 
       final testProfile = UserProfile(
         id: userId,
@@ -257,15 +248,15 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friendoo_saved_phone', fullPhone);
+        await prefs.setBool('friendoo_saved_is_host', _selectedIsHost);
         await prefs.setBool('friendoo_saved_has_entered', true);
       } catch (_) {}
+      ref.read(isHostModeProvider.notifier).state = _selectedIsHost;
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
-      setState(
-        () => _error = 'Invalid verification code. Please check and try again.',
-      );
+      setState(() => _error = 'Invalid verification code. Please check and try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
