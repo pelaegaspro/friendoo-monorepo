@@ -58,8 +58,8 @@ class PresenceService with WidgetsBindingObserver {
   Future<void> _setPresence(String state) async {
     final activeProfile = ProfileRepository.currentActiveProfile;
     final userId =
-        _client.auth.currentUser?.id ??
         activeProfile?.id ??
+        _client.auth.currentUser?.id ??
         (activeProfile?.phone.contains('7604991136') == true
             ? '00000000-0000-0000-0000-007604991136'
             : null);

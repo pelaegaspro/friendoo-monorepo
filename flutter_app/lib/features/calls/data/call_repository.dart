@@ -32,14 +32,15 @@ class CallRepository {
         ? hostId
         : '00000000-0000-0000-0000-007604991136';
     final callerId =
-        _client.auth.currentUser?.id ??
         ProfileRepository.currentActiveProfile?.id ??
+        _client.auth.currentUser?.id ??
         '00000000-0000-0000-0000-008870947891';
     final validCallerId = uuidRegex.hasMatch(callerId)
         ? callerId
         : '00000000-0000-0000-0000-008870947891';
     final newCallId = const Uuid().v4();
 
+    Object? initiateError;
     try {
       final response = await _client.functions.invoke(
         'call-initiate',
@@ -49,7 +50,10 @@ class CallRepository {
       if (data['call'] != null) {
         return CallSession.fromMap(data['call'] as Map<String, dynamic>);
       }
-    } catch (_) {}
+      initiateError = Exception('Call initiation returned no call.');
+    } catch (error) {
+      initiateError = error;
+    }
 
     try {
       // Ensure caller profile exists to satisfy any foreign key constraints
@@ -99,15 +103,11 @@ class CallRepository {
           .select()
           .single();
       return CallSession.fromMap(inserted);
-    } catch (_) {
-      return CallSession(
-        id: newCallId,
-        callerId: validCallerId,
-        hostId: validHostId,
-        channelName: 'friendoo_$newCallId',
-        callType: CallType.audio,
-        status: CallStatus.ringing,
-        ratePerMinute: 5,
+    } catch (error) {
+      throw Exception(
+        'Unable to create the call on the server. '
+        'Please check that the host is online and try again. '
+        'Details: ${error.toString()}; initial request: $initiateError',
       );
     }
   }
@@ -120,7 +120,7 @@ class CallRepository {
       );
       final data = response.data as Map<String, dynamic>;
       return CallSession.fromMap(data['call'] as Map<String, dynamic>);
-    } catch (_) {
+    } catch (error) {
       try {
         final updated = await _client
             .from('calls')
@@ -132,15 +132,10 @@ class CallRepository {
             .select()
             .single();
         return CallSession.fromMap(updated);
-      } catch (_) {
-        return CallSession(
-          id: callId,
-          callerId: '00000000-0000-0000-0000-008870947891',
-          hostId: '00000000-0000-0000-0000-007604991136',
-          channelName: 'friendoo_$callId',
-          callType: CallType.audio,
-          status: CallStatus.accepted,
-          ratePerMinute: 5,
+      } catch (updateError) {
+        throw Exception(
+          'Unable to accept the call on the server: '
+          '${updateError.toString()} (initial request: $error)',
         );
       }
     }
@@ -221,8 +216,8 @@ class CallRepository {
     Future<void> pollOnce() async {
       final activeProfile = ProfileRepository.currentActiveProfile;
       final userId =
-          _client.auth.currentUser?.id ??
           activeProfile?.id ??
+          _client.auth.currentUser?.id ??
           '00000000-0000-0000-0000-007604991136';
 
       try {
@@ -261,8 +256,8 @@ class CallRepository {
       sub = _client.from('calls').stream(primaryKey: ['id']).listen((rows) {
         final activeProfile = ProfileRepository.currentActiveProfile;
         final userId =
-            _client.auth.currentUser?.id ??
             activeProfile?.id ??
+            _client.auth.currentUser?.id ??
             '00000000-0000-0000-0000-007604991136';
 
         final matches = rows

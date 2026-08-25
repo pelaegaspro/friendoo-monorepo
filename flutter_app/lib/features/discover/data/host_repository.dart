@@ -49,68 +49,50 @@ class HostRepository {
   }
 
   Future<List<HostProfile>> fetchAvailableHosts() async {
-    List<HostProfile> hosts = [];
+    final List<HostProfile> hosts = [];
     try {
       final rows = await _client
           .from('hosts')
           .select(
-            'id, bio, rate_per_audio_minute, is_available, is_star, gender, languages, profile:profiles!id(display_name, avatar_path)',
+            'id, bio, rate_per_audio_minute, is_available, is_star, gender, languages',
           )
           .eq('is_available', true);
 
-      hosts = (rows as List<dynamic>)
-          .map((row) {
-            final map = Map<String, dynamic>.from(row as Map<String, dynamic>);
-            if (map['profile'] != null) {
-              map['display_name'] ??= map['profile']['display_name'];
-              map['avatar_path'] ??= map['profile']['avatar_path'];
-            }
-            return HostProfile.fromMap(map);
-          })
-          .where((host) => host.isFemale)
-          .toList();
-    } catch (_) {
-      try {
-        final rows = await _client
-            .from('hosts')
-            .select(
-              'id, display_name, bio, rate_per_audio_minute, is_available, is_star, gender, languages',
-            )
-            .eq('is_available', true);
+      final hostRows = rows as List<dynamic>;
+      for (final r in hostRows) {
+        final map = Map<String, dynamic>.from(r as Map<String, dynamic>);
+        final id = map['id']?.toString() ?? '';
 
-        hosts = (rows as List<dynamic>)
-            .map((row) => HostProfile.fromMap(row as Map<String, dynamic>))
-            .where((host) => host.isFemale)
-            .toList();
-      } catch (_) {}
-    }
+        String displayName = 'Host';
+        String? avatarPath;
+        try {
+          final pRow = await _client
+              .from('profiles')
+              .select('display_name, avatar_path')
+              .eq('id', id)
+              .maybeSingle();
+          if (pRow != null) {
+            displayName = pRow['display_name']?.toString() ?? 'Host';
+            avatarPath = pRow['avatar_path']?.toString();
+          }
+        } catch (_) {}
 
+        map['display_name'] = displayName;
+        map['avatar_path'] = avatarPath;
+        hosts.add(HostProfile.fromMap(map));
+      }
+    } catch (_) {}
+
+    // Check if test host 7604 is online
     bool is7604Online = false;
     try {
       final hostRow = await _client
           .from('hosts')
-          .select('is_available, last_seen_at')
+          .select('is_available')
           .eq('id', '00000000-0000-0000-0000-007604991136')
           .maybeSingle();
       if (hostRow != null && hostRow['is_available'] != null) {
-        final isAvail = (hostRow['is_available'] as bool);
-        final lastSeenStr = hostRow['last_seen_at'] as String?;
-        if (isAvail) {
-          if (lastSeenStr != null) {
-            final lastSeen = DateTime.tryParse(lastSeenStr);
-            if (lastSeen != null) {
-              final diff = DateTime.now().toUtc().difference(lastSeen);
-              // If heartbeat received within last 20 seconds, host is online
-              is7604Online = diff.inSeconds <= 20;
-            } else {
-              is7604Online = true;
-            }
-          } else {
-            is7604Online = true;
-          }
-        } else {
-          is7604Online = false;
-        }
+        is7604Online = (hostRow['is_available'] as bool);
       }
     } catch (_) {}
 
@@ -151,7 +133,7 @@ class HostRepository {
 
   Future<void> updateCurrentHostLanguages(List<String> languages) async {
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final userId = _client.auth.currentUser?.id ?? activeProfile?.id;
+    final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
     if (userId == null) return;
 
     final normalized = languages
@@ -335,18 +317,23 @@ class HostRepository {
   Future<void> setHostAvailability(bool isAvailable) async {
     final activeProfile = ProfileRepository.currentActiveProfile;
     final userId =
-        _client.auth.currentUser?.id ??
         activeProfile?.id ??
+        _client.auth.currentUser?.id ??
         '00000000-0000-0000-0000-007604991136';
 
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+
     try {
-      await _client
-          .from('hosts')
-          .update({
-            'is_available': isAvailable,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', userId);
+      await _client.from('hosts').upsert({
+        'id': userId,
+        'is_available': isAvailable,
+        'rate_per_audio_minute': 5,
+        'gender': 'female',
+        'is_star': true,
+        'languages': ['Tamil', 'Hindi', 'English'],
+        'last_seen_at': nowIso,
+        'updated_at': nowIso,
+      }, onConflict: 'id');
     } catch (_) {}
   }
 }

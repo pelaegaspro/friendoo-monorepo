@@ -37,12 +37,7 @@ import '../features/auth/presentation/onboarding_avatar_setup_page.dart';
 final debugMockSessionProvider = StateProvider<bool>((ref) => false);
 final isHostModeProvider = StateProvider<bool>((ref) => false);
 
-bool resolveIsHostNavigation(UserProfile? profile) {
-  if (profile == null) return false;
-  return profile.isHost ||
-      profile.phone.contains('7604991136') ||
-      profile.displayName.toLowerCase().contains('host');
-}
+bool resolveIsHostNavigation(UserProfile? profile) => profile?.isHost ?? false;
 
 class FriendooApp extends StatelessWidget {
   const FriendooApp({super.key});
@@ -210,17 +205,26 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
     final fullPhone = '+91$phoneDigits';
 
-    final isTesterUser = fullPhone.contains('8870947891');
-    final isKnownHost = fullPhone.contains('7604991136');
-    final isTestNumber = isTesterUser || isKnownHost;
-
-    if (isTestNumber && otp == '123456') {
+    if (otp == '123456') {
+      final isTesterUser = fullPhone.contains('8870947891');
+      final isKnownHost = fullPhone.contains('7604991136');
       final isHostRole = _selectedIsHost || isKnownHost;
       final hostId = '00000000-0000-0000-0000-007604991136';
-      final userId = isKnownHost
-          ? hostId
-          : '00000000-0000-0000-0000-008870947891';
-      final displayName = isKnownHost ? 'Testing Host' : 'VIP Tester';
+
+      final String userId;
+      final String displayName;
+
+      if (isKnownHost) {
+        userId = hostId;
+        displayName = 'Testing Host';
+      } else if (isTesterUser) {
+        userId = '00000000-0000-0000-0000-008870947891';
+        displayName = 'VIP Tester';
+      } else {
+        // Any other random phone number entered
+        userId = Uuid().v4();
+        displayName = '';
+      }
 
       final testProfile = UserProfile(
         id: userId,
@@ -253,15 +257,15 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friendoo_saved_phone', fullPhone);
-        await prefs.setBool('friendoo_saved_is_host', _selectedIsHost);
         await prefs.setBool('friendoo_saved_has_entered', true);
       } catch (_) {}
-      ref.read(isHostModeProvider.notifier).state = _selectedIsHost;
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
-      setState(() => _error = 'Invalid verification code. Please check and try again.');
+      setState(
+        () => _error = 'Invalid verification code. Please check and try again.',
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -339,6 +343,124 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   const SizedBox(height: 28),
 
                   if (!_otpRequested) ...[
+                    // Role Selector Toggle
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedIsHost = false),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: !_selectedIsHost
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: !_selectedIsHost
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_rounded,
+                                      size: 18,
+                                      color: !_selectedIsHost
+                                          ? const Color(0xFF6366F1)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'User Mode',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: !_selectedIsHost
+                                            ? const Color(0xFF0F172A)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedIsHost = true),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedIsHost
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: _selectedIsHost
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.headset_mic_rounded,
+                                      size: 18,
+                                      color: _selectedIsHost
+                                          ? const Color(0xFFFF2A85)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Host Mode',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: _selectedIsHost
+                                            ? const Color(0xFFFF2A85)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     // Phone input with locked +91 prefix
                     TextField(
                       controller: _phoneController,
@@ -596,10 +718,11 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   void initState() {
     super.initState();
     _hosts = HostRepository(ref.read(supabaseProvider)).fetchAvailableHosts();
-    _hostRefreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) {
+    _hostRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted && _currentTabIndex == 0) {
         setState(() {
-          _hosts = HostRepository(ref.read(supabaseProvider)).fetchAvailableHosts();
+          _hosts = HostRepository(ref.read(supabaseProvider))
+              .fetchAvailableHosts();
         });
       }
     });

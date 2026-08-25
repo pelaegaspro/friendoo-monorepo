@@ -75,8 +75,8 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
       final client = ref.read(supabaseProvider);
       final activeProfile = ProfileRepository.currentActiveProfile;
       final userId =
-          client.auth.currentUser?.id ??
-          activeProfile?.id ??
+        activeProfile?.id ??
+        client.auth.currentUser?.id ??
           '00000000-0000-0000-0000-007604991136';
 
       final row = await client
@@ -153,11 +153,18 @@ class BackgroundAvailabilityChecker {
   }
 
   Future<void> _verifyAvailability() async {
-    final client = _ref.read(supabaseProvider);
     final activeProfile = ProfileRepository.currentActiveProfile;
+    final isHostUser =
+        activeProfile?.isHost == true ||
+        activeProfile?.phone.contains('7604991136') == true;
+
+    // NEVER overwrite host availability if this device is logged in as a normal user!
+    if (!isHostUser) return;
+
+    final client = _ref.read(supabaseProvider);
     final userId =
-        client.auth.currentUser?.id ??
         activeProfile?.id ??
+        client.auth.currentUser?.id ??
         '00000000-0000-0000-0000-007604991136';
 
     try {
@@ -175,10 +182,11 @@ class BackgroundAvailabilityChecker {
 
         // Synchronize local guard with DB if mismatch
         if (dbAvailable != guard.isOnline) {
-          await client
-              .from('hosts')
-              .update({'is_available': guard.isOnline})
-              .eq('id', userId);
+          await client.from('hosts').upsert({
+            'id': userId,
+            'is_available': guard.isOnline,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }, onConflict: 'id');
         }
       }
     } catch (_) {
