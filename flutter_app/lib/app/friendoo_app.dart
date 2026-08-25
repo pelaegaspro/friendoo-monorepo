@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../core/theme/friendoo_theme.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/models/friendoo_models.dart';
@@ -61,22 +62,20 @@ class AuthGate extends ConsumerWidget {
     final client = ref.watch(supabaseProvider);
     final hasEntered = ref.watch(hasEnteredAppProvider);
     final debugMockSession = ref.watch(debugMockSessionProvider);
+    final activeProfile = ProfileRepository.currentActiveProfile;
 
-    // Always start at login page on launch unless explicitly entered/logged in
-    if (!hasEntered && !debugMockSession) {
-      return const PhoneAuthPage();
+    if (hasEntered || debugMockSession || activeProfile != null) {
+      return const AuthenticatedSession();
     }
 
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = snapshot.data?.session ?? client.auth.currentSession;
-        if (!debugMockSession &&
-            session == null &&
-            ProfileRepository.currentActiveProfile == null) {
-          return const PhoneAuthPage();
+        if (session != null || ProfileRepository.currentActiveProfile != null) {
+          return const AuthenticatedSession();
         }
-        return const AuthenticatedSession();
+        return const PhoneAuthPage();
       },
     );
   }
@@ -218,6 +217,14 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
         isHost: isKnownHost && !isTesterUser,
       );
       ProfileRepository.currentActiveProfile = testProfile;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('friendoo_saved_phone', fullPhone);
+        await prefs.setBool('friendoo_saved_is_host', testProfile.isHost);
+        await prefs.setString('friendoo_saved_display_name', testProfile.displayName);
+        await prefs.setString('friendoo_saved_user_id', testProfile.id);
+        await prefs.setBool('friendoo_saved_has_entered', true);
+      } catch (_) {}
       ref.read(isHostModeProvider.notifier).state = testProfile.isHost;
       ref.read(hasEnteredAppProvider.notifier).state = true;
       if (mounted) setState(() => _loading = false);
@@ -226,6 +233,11 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
     try {
       await _auth.verifySmsOtp(phone: fullPhone, code: otp);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('friendoo_saved_phone', fullPhone);
+        await prefs.setBool('friendoo_saved_has_entered', true);
+      } catch (_) {}
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
       setState(() => _error = error.message);
@@ -610,10 +622,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final activeCall = ref.watch(activeCallProvider).asData?.value;
     final isHost = ref.watch(isHostModeProvider);
 
+    if (activeCall != null) {
+      return LiveCallOverlay(
+        call: activeCall,
+        hostName: isHost ? 'Caller' : 'Testing Host',
+      );
+    }
+
     return Scaffold(
-      bottomSheet: activeCall == null
-          ? null
-          : LiveCallOverlay(call: activeCall),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           backgroundColor: Colors.white,
@@ -1587,19 +1603,16 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
     final activeCall = ref.read(activeCallProvider).asData?.value;
     if (activeCall != null) return;
 
+    final isHostMode = ref.read(isHostModeProvider);
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final isHostUser = isHostMode ||
+        activeProfile?.isHost == true ||
+        activeProfile?.phone.contains('7604991136') == true;
+
+    // Only phones acting as a host should receive host incoming call dialogs
+    if (!isHostUser) return;
+
     final call = calls.first;
-    final guard = ref.read(hostCallGuardProvider);
-
-    // If host is offline, automatically prevent/reject call
-    if (!guard.isOnline) {
-      unawaited(
-        ref
-            .read(callRepositoryProvider)
-            .endCall(call.id, reason: 'host_offline'),
-      );
-      return;
-    }
-
     _presentedCallId = call.id;
     unawaited(_showIncomingCall(call));
   }

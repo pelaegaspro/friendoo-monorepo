@@ -117,6 +117,8 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     await ref.read(rtcAudioServiceProvider).setSpeakerphone(nextSpeaker);
   }
 
+  Future<void> toggleSpeakerphone() => toggleSpeaker();
+
   Future<void> reportAndEndActiveCall({
     required String reason,
     String? details,

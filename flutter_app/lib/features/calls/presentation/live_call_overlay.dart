@@ -37,10 +37,10 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
@@ -62,8 +62,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   }
 
   void _checkBalanceLimit() {
-    final startCoins = _initialCoinBalance ?? 50;
-    final maxSeconds = (startCoins ~/ widget.call.ratePerMinute) * 60;
+    final startCoins = _initialCoinBalance ?? 999999;
+    final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
+    final maxSeconds = (startCoins ~/ rate) * 60;
     final remainingSeconds = maxSeconds - _secondsElapsed;
 
     if (remainingSeconds <= 0 && !_autoEnding) {
@@ -82,40 +83,44 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
   String _formatTimer(int totalSecs) {
     final clamped = totalSecs < 0 ? 0 : totalSecs;
-    final mins = clamped ~/ 60;
+    final hours = clamped ~/ 3600;
+    final mins = (clamped % 3600) ~/ 60;
     final secs = clamped % 60;
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    }
     return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final isMuted = ref.watch(callMuteStateProvider);
     final isSpeaker = ref.watch(callSpeakerStateProvider);
     final wallet = ref.watch(walletStreamProvider).asData?.value;
 
-    // Cache initial balance at start of call (fallback to 50 if zero/mock)
+    // Cache initial balance at start of call
     if (_initialCoinBalance == null && wallet != null) {
-      _initialCoinBalance = wallet.coinBalance > 0 ? wallet.coinBalance : 50;
+      _initialCoinBalance = wallet.coinBalance > 0
+          ? wallet.coinBalance
+          : 999999;
     }
-    final startingCoins = _initialCoinBalance ?? 50;
+    final startingCoins = _initialCoinBalance ?? 999999;
+    final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
 
-    // Available duration from coins (e.g. 50 coins @ 5 coins/min = 10 mins = 600s)
-    final maxSeconds = (startingCoins ~/ widget.call.ratePerMinute) * 60;
+    // Maximum talk time in seconds calculated directly from user's coins
+    final maxSeconds = (startingCoins ~/ rate) * 60;
     final remainingSeconds = (maxSeconds - _secondsElapsed).clamp(
       0,
       maxSeconds,
     );
+    final availableMinutesLeft = (remainingSeconds / 60).toStringAsFixed(1);
 
     // 5-Second Grace Period Rule:
-    // If <= 5s: 0 coins charged
-    // If > 5s: billed per minute (e.g., 10s = 1 min charged = 5 coins)
     final bool isGracePeriod = _secondsElapsed <= 5;
     final int billedMinutes = isGracePeriod
         ? 0
-        : (_secondsElapsed / 60).ceil().clamp(1, 999);
-    final int coinsSpent = billedMinutes * widget.call.ratePerMinute;
+        : (_secondsElapsed / 60).ceil().clamp(1, 99999);
+    final int coinsSpent = billedMinutes * rate;
     final int remainingCoins = (startingCoins - coinsSpent).clamp(
       0,
       startingCoins,
@@ -123,381 +128,498 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     final bool isLowBalance = remainingSeconds <= 60 && remainingSeconds > 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            colors.surface,
-            colors.surfaceContainerHighest.withValues(alpha: 0.95),
-            const Color(0xFF101322),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 28,
-            offset: const Offset(0, -6),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0E17),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF0B0E17)],
+            stops: [0.0, 0.45, 1.0],
           ),
-        ],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle Bar
-            Container(
-              width: 44,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Top Status Bar: Live Indicator & Report Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFF10B981),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'LIVE CALL',
-                        style: TextStyle(
-                          color: Color(0xFF10B981),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton.filledTonal(
-                  style: IconButton.styleFrom(
-                    backgroundColor: colors.errorContainer.withValues(
-                      alpha: 0.7,
-                    ),
-                    foregroundColor: colors.error,
-                  ),
-                  tooltip: 'Report Call',
-                  icon: const Icon(Icons.flag_rounded, size: 20),
-                  onPressed: () => CallReportBottomSheet.show(
-                    context,
-                    callId: widget.call.id,
-                    autoEndCall: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Pulsing Avatar with Waves
-            AnimatedBuilder(
-              animation: _pulseAnimation,
-              builder: (context, child) {
-                return Stack(
-                  alignment: Alignment.center,
+                // Top Header: Security Badge & Report Flag
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 110 * _pulseAnimation.value,
-                      height: 110 * _pulseAnimation.value,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isLowBalance
-                            ? Colors.redAccent.withValues(alpha: 0.15)
-                            : colors.primary.withValues(alpha: 0.14),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.6),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            color: Color(0xFF10B981),
+                            size: 14,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'SAFE & ANONYMOUS CALL',
+                            style: TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isLowBalance
-                              ? [Colors.orange, Colors.redAccent]
-                              : [colors.primary, colors.secondary],
-                        ),
-                        shape: BoxShape.circle,
+                    IconButton.filledTonal(
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
+                        foregroundColor: Colors.white70,
                       ),
-                      child: Center(
-                        child: Text(
-                          widget.hostName.isNotEmpty
-                              ? widget.hostName.substring(0, 1).toUpperCase()
-                              : 'H',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
+                      tooltip: 'Report Call',
+                      icon: const Icon(Icons.flag_outlined, size: 20),
+                      onPressed: () => CallReportBottomSheet.show(
+                        context,
+                        callId: widget.call.id,
+                        autoEndCall: true,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Spacer(flex: 1),
+
+                // Center Pulsing Avatar with Radar Rings
+                AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer Radar Ring
+                        Container(
+                          width: 170 * _pulseAnimation.value,
+                          height: 170 * _pulseAnimation.value,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF6366F1).withValues(
+                              alpha: (0.2 / _pulseAnimation.value).clamp(
+                                0.0,
+                                0.2,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 14),
-
-            // Host Name
-            Text(
-              widget.hostName,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-
-            // PRIMARY COUNTDOWN TIMER (Remaining Time)
-            Text(
-              _formatTimer(remainingSeconds),
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-                color: isLowBalance
-                    ? Colors.redAccent
-                    : isGracePeriod
-                    ? Colors.greenAccent[700]
-                    : colors.primary,
-              ),
-            ),
-            Text(
-              'Remaining Talk Time (${_formatTimer(_secondsElapsed)} elapsed)',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // GRACE PERIOD OR COIN BALANCE BADGE
-            if (isGracePeriod)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
+                        // Middle Radar Ring
+                        Container(
+                          width: 140 * _pulseAnimation.value,
+                          height: 140 * _pulseAnimation.value,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF818CF8)
+                                .withValues(alpha: 0.18),
+                          ),
+                        ),
+                        // Main Luxury Avatar Box
+                        Container(
+                          width: 110,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.5),
+                                blurRadius: 28,
+                                spreadRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.hostName.isNotEmpty
+                                  ? widget.hostName
+                                        .substring(0, 1)
+                                        .toUpperCase()
+                                  : 'H',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 44,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green, width: 1),
+
+                const SizedBox(height: 20),
+
+                // Host / Caller Name
+                Text(
+                  widget.hostName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 4),
+
+                // Connection State
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.verified_user_rounded,
-                      color: Colors.green,
-                      size: 16,
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      '5s Grace Period (${5 - _secondsElapsed}s) • Free if ended now',
-                      style: const TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                    const Text(
+                      'Voice Connected · HD Audio',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on_rounded,
-                      color: Colors.amber,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$remainingCoins Coins Remaining • Min $billedMinutes charged ($coinsSpent coins)',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
-            // Low Balance Warning & Quick In-Call Recharge Button
-            if (isLowBalance) ...[
-              const SizedBox(height: 10),
-              InkWell(
-                onTap: () =>
-                    CoinPackagesPage.push(context, isCallRecharge: true),
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
+                const Spacer(flex: 1),
+
+                // MAIN COUNTDOWN BOX (Counting down every second!)
+                Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
+                    horizontal: 20,
+                    vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.5),
+                      color: isLowBalance
+                          ? Colors.redAccent.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.12),
+                      width: 1.5,
                     ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Column(
                     children: [
-                      Text(
-                        '⚠️ < 1 min left • ',
+                      const Text(
+                        'TALK TIME REMAINING',
                         style: TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF818CF8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      // Huge Countdown Clock
                       Text(
-                        'Quick Top-Up (₹15 / ₹25) ➔',
+                        _formatTimer(remainingSeconds),
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11.5,
+                          fontSize: 42,
                           fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                          color: isLowBalance
+                              ? Colors.redAccent
+                              : const Color(0xFF38BDF8),
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'You can speak for ~$availableMinutesLeft mins (${_formatTimer(_secondsElapsed)} elapsed)',
+                        style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 14),
 
-            // Action Controls Row: Mute, Speaker, Hangup
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Mute Mic Button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton.filledTonal(
-                      iconSize: 26,
-                      style: IconButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: isMuted
-                            ? colors.errorContainer
-                            : colors.surfaceContainerHighest,
-                        foregroundColor: isMuted
-                            ? colors.error
-                            : colors.onSurface,
+                // LIVE COIN BALANCE PILL
+                if (isGracePeriod)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.green, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.shield_outlined,
+                          color: Colors.green,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '5s Grace Period (${5 - _secondsElapsed}s left) • 0 coins charged',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.monetization_on_rounded,
+                          color: Colors.amber,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$remainingCoins Coins Left · $rate coins/min',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Low balance warning quick topup
+                if (isLowBalance) ...[
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () =>
+                        CoinPackagesPage.push(context, isCallRecharge: true),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      onPressed: () =>
-                          ref.read(activeCallProvider.notifier).toggleMute(),
-                      icon: Icon(
-                        isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.redAccent),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '⚠️ Low balance · ',
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Recharge Coins Now ➔',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isMuted ? 'Muted' : 'Mute',
-                      style: theme.textTheme.labelSmall,
+                  ),
+                ],
+
+                const Spacer(flex: 2),
+
+                // CALL CONTROLS ROW: Mute, End Call (Red), Speaker
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // MUTE BUTTON
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () => ref
+                              .read(activeCallProvider.notifier)
+                              .toggleMute(),
+                          borderRadius: BorderRadius.circular(36),
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isMuted
+                                  ? Colors.redAccent
+                                  : Colors.white.withValues(alpha: 0.12),
+                              border: Border.all(
+                                color: isMuted
+                                    ? Colors.redAccent
+                                    : Colors.white24,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Icon(
+                              isMuted
+                                  ? Icons.mic_off_rounded
+                                  : Icons.mic_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isMuted ? 'Muted' : 'Mute',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // BIG RED END CALL BUTTON
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () => ref
+                              .read(activeCallProvider.notifier)
+                              .endActiveCall(reason: 'user_hangup'),
+                          borderRadius: BorderRadius.circular(44),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFEF4444),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFEF4444)
+                                      .withValues(alpha: 0.45),
+                                  blurRadius: 20,
+                                  spreadRadius: 3,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.call_end_rounded,
+                              color: Colors.white,
+                              size: 38,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'End Call',
+                          style: TextStyle(
+                            color: Color(0xFFEF4444),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // SPEAKER BUTTON
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () => ref
+                              .read(activeCallProvider.notifier)
+                              .toggleSpeakerphone(),
+                          borderRadius: BorderRadius.circular(36),
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSpeaker
+                                  ? const Color(0xFF6366F1)
+                                  : Colors.white.withValues(alpha: 0.12),
+                              border: Border.all(
+                                color: isSpeaker
+                                    ? const Color(0xFF6366F1)
+                                    : Colors.white24,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Icon(
+                              isSpeaker
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_down_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isSpeaker ? 'Speaker On' : 'Speaker',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
 
-                // Speaker Button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton.filledTonal(
-                      iconSize: 26,
-                      style: IconButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: isSpeaker
-                            ? colors.primaryContainer
-                            : colors.surfaceContainerHighest,
-                        foregroundColor: isSpeaker
-                            ? colors.primary
-                            : colors.onSurface,
-                      ),
-                      onPressed: () =>
-                          ref.read(activeCallProvider.notifier).toggleSpeaker(),
-                      icon: Icon(
-                        isSpeaker
-                            ? Icons.volume_up_rounded
-                            : Icons.volume_down_rounded,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isSpeaker ? 'Speaker' : 'Earpiece',
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  ],
-                ),
-
-                // End Call Button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton.filled(
-                      iconSize: 28,
-                      style: IconButton.styleFrom(
-                        padding: const EdgeInsets.all(18),
-                        backgroundColor: colors.error,
-                        foregroundColor: colors.onError,
-                      ),
-                      onPressed: () =>
-                          ref.read(activeCallProvider.notifier).endActiveCall(),
-                      icon: const Icon(Icons.call_end_rounded),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'End Call',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colors.error,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 16),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
