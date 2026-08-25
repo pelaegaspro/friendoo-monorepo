@@ -91,7 +91,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   bool _otpRequested = false;
   bool _loading = false;
   String? _error;
-  bool _isHostMode = false;
   int _resendCountdown = 0;
   Timer? _countdownTimer;
 
@@ -179,7 +178,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
     try {
       await _auth.verifySmsOtp(phone: fullPhone, code: otp);
-      ref.read(isHostModeProvider.notifier).state = _isHostMode;
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
       setState(() => _error = error.message);
@@ -262,27 +260,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   const SizedBox(height: 28),
 
                   if (!_otpRequested) ...[
-                    // Role Selector
-                    SegmentedButton<bool>(
-                      segments: const [
-                        ButtonSegment(
-                          value: false,
-                          icon: Icon(Icons.person_rounded, size: 18),
-                          label: Text('User Mode'),
-                        ),
-                        ButtonSegment(
-                          value: true,
-                          icon: Icon(Icons.star_rounded, size: 18),
-                          label: Text('Host Mode'),
-                        ),
-                      ],
-                      selected: {_isHostMode},
-                      onSelectionChanged: (selected) {
-                        setState(() => _isHostMode = selected.first);
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
                     // Phone input with locked +91 prefix
                     TextField(
                       controller: _phoneController,
@@ -1496,11 +1473,17 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentUserProfileStreamProvider);
-    final isHostMode = ref.watch(isHostModeProvider);
 
     return IncomingCallListener(
       child: profileAsync.when(
         data: (profile) {
+          final isHost = resolveIsHostNavigation(profile);
+          if (ref.read(isHostModeProvider) != isHost) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(isHostModeProvider.notifier).state = isHost;
+            });
+          }
+
           final trimmed = profile?.displayName.trim().toLowerCase() ?? '';
           final isProfileIncomplete = profile == null ||
               trimmed.isEmpty ||
@@ -1512,7 +1495,7 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
 
           if (isProfileIncomplete) {
             return NameAndDobSetupPage(
-              isHostInitial: isHostMode,
+              isHostInitial: isHost,
             );
           }
 

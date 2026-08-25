@@ -3204,11 +3204,11 @@ class _FriendooHostEarningsViewState
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
           error: (_, _) => _HostTotalEarningsCard(
-            totalEarningsInr: 8450,
-            availableToWithdrawInr: 5240,
+            totalEarningsInr: 0,
+            availableToWithdrawInr: 0,
             onWithdraw: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const HostWithdrawalPage(availableAmount: 5240),
+                builder: (_) => const HostWithdrawalPage(availableAmount: 0),
               ),
             ),
           ),
@@ -3230,9 +3230,9 @@ class _FriendooHostEarningsViewState
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
           error: (_, _) => const _HostQuickStatsRow(
-            thisWeekInr: 2340,
-            thisMonthInr: 8450,
-            totalCalls: 126,
+            thisWeekInr: 0,
+            thisMonthInr: 0,
+            totalCalls: 0,
           ),
           data: (stats) => _HostQuickStatsRow(
             thisWeekInr: stats.thisWeekEarningsInr,
@@ -3253,10 +3253,10 @@ class _FriendooHostEarningsViewState
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
           error: (_, _) => const _HostHowYouEarnedCard(
-            voiceCallsInr: 7850,
-            bonusesInr: 400,
-            referralsInr: 200,
-            totalInr: 8450,
+            voiceCallsInr: 0,
+            bonusesInr: 0,
+            referralsInr: 0,
+            totalInr: 0,
           ),
           data: (stats) => _HostHowYouEarnedCard(
             voiceCallsInr: stats.voiceCallsEarningsInr,
@@ -5467,14 +5467,14 @@ class _HostEarningsOverviewCard extends StatefulWidget {
 }
 
 class _HostEarningsOverviewCardState extends State<_HostEarningsOverviewCard> {
-  int _selectedDayIndex = 5; // Default Saturday (highest point ₹890)
+  int _selectedDayIndex = 0;
 
   static const _filters = ['7D', '30D', '90D'];
 
   final List<List<double>> _chartData = [
-    [320, 580, 210, 740, 420, 890, 610], // 7D
-    [1850, 2120, 1940, 2540], // 30D
-    [6200, 7450, 8450], // 90D
+    [0, 0, 0, 0, 0, 0, 0], // 7D
+    [0, 0, 0, 0], // 30D
+    [0, 0, 0], // 90D
   ];
 
   final List<List<String>> _chartLabels = [

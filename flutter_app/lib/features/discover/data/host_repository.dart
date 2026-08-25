@@ -285,32 +285,61 @@ class HostRepository {
       final isOnline = (hostRow?['is_available'] as bool?) ?? false;
       final rate = (hostRow?['rate_per_audio_minute'] as num?)?.toInt() ?? 5;
 
-      final today = DateTime.now().toUtc();
-      final startOfDay = DateTime.utc(
-        today.year,
-        today.month,
-        today.day,
-      ).toIso8601String();
+      final now = DateTime.now().toUtc();
+      final startOfDay = DateTime.utc(now.year, now.month, now.day);
+      final startOfWeek = now.subtract(const Duration(days: 7));
+      final startOfMonth = DateTime.utc(now.year, now.month, 1);
 
       final calls = await _client
           .from('calls')
-          .select('total_coins_deducted')
+          .select('total_coins_deducted, created_at, status')
           .eq('host_id', userId)
-          .gte('created_at', startOfDay);
+          .eq('status', 'ended');
 
+      var todayCoins = 0;
+      var todayCount = 0;
+      var weekCoins = 0;
+      var monthCoins = 0;
       var totalCoins = 0;
-      final count = calls.length;
-      for (final c in calls) {
-        totalCoins += (c['total_coins_deducted'] as num?)?.toInt() ?? 0;
+      final totalCallsList = (calls as List<dynamic>);
+      final totalCallsCount = totalCallsList.length;
+
+      for (final c in totalCallsList) {
+        final coins = (c['total_coins_deducted'] as num?)?.toInt() ?? 0;
+        final createdAt =
+            DateTime.tryParse(c['created_at']?.toString() ?? '') ?? now;
+        totalCoins += coins;
+
+        if (createdAt.isAfter(startOfDay)) {
+          todayCoins += coins;
+          todayCount++;
+        }
+        if (createdAt.isAfter(startOfWeek)) {
+          weekCoins += coins;
+        }
+        if (createdAt.isAfter(startOfMonth)) {
+          monthCoins += coins;
+        }
       }
 
-      final earningsInr = (totalCoins * 0.5).round();
+      final todayEarningsInr = (todayCoins * 0.6).round();
+      final totalEarningsInr = (totalCoins * 0.6).round();
+      final thisWeekEarningsInr = (weekCoins * 0.6).round();
+      final thisMonthEarningsInr = (monthCoins * 0.6).round();
 
       return HostDashboardStats(
-        todayEarningsInr: earningsInr,
-        todayCallsCount: count,
+        todayEarningsInr: todayEarningsInr,
+        todayCallsCount: todayCount,
         isOnline: isOnline,
         ratePerMinute: rate,
+        totalEarningsInr: totalEarningsInr,
+        availableToWithdrawInr: totalEarningsInr,
+        thisWeekEarningsInr: thisWeekEarningsInr,
+        thisMonthEarningsInr: thisMonthEarningsInr,
+        totalCallsCount: totalCallsCount,
+        voiceCallsEarningsInr: totalEarningsInr,
+        bonusesEarningsInr: 0,
+        referralsEarningsInr: 0,
       );
     } catch (_) {
       return const HostDashboardStats(

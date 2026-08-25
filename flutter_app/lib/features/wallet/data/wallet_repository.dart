@@ -246,8 +246,8 @@ class WalletRepository {
         return HostEarningsItem(
           id: map['id'].toString(),
           userName: 'Call with $callerName',
-          createdAt: DateTime.tryParse(map['created_at'].toString()) ??
-              DateTime.now(),
+          createdAt:
+              DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now(),
           durationFormatted: '${mins}m ${secs.toString().padLeft(2, '0')}s',
           amountEarnedInr: hostEarned,
         );
@@ -338,8 +338,7 @@ class WalletRepository {
       } else if (errStr.contains('404') ||
           errStr.contains('function') ||
           errStr.contains('Could not find')) {
-        message =
-            'Withdrawal service is temporarily unavailable. Please try again later.';
+        message = 'Withdrawal service is temporarily unavailable. Please try again later.';
       }
 
       // Never return a fake success — always propagate the real error to the host.

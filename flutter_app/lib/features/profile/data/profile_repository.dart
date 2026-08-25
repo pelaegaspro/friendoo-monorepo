@@ -36,14 +36,7 @@ class ProfileRepository {
   Future<UserProfile?> fetchCurrentUserProfile() async {
     final user = _client.auth.currentUser;
     if (user == null) {
-      return currentActiveProfile ??
-          const UserProfile(
-            id: 'mock_user',
-            phone: '+919876543210',
-            displayName: 'User',
-            preferredLanguages: _fallbackLanguages,
-            avatarUrl: 'user_01',
-          );
+      return currentActiveProfile;
     }
 
     try {
@@ -53,13 +46,14 @@ class ProfileRepository {
           .eq('id', user.id)
           .maybeSingle();
 
+      final phone = user.phone ?? '';
+      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
+      final metaName =
+          user.userMetadata?['display_name'] as String? ??
+          user.userMetadata?['name'] as String? ??
+          user.userMetadata?['full_name'] as String?;
+
       if (row == null) {
-        final phone = user.phone ?? '';
-        final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-        final metaName =
-            user.userMetadata?['display_name'] as String? ??
-            user.userMetadata?['name'] as String? ??
-            user.userMetadata?['full_name'] as String?;
         final prof =
             currentActiveProfile ??
             UserProfile(
@@ -74,10 +68,12 @@ class ProfileRepository {
         currentActiveProfile = prof;
         return prof;
       }
+
       final prof = UserProfile.fromMap(row);
-      final phone = prof.phone.isNotEmpty ? prof.phone : (user.phone ?? '');
-      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-      final finalProf = isKnownHostPhone ? prof.copyWith(isHost: true) : prof;
+      final finalPhone = prof.phone.isNotEmpty ? prof.phone : phone;
+      final finalIsHost =
+          prof.isHost || finalPhone.replaceAll(' ', '').contains('7604991136');
+      final finalProf = prof.copyWith(phone: finalPhone, isHost: finalIsHost);
       currentActiveProfile = finalProf;
       return finalProf;
     } catch (_) {
@@ -87,6 +83,7 @@ class ProfileRepository {
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
           user.userMetadata?['full_name'] as String?;
+
       return currentActiveProfile ??
           UserProfile(
             id: user.id,
