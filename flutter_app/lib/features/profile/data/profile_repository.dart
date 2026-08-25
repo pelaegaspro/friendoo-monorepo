@@ -48,6 +48,7 @@ class ProfileRepository {
 
       final phone = user.phone ?? '';
       final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
+      final isTesterUserPhone = phone.replaceAll(' ', '').contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
@@ -61,9 +62,12 @@ class ProfileRepository {
               phone: phone,
               displayName: metaName?.trim().isNotEmpty == true
                   ? metaName!.trim()
-                  : (isKnownHostPhone ? 'Host 7604991136' : 'User'),
+                  : (isKnownHostPhone
+                      ? 'Host 7604991136'
+                      : (isTesterUserPhone ? 'VIP Tester' : 'User')),
               preferredLanguages: _fallbackLanguages,
-              isHost: isKnownHostPhone,
+              avatarUrl: 'user_01',
+              isHost: isKnownHostPhone && !isTesterUserPhone,
             );
         currentActiveProfile = prof;
         return prof;
@@ -72,13 +76,16 @@ class ProfileRepository {
       final prof = UserProfile.fromMap(row);
       final finalPhone = prof.phone.isNotEmpty ? prof.phone : phone;
       final finalIsHost =
-          prof.isHost || finalPhone.replaceAll(' ', '').contains('7604991136');
+          !isTesterUserPhone &&
+          (prof.isHost ||
+              finalPhone.replaceAll(' ', '').contains('7604991136'));
       final finalProf = prof.copyWith(phone: finalPhone, isHost: finalIsHost);
       currentActiveProfile = finalProf;
       return finalProf;
     } catch (_) {
       final phone = user.phone ?? '';
       final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
+      final isTesterUserPhone = phone.replaceAll(' ', '').contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
@@ -90,9 +97,12 @@ class ProfileRepository {
             phone: phone,
             displayName: metaName?.trim().isNotEmpty == true
                 ? metaName!.trim()
-                : (isKnownHostPhone ? 'Host 7604991136' : 'User'),
+                : (isKnownHostPhone
+                    ? 'Host 7604991136'
+                    : (isTesterUserPhone ? 'VIP Tester' : 'User')),
             preferredLanguages: _fallbackLanguages,
-            isHost: isKnownHostPhone,
+            avatarUrl: 'user_01',
+            isHost: isKnownHostPhone && !isTesterUserPhone,
           );
     }
   }
