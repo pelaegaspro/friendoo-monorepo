@@ -76,23 +76,22 @@ class HostRepository {
             avatarPath = pRow['avatar_path']?.toString();
           }
         } catch (_) {}
-
         map['display_name'] = displayName;
         map['avatar_path'] = avatarPath;
         hosts.add(HostProfile.fromMap(map));
       }
     } catch (_) {}
 
-    // Check if test host 7604 is online
-    bool is7604Online = false;
+    // Check if test host 7604 is explicitly offline in database
+    bool is7604ExplicitlyOffline = false;
     try {
       final hostRow = await _client
           .from('hosts')
           .select('is_available')
           .eq('id', '00000000-0000-0000-0000-007604991136')
           .maybeSingle();
-      if (hostRow != null && hostRow['is_available'] != null) {
-        is7604Online = (hostRow['is_available'] as bool);
+      if (hostRow != null && hostRow['is_available'] == false) {
+        is7604ExplicitlyOffline = true;
       }
     } catch (_) {}
 
@@ -103,7 +102,7 @@ class HostRepository {
           h.displayName.contains('7604991136'),
     );
 
-    if (is7604Online && !has7604Host) {
+    if (!is7604ExplicitlyOffline && !has7604Host) {
       hosts.add(
         const HostProfile(
           id: '00000000-0000-0000-0000-007604991136',
@@ -120,7 +119,7 @@ class HostRepository {
           city: 'Chennai, Tamil Nadu',
         ),
       );
-    } else if (!is7604Online) {
+    } else if (is7604ExplicitlyOffline) {
       hosts.removeWhere(
         (h) =>
             h.id == '00000000-0000-0000-0000-007604991136' ||
@@ -135,7 +134,6 @@ class HostRepository {
     final activeProfile = ProfileRepository.currentActiveProfile;
     final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
     if (userId == null) return;
-
     final normalized = languages
         .map((language) => language.trim())
         .where(
@@ -152,47 +150,9 @@ class HostRepository {
         .eq('id', userId);
   }
 
-  /// Sorts hosts so that hosts speaking the user's preferred regional language
-  /// appear FIRST (at the top), followed by hosts speaking other languages.
-  /// Does NOT filter out non-matching hosts.
-  List<HostProfile> prioritizeHostsByRegionalLanguage(
-    List<HostProfile> hosts,
-    String preferredLanguage,
-  ) {
-    if (preferredLanguage.isEmpty || preferredLanguage == 'All') {
-      return List<HostProfile>.from(hosts);
-    }
-
-    final regionalMatches = <HostProfile>[];
-    final otherLanguageHosts = <HostProfile>[];
-
-    for (final host in hosts) {
-      final speaksLanguage = host.languages.any(
-        (l) => l.toLowerCase() == preferredLanguage.toLowerCase(),
-      );
-      if (speaksLanguage) {
-        regionalMatches.add(host);
-      } else {
-        otherLanguageHosts.add(host);
-      }
-    }
-
-    // Sort regional matches: Star hosts first, then highest rating
-    regionalMatches.sort((a, b) {
-      if (a.isStar != b.isStar) return b.isStar ? 1 : -1;
-      return b.rating.compareTo(a.rating);
-    });
-
-    otherLanguageHosts.sort((a, b) {
-      if (a.isStar != b.isStar) return b.isStar ? 1 : -1;
-      return b.rating.compareTo(a.rating);
-    });
-
-    return [...regionalMatches, ...otherLanguageHosts];
-  }
-
   Future<HostDashboardStats> fetchHostDashboardStats() async {
-    final userId = _client.auth.currentUser?.id;
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
     if (userId == null) {
       return const HostDashboardStats(
         todayEarningsInr: 0,
