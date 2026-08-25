@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../core/theme/friendoo_theme.dart';
@@ -50,13 +51,22 @@ class FriendooApp extends StatelessWidget {
   }
 }
 
+final hasEnteredAppProvider = StateProvider<bool>((ref) => false);
+
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.watch(supabaseProvider);
+    final hasEntered = ref.watch(hasEnteredAppProvider);
     final debugMockSession = ref.watch(debugMockSessionProvider);
+
+    // Always start at login page on launch unless explicitly entered/logged in
+    if (!hasEntered && !debugMockSession) {
+      return const PhoneAuthPage();
+    }
+
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
@@ -84,11 +94,13 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
   bool _isHostMode = false;
 
-  static const _debugMockPhone = '+919000000000';
+  static const _debugMockPhone = '9000000000';
   static const _debugMockOtp = '123456';
 
-  bool get _isDebugMockPhone =>
-      kDebugMode && _phoneController.text.trim() == _debugMockPhone;
+  bool get _isDebugMockPhone {
+    final digits = _phoneController.text.trim().replaceAll('+91', '').replaceAll(' ', '');
+    return kDebugMode && digits == _debugMockPhone;
+  }
 
   AuthRepository get _auth => AuthRepository(ref.read(supabaseProvider));
 
@@ -99,18 +111,37 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
     super.dispose();
   }
 
+  void _quickLogin({required bool isHost}) {
+    ref.read(isHostModeProvider.notifier).state = isHost;
+    ref.read(hasEnteredAppProvider.notifier).state = true;
+    ref.read(debugMockSessionProvider.notifier).state = true;
+  }
+
   Future<void> _continue() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
+      final phoneDigits = _phoneController.text
+          .trim()
+          .replaceAll('+91', '')
+          .replaceAll(' ', '');
+
+      if (phoneDigits.length != 10 && !_isDebugMockPhone) {
+        setState(() => _error = 'Please enter a valid 10-digit mobile number');
+        return;
+      }
+
+      final fullPhone = '+91$phoneDigits';
+
       if (_isDebugMockPhone) {
         if (_otpRequested) {
           if (_otpController.text.trim() != _debugMockOtp) {
             throw StateError('Invalid test code');
           }
           ref.read(isHostModeProvider.notifier).state = _isHostMode;
+          ref.read(hasEnteredAppProvider.notifier).state = true;
           ref.read(debugMockSessionProvider.notifier).state = true;
         } else {
           if (mounted) setState(() => _otpRequested = true);
@@ -120,12 +151,13 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
       if (_otpRequested) {
         await _auth.verifySmsOtp(
-          phone: _phoneController.text.trim(),
+          phone: fullPhone,
           code: _otpController.text.trim(),
         );
         ref.read(isHostModeProvider.notifier).state = _isHostMode;
+        ref.read(hasEnteredAppProvider.notifier).state = true;
       } else {
-        await _auth.requestSmsOtp(_phoneController.text.trim());
+        await _auth.requestSmsOtp(fullPhone);
         if (mounted) setState(() => _otpRequested = true);
       }
     } on AuthException catch (error) {
@@ -139,6 +171,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final client = ref.watch(supabaseProvider);
+    final hasExistingSession = client.auth.currentSession != null;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -215,10 +250,62 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     enabled: !_otpRequested && !_loading,
-                    decoration: const InputDecoration(
+                    maxLength: 10,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Color(0xFF0F172A),
+                    ),
+                    decoration: InputDecoration(
                       labelText: 'Mobile Phone Number',
-                      hintText: '+91 98765 43210',
-                      prefixIcon: Icon(Icons.phone_iphone_rounded),
+                      hintText: '98765 43210',
+                      counterText: '',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 14, right: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.phone_iphone_rounded,
+                              color: Color(0xFF6366F1),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFFC7D2FE),
+                                ),
+                              ),
+                              child: const Text(
+                                '🇮🇳 +91',
+                                style: TextStyle(
+                                  color: Color(0xFF1E293B),
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 1.5,
+                              height: 20,
+                              color: const Color(0xFFCBD5E1),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   if (_otpRequested) ...[
@@ -227,9 +314,15 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                       controller: _otpController,
                       keyboardType: TextInputType.number,
                       autofocus: true,
+                      maxLength: 6,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       decoration: const InputDecoration(
                         labelText: '6-Digit SMS Verification Code',
                         hintText: '123456',
+                        counterText: '',
                         prefixIcon: Icon(Icons.lock_outline_rounded),
                       ),
                     ),
@@ -312,6 +405,118 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                             ),
                     ),
                   ),
+
+                  // ==========================================
+                  // QUICK LOGIN ENABLE FOR TESTING
+                  // ==========================================
+                  const SizedBox(height: 28),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          '⚡ QUICK TEST LOGIN',
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () => _quickLogin(isHost: false),
+                          icon: const Icon(
+                            Icons.person_rounded,
+                            size: 18,
+                            color: Color(0xFF2563EB),
+                          ),
+                          label: const Text(
+                            'Quick User',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF2563EB),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            side: const BorderSide(
+                              color: Color(0xFF93C5FD),
+                              width: 1.5,
+                            ),
+                            backgroundColor: const Color(0xFFEFF6FF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () => _quickLogin(isHost: true),
+                          icon: const Icon(
+                            Icons.star_rounded,
+                            size: 18,
+                            color: Color(0xFFD97706),
+                          ),
+                          label: const Text(
+                            'Quick Host',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            side: const BorderSide(
+                              color: Color(0xFFFDE68A),
+                              width: 1.5,
+                            ),
+                            backgroundColor: const Color(0xFFFEF3C7),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (hasExistingSession) ...[
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () {
+                        ref.read(hasEnteredAppProvider.notifier).state = true;
+                      },
+                      icon: const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Color(0xFF6366F1),
+                      ),
+                      label: const Text(
+                        'Continue with Active Supabase Session ➔',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -361,6 +566,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   void _signOut() {
+    ref.read(hasEnteredAppProvider.notifier).state = false;
     ref.read(debugMockSessionProvider.notifier).state = false;
     AuthRepository(ref.read(supabaseProvider)).signOut();
   }

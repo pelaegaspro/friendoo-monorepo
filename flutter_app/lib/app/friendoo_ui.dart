@@ -18,6 +18,7 @@ import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import '../features/wallet/presentation/select_payment_method_page.dart';
 import '../features/ads/presentation/cloud_banner_ad_widget.dart';
+import '../features/ads/presentation/live_ad_banner_widget.dart';
 
 abstract final class FriendooUiColors {
   static const canvas = Color(0xFFF7F7FB);
@@ -870,7 +871,9 @@ class FriendooDashboardView extends ConsumerWidget {
         // 3. TOP CLOUD PROMOTIONAL BANNER (6-SEC AUTO-SLIDER)
         // ==========================================
         const CloudBannerAdCard(placement: 'user_top_banner'),
-        const SizedBox(height: 22),
+        const SizedBox(height: 12),
+        const LiveAdBannerWidget(placement: 'user_top_banner'),
+        const SizedBox(height: 16),
 
         // ==========================================
         // 4. HOST SECTION HEADER & COUNTER
