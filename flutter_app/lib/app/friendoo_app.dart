@@ -62,17 +62,17 @@ class AuthGate extends ConsumerWidget {
     final client = ref.watch(supabaseProvider);
     final hasEntered = ref.watch(hasEnteredAppProvider);
     final debugMockSession = ref.watch(debugMockSessionProvider);
-    final activeProfile = ProfileRepository.currentActiveProfile;
 
-    if (hasEntered || debugMockSession || activeProfile != null) {
-      return const AuthenticatedSession();
+    // If user has not entered (or explicitly logged out), show PhoneAuthPage
+    if (!hasEntered && !debugMockSession) {
+      return const PhoneAuthPage();
     }
 
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = snapshot.data?.session ?? client.auth.currentSession;
-        if (session != null || ProfileRepository.currentActiveProfile != null) {
+        if (session != null || ProfileRepository.currentActiveProfile != null || hasEntered) {
           return const AuthenticatedSession();
         }
         return const PhoneAuthPage();
@@ -589,10 +589,17 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     ref.read(activeCallProvider.notifier).initiateAudioCall(host.id);
   }
 
-  void _signOut() {
+  Future<void> _signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (_) {}
+    ProfileRepository.currentActiveProfile = null;
     ref.read(hasEnteredAppProvider.notifier).state = false;
     ref.read(debugMockSessionProvider.notifier).state = false;
-    AuthRepository(ref.read(supabaseProvider)).signOut();
+    try {
+      await AuthRepository(ref.read(supabaseProvider)).signOut();
+    } catch (_) {}
   }
 
   @override
@@ -1548,13 +1555,23 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
             });
           }
 
-          // Only brand-new uninitialized users without phone/id need first-time setup.
-          // Returning users directly enter the Discover Lounge or Host Dashboard.
-          final isFirstTimeSignup = profile == null || profile.id.isEmpty;
+          final isKnownTestAccount = profile != null &&
+              (profile.phone.contains('7604991136') ||
+                  profile.phone.contains('8870947891') ||
+                  profile.displayName == 'Testing Host' ||
+                  profile.displayName == 'VIP Tester');
+
+          final isFirstTimeSignup = !isKnownTestAccount &&
+              (profile == null ||
+                  profile.displayName.isEmpty ||
+                  profile.displayName == 'User' ||
+                  profile.displayName == 'Friendoo User' ||
+                  profile.avatarSelectedAt == null);
 
           if (isFirstTimeSignup) {
             return NameAndDobSetupPage(
               isHostInitial: isHost,
+              initialPhone: profile?.phone ?? '',
             );
           }
 

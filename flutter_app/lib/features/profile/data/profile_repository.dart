@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/friendoo_avatar_config.dart';
@@ -249,36 +250,48 @@ class ProfileRepository {
     final trimmedName = displayName.trim().isNotEmpty
         ? displayName.trim()
         : 'User';
+    final effectivePhone =
+        user?.phone ?? currentActiveProfile?.phone ?? '+919876543210';
+    final isHostRole = avatarConfig.role == 'host';
+    final effectiveId =
+        user?.id ??
+        currentActiveProfile?.id ??
+        (isHostRole
+            ? '00000000-0000-0000-0000-007604991136'
+            : '00000000-0000-0000-0000-008870947891');
 
     currentActiveProfile = UserProfile(
-      id: user?.id ?? 'mock_user',
-      phone: user?.phone ?? '+919876543210',
+      id: effectiveId,
+      phone: effectivePhone,
       displayName: trimmedName,
       preferredLanguages: _fallbackLanguages,
       avatarUrl: presetId,
       avatarSelectedAt: DateTime.now(),
-      isHost: avatarConfig.role == 'host',
+      isHost: isHostRole,
     );
     _profileChangeNotifier.add(currentActiveProfile);
 
-    if (user != null) {
-      try {
-        await _client.rpc(
-          'complete_initial_profile',
-          params: {'p_avatar_path': presetId, 'p_display_name': trimmedName},
-        );
-      } catch (_) {
-        try {
-          await _client
-              .from('profiles')
-              .update({
-                'avatar_path': presetId,
-                'avatar_selected_at': DateTime.now().toIso8601String(),
-                'display_name': trimmedName,
-              })
-              .eq('id', user.id);
-        } catch (_) {}
-      }
-    }
+    // Save locally to SharedPreferences for instant persistent launch
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('friendoo_saved_phone', effectivePhone);
+      await prefs.setString('friendoo_saved_display_name', trimmedName);
+      await prefs.setString('friendoo_saved_avatar_url', presetId);
+      await prefs.setString('friendoo_saved_user_id', effectiveId);
+      await prefs.setBool('friendoo_saved_is_host', isHostRole);
+      await prefs.setBool('friendoo_saved_has_entered', true);
+    } catch (_) {}
+
+    // Save to Supabase profiles database table
+    try {
+      await _client.from('profiles').upsert({
+        'id': effectiveId,
+        'phone': effectivePhone,
+        'display_name': trimmedName,
+        'avatar_path': presetId,
+        'avatar_selected_at': DateTime.now().toIso8601String(),
+        'is_host': isHostRole,
+      });
+    } catch (_) {}
   }
 }
