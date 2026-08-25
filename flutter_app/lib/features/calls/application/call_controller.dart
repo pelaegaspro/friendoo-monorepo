@@ -202,7 +202,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
         }
       },
       onError: (Object error, StackTrace stackTrace) {
-        state = AsyncError(error, stackTrace);
+        // Retain call state; avoid throwing transient stream disconnects to UI
       },
     );
   }

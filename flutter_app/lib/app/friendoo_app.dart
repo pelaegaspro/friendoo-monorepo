@@ -1532,16 +1532,11 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
             });
           }
 
-          final trimmed = profile?.displayName.trim().toLowerCase() ?? '';
-          final isProfileIncomplete = profile == null ||
-              trimmed.isEmpty ||
-              trimmed == 'user' ||
-              trimmed == 'friendoo user' ||
-              trimmed == 'host' ||
-              profile.avatarUrl == null ||
-              profile.avatarUrl!.isEmpty;
+          // Only brand-new uninitialized users without phone/id need first-time setup.
+          // Returning users directly enter the Discover Lounge or Host Dashboard.
+          final isFirstTimeSignup = profile == null || profile.id.isEmpty;
 
-          if (isProfileIncomplete) {
+          if (isFirstTimeSignup) {
             return NameAndDobSetupPage(
               isHostInitial: isHost,
             );
