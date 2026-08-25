@@ -25,48 +25,58 @@ class CallRepository {
   final SupabaseClient _client;
 
   Future<CallSession> initiateAudioCall(String hostId) async {
-    final cleanHostId =
-        (hostId == 'host_7604991136' || hostId.contains('7604991136'))
-        ? '00000000-0000-0000-0000-007604991136'
-        : hostId;
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+    final validHostId = uuidRegex.hasMatch(hostId)
+        ? hostId
+        : '00000000-0000-0000-0000-007604991136';
+    final callerId =
+        _client.auth.currentUser?.id ??
+        ProfileRepository.currentActiveProfile?.id ??
+        '00000000-0000-0000-0000-008870947891';
+    final validCallerId = uuidRegex.hasMatch(callerId)
+        ? callerId
+        : '00000000-0000-0000-0000-008870947891';
+    final newCallId = const Uuid().v4();
+
     try {
       final response = await _client.functions.invoke(
         'call-initiate',
-        body: {'host_id': cleanHostId, 'call_type': 'audio'},
+        body: {'host_id': validHostId, 'call_type': 'audio'},
       );
       final data = response.data as Map<String, dynamic>;
-      return CallSession.fromMap(data['call'] as Map<String, dynamic>);
-    } catch (_) {
-      final callerId =
-          _client.auth.currentUser?.id ??
-          '00000000-0000-0000-0000-008870947891';
-      final newCallId = const Uuid().v4();
-      try {
-        final inserted = await _client
-            .from('calls')
-            .insert({
-              'id': newCallId,
-              'caller_id': callerId,
-              'host_id': cleanHostId,
-              'call_type': 'audio',
-              'status': 'ringing',
-              'rate_per_minute': 5,
-              'rtc_channel': 'friendoo_$newCallId',
-            })
-            .select()
-            .single();
-        return CallSession.fromMap(inserted);
-      } catch (_) {
-        return CallSession(
-          id: newCallId,
-          callerId: callerId,
-          hostId: cleanHostId,
-          channelName: 'friendoo_$newCallId',
-          callType: CallType.audio,
-          status: CallStatus.ringing,
-          ratePerMinute: 5,
-        );
+      if (data['call'] != null) {
+        return CallSession.fromMap(data['call'] as Map<String, dynamic>);
       }
+    } catch (_) {}
+
+    try {
+      final inserted = await _client
+          .from('calls')
+          .insert({
+            'id': newCallId,
+            'caller_id': validCallerId,
+            'host_id': validHostId,
+            'call_type': 'audio',
+            'status': 'ringing',
+            'rate_per_minute': 5,
+            'rtc_channel': 'friendoo_$newCallId',
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+      return CallSession.fromMap(inserted);
+    } catch (_) {
+      return CallSession(
+        id: newCallId,
+        callerId: validCallerId,
+        hostId: validHostId,
+        channelName: 'friendoo_$newCallId',
+        callType: CallType.audio,
+        status: CallStatus.ringing,
+        ratePerMinute: 5,
+      );
     }
   }
 

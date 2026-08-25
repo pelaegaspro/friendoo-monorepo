@@ -10,6 +10,7 @@ import '../core/theme/friendoo_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../core/models/friendoo_models.dart';
 import '../core/supabase/supabase_provider.dart';
@@ -72,7 +73,9 @@ class AuthGate extends ConsumerWidget {
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = snapshot.data?.session ?? client.auth.currentSession;
-        if (session != null || ProfileRepository.currentActiveProfile != null || hasEntered) {
+        if (session != null ||
+            ProfileRepository.currentActiveProfile != null ||
+            hasEntered) {
           return const AuthenticatedSession();
         }
         return const PhoneAuthPage();
@@ -92,6 +95,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _otpRequested = false;
+  bool _selectedIsHost = false;
   bool _loading = false;
   String? _error;
   int _resendCountdown = 0;
@@ -204,24 +208,41 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
     if (otp == '123456') {
       final isTesterUser = fullPhone.contains('8870947891');
       final isKnownHost = fullPhone.contains('7604991136');
+      final isHostRole = _selectedIsHost || isKnownHost;
+      final hostId = '00000000-0000-0000-0000-007604991136';
+
+      final String userId;
+      final String displayName;
+
+      if (isKnownHost) {
+        userId = hostId;
+        displayName = 'Testing Host';
+      } else if (isTesterUser) {
+        userId = '00000000-0000-0000-0000-008870947891';
+        displayName = 'VIP Tester';
+      } else {
+        // Any other random phone number entered
+        userId = Uuid().v4();
+        displayName = '';
+      }
+
       final testProfile = UserProfile(
-        id: isKnownHost
-            ? '00000000-0000-0000-0000-007604991136'
-            : '00000000-0000-0000-0000-008870947891',
+        id: userId,
         phone: fullPhone,
-        displayName: isKnownHost
-            ? 'Testing Host'
-            : (isTesterUser ? 'VIP Tester' : 'Friendoo User'),
+        displayName: displayName,
         preferredLanguages: const ['Tamil', 'Hindi', 'English'],
         avatarUrl: 'user_01',
-        isHost: isKnownHost && !isTesterUser,
+        isHost: isHostRole,
       );
       ProfileRepository.currentActiveProfile = testProfile;
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friendoo_saved_phone', fullPhone);
         await prefs.setBool('friendoo_saved_is_host', testProfile.isHost);
-        await prefs.setString('friendoo_saved_display_name', testProfile.displayName);
+        await prefs.setString(
+          'friendoo_saved_display_name',
+          testProfile.displayName,
+        );
         await prefs.setString('friendoo_saved_user_id', testProfile.id);
         await prefs.setBool('friendoo_saved_has_entered', true);
       } catch (_) {}
@@ -242,7 +263,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
     } on AuthException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
-      setState(() => _error = 'Invalid verification code. Please check and try again.');
+      setState(
+        () => _error = 'Invalid verification code. Please check and try again.',
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -266,9 +289,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(
-                    child: FriendooLogo(fontSize: 42),
-                  ),
+                  const Center(child: FriendooLogo(fontSize: 42)),
                   const SizedBox(height: 24),
                   Center(
                     child: Container(
@@ -295,7 +316,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _otpRequested ? 'Verify Mobile Number' : 'Welcome to Friendoo',
+                    _otpRequested
+                        ? 'Verify Mobile Number'
+                        : 'Welcome to Friendoo',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Color(0xFF0E1020),
@@ -320,6 +343,124 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   const SizedBox(height: 28),
 
                   if (!_otpRequested) ...[
+                    // Role Selector Toggle
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedIsHost = false),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: !_selectedIsHost
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: !_selectedIsHost
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_rounded,
+                                      size: 18,
+                                      color: !_selectedIsHost
+                                          ? const Color(0xFF6366F1)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'User Mode',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: !_selectedIsHost
+                                            ? const Color(0xFF0F172A)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedIsHost = true),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedIsHost
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: _selectedIsHost
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.06,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.headset_mic_rounded,
+                                      size: 18,
+                                      color: _selectedIsHost
+                                          ? const Color(0xFFFF2A85)
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Host Mode',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: _selectedIsHost
+                                            ? const Color(0xFFFF2A85)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     // Phone input with locked +91 prefix
                     TextField(
                       controller: _phoneController,
@@ -659,15 +800,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(
-                color: Color(0xFF4F46E5),
-                size: 24,
-              );
+              return const IconThemeData(color: Color(0xFF4F46E5), size: 24);
             }
-            return const IconThemeData(
-              color: Color(0xFF94A3B8),
-              size: 24,
-            );
+            return const IconThemeData(color: Color(0xFF94A3B8), size: 24);
           }),
         ),
         child: NavigationBar(
@@ -743,8 +878,11 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                     child: FutureBuilder<List<HostProfile>>(
                       future: _hosts,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState != ConnectionState.done &&
+                            !snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         if (snapshot.hasError) {
                           return _DiscoverMessageState(
@@ -1555,13 +1693,15 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
             });
           }
 
-          final isKnownTestAccount = profile != null &&
+          final isKnownTestAccount =
+              profile != null &&
               (profile.phone.contains('7604991136') ||
                   profile.phone.contains('8870947891') ||
                   profile.displayName == 'Testing Host' ||
                   profile.displayName == 'VIP Tester');
 
-          final isFirstTimeSignup = !isKnownTestAccount &&
+          final isFirstTimeSignup =
+              !isKnownTestAccount &&
               (profile == null ||
                   profile.displayName.isEmpty ||
                   profile.displayName == 'User' ||
@@ -1577,9 +1717,8 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
 
           return const DiscoverPage();
         },
-        loading: () => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (e, st) => const DiscoverPage(),
       ),
     );
@@ -1622,7 +1761,8 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
 
     final isHostMode = ref.read(isHostModeProvider);
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final isHostUser = isHostMode ||
+    final isHostUser =
+        isHostMode ||
         activeProfile?.isHost == true ||
         activeProfile?.phone.contains('7604991136') == true;
 
@@ -2186,7 +2326,10 @@ class _HostCallHistoryCard extends StatelessWidget {
                       const SizedBox(width: 5),
                       const Text(
                         '•',
-                        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+                        style: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 11,
+                        ),
                       ),
                       const SizedBox(width: 5),
                       Text(
@@ -3194,295 +3337,138 @@ class _ProfileTab extends ConsumerWidget {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
-          children: [
-            const Text(
-              'Host Profile & Settings',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: FriendooUiColors.ink,
-                letterSpacing: -0.8,
-              ),
-            ),
-            const SizedBox(height: 20),
+      children: [
+        const Text(
+          'Host Profile & Settings',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: FriendooUiColors.ink,
+            letterSpacing: -0.8,
+          ),
+        ),
+        const SizedBox(height: 20),
 
-            // 1. Female Host Profile Card (With DesiFemaleAvatar, Star Host Badge, Host ID, Languages)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: const Color(0xFFFFB703).withOpacity(0.6),
-                  width: 1.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0x14FFB703),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+        // 1. Female Host Profile Card (With DesiFemaleAvatar, Star Host Badge, Host ID, Languages)
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFFFFB703).withOpacity(0.6),
+              width: 1.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0x14FFB703),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
-              padding: const EdgeInsets.all(18),
-              child: Column(
+            ],
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      // Female Desi Avatar
-                      DesiFemaleAvatar(
-                        seed: hostName,
-                        age: 24,
-                        isStar: true,
-                        size: 74,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  // Female Desi Avatar
+                  DesiFemaleAvatar(
+                    seed: hostName,
+                    age: 24,
+                    isStar: true,
+                    size: 74,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    hostName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: FriendooUiColors.ink,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
+                            Flexible(
+                              child: Text(
+                                hostName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: FriendooUiColors.ink,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.3,
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 16,
-                                ),
-                              ],
+                              ),
                             ),
-                            const SizedBox(height: 3),
-                            Row(
-                              children: [
-                                const Text(
-                                  '24 yrs',
-                                  style: TextStyle(
-                                    color: Color(0xFF4B5563),
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFFFB703),
-                                        Color(0xFFFF5400),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    '⭐ Star Host',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'HOST-8391',
-                                    style: TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: Color(0xFF10B981),
+                              size: 16,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              languages.join(' · '),
-                              style: const TextStyle(
-                                color: FriendooUiColors.violet,
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Text(
+                              '24 yrs',
+                              style: TextStyle(
+                                color: Color(0xFF4B5563),
                                 fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFFB703),
+                                    Color(0xFFFF5400),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '⭐ Star Host',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'HOST-8391',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  // Edit Profile Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const EditHostProfilePage(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text(
-                        'Edit Host Profile',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13.5,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: FriendooUiColors.ink,
-                        side: const BorderSide(color: Color(0xFFE5E7EB)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 2. Host Quick Performance Overview (Compact Clean 3-Metric Summary)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Rating',
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '⭐ 4.9',
-                          style: TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          '142 reviews',
-                          style: TextStyle(
-                            color: Color(0xFF9CA3AF),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    height: 36,
-                    width: 1,
-                    color: const Color(0xFFE5E7EB),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Calls Done',
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
-                          hostStatsAsync.when(
-                            data: (s) => '${s.totalCallsCount}+',
-                            loading: () => '150+',
-                            error: (_, __) => '150+',
-                          ),
+                          languages.join(' · '),
                           style: const TextStyle(
-                            color: Color(0xFF10B981),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'Completed',
-                          style: TextStyle(
-                            color: Color(0xFF9CA3AF),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    height: 36,
-                    width: 1,
-                    color: const Color(0xFFE5E7EB),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Views',
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 11,
+                            color: FriendooUiColors.violet,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '1.4k',
-                          style: TextStyle(
-                            color: FriendooUiColors.blue,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'This month',
-                          style: TextStyle(
-                            color: Color(0xFF9CA3AF),
-                            fontSize: 10,
                           ),
                         ),
                       ],
@@ -3490,173 +3476,313 @@ class _ProfileTab extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // 3. HOST & ACCOUNT SECTION
-            const Text(
-              'HOST & ACCOUNT',
-              style: TextStyle(
-                color: Color(0xFF4B5563),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 1. Host Information
-            _HostNavigationRow(
-              icon: Icons.badge_outlined,
-              iconBg: const Color(0xFFEDE9FE),
-              iconColor: const Color(0xFF7C3AED),
-              title: 'Host Information',
-              subtitle: 'Voice intro, profession, education & hobbies',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HostInformationPage(),
+              const SizedBox(height: 14),
+              // Edit Profile Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const EditHostProfilePage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text(
+                    'Edit Host Profile',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 2. Payout & Bank Details
-            _HostNavigationRow(
-              icon: Icons.account_balance_wallet_outlined,
-              iconBg: const Color(0xFFECFDF5),
-              iconColor: const Color(0xFF059669),
-              title: 'Payout & Bank Details',
-              subtitle: 'UPI ID, bank account & settlement schedule',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HostPayoutBankDetailsPage(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FriendooUiColors.ink,
+                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 3. Call & Earnings Preferences
-            _HostNavigationRow(
-              icon: Icons.tune_rounded,
-              iconBg: const Color(0xFFFEF3C7),
-              iconColor: const Color(0xFFD97706),
-              title: 'Call & Earnings Preferences',
-              subtitle: 'Per-minute audio rate & priority call alerts',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HostCallEarningsPreferencesPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 4. Performance Insights
-            _HostNavigationRow(
-              icon: Icons.insights_rounded,
-              iconBg: const Color(0xFFE0F2FE),
-              iconColor: const Color(0xFF0284C7),
-              title: 'Performance Insights',
-              subtitle: 'Caller analytics, ratings & duration trends',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HostPerformanceInsightsPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 5. Languages
-            _HostNavigationRow(
-              icon: Icons.translate_rounded,
-              iconBg: const Color(0xFFFDF2F8),
-              iconColor: const Color(0xFFDB2777),
-              title: 'Languages',
-              subtitle: 'Add or update languages you talk with callers in',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserLanguagesPage(isHost: true),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 6. Help & Support
-            _HostNavigationRow(
-              icon: Icons.headset_mic_outlined,
-              iconBg: const Color(0xFFF3F4F6),
-              iconColor: FriendooUiColors.ink,
-              title: 'Help & Support',
-              subtitle: 'Host safety guidelines & 24/7 host partner care',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HelpSupportPage(isHost: true),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 7. About Friendoo
-            _HostNavigationRow(
-              icon: Icons.info_outline_rounded,
-              iconBg: const Color(0xFFF1F5F9),
-              iconColor: const Color(0xFF475569),
-              title: 'About Friendoo',
-              subtitle: 'Host partner terms, safety policy & version',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AboutFriendooPage(isHost: true),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // 8. Edit Profile
-            _HostNavigationRow(
-              icon: Icons.person_outline_rounded,
-              iconBg: const Color(0xFFF5F3FF),
-              iconColor: const Color(0xFF6366F1),
-              title: 'Edit Profile',
-              subtitle: 'Photo, display name, age & voice intro',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const EditHostProfilePage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Sign Out Button
-            OutlinedButton.icon(
-              onPressed: () => _confirmSignOut(context),
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign out of Host Account'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: FriendooUiColors.pink,
-                side: const BorderSide(color: Color(0xFFFFD1DC), width: 1.5),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // 2. Host Quick Performance Overview (Compact Clean 3-Metric Summary)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Rating',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      '⭐ 4.9',
+                      style: TextStyle(
+                        color: FriendooUiColors.ink,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    const Text(
+                      '142 reviews',
+                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              Container(height: 36, width: 1, color: const Color(0xFFE5E7EB)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Calls Done',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hostStatsAsync.when(
+                        data: (s) => '${s.totalCallsCount}+',
+                        loading: () => '150+',
+                        error: (_, __) => '150+',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFF10B981),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    const Text(
+                      'Completed',
+                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              Container(height: 36, width: 1, color: const Color(0xFFE5E7EB)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Views',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      '1.4k',
+                      style: TextStyle(
+                        color: FriendooUiColors.blue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    const Text(
+                      'This month',
+                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // 3. HOST & ACCOUNT SECTION
+        const Text(
+          'HOST & ACCOUNT',
+          style: TextStyle(
+            color: Color(0xFF4B5563),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // 1. Host Information
+        _HostNavigationRow(
+          icon: Icons.badge_outlined,
+          iconBg: const Color(0xFFEDE9FE),
+          iconColor: const Color(0xFF7C3AED),
+          title: 'Host Information',
+          subtitle: 'Voice intro, profession, education & hobbies',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HostInformationPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 2. Payout & Bank Details
+        _HostNavigationRow(
+          icon: Icons.account_balance_wallet_outlined,
+          iconBg: const Color(0xFFECFDF5),
+          iconColor: const Color(0xFF059669),
+          title: 'Payout & Bank Details',
+          subtitle: 'UPI ID, bank account & settlement schedule',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HostPayoutBankDetailsPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 3. Call & Earnings Preferences
+        _HostNavigationRow(
+          icon: Icons.tune_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          title: 'Call & Earnings Preferences',
+          subtitle: 'Per-minute audio rate & priority call alerts',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HostCallEarningsPreferencesPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 4. Performance Insights
+        _HostNavigationRow(
+          icon: Icons.insights_rounded,
+          iconBg: const Color(0xFFE0F2FE),
+          iconColor: const Color(0xFF0284C7),
+          title: 'Performance Insights',
+          subtitle: 'Caller analytics, ratings & duration trends',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HostPerformanceInsightsPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 5. Languages
+        _HostNavigationRow(
+          icon: Icons.translate_rounded,
+          iconBg: const Color(0xFFFDF2F8),
+          iconColor: const Color(0xFFDB2777),
+          title: 'Languages',
+          subtitle: 'Add or update languages you talk with callers in',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserLanguagesPage(isHost: true),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 6. Help & Support
+        _HostNavigationRow(
+          icon: Icons.headset_mic_outlined,
+          iconBg: const Color(0xFFF3F4F6),
+          iconColor: FriendooUiColors.ink,
+          title: 'Help & Support',
+          subtitle: 'Host safety guidelines & 24/7 host partner care',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HelpSupportPage(isHost: true),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 7. About Friendoo
+        _HostNavigationRow(
+          icon: Icons.info_outline_rounded,
+          iconBg: const Color(0xFFF1F5F9),
+          iconColor: const Color(0xFF475569),
+          title: 'About Friendoo',
+          subtitle: 'Host partner terms, safety policy & version',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AboutFriendooPage(isHost: true),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 8. Edit Profile
+        _HostNavigationRow(
+          icon: Icons.person_outline_rounded,
+          iconBg: const Color(0xFFF5F3FF),
+          iconColor: const Color(0xFF6366F1),
+          title: 'Edit Profile',
+          subtitle: 'Photo, display name, age & voice intro',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const EditHostProfilePage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Sign Out Button
+        OutlinedButton.icon(
+          onPressed: () => _confirmSignOut(context),
+          icon: const Icon(Icons.logout_rounded),
+          label: const Text('Sign out of Host Account'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: FriendooUiColors.pink,
+            side: const BorderSide(color: Color(0xFFFFD1DC), width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
-          ],
-        );
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -3756,774 +3882,773 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(hostDashboardStatsProvider);
-    final userProfile = ref.watch(currentUserProfileStreamProvider).asData?.value;
+    final userProfile = ref
+        .watch(currentUserProfileStreamProvider)
+        .asData
+        ?.value;
     final hostName = userProfile?.displayName ?? 'Host';
     final languages =
         userProfile?.preferredLanguages ?? const ['Tamil', 'English'];
 
     return statsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(
-            child: Text(
-              'Unable to load host dashboard',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          data: (stats) {
-            final guard = ref.watch(hostCallGuardProvider);
-            final isOnline = _isOnlineLocal ?? guard.isOnline;
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const Center(
+        child: Text(
+          'Unable to load host dashboard',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      data: (stats) {
+        final guard = ref.watch(hostCallGuardProvider);
+        final isOnline = _isOnlineLocal ?? guard.isOnline;
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+          children: [
+            // ==========================================
+            // 1. HOST FLOW HEADER
+            // Left: Friendoo Logo + Live / Offline Status Pill
+            // Right: Host earnings / balance, Notification icon, Profile/avatar
+            // ==========================================
+            Row(
               children: [
-                // ==========================================
-                // 1. HOST FLOW HEADER
-                // Left: Friendoo Logo + Live / Offline Status Pill
-                // Right: Host earnings / balance, Notification icon, Profile/avatar
-                // ==========================================
-                Row(
-                  children: [
-                    const FriendooLogo(fontSize: 21),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3.5,
-                      ),
-                      decoration: BoxDecoration(
+                const FriendooLogo(fontSize: 21),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isOnline
+                        ? const Color(0xFFECFDF5)
+                        : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: isOnline
+                          ? const Color(0xFF10B981).withOpacity(0.35)
+                          : const Color(0xFFD1D5DB),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.circle_rounded,
                         color: isOnline
-                            ? const Color(0xFFECFDF5)
-                            : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(99),
-                        border: Border.all(
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF9CA3AF),
+                        size: 6.5,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isOnline ? 'Live' : 'Offline',
+                        style: TextStyle(
                           color: isOnline
-                              ? const Color(0xFF10B981).withOpacity(0.35)
-                              : const Color(0xFFD1D5DB),
+                              ? const Color(0xFF047857)
+                              : const Color(0xFF6B7280),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.circle_rounded,
-                            color: isOnline
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF9CA3AF),
-                            size: 6.5,
+                    ],
+                  ),
+                ),
+                const Spacer(),
+
+                // Host Earnings Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: FriendooUiColors.softGold,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFFFD166).withOpacity(0.6),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.currency_rupee_rounded,
+                        color: Color(0xFFD97706),
+                        size: 15,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        stats.totalEarningsInr.toString().replaceAllMapped(
+                          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                          (Match m) => '${m[1]},',
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xFFB45309),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+
+                // Notification Icon (Compact, zero-overflow)
+                InkWell(
+                  onTap: () => showFriendooNotificationsSheet(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(
+                          Icons.notifications_none_rounded,
+                          color: FriendooUiColors.ink,
+                          size: 22,
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: FriendooUiColors.pink,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          const SizedBox(width: 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // ==========================================
+            // 2. HOST DISCOVER TITLE
+            // "Your Voice Lounge"
+            // "Manage your availability and see what's happening"
+            // ==========================================
+            const Text(
+              'Your Voice Lounge',
+              style: TextStyle(
+                color: FriendooUiColors.ink,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.8,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // ==========================================
+            // 3. HOST STATUS CARD (LIVE / OFFLINE)
+            // ==========================================
+            Container(
+              decoration: BoxDecoration(
+                color: isOnline ? const Color(0xFFECFDF5) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isOnline
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFE5E7EB),
+                  width: isOnline ? 2.0 : 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isOnline
+                        ? const Color(0x1F10B981)
+                        : Colors.black.withOpacity(0.03),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF9CA3AF),
+                              shape: BoxShape.circle,
+                              boxShadow: isOnline
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF10B981)
+                                            .withOpacity(0.6),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            isOnline ? 'Live' : 'Offline',
+                            isOnline ? 'YOU ARE LIVE' : 'YOU ARE OFFLINE',
                             style: TextStyle(
                               color: isOnline
                                   ? const Color(0xFF047857)
-                                  : const Color(0xFF6B7280),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-
-                    // Host Earnings Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: FriendooUiColors.softGold,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFFFD166).withOpacity(0.6),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.currency_rupee_rounded,
-                            color: Color(0xFFD97706),
-                            size: 15,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            stats.totalEarningsInr.toString().replaceAllMapped(
-                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                              (Match m) => '${m[1]},',
-                            ),
-                            style: const TextStyle(
-                              color: Color(0xFFB45309),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-
-                    // Notification Icon (Compact, zero-overflow)
-                    InkWell(
-                      onTap: () => showFriendooNotificationsSheet(context),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            const Icon(
-                              Icons.notifications_none_rounded,
-                              color: FriendooUiColors.ink,
-                              size: 22,
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: FriendooUiColors.pink,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // ==========================================
-                // 2. HOST DISCOVER TITLE
-                // "Your Voice Lounge"
-                // "Manage your availability and see what's happening"
-                // ==========================================
-                const Text(
-                  'Your Voice Lounge',
-                  style: TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.8,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 18),
-
-                // ==========================================
-                // 3. HOST STATUS CARD (LIVE / OFFLINE)
-                // ==========================================
-                Container(
-                  decoration: BoxDecoration(
-                    color: isOnline ? const Color(0xFFECFDF5) : Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isOnline
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFE5E7EB),
-                      width: isOnline ? 2.0 : 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isOnline
-                            ? const Color(0x1F10B981)
-                            : Colors.black.withOpacity(0.03),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: isOnline
-                                      ? const Color(0xFF10B981)
-                                      : const Color(0xFF9CA3AF),
-                                  shape: BoxShape.circle,
-                                  boxShadow: isOnline
-                                      ? [
-                                          BoxShadow(
-                                            color: const Color(0xFF10B981)
-                                                .withOpacity(0.6),
-                                            blurRadius: 8,
-                                            spreadRadius: 2,
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                isOnline ? 'YOU ARE LIVE' : 'YOU ARE OFFLINE',
-                                style: TextStyle(
-                                  color: isOnline
-                                      ? const Color(0xFF047857)
-                                      : const Color(0xFF4B5563),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: FriendooUiColors.softBlue,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '₹${stats.ratePerMinute} / min',
-                              style: const TextStyle(
-                                color: FriendooUiColors.blue,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        isOnline
-                            ? 'Available for incoming voice calls from users.'
-                            : 'You\'re currently unavailable to callers.',
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Prominent CTA: Go Offline / Go Live
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () async {
-                            final newStatus = !isOnline;
-                            setState(() => _isOnlineLocal = newStatus);
-                            await ref
-                                .read(hostCallGuardProvider.notifier)
-                                .setOnlineStatus(newStatus);
-                            ref.invalidate(hostDashboardStatsProvider);
-                          },
-                          icon: Icon(
-                            isOnline
-                                ? Icons.pause_circle_filled_rounded
-                                : Icons.play_circle_fill_rounded,
-                            size: 20,
-                          ),
-                          label: Text(
-                            isOnline ? 'Go Offline' : 'Go Live',
-                            style: const TextStyle(
+                                  : const Color(0xFF4B5563),
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: isOnline
-                                ? const Color(0xFFDC2626)
-                                : const Color(0xFF10B981),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 3,
-                          ),
-                        ),
+                        ],
                       ),
-
-                      // Daily Skip Quota Status (Retaining Host Call Guard logic)
-                      const SizedBox(height: 14),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: guard.mustAutoAttend
-                              ? const Color(0xFFFEF3C7)
-                              : Colors.black.withOpacity(0.03),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              guard.mustAutoAttend
-                                  ? Icons.bolt_rounded
-                                  : Icons.shield_rounded,
-                              color: guard.mustAutoAttend
-                                  ? const Color(0xFFB45309)
-                                  : FriendooUiColors.violet,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                guard.mustAutoAttend
-                                    ? 'Auto-attend active (0 skips left today)'
-                                    : '${guard.remainingSkips} skips remaining today',
-                                style: TextStyle(
-                                  color: guard.mustAutoAttend
-                                      ? const Color(0xFF92400E)
-                                      : const Color(0xFF374151),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 22),
-
-                // ==========================================
-                // 4. HOST QUICK STATS (Compact Clean Cards)
-                // Today's Calls, Today's Earnings, Avg Duration, Rating
-                // ==========================================
-                Row(
-                  children: [
-                    Expanded(
-                      child: _HostStatCard(
-                        label: 'Today\'s Calls',
-                        value: '${stats.todayCallsCount}',
-                        unit: 'Calls',
-                        icon: Icons.phone_in_talk_rounded,
-                        tint: FriendooUiColors.softBlue,
-                        iconColor: FriendooUiColors.blue,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _HostStatCard(
-                        label: 'Total Earnings',
-                        value:
-                            '₹${stats.totalEarningsInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-                        unit: 'Earned',
-                        icon: Icons.monetization_on_rounded,
-                        tint: FriendooUiColors.softGold,
-                        iconColor: const Color(0xFFD97706),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Row(
-                  children: [
-                    Expanded(
-                      child: _HostStatCard(
-                        label: 'Avg Call Duration',
-                        value: '8m 24s',
-                        unit: 'Per session',
-                        icon: Icons.timer_outlined,
-                        tint: FriendooUiColors.softViolet,
-                        iconColor: FriendooUiColors.violet,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _HostStatCard(
-                        label: 'Rating',
-                        value: '⭐ 4.9',
-                        unit: 'Caller score',
-                        icon: Icons.star_rounded,
-                        tint: FriendooUiColors.softPink,
-                        iconColor: FriendooUiColors.pink,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // ==========================================
-                // 5. HOST TOP AD BANNER (SAME AS USER DISCOVER)
-                // ==========================================
-                const LiveAdBannerWidget(placement: 'host_top_banner'),
-                const SizedBox(height: 24),
-
-                // ==========================================
-                // 5b. HOST BOTTOM AD BANNER (ABOVE RECENT ACTIVITY)
-                // ==========================================
-                const LiveAdBannerWidget(placement: 'host_bottom_banner'),
-                const SizedBox(height: 24),
-
-                // ==========================================
-                // 6. HOST DISCOVERY / RECENT ACTIVITY
-                // ==========================================
-                const Text(
-                  'Recent Activity',
-                  style: TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const _HostActivityTile(
-                  title: 'User requested a voice call',
-                  timeAgo: '2 min ago',
-                  icon: Icons.phone_callback_rounded,
-                  tint: FriendooUiColors.softBlue,
-                  iconColor: FriendooUiColors.blue,
-                ),
-                const SizedBox(height: 10),
-                const _HostActivityTile(
-                  title: 'User completed a 12-minute call',
-                  timeAgo: '8 min ago',
-                  icon: Icons.check_circle_rounded,
-                  tint: Color(0xFFECFDF5),
-                  iconColor: Color(0xFF10B981),
-                ),
-                const SizedBox(height: 10),
-                const _HostActivityTile(
-                  title: 'New profile view from Discover',
-                  timeAgo: '15 min ago',
-                  icon: Icons.visibility_rounded,
-                  tint: FriendooUiColors.softViolet,
-                  iconColor: FriendooUiColors.violet,
-                ),
-                const SizedBox(height: 10),
-                const _HostActivityTile(
-                  title: 'Caller from Bangalore added you to favorites',
-                  timeAgo: '35 min ago',
-                  icon: Icons.favorite_rounded,
-                  tint: FriendooUiColors.softPink,
-                  iconColor: FriendooUiColors.pink,
-                ),
-                const SizedBox(height: 24),
-
-                // ==========================================
-                // 7. HOST PROFILE CARD (Desi Avatar + Age + Badges + Languages)
-                // ==========================================
-                const Text(
-                  'Host Profile',
-                  style: TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: const Color(0xFFFFB703).withOpacity(0.55),
-                      width: 1.8,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0x14FFB703),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(18),
-                  child: Row(
-                    children: [
-                      // Host's Desi Avatar (NO age badge on avatar)
-                      DesiFemaleAvatar(
-                        seed: hostName,
-                        age: 24,
-                        isStar: true,
-                        size: 68,
-                        showPresence: true,
-                        isOnline: isOnline,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    hostName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: FriendooUiColors.ink,
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            Row(
-                              children: [
-                                const Text(
-                                  '24 yrs',
-                                  style: TextStyle(
-                                    color: Color(0xFF4B5563),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFFFB703),
-                                        Color(0xFFFF5400),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    '⭐ Star Host',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              languages.join(' · '),
-                              style: const TextStyle(
-                                color: FriendooUiColors.violet,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ==========================================
-                // 8. HOST CTA: Primary [Go Offline/Live] + Secondary [Edit Profile]
-                // ==========================================
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: FilledButton(
-                        onPressed: () async {
-                          final newStatus = !isOnline;
-                          setState(() => _isOnlineLocal = newStatus);
-                          await ref
-                              .read(hostCallGuardProvider.notifier)
-                              .setOnlineStatus(newStatus);
-                          ref.invalidate(hostDashboardStatsProvider);
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: isOnline
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFF10B981),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          color: FriendooUiColors.softBlue,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          isOnline ? 'Go Offline' : 'Go Live',
+                          '₹${stats.ratePerMinute} / min',
                           style: const TextStyle(
-                            fontSize: 14,
+                            color: FriendooUiColors.blue,
+                            fontSize: 13,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isOnline
+                        ? 'Available for incoming voice calls from users.'
+                        : 'You\'re currently unavailable to callers.',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          showFriendooLanguagePicker(
-                            context,
-                            selectedLanguages: languages,
-                            isHost: true,
-                            onSave: (langs) async {
-                              await ref
-                                  .read(hostRepositoryProvider)
-                                  .updateCurrentHostLanguages(langs);
-                              ref.invalidate(profileRepositoryProvider);
-                            },
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: FriendooUiColors.ink,
-                          side: const BorderSide(
-                            color: Color(0xFFD1D5DB),
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Text(
-                          'Edit Profile',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Prominent CTA: Go Offline / Go Live
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        final newStatus = !isOnline;
+                        setState(() => _isOnlineLocal = newStatus);
+                        await ref
+                            .read(hostCallGuardProvider.notifier)
+                            .setOnlineStatus(newStatus);
+                        ref.invalidate(hostDashboardStatsProvider);
+                      },
+                      icon: Icon(
+                        isOnline
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_fill_rounded,
+                        size: 20,
+                      ),
+                      label: Text(
+                        isOnline ? 'Go Offline' : 'Go Live',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: isOnline
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF10B981),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 3,
+                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                  ),
 
-                // ==========================================
-                // 9. INCOMING CALL REQUESTS (Live Queue)
-                // ==========================================
-                Consumer(
-                  builder: (context, ref, _) {
-                    final incomingStream = ref
-                        .watch(callRepositoryProvider)
-                        .watchIncomingCalls();
-                    return StreamBuilder<List<CallSession>>(
-                      stream: incomingStream,
-                      builder: (context, snap) {
-                        final calls = snap.data ?? [];
-                        if (calls.isEmpty) return const SizedBox.shrink();
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Live Incoming Calls',
-                              style: TextStyle(
-                                color: FriendooUiColors.ink,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
+                  // Daily Skip Quota Status (Retaining Host Call Guard logic)
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: guard.mustAutoAttend
+                          ? const Color(0xFFFEF3C7)
+                          : Colors.black.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          guard.mustAutoAttend
+                              ? Icons.bolt_rounded
+                              : Icons.shield_rounded,
+                          color: guard.mustAutoAttend
+                              ? const Color(0xFFB45309)
+                              : FriendooUiColors.violet,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            guard.mustAutoAttend
+                                ? 'Auto-attend active (0 skips left today)'
+                                : '${guard.remainingSkips} skips remaining today',
+                            style: TextStyle(
+                              color: guard.mustAutoAttend
+                                  ? const Color(0xFF92400E)
+                                  : const Color(0xFF374151),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(height: 12),
-                            ...calls.map((c) {
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xFF10B981),
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x1810B981),
-                                      blurRadius: 12,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    const CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: FriendooUiColors.violet,
-                                      child: Icon(
-                                        Icons.person_rounded,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Incoming ${c.callType.name.toUpperCase()} Call',
-                                            style: const TextStyle(
-                                              color: FriendooUiColors.ink,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'Rate: ₹${c.ratePerMinute} / min',
-                                            style: const TextStyle(
-                                              color: FriendooUiColors.muted,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    FilledButton(
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF10B981,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      onPressed: () => ref
-                                          .read(activeCallProvider.notifier)
-                                          .acceptIncomingCall(c.id),
-                                      child: const Text('Accept'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // ==========================================
+            // 4. HOST QUICK STATS (Compact Clean Cards)
+            // Today's Calls, Today's Earnings, Avg Duration, Rating
+            // ==========================================
+            Row(
+              children: [
+                Expanded(
+                  child: _HostStatCard(
+                    label: 'Today\'s Calls',
+                    value: '${stats.todayCallsCount}',
+                    unit: 'Calls',
+                    icon: Icons.phone_in_talk_rounded,
+                    tint: FriendooUiColors.softBlue,
+                    iconColor: FriendooUiColors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HostStatCard(
+                    label: 'Total Earnings',
+                    value:
+                        '₹${stats.totalEarningsInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                    unit: 'Earned',
+                    icon: Icons.monetization_on_rounded,
+                    tint: FriendooUiColors.softGold,
+                    iconColor: const Color(0xFFD97706),
+                  ),
                 ),
               ],
-            );
-          },
+            ),
+            const SizedBox(height: 12),
+            const Row(
+              children: [
+                Expanded(
+                  child: _HostStatCard(
+                    label: 'Avg Call Duration',
+                    value: '8m 24s',
+                    unit: 'Per session',
+                    icon: Icons.timer_outlined,
+                    tint: FriendooUiColors.softViolet,
+                    iconColor: FriendooUiColors.violet,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _HostStatCard(
+                    label: 'Rating',
+                    value: '⭐ 4.9',
+                    unit: 'Caller score',
+                    icon: Icons.star_rounded,
+                    tint: FriendooUiColors.softPink,
+                    iconColor: FriendooUiColors.pink,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // 5. HOST TOP AD BANNER (SAME AS USER DISCOVER)
+            // ==========================================
+            const LiveAdBannerWidget(placement: 'host_top_banner'),
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // 5b. HOST BOTTOM AD BANNER (ABOVE RECENT ACTIVITY)
+            // ==========================================
+            const LiveAdBannerWidget(placement: 'host_bottom_banner'),
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // 6. HOST DISCOVERY / RECENT ACTIVITY
+            // ==========================================
+            const Text(
+              'Recent Activity',
+              style: TextStyle(
+                color: FriendooUiColors.ink,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const _HostActivityTile(
+              title: 'User requested a voice call',
+              timeAgo: '2 min ago',
+              icon: Icons.phone_callback_rounded,
+              tint: FriendooUiColors.softBlue,
+              iconColor: FriendooUiColors.blue,
+            ),
+            const SizedBox(height: 10),
+            const _HostActivityTile(
+              title: 'User completed a 12-minute call',
+              timeAgo: '8 min ago',
+              icon: Icons.check_circle_rounded,
+              tint: Color(0xFFECFDF5),
+              iconColor: Color(0xFF10B981),
+            ),
+            const SizedBox(height: 10),
+            const _HostActivityTile(
+              title: 'New profile view from Discover',
+              timeAgo: '15 min ago',
+              icon: Icons.visibility_rounded,
+              tint: FriendooUiColors.softViolet,
+              iconColor: FriendooUiColors.violet,
+            ),
+            const SizedBox(height: 10),
+            const _HostActivityTile(
+              title: 'Caller from Bangalore added you to favorites',
+              timeAgo: '35 min ago',
+              icon: Icons.favorite_rounded,
+              tint: FriendooUiColors.softPink,
+              iconColor: FriendooUiColors.pink,
+            ),
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // 7. HOST PROFILE CARD (Desi Avatar + Age + Badges + Languages)
+            // ==========================================
+            const Text(
+              'Host Profile',
+              style: TextStyle(
+                color: FriendooUiColors.ink,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: const Color(0xFFFFB703).withOpacity(0.55),
+                  width: 1.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x14FFB703),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  // Host's Desi Avatar (NO age badge on avatar)
+                  DesiFemaleAvatar(
+                    seed: hostName,
+                    age: 24,
+                    isStar: true,
+                    size: 68,
+                    showPresence: true,
+                    isOnline: isOnline,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                hostName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: FriendooUiColors.ink,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: Color(0xFF10B981),
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Text(
+                              '24 yrs',
+                              style: TextStyle(
+                                color: Color(0xFF4B5563),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFFB703),
+                                    Color(0xFFFF5400),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '⭐ Star Host',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          languages.join(' · '),
+                          style: const TextStyle(
+                            color: FriendooUiColors.violet,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ==========================================
+            // 8. HOST CTA: Primary [Go Offline/Live] + Secondary [Edit Profile]
+            // ==========================================
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: FilledButton(
+                    onPressed: () async {
+                      final newStatus = !isOnline;
+                      setState(() => _isOnlineLocal = newStatus);
+                      await ref
+                          .read(hostCallGuardProvider.notifier)
+                          .setOnlineStatus(newStatus);
+                      ref.invalidate(hostDashboardStatsProvider);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isOnline
+                          ? const Color(0xFFDC2626)
+                          : const Color(0xFF10B981),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      isOnline ? 'Go Offline' : 'Go Live',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      showFriendooLanguagePicker(
+                        context,
+                        selectedLanguages: languages,
+                        isHost: true,
+                        onSave: (langs) async {
+                          await ref
+                              .read(hostRepositoryProvider)
+                              .updateCurrentHostLanguages(langs);
+                          ref.invalidate(profileRepositoryProvider);
+                        },
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: FriendooUiColors.ink,
+                      side: const BorderSide(
+                        color: Color(0xFFD1D5DB),
+                        width: 1.5,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Edit Profile',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ==========================================
+            // 9. INCOMING CALL REQUESTS (Live Queue)
+            // ==========================================
+            Consumer(
+              builder: (context, ref, _) {
+                final incomingStream = ref
+                    .watch(callRepositoryProvider)
+                    .watchIncomingCalls();
+                return StreamBuilder<List<CallSession>>(
+                  stream: incomingStream,
+                  builder: (context, snap) {
+                    final calls = snap.data ?? [];
+                    if (calls.isEmpty) return const SizedBox.shrink();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Live Incoming Calls',
+                          style: TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...calls.map((c) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFF10B981),
+                                width: 1.5,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x1810B981),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: FriendooUiColors.violet,
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Incoming ${c.callType.name.toUpperCase()} Call',
+                                        style: const TextStyle(
+                                          color: FriendooUiColors.ink,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Rate: ₹${c.ratePerMinute} / min',
+                                        style: const TextStyle(
+                                          color: FriendooUiColors.muted,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: () => ref
+                                      .read(activeCallProvider.notifier)
+                                      .acceptIncomingCall(c.id),
+                                  child: const Text('Accept'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ],
         );
+      },
+    );
   }
 }
 

@@ -85,31 +85,24 @@ class HostRepository {
       } catch (_) {}
     }
 
-    // Always ensure live host 7604991136 is available in Discover Lounge for audio calls
-    final has7604Host = hosts.any(
-      (h) =>
-          h.id == '00000000-0000-0000-0000-007604991136' ||
-          h.displayName.toLowerCase().contains('testing host') ||
-          h.displayName.contains('7604991136'),
-    );
-    if (!has7604Host) {
-      hosts.add(
-        const HostProfile(
-          id: '00000000-0000-0000-0000-007604991136',
-          displayName: 'Testing Host',
-          bio: 'Verified Friendoo Host · Live & Ready for Audio Calls',
-          ratePerAudioMinute: 5,
-          isAvailable: true,
-          isStar: true,
-          languages: ['Tamil', 'Hindi', 'English'],
-          gender: 'female',
-          rating: 5.0,
-          totalCalls: 120,
-          age: 24,
-          city: 'Chennai, Tamil Nadu',
-        ),
-      );
-    }
+    try {
+      final hostRow = await _client
+          .from('hosts')
+          .select('is_available')
+          .eq('id', '00000000-0000-0000-0000-007604991136')
+          .maybeSingle();
+      final is7604Online = hostRow != null
+          ? (hostRow['is_available'] as bool? ?? false)
+          : false;
+
+      if (!is7604Online) {
+        hosts.removeWhere(
+          (h) =>
+              h.id == '00000000-0000-0000-0000-007604991136' ||
+              h.displayName.toLowerCase().contains('testing host'),
+        );
+      }
+    } catch (_) {}
 
     return applyStarHostQuota(hosts);
   }
@@ -298,15 +291,20 @@ class HostRepository {
   }
 
   Future<void> setHostAvailability(bool isAvailable) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return;
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final userId =
+        _client.auth.currentUser?.id ??
+        activeProfile?.id ??
+        '00000000-0000-0000-0000-007604991136';
 
-    await _client
-        .from('hosts')
-        .update({
-          'is_available': isAvailable,
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', userId);
+    try {
+      await _client
+          .from('hosts')
+          .update({
+            'is_available': isAvailable,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId);
+    } catch (_) {}
   }
 }
