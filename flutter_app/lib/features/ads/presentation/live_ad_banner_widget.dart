@@ -33,6 +33,7 @@ class _LiveAdBannerWidgetState extends State<LiveAdBannerWidget> {
   }
 
   void _loadAd({bool useTestId = false}) {
+    if (kIsWeb) return;
     final adUnit = useTestId || kDebugMode
         ? _googleTestBannerAdUnitId
         : AdsConfig.googleBannerAdUnitId;

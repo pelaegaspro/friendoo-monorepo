@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,9 +59,11 @@ Future<void> main() async {
     }
   } catch (_) {}
 
-  try {
-    await MobileAds.instance.initialize();
-  } catch (_) {}
+  if (!kIsWeb) {
+    try {
+      await MobileAds.instance.initialize();
+    } catch (_) {}
+  }
 
   runApp(
     ProviderScope(

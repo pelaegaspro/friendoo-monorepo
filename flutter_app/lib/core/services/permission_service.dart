@@ -36,6 +36,18 @@ class AppPermissionService {
     return status.isGranted;
   }
 
+  /// Requests Android 12+ Bluetooth headset access for audio routing.
+  /// A denied Bluetooth permission must not prevent a call; the call can use
+  /// the phone speaker and microphone instead.
+  Future<void> requestBluetoothAudio() async {
+    if (kIsWeb || !Platform.isAndroid) return;
+
+    final status = await Permission.bluetoothConnect.status;
+    if (!status.isGranted && !status.isPermanentlyDenied) {
+      await Permission.bluetoothConnect.request();
+    }
+  }
+
   /// Requests microphone permission for voice lounge and calling.
   Future<bool> requestMicrophone({BuildContext? context}) async {
     if (kIsWeb) return true;

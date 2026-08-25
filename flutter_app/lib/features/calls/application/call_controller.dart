@@ -68,6 +68,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
         );
       }
 
+      await ref.read(permissionServiceProvider).requestBluetoothAudio();
       final micGranted = await ref
           .read(permissionServiceProvider)
           .requestMicrophone(context: context);
@@ -88,6 +89,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   Future<void> acceptIncomingCall(String callId, {BuildContext? context}) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
+      await ref.read(permissionServiceProvider).requestBluetoothAudio();
       final micGranted = await ref
           .read(permissionServiceProvider)
           .requestMicrophone(context: context);
