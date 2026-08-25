@@ -338,7 +338,8 @@ class WalletRepository {
       } else if (errStr.contains('404') ||
           errStr.contains('function') ||
           errStr.contains('Could not find')) {
-        message = 'Withdrawal service is temporarily unavailable. Please try again later.';
+        message =
+            'Withdrawal service is temporarily unavailable. Please try again later.';
       }
 
       // Never return a fake success — always propagate the real error to the host.

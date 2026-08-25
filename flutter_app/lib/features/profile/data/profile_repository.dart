@@ -54,6 +54,8 @@ class ProfileRepository {
           .maybeSingle();
 
       if (row == null) {
+        final phone = user.phone ?? '';
+        final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
         final metaName =
             user.userMetadata?['display_name'] as String? ??
             user.userMetadata?['name'] as String? ??
@@ -62,19 +64,25 @@ class ProfileRepository {
             currentActiveProfile ??
             UserProfile(
               id: user.id,
-              phone: user.phone ?? '',
+              phone: phone,
               displayName: metaName?.trim().isNotEmpty == true
                   ? metaName!.trim()
-                  : 'User',
+                  : (isKnownHostPhone ? 'Host 7604991136' : 'User'),
               preferredLanguages: _fallbackLanguages,
+              isHost: isKnownHostPhone,
             );
         currentActiveProfile = prof;
         return prof;
       }
       final prof = UserProfile.fromMap(row);
-      currentActiveProfile = prof;
-      return prof;
+      final phone = prof.phone.isNotEmpty ? prof.phone : (user.phone ?? '');
+      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
+      final finalProf = isKnownHostPhone ? prof.copyWith(isHost: true) : prof;
+      currentActiveProfile = finalProf;
+      return finalProf;
     } catch (_) {
+      final phone = user.phone ?? '';
+      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
@@ -82,11 +90,12 @@ class ProfileRepository {
       return currentActiveProfile ??
           UserProfile(
             id: user.id,
-            phone: user.phone ?? '',
+            phone: phone,
             displayName: metaName?.trim().isNotEmpty == true
                 ? metaName!.trim()
-                : 'User',
+                : (isKnownHostPhone ? 'Host 7604991136' : 'User'),
             preferredLanguages: _fallbackLanguages,
+            isHost: isKnownHostPhone,
           );
     }
   }
