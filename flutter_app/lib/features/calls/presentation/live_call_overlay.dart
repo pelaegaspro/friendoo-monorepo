@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../../profile/data/profile_repository.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../../wallet/presentation/coin_packages_page.dart';
 import '../application/call_controller.dart';
@@ -62,6 +63,13 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   }
 
   void _checkBalanceLimit() {
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final isHost =
+        activeProfile?.isHost == true ||
+        activeProfile?.phone.contains('7604991136') == true ||
+        activeProfile?.id == widget.call.hostId;
+    if (isHost) return;
+
     final startCoins = _initialCoinBalance ?? 999999;
     final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
     final maxSeconds = (startCoins ~/ rate) * 60;

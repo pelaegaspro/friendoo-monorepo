@@ -585,11 +585,25 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   late Future<List<HostProfile>> _hosts;
   int _selectedFilter = 0;
   int _currentTabIndex = 0;
+  Timer? _hostRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _hosts = HostRepository(ref.read(supabaseProvider)).fetchAvailableHosts();
+    _hostRefreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        setState(() {
+          _hosts = HostRepository(ref.read(supabaseProvider)).fetchAvailableHosts();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _hostRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _refreshHosts() async {

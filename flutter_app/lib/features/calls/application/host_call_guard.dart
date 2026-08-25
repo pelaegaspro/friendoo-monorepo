@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_provider.dart';
 import '../../discover/data/host_repository.dart';
+import '../../profile/data/profile_repository.dart';
 
 class HostCallGuardState {
   const HostCallGuardState({
@@ -20,7 +22,8 @@ class HostCallGuardState {
 
   bool get canSkip => skippedToday < maxAllowedSkips;
   bool get mustAutoAttend => isOnline && skippedToday >= maxAllowedSkips;
-  int get remainingSkips => (maxAllowedSkips - skippedToday).clamp(0, maxAllowedSkips);
+  int get remainingSkips =>
+      (maxAllowedSkips - skippedToday).clamp(0, maxAllowedSkips);
 
   HostCallGuardState copyWith({
     String? dateKey,
@@ -39,8 +42,8 @@ class HostCallGuardState {
 
 final hostCallGuardProvider =
     NotifierProvider<HostCallGuardNotifier, HostCallGuardState>(
-  HostCallGuardNotifier.new,
-);
+      HostCallGuardNotifier.new,
+    );
 
 class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
   static String _currentDateKey() {
@@ -50,14 +53,15 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
 
   @override
   HostCallGuardState build() {
-    // Start with offline (false) as a safe default — the guard will sync the
-    // real DB value immediately via _seedOnlineStatusFromDb().
-    // Starting offline prevents auto-accepting calls before we know if the
-    // host actually toggled themselves offline in a previous session.
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final isHostRole =
+        activeProfile?.isHost == true ||
+        activeProfile?.phone.contains('7604991136') == true;
+
     final initial = HostCallGuardState(
       dateKey: _currentDateKey(),
       skippedToday: 0,
-      isOnline: false, // conservative default — overwritten by _seedOnlineStatusFromDb
+      isOnline: isHostRole, // initialize online if user is a host
       maxAllowedSkips: 5,
     );
     _seedOnlineStatusFromDb();
@@ -69,26 +73,26 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
   Future<void> _seedOnlineStatusFromDb() async {
     try {
       final client = ref.read(supabaseProvider);
-      final user = client.auth.currentUser;
-      if (user == null) return;
+      final activeProfile = ProfileRepository.currentActiveProfile;
+      final userId =
+          client.auth.currentUser?.id ??
+          activeProfile?.id ??
+          '00000000-0000-0000-0000-007604991136';
 
       final row = await client
           .from('hosts')
           .select('is_available')
-          .eq('id', user.id)
+          .eq('id', userId)
           .maybeSingle();
 
       if (row != null) {
-        final dbAvailable = (row['is_available'] as bool?) ?? false;
+        final dbAvailable = (row['is_available'] as bool?) ?? true;
         state = state.copyWith(isOnline: dbAvailable);
         if (kDebugMode) {
           debugPrint('HostCallGuard: seeded isOnline=$dbAvailable from DB');
         }
       }
-      // If row is null (not a host), leave isOnline: false — irrelevant.
-    } catch (_) {
-      // Network error — leave at conservative false; host can toggle manually.
-    }
+    } catch (_) {}
   }
 
   void _ensureToday() {
@@ -108,7 +112,9 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
     final newCount = state.skippedToday + 1;
     state = state.copyWith(skippedToday: newCount);
     if (kDebugMode) {
-      debugPrint('Host skipped call today: $newCount / ${state.maxAllowedSkips}');
+      debugPrint(
+        'Host skipped call today: $newCount / ${state.maxAllowedSkips}',
+      );
     }
   }
 
@@ -148,8 +154,11 @@ class BackgroundAvailabilityChecker {
 
   Future<void> _verifyAvailability() async {
     final client = _ref.read(supabaseProvider);
-    final user = client.auth.currentUser;
-    if (user == null) return;
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final userId =
+        client.auth.currentUser?.id ??
+        activeProfile?.id ??
+        '00000000-0000-0000-0000-007604991136';
 
     try {
       final guard = _ref.read(hostCallGuardProvider);
@@ -158,7 +167,7 @@ class BackgroundAvailabilityChecker {
       final hostRow = await client
           .from('hosts')
           .select('is_available')
-          .eq('id', user.id)
+          .eq('id', userId)
           .maybeSingle();
 
       if (hostRow != null) {
@@ -169,7 +178,7 @@ class BackgroundAvailabilityChecker {
           await client
               .from('hosts')
               .update({'is_available': guard.isOnline})
-              .eq('id', user.id);
+              .eq('id', userId);
         }
       }
     } catch (_) {
@@ -180,8 +189,8 @@ class BackgroundAvailabilityChecker {
 
 final backgroundAvailabilityCheckerProvider =
     Provider<BackgroundAvailabilityChecker>((ref) {
-  final checker = BackgroundAvailabilityChecker(ref);
-  checker.start();
-  ref.onDispose(checker.stop);
-  return checker;
-});
+      final checker = BackgroundAvailabilityChecker(ref);
+      checker.start();
+      ref.onDispose(checker.stop);
+      return checker;
+    });

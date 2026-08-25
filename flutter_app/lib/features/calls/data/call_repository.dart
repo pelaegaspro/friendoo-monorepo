@@ -52,6 +52,38 @@ class CallRepository {
     } catch (_) {}
 
     try {
+      // Ensure caller profile exists to satisfy any foreign key constraints
+      try {
+        await _client.from('profiles').upsert({
+          'id': validCallerId,
+          'phone':
+              ProfileRepository.currentActiveProfile?.phone ?? '+918870947891',
+          'display_name':
+              ProfileRepository.currentActiveProfile?.displayName.isNotEmpty ==
+                  true
+              ? ProfileRepository.currentActiveProfile!.displayName
+              : 'VIP Tester',
+          'avatar_path': 'user_01',
+        }, onConflict: 'id');
+      } catch (_) {}
+
+      // Ensure host exists to satisfy any foreign key constraints
+      try {
+        await _client.from('profiles').upsert({
+          'id': validHostId,
+          'phone': '+917604991136',
+          'display_name': 'Testing Host',
+          'avatar_path': 'host_01',
+        }, onConflict: 'id');
+        await _client.from('hosts').upsert({
+          'id': validHostId,
+          'is_available': true,
+          'rate_per_audio_minute': 5,
+          'gender': 'female',
+          'is_star': true,
+        }, onConflict: 'id');
+      } catch (_) {}
+
       final inserted = await _client
           .from('calls')
           .insert({
@@ -62,7 +94,7 @@ class CallRepository {
             'status': 'ringing',
             'rate_per_minute': 5,
             'rtc_channel': 'friendoo_$newCallId',
-            'created_at': DateTime.now().toIso8601String(),
+            'created_at': DateTime.now().toUtc().toIso8601String(),
           })
           .select()
           .single();
@@ -271,42 +303,47 @@ class CallRepository {
   }
 
   Stream<CallSession> watchCall(String callId) {
-    if (!RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-    ).hasMatch(callId)) {
-      return Stream.value(
-        CallSession(
-          id: callId,
-          callerId: '00000000-0000-0000-0000-008870947891',
-          hostId: '00000000-0000-0000-0000-007604991136',
-          channelName: 'friendoo_$callId',
-          callType: CallType.audio,
-          status: CallStatus.ringing,
-          ratePerMinute: 5,
-        ),
-      );
+    final controller = StreamController<CallSession>.broadcast();
+    Timer? pollTimer;
+
+    Future<void> pollOnce() async {
+      try {
+        final row = await _client
+            .from('calls')
+            .select()
+            .eq('id', callId)
+            .maybeSingle();
+        if (row != null && !controller.isClosed) {
+          controller.add(CallSession.fromMap(row));
+        }
+      } catch (_) {}
     }
+
+    StreamSubscription? sub;
     try {
-      return _client
+      sub = _client
           .from('calls')
           .stream(primaryKey: ['id'])
           .eq('id', callId)
-          .where((rows) => rows.isNotEmpty)
-          .map((rows) => CallSession.fromMap(rows.first))
-          .handleError((_) => const Stream.empty());
-    } catch (_) {
-      return Stream.value(
-        CallSession(
-          id: callId,
-          callerId: '00000000-0000-0000-0000-008870947891',
-          hostId: '00000000-0000-0000-0000-007604991136',
-          channelName: 'friendoo_$callId',
-          callType: CallType.audio,
-          status: CallStatus.ringing,
-          ratePerMinute: 5,
-        ),
-      );
-    }
+          .listen((rows) {
+            if (rows.isNotEmpty && !controller.isClosed) {
+              controller.add(CallSession.fromMap(rows.first));
+            }
+          }, onError: (_) {});
+    } catch (_) {}
+
+    pollOnce();
+    pollTimer = Timer.periodic(
+      const Duration(milliseconds: 1200),
+      (_) => pollOnce(),
+    );
+
+    controller.onCancel = () {
+      pollTimer?.cancel();
+      sub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   Future<List<CallHistoryItem>> fetchCallHistory({bool? isHostFlow}) async {

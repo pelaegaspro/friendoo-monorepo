@@ -34,9 +34,9 @@ abstract class RtcAudioService {
   Future<void> dispose();
 }
 
-/// Active RTC Provider Selector (Default: VideoSDK for ultra-low ₹0.38/min pricing)
+/// Active RTC Provider Selector (Default: Agora RTC for high quality audio)
 final rtcProviderTypeProvider = StateProvider<RtcProviderType>(
-  (ref) => RtcProviderType.videosdk,
+  (ref) => RtcProviderType.agora,
 );
 
 /// Pluggable RTC Audio Service Provider
