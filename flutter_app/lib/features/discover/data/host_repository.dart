@@ -68,7 +68,7 @@ class HostRepository {
           .where((host) => host.isFemale)
           .toList();
 
-      if (hosts.isNotEmpty) return applyStarHostQuota(hosts);
+      return applyStarHostQuota(hosts);
     } catch (_) {
       try {
         final rows = await _client
@@ -80,128 +80,13 @@ class HostRepository {
 
         final hosts = (rows as List<dynamic>)
             .map((row) => HostProfile.fromMap(row as Map<String, dynamic>))
-            .where((host) => host.isFemale)
             .toList();
 
-        if (hosts.isNotEmpty) return applyStarHostQuota(hosts);
-      } catch (_) {}
+        return applyStarHostQuota(hosts);
+      } catch (_) {
+        return const <HostProfile>[];
+      }
     }
-
-    // Female-only fallback hosts across the supported regional languages and age brackets.
-    return applyStarHostQuota(const [
-      HostProfile(
-        id: 'host_tamil_3',
-        displayName: 'Ananya S',
-        bio: 'Passionate about Carnatic melodies & friendly conversations.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: true,
-        languages: ['Tamil', 'English'],
-        gender: 'female',
-        rating: 5.0,
-        totalCalls: 2400,
-        age: 24,
-        city: 'Chennai, Tamil Nadu',
-      ),
-      HostProfile(
-        id: 'host_hindi_1',
-        displayName: 'Priya Sharma',
-        bio: 'Namaste! Great listener, bollywood fan & cheerful vibe curator.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: true,
-        languages: ['Hindi', 'English'],
-        gender: 'female',
-        rating: 4.9,
-        totalCalls: 3100,
-        age: 22,
-        city: 'Mumbai, Maharashtra',
-      ),
-      HostProfile(
-        id: 'host_tamil_1',
-        displayName: 'Kavitha R',
-        bio: 'Vanakkam! Love talking about Tamil cinema, life stories & career journeys.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: true,
-        languages: ['Tamil', 'English'],
-        gender: 'female',
-        rating: 4.9,
-        totalCalls: 1850,
-        age: 28,
-        city: 'Coimbatore, Tamil Nadu',
-      ),
-      HostProfile(
-        id: 'host_hindi_2',
-        displayName: 'Ritu Varma',
-        bio: 'Friendly evening coffee talks, poetry, literature & mindful listening.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: false,
-        languages: ['Hindi', 'Punjabi'],
-        gender: 'female',
-        rating: 4.8,
-        totalCalls: 1200,
-        age: 31,
-        city: 'Delhi NCR',
-      ),
-      HostProfile(
-        id: 'host_malayalam_1',
-        displayName: 'Sneha Menon',
-        bio: 'Namaskaram! Gentle conversations, book recommendations & cozy talks.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: true,
-        languages: ['Malayalam', 'English'],
-        gender: 'female',
-        rating: 4.9,
-        totalCalls: 1500,
-        age: 38,
-        city: 'Kochi, Kerala',
-      ),
-      HostProfile(
-        id: 'host_tamil_2',
-        displayName: 'Meera Sundaram',
-        bio: 'Experienced host, parenting talks, South Indian cuisine & warm support.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: false,
-        languages: ['Tamil', 'Telugu'],
-        gender: 'female',
-        rating: 4.9,
-        totalCalls: 2100,
-        age: 42,
-        city: 'Madurai, Tamil Nadu',
-      ),
-      HostProfile(
-        id: 'host_kannada_1',
-        displayName: 'Deepa K',
-        bio: 'Calm listener, traditional arts, wisdom sharing & peaceful evening chats.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: false,
-        languages: ['Kannada', 'English'],
-        gender: 'female',
-        rating: 4.8,
-        totalCalls: 920,
-        age: 48,
-        city: 'Bengaluru, Karnataka',
-      ),
-      HostProfile(
-        id: 'host_hindi_3',
-        displayName: 'Shanti Devi',
-        bio: 'Warm motherly guidance, folk stories & heartfelt uplifting conversations.',
-        ratePerAudioMinute: 5,
-        isAvailable: true,
-        isStar: false,
-        languages: ['Hindi', 'Bhojpuri'],
-        gender: 'female',
-        rating: 4.9,
-        totalCalls: 1650,
-        age: 52,
-        city: 'Varanasi, Uttar Pradesh',
-      ),
-    ]);
   }
 
   Future<void> updateCurrentHostLanguages(List<String> languages) async {
