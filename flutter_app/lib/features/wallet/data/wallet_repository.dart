@@ -7,6 +7,7 @@ import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 
 import '../../ads/data/banner_ad_repository.dart';
+import '../../profile/data/profile_repository.dart';
 
 final walletRepositoryProvider = Provider<WalletRepository>(
   (ref) => WalletRepository(ref.watch(supabaseProvider)),
@@ -80,8 +81,9 @@ class WalletRepository {
   final SupabaseClient _client;
 
   Future<WalletSnapshot> fetchCurrentWallet() async {
+    final activeProfile = ProfileRepository.currentActiveProfile;
     final user = _client.auth.currentUser;
-    final phone = user?.phone ?? '';
+    final phone = activeProfile?.phone ?? user?.phone ?? '';
     final isUnlimitedTester = phone.replaceAll(' ', '').contains('8870947891');
     if (isUnlimitedTester) {
       return const WalletSnapshot(
@@ -91,7 +93,7 @@ class WalletRepository {
       );
     }
 
-    final userId = user?.id;
+    final userId = activeProfile?.id ?? user?.id;
     if (userId == null) {
       return const WalletSnapshot(coinBalance: 0, isFrozen: false);
     }
@@ -122,15 +124,16 @@ class WalletRepository {
     final initial = await fetchCurrentWallet();
     yield initial;
 
+    final activeProfile = ProfileRepository.currentActiveProfile;
     final user = _client.auth.currentUser;
-    final phone = user?.phone ?? '';
+    final phone = activeProfile?.phone ?? user?.phone ?? '';
     final isUnlimitedTester = phone.replaceAll(' ', '').contains('8870947891');
     if (isUnlimitedTester) {
       yield* _walletChangeNotifier.stream;
       return;
     }
 
-    final userId = user?.id;
+    final userId = activeProfile?.id ?? user?.id;
     if (userId != null) {
       try {
         final realtimeStream = _client
