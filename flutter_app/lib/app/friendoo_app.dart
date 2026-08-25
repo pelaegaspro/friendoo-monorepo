@@ -91,79 +91,100 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   bool _otpRequested = false;
   bool _loading = false;
   String? _error;
-
   bool _isHostMode = false;
-
-  static const _debugMockPhone = '9000000000';
-  static const _debugMockOtp = '123456';
-
-  bool get _isDebugMockPhone {
-    final digits = _phoneController.text.trim().replaceAll('+91', '').replaceAll(' ', '');
-    return kDebugMode && digits == _debugMockPhone;
-  }
+  int _resendCountdown = 0;
+  Timer? _countdownTimer;
 
   AuthRepository get _auth => AuthRepository(ref.read(supabaseProvider));
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
   }
 
-  void _quickLogin({required bool isHost}) {
-    ref.read(isHostModeProvider.notifier).state = isHost;
-    ref.read(hasEnteredAppProvider.notifier).state = true;
-    ref.read(debugMockSessionProvider.notifier).state = true;
+  void _startResendTimer() {
+    _countdownTimer?.cancel();
+    setState(() => _resendCountdown = 45);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_resendCountdown <= 1) {
+        timer.cancel();
+        setState(() => _resendCountdown = 0);
+      } else {
+        setState(() => _resendCountdown--);
+      }
+    });
   }
 
-  Future<void> _continue() async {
+  Future<void> _sendOtp() async {
+    final phoneDigits = _phoneController.text
+        .trim()
+        .replaceAll('+91', '')
+        .replaceAll(' ', '');
+
+    if (phoneDigits.length != 10) {
+      setState(() => _error = 'Please enter a valid 10-digit mobile number');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
+
+    final fullPhone = '+91$phoneDigits';
+
     try {
-      final phoneDigits = _phoneController.text
-          .trim()
-          .replaceAll('+91', '')
-          .replaceAll(' ', '');
-
-      if (phoneDigits.length != 10 && !_isDebugMockPhone) {
-        setState(() => _error = 'Please enter a valid 10-digit mobile number');
-        return;
-      }
-
-      final fullPhone = '+91$phoneDigits';
-
-      if (_isDebugMockPhone) {
-        if (_otpRequested) {
-          if (_otpController.text.trim() != _debugMockOtp) {
-            throw StateError('Invalid test code');
-          }
-          ref.read(isHostModeProvider.notifier).state = _isHostMode;
-          ref.read(hasEnteredAppProvider.notifier).state = true;
-          ref.read(debugMockSessionProvider.notifier).state = true;
-        } else {
-          if (mounted) setState(() => _otpRequested = true);
-        }
-        return;
-      }
-
-      if (_otpRequested) {
-        await _auth.verifySmsOtp(
-          phone: fullPhone,
-          code: _otpController.text.trim(),
-        );
-        ref.read(isHostModeProvider.notifier).state = _isHostMode;
-        ref.read(hasEnteredAppProvider.notifier).state = true;
-      } else {
-        await _auth.requestSmsOtp(fullPhone);
-        if (mounted) setState(() => _otpRequested = true);
+      await _auth.requestSmsOtp(fullPhone);
+      if (mounted) {
+        setState(() {
+          _otpRequested = true;
+          _otpController.clear();
+        });
+        _startResendTimer();
       }
     } on AuthException catch (error) {
       setState(() => _error = error.message);
     } catch (_) {
-      setState(() => _error = 'Unable to continue. Please try again.');
+      setState(() => _error = 'Unable to send SMS code. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    final phoneDigits = _phoneController.text
+        .trim()
+        .replaceAll('+91', '')
+        .replaceAll(' ', '');
+    final otp = _otpController.text.trim();
+
+    if (otp.length != 6) {
+      setState(() => _error = 'Please enter the 6-digit SMS verification code');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final fullPhone = '+91$phoneDigits';
+
+    try {
+      await _auth.verifySmsOtp(phone: fullPhone, code: otp);
+      ref.read(isHostModeProvider.notifier).state = _isHostMode;
+      ref.read(hasEnteredAppProvider.notifier).state = true;
+    } on AuthException catch (error) {
+      setState(() => _error = error.message);
+    } catch (_) {
+      setState(() => _error = 'Invalid verification code. Please check and try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -171,8 +192,10 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    final client = ref.watch(supabaseProvider);
-    final hasExistingSession = client.auth.currentSession != null;
+    final phoneDigits = _phoneController.text
+        .trim()
+        .replaceAll('+91', '')
+        .replaceAll(' ', '');
 
     return Scaffold(
       body: SafeArea(
@@ -212,104 +235,119 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Welcome to Friendoo',
+                  const SizedBox(height: 16),
+                  Text(
+                    _otpRequested ? 'Verify Mobile Number' : 'Welcome to Friendoo',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFF0E1020),
-                      fontSize: 28,
+                      fontSize: 26,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.8,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Connect instantly with verified female hosts for friendly audio conversations.',
+                  Text(
+                    _otpRequested
+                        ? 'Enter the 6-digit SMS verification code sent to +91 $phoneDigits'
+                        : 'Connect instantly with verified female hosts for friendly audio conversations.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  SegmentedButton<bool>(
-                    segments: const [
-                      ButtonSegment(value: false, label: Text('User')),
-                      ButtonSegment(value: true, label: Text('Host')),
-                    ],
-                    selected: {_isHostMode},
-                    onSelectionChanged: (selected) {
-                      setState(() => _isHostMode = selected.first);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    enabled: !_otpRequested && !_loading,
-                    maxLength: 10,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                    ],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: Color(0xFF0F172A),
+                  const SizedBox(height: 28),
+
+                  if (!_otpRequested) ...[
+                    // Role Selector
+                    SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment(
+                          value: false,
+                          icon: Icon(Icons.person_rounded, size: 18),
+                          label: Text('User Mode'),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          icon: Icon(Icons.star_rounded, size: 18),
+                          label: Text('Host Mode'),
+                        ),
+                      ],
+                      selected: {_isHostMode},
+                      onSelectionChanged: (selected) {
+                        setState(() => _isHostMode = selected.first);
+                      },
                     ),
-                    decoration: InputDecoration(
-                      labelText: 'Mobile Phone Number',
-                      hintText: '98765 43210',
-                      counterText: '',
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.only(left: 14, right: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.phone_iphone_rounded,
-                              color: Color(0xFF6366F1),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 4,
+                    const SizedBox(height: 20),
+
+                    // Phone input with locked +91 prefix
+                    TextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      enabled: !_loading,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: Color(0xFF0F172A),
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Mobile Phone Number',
+                        hintText: '98765 43210',
+                        counterText: '',
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.only(left: 14, right: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.phone_iphone_rounded,
+                                color: Color(0xFF6366F1),
+                                size: 20,
                               ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEF2FF),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: const Color(0xFFC7D2FE),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFC7D2FE),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '🇮🇳 +91',
+                                  style: TextStyle(
+                                    color: Color(0xFF1E293B),
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
-                              child: const Text(
-                                '🇮🇳 +91',
-                                style: TextStyle(
-                                  color: Color(0xFF1E293B),
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 1.5,
+                                height: 20,
+                                color: const Color(0xFFCBD5E1),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 1.5,
-                              height: 20,
-                              color: const Color(0xFFCBD5E1),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (_otpRequested) ...[
-                    const SizedBox(height: 16),
+                  ] else ...[
+                    // OTP Input
                     TextField(
                       controller: _otpController,
                       keyboardType: TextInputType.number,
@@ -319,16 +357,73 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(6),
                       ],
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 6.0,
+                        color: Color(0xFF0F172A),
+                      ),
+                      textAlign: TextAlign.center,
                       decoration: const InputDecoration(
                         labelText: '6-Digit SMS Verification Code',
-                        hintText: '123456',
+                        hintText: '• • • • • •',
                         counterText: '',
                         prefixIcon: Icon(Icons.lock_outline_rounded),
                       ),
                     ),
-                  ],
-                  if (_error != null) ...[
                     const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _otpRequested = false;
+                                    _error = null;
+                                  });
+                                },
+                          icon: const Icon(Icons.edit_rounded, size: 15),
+                          label: const Text(
+                            'Change Number',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (_resendCountdown > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              'Resend in ${_resendCountdown}s',
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          )
+                        else
+                          TextButton.icon(
+                            onPressed: _loading ? null : _sendOtp,
+                            icon: const Icon(Icons.refresh_rounded, size: 15),
+                            label: const Text(
+                              'Resend Code',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF6366F1),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  if (_error != null) ...[
+                    const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 14,
@@ -362,6 +457,8 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                     ),
                   ],
                   const SizedBox(height: 24),
+
+                  // Main CTA button
                   Container(
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
@@ -377,7 +474,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: _loading ? null : _continue,
+                      onPressed: _loading
+                          ? null
+                          : (_otpRequested ? _verifyOtp : _sendOtp),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -394,8 +493,8 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                             )
                           : Text(
                               _otpRequested
-                                  ? 'Verify & Enter Friendoo Lounge'
-                                  : 'Send Instant SMS Code ✦',
+                                  ? 'Verify & Enter Lounge ➔'
+                                  : 'Send SMS Code ✦',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
@@ -405,118 +504,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                             ),
                     ),
                   ),
-
-                  // ==========================================
-                  // QUICK LOGIN ENABLE FOR TESTING
-                  // ==========================================
-                  const SizedBox(height: 28),
-                  const Row(
-                    children: [
-                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          '⚡ QUICK TEST LOGIN',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: Color(0xFFE2E8F0))),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : () => _quickLogin(isHost: false),
-                          icon: const Icon(
-                            Icons.person_rounded,
-                            size: 18,
-                            color: Color(0xFF2563EB),
-                          ),
-                          label: const Text(
-                            'Quick User',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF2563EB),
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            side: const BorderSide(
-                              color: Color(0xFF93C5FD),
-                              width: 1.5,
-                            ),
-                            backgroundColor: const Color(0xFFEFF6FF),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : () => _quickLogin(isHost: true),
-                          icon: const Icon(
-                            Icons.star_rounded,
-                            size: 18,
-                            color: Color(0xFFD97706),
-                          ),
-                          label: const Text(
-                            'Quick Host',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFFD97706),
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            side: const BorderSide(
-                              color: Color(0xFFFDE68A),
-                              width: 1.5,
-                            ),
-                            backgroundColor: const Color(0xFFFEF3C7),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (hasExistingSession) ...[
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: () {
-                        ref.read(hasEnteredAppProvider.notifier).state = true;
-                      },
-                      icon: const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: Color(0xFF6366F1),
-                      ),
-                      label: const Text(
-                        'Continue with Active Supabase Session ➔',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF6366F1),
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

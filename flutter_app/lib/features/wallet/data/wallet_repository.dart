@@ -190,7 +190,7 @@ class WalletRepository {
 
   Future<List<WalletTransactionItem>> fetchTransactions() async {
     final userId = _client.auth.currentUser?.id;
-    if (userId == null) return _mockTransactions();
+    if (userId == null) return const <WalletTransactionItem>[];
 
     try {
       final rows = await _client
@@ -198,122 +198,63 @@ class WalletRepository {
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
-          .limit(30);
+          .limit(50);
 
-      final list = (rows as List<dynamic>)
+      return (rows as List<dynamic>)
           .map(
             (row) => WalletTransactionItem.fromMap(row as Map<String, dynamic>),
           )
           .toList();
-
-      if (list.isNotEmpty) return list;
-    } catch (_) {}
-
-    return _mockTransactions();
-  }
-
-  List<WalletTransactionItem> _mockTransactions() {
-    final now = DateTime.now();
-    return [
-      WalletTransactionItem(
-        id: 'tx_rec_500',
-        type: 'added',
-        status: 'completed',
-        coinAmount: 500,
-        balanceAfter: 2553,
-        createdAt: now.subtract(const Duration(minutes: 42)),
-        otherPartyName: 'Coin Pack Recharge',
-        methodOrContext: 'UPI (Google Pay)',
-        amountInr: 149,
-        description: 'Coins Added • 500 Coins + 250 Bonus',
-        rawTransactionCode:
-            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-REC500',
-      ),
-      WalletTransactionItem(
-        id: 'tx_call_1',
-        type: 'debit',
-        status: 'completed',
-        coinAmount: -62,
-        balanceAfter: 2053,
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 15)),
-        otherPartyName: 'Call with Ananya S',
-        durationFormatted: '12m 34s',
-        methodOrContext: 'Audio Call Billing',
-        amountInr: 62,
-        description: 'Voice Call with Ananya S',
-        rawTransactionCode:
-            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-CL6201',
-      ),
-      WalletTransactionItem(
-        id: 'tx_wd_500',
-        type: 'withdrawal',
-        status: 'completed',
-        coinAmount: -500,
-        balanceAfter: 2115,
-        createdAt: now.subtract(const Duration(hours: 3, minutes: 20)),
-        otherPartyName: 'Host Payout Withdrawal',
-        methodOrContext: 'Bank IMPS (UPI VPA)',
-        amountInr: 500,
-        description: 'Withdrawal to UPI (pria@oksbi)',
-        rawTransactionCode:
-            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-WD5240',
-      ),
-      WalletTransactionItem(
-        id: 'tx_fail_99',
-        type: 'failed',
-        status: 'failed',
-        coinAmount: 0,
-        balanceAfter: 2615,
-        createdAt: now.subtract(const Duration(hours: 5, minutes: 10)),
-        otherPartyName: 'UPI Payment Failed',
-        methodOrContext: 'UPI (PhonePe)',
-        amountInr: 99,
-        description: 'Recharge Failed • Bank Server Timeout (0 coins deducted)',
-        rawTransactionCode:
-            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-FL9981',
-      ),
-      WalletTransactionItem(
-        id: 'tx_can_15',
-        type: 'canceled',
-        status: 'canceled',
-        coinAmount: 15,
-        balanceAfter: 2615,
-        createdAt: now.subtract(const Duration(hours: 6, minutes: 45)),
-        otherPartyName: 'Call Refund (Canceled)',
-        methodOrContext: 'System Auto-Refund',
-        amountInr: 15,
-        description: 'Call Canceled • Immediate Grace Period Refund',
-        rawTransactionCode:
-            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-CAN150',
-      ),
-    ];
+    } catch (_) {
+      return const <WalletTransactionItem>[];
+    }
   }
 
   Future<List<HostEarningsItem>> fetchHostRecentEarnings() async {
-    final now = DateTime.now();
-    return [
-      HostEarningsItem(
-        id: 'earn_1',
-        userName: 'Call with Ananya S',
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 15)),
-        durationFormatted: '12m 34s',
-        amountEarnedInr: 62,
-      ),
-      HostEarningsItem(
-        id: 'earn_2',
-        userName: 'Call with Arjun R',
-        createdAt: now.subtract(const Duration(hours: 2, minutes: 40)),
-        durationFormatted: '8m 15s',
-        amountEarnedInr: 41,
-      ),
-      HostEarningsItem(
-        id: 'earn_3',
-        userName: 'Call with Rahul M',
-        createdAt: now.subtract(const Duration(hours: 3, minutes: 55)),
-        durationFormatted: '15m 02s',
-        amountEarnedInr: 75,
-      ),
-    ];
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return const <HostEarningsItem>[];
+
+    try {
+      final rows = await _client
+          .from('calls')
+          .select(
+            'id, caller_id, started_at, ended_at, total_coins_deducted, created_at, caller:profiles!caller_id(display_name)',
+          )
+          .eq('host_id', userId)
+          .eq('status', 'ended')
+          .order('created_at', ascending: false)
+          .limit(30);
+
+      return (rows as List<dynamic>).map((row) {
+        final map = row as Map<String, dynamic>;
+        final started = map['started_at'] != null
+            ? DateTime.tryParse(map['started_at'].toString())
+            : null;
+        final ended = map['ended_at'] != null
+            ? DateTime.tryParse(map['ended_at'].toString())
+            : null;
+        final durationSeconds = (started != null && ended != null)
+            ? ended.difference(started).inSeconds
+            : 0;
+        final mins = durationSeconds ~/ 60;
+        final secs = durationSeconds % 60;
+        final callerMap = map['caller'] as Map<String, dynamic>?;
+        final callerName = callerMap?['display_name'] as String? ?? 'Caller';
+        final coins = (map['total_coins_deducted'] as num?)?.toInt() ?? 0;
+        final hostEarned = (coins * 0.6).round(); // 60% host split
+
+        return HostEarningsItem(
+          id: map['id'].toString(),
+          userName: 'Call with $callerName',
+          createdAt: DateTime.tryParse(map['created_at'].toString()) ??
+              DateTime.now(),
+          durationFormatted: '${mins}m ${secs.toString().padLeft(2, '0')}s',
+          amountEarnedInr: hostEarned,
+        );
+      }).toList();
+    } catch (_) {
+      return const <HostEarningsItem>[];
+    }
   }
 
   Future<bool> rechargeWallet({
