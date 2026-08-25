@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:friendoo/core/config/app_environment.dart';
-import 'package:friendoo/core/models/banner_ad_model.dart';
 import 'package:friendoo/core/supabase/backend2_supabase_provider.dart';
-import 'package:friendoo/core/supabase/supabase_provider.dart';
 import 'package:friendoo/features/ads/data/backend2_promo_repository.dart';
 import 'package:friendoo/features/ads/data/banner_ad_repository.dart';
 
