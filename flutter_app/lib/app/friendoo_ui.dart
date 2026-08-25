@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/models/friendoo_models.dart';
 import '../features/calls/data/call_repository.dart';
@@ -4697,6 +4698,7 @@ void showTransactionDetailsSheet(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
+                  const Text('🪙 ', style: TextStyle(fontSize: 24)),
                   Text(
                     '${isCredit || isCanceled ? '+' : '-'}${transaction.coinAmount.abs()} Coins',
                     style: TextStyle(
@@ -4883,7 +4885,38 @@ void showTransactionDetailsSheet(
               ),
               const SizedBox(height: 20),
 
-              // 5. Close CTA
+              // 5. Customer Care & Support CTA
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      _showTransactionCustomerCareSheet(context, transaction),
+                  icon: const Icon(
+                    Icons.headset_mic_rounded,
+                    size: 19,
+                    color: Color(0xFF4F46E5),
+                  ),
+                  label: const Text(
+                    'Need Help? Contact Customer Care',
+                    style: TextStyle(
+                      color: Color(0xFF4F46E5),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFC7D2FE)),
+                    backgroundColor: const Color(0xFFEEF2FF),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // 6. Close CTA
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -4911,6 +4944,248 @@ void showTransactionDetailsSheet(
       );
     },
   );
+}
+
+void _showTransactionCustomerCareSheet(
+  BuildContext context,
+  WalletTransactionItem transaction,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.support_agent_rounded,
+                      color: Color(0xFF4F46E5),
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Customer Care Desk',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '24x7 Instant Support & Dispute Redressal',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Transaction Code Summary Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.receipt_rounded,
+                      size: 18,
+                      color: Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ref: ${transaction.transactionCode} (${transaction.statusLabel})',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Option 1: WhatsApp Support
+              _SupportOptionTile(
+                icon: Icons.chat_rounded,
+                iconColor: const Color(0xFF10B981),
+                bgColor: const Color(0xFFECFDF5),
+                title: 'WhatsApp Customer Support',
+                subtitle: 'Chat live with Friendoo support agent (Fastest)',
+                onTap: () async {
+                  final msg = Uri.encodeComponent(
+                    'Hi Friendoo Support, I need help with transaction: ${transaction.transactionCode} (Amount: ₹${transaction.displayAmountInr}, Status: ${transaction.statusLabel})',
+                  );
+                  final uri =
+                      Uri.parse('https://wa.me/919999999999?text=$msg');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // Option 2: Email Support Desk
+              _SupportOptionTile(
+                icon: Icons.mail_outline_rounded,
+                iconColor: const Color(0xFF2563EB),
+                bgColor: const Color(0xFFEFF6FF),
+                title: 'Email Support Desk (support@friendoo.in)',
+                subtitle: 'Send detailed query with transaction logs',
+                onTap: () async {
+                  final subject = Uri.encodeComponent(
+                    'Transaction Inquiry: ${transaction.transactionCode}',
+                  );
+                  final body = Uri.encodeComponent(
+                    'Hello Friendoo Team,\n\nI need assistance regarding the following transaction:\nTransaction Code: ${transaction.transactionCode}\nDate: ${transaction.formattedDateTime}\nAmount: ₹${transaction.displayAmountInr}\nStatus: ${transaction.statusLabel}\n\nDescription of issue:\n',
+                  );
+                  final uri = Uri.parse(
+                    'mailto:support@friendoo.in?subject=$subject&body=$body',
+                  );
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // Option 3: Formal Grievance Officer
+              _SupportOptionTile(
+                icon: Icons.gavel_rounded,
+                iconColor: const Color(0xFF7C3AED),
+                bgColor: const Color(0xFFF5F3FF),
+                title: 'File Statutory Grievance Ticket',
+                subtitle: 'DPDP Act 2023 & IT Rules official resolution desk',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const GrievanceRedressalPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _SupportOptionTile extends StatelessWidget {
+  const _SupportOptionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.bgColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color bgColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Color(0xFF94A3B8),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ReceiptRow extends StatelessWidget {
@@ -7507,7 +7782,7 @@ class _TransactionTile extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                '${isCredit || transaction.isCanceled ? '+' : ''}${transaction.coinAmount}',
+                '${isCredit || transaction.isCanceled ? '+' : ''}${transaction.coinAmount} 🪙',
                 style: TextStyle(
                   color: isCredit ? const Color(0xFF10B981) : FriendooUiColors.pink,
                   fontSize: 15,
@@ -7565,17 +7840,16 @@ class _CoinPackCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: featured
                         ? FriendooUiColors.softViolet
                         : FriendooUiColors.softGold,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.monetization_on_rounded,
-                    color: Color(0xFFD97706),
-                    size: 20,
+                  child: const Text(
+                    '🪙',
+                    style: TextStyle(fontSize: 18),
                   ),
                 ),
                 if (featured)
@@ -7605,7 +7879,13 @@ class _CoinPackCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            Text('${package.coins} coins', style: const _CardValue()),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🪙 ', style: TextStyle(fontSize: 16)),
+                Text('${package.coins} Coins', style: const _CardValue()),
+              ],
+            ),
             const SizedBox(height: 4),
             Text('~$minutes mins audio talk', style: const _FriendooMuted()),
             const SizedBox(height: 14),

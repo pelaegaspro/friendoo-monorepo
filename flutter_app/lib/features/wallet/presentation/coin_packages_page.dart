@@ -353,13 +353,19 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                 color: Color(0xFF475569),
                               ),
                             ),
-                            Text(
-                              '₹${balance.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF2563EB),
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('🪙 ', style: TextStyle(fontSize: 18)),
+                                Text(
+                                  '${(balance * 10).round()} Coins',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -388,7 +394,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 14,
                               mainAxisSpacing: 14,
-                              childAspectRatio: 1.65,
+                              childAspectRatio: 1.5,
                             ),
                         itemBuilder: (context, index) {
                           final pkg = packages[index];
@@ -446,7 +452,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                               Text(
                                                 '₹${pkg.amountInr}',
                                                 style: const TextStyle(
-                                                  fontSize: 22,
+                                                  fontSize: 20,
                                                   fontWeight: FontWeight.w900,
                                                   color: Color(0xFF1D4ED8),
                                                 ),
@@ -455,8 +461,8 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                                 Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3,
+                                                        horizontal: 7,
+                                                        vertical: 2.5,
                                                       ),
                                                   decoration: BoxDecoration(
                                                     color: const Color(
@@ -471,7 +477,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                                     'Value Pack',
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 10,
+                                                      fontSize: 9.5,
                                                       fontWeight:
                                                           FontWeight.w900,
                                                     ),
@@ -481,8 +487,8 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                                 Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3,
+                                                        horizontal: 7,
+                                                        vertical: 2.5,
                                                       ),
                                                   decoration: BoxDecoration(
                                                     color: const Color(
@@ -497,7 +503,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                                     '% Sale',
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 10,
+                                                      fontSize: 9.5,
                                                       fontWeight:
                                                           FontWeight.w900,
                                                     ),
@@ -505,12 +511,30 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                                 ),
                                             ],
                                           ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Text(
+                                                '🪙 ',
+                                                style: TextStyle(fontSize: 15),
+                                              ),
+                                              Text(
+                                                '${pkg.coins} Coins',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFF0F172A),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                           if (!isSale) ...[
                                             const SizedBox(height: 4),
                                             Text(
                                               pkg.bonus ?? '+10% Extra',
                                               style: const TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 11,
                                                 fontWeight: FontWeight.w800,
                                                 color: Color(0xFF10B981),
                                               ),
@@ -759,7 +783,7 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '${isCredit || tx.isCanceled ? '+' : '-'}${tx.coinAmount.abs()} Coins',
+                            '${isCredit || tx.isCanceled ? '+' : '-'}${tx.coinAmount.abs()} 🪙',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w900,

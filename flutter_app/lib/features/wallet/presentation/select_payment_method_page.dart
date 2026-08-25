@@ -356,7 +356,7 @@ class _SelectPaymentMethodPageState extends ConsumerState<SelectPaymentMethodPag
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'You will get $coins Coins in this recharge',
+                              'You will get 🪙 $coins Coins in this recharge',
                               style: const TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontSize: 13.5,
