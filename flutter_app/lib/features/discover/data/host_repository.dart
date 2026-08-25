@@ -13,11 +13,10 @@ final selectedRegionalLanguageProvider = StateProvider<String>(
   (ref) => 'Tamil',
 ); // Default to Tamil as requested
 
-final hostDashboardStatsProvider =
-    FutureProvider<HostDashboardStats>((ref) {
-      final repo = ref.watch(hostRepositoryProvider);
-      return repo.fetchHostDashboardStats();
-    });
+final hostDashboardStatsProvider = FutureProvider<HostDashboardStats>((ref) {
+  final repo = ref.watch(hostRepositoryProvider);
+  return repo.fetchHostDashboardStats();
+});
 
 class HostRepository {
   const HostRepository(this._client);
