@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "friendoo-v1"
+  },
+  "targets": {
+    "friendoo-v1": {
+      "hosting": {
+        "app": ["friendoo-v1"]
+      }
+    }
+  }
+}
