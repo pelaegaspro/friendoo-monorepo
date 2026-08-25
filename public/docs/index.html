@@ -1,11 +1,13 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Friendoo — Real Conversations with Verified Female Hosts</title>
-<meta name="description" content="Friendoo connects users with verified female hosts for real conversations via chat and voice calls.">
+<title>Friendoo | Real Conversations with Verified Hosts</title>
+<meta name="description" content="Friendoo connects you with verified female hosts for genuine conversations by chat and voice call, with safe payments and weekly host earnings.">
+<link rel="icon" type="image/png" href="/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--brand:#7c5cff;--teal:#18c6b8;--pink:#ff7ab6;--dark:#060810;--panel:rgba(255,255,255,.05);--border:rgba(255,255,255,.08);--muted:rgba(255,255,255,.5);--r:22px}
-*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
-body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:#fff;line-height:1.7;overflow-x:hidden}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:#fff;line-height:1.7;overflow-x:hidden;max-width:100%}
+img,svg,video{max-width:100%;height:auto}h1,h2,h3,h4,p,li,a,button,label{overflow-wrap:anywhere}
 a{color:inherit;text-decoration:none}
 .lang-bar{background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);padding:6px 6vw;display:flex;gap:6px;align-items:center;justify-content:flex-end}
 .lang-bar>span{color:var(--muted);font-size:12px}
@@ -15,10 +17,12 @@ a{color:inherit;text-decoration:none}
 nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 6vw;background:rgba(6,8,16,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px}.logo svg,.logo img{width:36px;height:36px;object-fit:contain;border-radius:8px}
 .nav-right{display:flex;gap:22px;align-items:center}.nav-right a{color:var(--muted);font-size:14px}.nav-right a:hover{color:#fff}
+.menu-toggle{display:none;background:transparent;border:1px solid var(--border);color:#fff;border-radius:10px;padding:8px 10px;font:inherit;font-size:20px;line-height:1;cursor:pointer}.mobile-menu{display:none}
 .btn{display:inline-block;padding:10px 22px;border-radius:999px;font-weight:700;font-size:14px;font-family:inherit;background:linear-gradient(135deg,var(--brand),var(--pink));color:#fff;border:none;cursor:pointer;transition:transform .2s}.btn:hover{transform:translateY(-2px)}
 .btn-lg{padding:16px 36px;font-size:16px}.btn-outline{background:transparent!important;color:#fff!important;border:1.5px solid rgba(255,255,255,.25)!important}
 .view{display:none}.view:target{display:block}
 body:not(:has(.view:target)) #home-view{display:block}
+body.route-404 #home-view{display:none}body.route-404 #not-found-view{display:block}
 .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6vw 80px;position:relative;background:var(--dark);overflow:hidden}
 .hero-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(124,92,255,.22) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 20% 70%,rgba(255,122,182,.14) 0%,transparent 55%)}
 .hero-content{position:relative;z-index:2}
@@ -143,6 +147,7 @@ footer .links{flex-wrap:wrap;gap:14px}
 <nav>
 <a class="logo" href="#home"><img src="/logo.png" alt="Friendoo Logo" />Friendoo</a>
 <div class="nav-right"><a href="#features" data-t="nav.features">Features</a><a href="#for-users">For Users</a><a href="#hosts">Hosts</a><a href="#tiers" data-t="nav.tiers">Host Tiers</a><a href="#apply" data-t="nav.apply">Apply</a><a href="#safety-view">Safety</a><a href="#privacy-view">Privacy</a><a href="#terms-view">Terms</a><a class="btn" href="#apply" data-t="nav.join">Join as Host</a></div>
+<button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">☰</button><div class="mobile-menu" id="mobileMenu"><a href="#features">Features</a><a href="#for-users">For Users</a><a href="#hosts">Hosts</a><a href="#tiers">Host Tiers</a><a href="#apply">Apply</a><a href="#safety-view">Safety</a><a href="#privacy-view">Privacy</a><a href="#terms-view">Terms</a><a class="btn" href="#apply">Join as Host</a></div>
 </nav>
 <div id="home-view" class="view">
 <section class="hero"><div class="hero-bg"></div><div class="hero-content">
@@ -240,11 +245,11 @@ footer .links{flex-wrap:wrap;gap:14px}
 <p class="section-lead" data-t="form.lead">Only female applicants accepted. Our team will review your application within 48 hours.</p>
 <div style="background:rgba(255,122,182,.1);border:1px solid rgba(255,122,182,.3);border-radius:14px;padding:16px 20px;margin:20px 0;color:rgba(255,255,255,.85);font-size:14px">&#128161; Host earnings start only after verification. Paid weekly via UPI.</div>
 <form class="form-grid" id="hostForm">
-<div><label class="form-label" data-t="form.field.name">Full name</label><input type="text" name="name" placeholder="Your full name" required></div>
-<div><label class="form-label" data-t="form.field.city">City</label><input type="text" name="city" placeholder="Mumbai, Chennai&#8230;" required></div>
-<div><label class="form-label" data-t="form.field.phone">Phone / WhatsApp</label><input type="tel" name="phone" placeholder="+91XXXXXXXXXX" required></div>
+<div><label class="form-label" data-t="form.field.name">Full name</label><input type="text" name="name" autocomplete="name" required></div>
+<div><label class="form-label" data-t="form.field.city">City</label><input type="text" name="city" autocomplete="address-level2" required></div>
+<div><label class="form-label" data-t="form.field.phone">Phone / WhatsApp</label><input type="tel" name="phone" autocomplete="tel" required></div>
 <div class="form-full"><label class="form-label" data-t="form.field.lang">Languages you can speak (select all that apply)</label><div id="langCheckboxes" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Hindi" style="width:auto"> हिंदी</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Tamil" style="width:auto"> தமிழ்</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Telugu" style="width:auto"> తెలుగు</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Kannada" style="width:auto"> ಕನ್ನಡ</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Malayalam" style="width:auto"> മലയാളം</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Urdu" style="width:auto"> اردو</label></div></div>
-<div class="form-full"><label class="form-label" data-t="form.field.about">Why do you want to join as a host?</label><textarea name="about" placeholder="I love talking about movies and music&#8230;"></textarea></div>
+<div class="form-full"><label class="form-label" data-t="form.field.about">Why do you want to join as a host?</label><textarea name="about"></textarea></div>
 <div class="form-full"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><input type="checkbox" id="confirm" required style="width:auto"><label for="confirm" style="display:inline;color:rgba(255,255,255,.7);font-size:14px" data-t="form.confirm">I confirm I am 18+ female and agree to the Terms of Service and Privacy Policy</label></div>
 <button type="submit" class="btn btn-lg" id="submitBtn" style="width:100%;text-align:center;border-radius:14px" data-t="form.submit">Submit application</button>
 <div class="success-msg" id="successMsg">&#9989; Application received! Our team will review your profile and contact you on WhatsApp within 48 hours.</div>
@@ -270,11 +275,11 @@ footer .links{flex-wrap:wrap;gap:14px}
 </div>
 </div>
 </section>
-<div class="cta-band"><div><h2>Join Friendoo today</h2><p style="color:var(--muted);margin-top:10px;font-size:15px">Whether you want real conversations or real earnings &mdash; Friendoo has a place for you.</p></div><div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-lg" href="#for-users">Start Chatting</a><a class="btn btn-lg" href="#apply" style="background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000">Join as Host</a><a class="btn btn-lg btn-outline" href="mailto:support@friendoo.app">Contact us</a></div></div>
+<div class="cta-band"><div><h2>Join Friendoo today</h2><p style="color:var(--muted);margin-top:10px;font-size:15px">Whether you want real conversations or real earnings &mdash; Friendoo has a place for you.</p></div><div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-lg" href="#for-users">Start Chatting</a><a class="btn btn-lg" href="#apply" style="background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000">Join as Host</a><a class="btn btn-lg btn-outline" href="mailto:contact@friendoo.in">Contact us</a></div></div>
 </div><div id="privacy-view" class="view"><div class="legal-hero">
   <div class="label">Legal</div>
   <h1 style="font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.1">Privacy Policy</h1>
-  <p style="color:var(--muted);margin-top:12px;font-size:15px">Last updated: May 2026 &nbsp;&middot;&nbsp; Friendoo Platform operated by [Your Company Name] (&ldquo;Company&rdquo;)</p>
+   <p style="color:var(--muted);margin-top:12px;font-size:15px">Last updated: May 2026 &nbsp;&middot;&nbsp; Friendoo Platform (&ldquo;Company&rdquo;)</p>
 </div>
 <div class="legal-content">
   <div class="legal-toc">
@@ -329,9 +334,9 @@ footer .links{flex-wrap:wrap;gap:14px}
   <p>Friendoo is intended for users aged <strong>18 and above</strong>. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us immediately at privacy@friendoo.in.</p>
   <h2 id="pp8">8. Grievance Officer</h2>
   <div class="legal-contact">
-    <p><strong>Grievance Officer:</strong> [Name]</p>
+     <p><strong>Grievance Officer:</strong> Friendoo Operations Team</p>
     <p><strong>Email:</strong> grievance@friendoo.in</p>
-    <p><strong>Address:</strong> [Registered Office Address, India]</p>
+     <p><strong>Address:</strong> Registered office in India</p>
     <p style="margin-top:10px;font-size:13px;color:var(--muted)">We will acknowledge your grievance within 48 hours and resolve it within 30 days as per applicable law.</p>
   </div>
   <h2 id="pp9">9. Changes to This Policy</h2>
@@ -396,12 +401,12 @@ footer .links{flex-wrap:wrap;gap:14px}
   <h2 id="tc9">9. Disclaimer &amp; Limitation of Liability</h2>
   <p>The Platform is provided &ldquo;as is&rdquo; without warranties of any kind. Friendoo does not guarantee uninterrupted service, and is not liable for any indirect, incidental, or consequential damages arising from use of the Platform. Our total liability shall not exceed the amount you paid to us in the 30 days preceding the claim.</p>
   <h2 id="tc10">10. Governing Law</h2>
-  <p>These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in [City], India. We encourage you to contact us first to resolve any dispute amicably.</p>
+   <p>These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in India. We encourage you to contact us first to resolve any dispute amicably.</p>
   <h2 id="tc11">11. Contact Us</h2>
   <div class="legal-contact">
     <p><strong>Email:</strong> legal@friendoo.in</p>
     <p><strong>Support:</strong> support@friendoo.in</p>
-    <p><strong>Address:</strong> [Registered Office Address, India]</p>
+    <p><strong>Address:</strong> Registered office in India</p>
   </div>
 </div></div>
 <div id="refund-view" class="view"><div class="legal-hero"><span class="label">Legal</span><h1>Refund &amp; Cancellation Policy</h1><p style="color:var(--muted);font-size:14px">Effective date: 6 May 2026 &nbsp;&bull;&nbsp; Last updated: 9 May 2026</p></div><div class="legal-content">
@@ -468,7 +473,7 @@ footer .links{flex-wrap:wrap;gap:14px}
   <ol>
     <li>Use the in-app <strong>Report</strong> button on any host profile or during a call</li>
     <li>Email our safety team at <strong>safety@friendoo.in</strong></li>
-    <li>For urgent issues, call our helpline: <strong>[Helpline Number]</strong></li>
+    <li>For urgent issues, email our safety team at <a href="mailto:safety@friendoo.in">safety@friendoo.in</a></li>
   </ol>
   <p>All reports are confidential. We do not share reporter identities with the reported user.</p>
   <h2>For Hosts: Your Safety Matters Too</h2>

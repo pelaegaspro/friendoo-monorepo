@@ -33,6 +33,7 @@ import { LiveChart } from "@/components/crm/LiveChart";
 import { FraudAlertCard } from "@/components/crm/FraudAlertCard";
 import { Button } from "@/components/ui/button";
 import { toNumber } from "@/lib/utils";
+import { crmFetch } from "@/lib/client";
 
 interface DashboardResponse {
   kpis: {
@@ -144,12 +145,9 @@ export default function CrmDashboardPage() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/crm/stats/live", { cache: "no-store" });
-      if (response.ok) {
-        const json = (await response.json()) as DashboardResponse;
-        if (json && json.kpis) {
-          setData(json);
-        }
+      const json = await crmFetch<DashboardResponse>("/api/crm/stats/live");
+      if (json && json.kpis) {
+        setData(json);
       }
     } catch (e) {
       console.warn("Using baseline dashboard state:", e);

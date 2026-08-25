@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:friendoo/core/models/friendoo_models.dart';
+import 'package:friendoo/features/discover/presentation/desi_avatar.dart';
 import 'package:friendoo/features/profile/presentation/settings_pages.dart';
 import 'package:friendoo/features/wallet/data/wallet_repository.dart';
 
@@ -95,6 +96,7 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('Withdraw Earnings'), findsOneWidget);
     expect(find.text('AVAILABLE FOR WITHDRAWAL'), findsOneWidget);
@@ -102,9 +104,7 @@ void main() {
     expect(find.text('₹500'), findsOneWidget);
     expect(find.text('₹1000'), findsOneWidget);
     expect(find.text('₹2500'), findsOneWidget);
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('UPI Virtual Payment Address'), findsOneWidget);
-    expect(find.text('Bank Account (Direct Transfer)'), findsOneWidget);
+    expect(find.text('Full Amount'), findsOneWidget);
     expect(find.text('Confirm Withdrawal'), findsOneWidget);
   });
 
@@ -136,11 +136,62 @@ void main() {
     const failureResult = HostWithdrawalRequestResult(
       success: false,
       isDuplicate: false,
-      errorMessage: 'Minimum withdrawal amount is ₹500.',
+      errorMessage: 'Minimum withdrawal amount is ₹100.',
     );
 
     expect(failureResult.success, false);
-    expect(failureResult.errorMessage, 'Minimum withdrawal amount is ₹500.');
+    expect(failureResult.errorMessage, 'Minimum withdrawal amount is ₹100.');
+  });
+
+  test('FriendooAvatarConfig serializes, deserializes, and migrates legacy strings accurately', () {
+    final userConfig = FriendooAvatarConfig.defaultUser();
+    expect(userConfig.isMale, true);
+    expect(userConfig.isHost, false);
+
+    final hostConfig = FriendooAvatarConfig.defaultHost();
+    expect(hostConfig.isFemale, true);
+    expect(hostConfig.isHost, true);
+
+    // Serialization & Deserialization
+    final jsonString = userConfig.toJson();
+    final parsed = FriendooAvatarConfig.fromRawString(jsonString);
+    expect(parsed.skin, userConfig.skin);
+    expect(parsed.hairColor, userConfig.hairColor);
+
+    // Legacy preset migration
+    final migrated = FriendooAvatarConfig.fromRawString('f_18', gender: 'female', role: 'host');
+    expect(migrated.presetId, 'host_01');
+    expect(migrated.isFemale, true);
+  });
+
+  testWidgets('FriendooAvatar renders layered vector canvas and presets gracefully', (tester) async {
+    const config = FriendooAvatarConfig(
+      gender: 'female',
+      role: 'host',
+      skin: '02',
+      hairColor: '#141218',
+      outfitColor: '#FF2A85',
+      background: 'grad_rose',
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: FriendooAvatar(
+              config: config,
+              size: 96,
+              isStar: true,
+              showPresence: true,
+              isOnline: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FriendooAvatar), findsOneWidget);
   });
 }
 

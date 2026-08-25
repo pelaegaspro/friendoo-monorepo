@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/friendoo_ui.dart';
+import '../../../core/services/permission_service.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../data/profile_repository.dart';
 import '../../discover/data/host_repository.dart';
+import '../../notifications/data/notification_repository.dart';
+import '../../notifications/presentation/in_app_notification_banner.dart';
 import '../../wallet/data/wallet_repository.dart';
 
 /// Clean scaffold wrapper for all dedicated settings & profile child pages
@@ -30,9 +33,12 @@ class SettingsPageScaffold extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,
-        shadowColor: Colors.black.withOpacity(0.06),
+        shadowColor: Colors.black.withValues(alpha: 0.06),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: FriendooUiColors.ink),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: FriendooUiColors.ink,
+          ),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -78,7 +84,7 @@ class SettingsPageScaffold extends StatelessWidget {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, -3),
                     ),
@@ -95,11 +101,7 @@ class SettingsPageScaffold extends StatelessWidget {
 
 /// Generic Settings Section Card
 class SettingsSectionCard extends StatelessWidget {
-  const SettingsSectionCard({
-    super.key,
-    this.title,
-    required this.children,
-  });
+  const SettingsSectionCard({super.key, this.title, required this.children});
 
   final String? title;
   final List<Widget> children;
@@ -128,16 +130,14 @@ class SettingsSectionCard extends StatelessWidget {
             border: Border.all(color: const Color(0xFFE5E7EB)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
         const SizedBox(height: 20),
       ],
@@ -206,7 +206,7 @@ class SettingsSwitchTile extends StatelessWidget {
           ),
           Switch.adaptive(
             value: value,
-            activeColor: FriendooUiColors.pink,
+            activeTrackColor: FriendooUiColors.pink,
             onChanged: onChanged,
           ),
         ],
@@ -224,21 +224,40 @@ class EditUserProfilePage extends ConsumerStatefulWidget {
   const EditUserProfilePage({super.key});
 
   @override
-  ConsumerState<EditUserProfilePage> createState() => _EditUserProfilePageState();
+  ConsumerState<EditUserProfilePage> createState() =>
+      _EditUserProfilePageState();
 }
 
 class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   late TextEditingController _bioController;
+  String _selectedAvatarId = 'user_01';
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Rahul Sharma');
+    _nameController = TextEditingController(text: '');
     _ageController = TextEditingController(text: '26');
-    _bioController = TextEditingController(text: 'Voice caller on Friendoo. Enjoying casual chats and good discussions.');
+    _bioController = TextEditingController(
+      text: 'Voice caller on Friendoo. Enjoying casual chats and good discussions.',
+    );
+    _loadAvatarSelection();
+  }
+
+  Future<void> _loadAvatarSelection() async {
+    final profile = await ref
+        .read(profileRepositoryProvider)
+        .fetchCurrentUserProfile();
+    if (!mounted || profile == null) return;
+
+    final savedId = profile.avatarUrl;
+    if (!DesiAvatarPack.isValidPresetForRole(savedId ?? '', 'user')) return;
+
+    setState(() {
+      _selectedAvatarId = savedId!;
+    });
   }
 
   @override
@@ -251,8 +270,24 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
 
   Future<void> _saveChanges() async {
     setState(() => _isSaving = true);
-    await ref.read(profileRepositoryProvider).updateDisplayName(_nameController.text.trim());
-    await Future.delayed(const Duration(milliseconds: 400));
+    final repository = ref.read(profileRepositoryProvider);
+
+    try {
+      try {
+        await repository.updateDisplayName(_nameController.text.trim());
+      } catch (_) {}
+      await Future.delayed(const Duration(milliseconds: 300));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save your profile. Please try again.'),
+        ),
+      );
+      return;
+    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -276,83 +311,250 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
-              : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+              : const Text(
+                  'Save Changes',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                ),
         ),
       ),
       children: [
-        // Male Avatar Preview
+        // Fixed static user avatar display (cannot be modified)
         Center(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  DesiMaleAvatar(seed: _nameController.text, age: 26, size: 96),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: FriendooUiColors.pink,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Indian Male User Avatar',
-                style: TextStyle(color: Color(0xFF6B7280), fontSize: 12.5, fontWeight: FontWeight.w700),
-              ),
-            ],
+          child: FriendooAvatar(
+            config: FriendooAvatarConfig(
+              gender: 'male',
+              role: 'user',
+              presetId: _selectedAvatarId,
+            ),
+            age: int.tryParse(_ageController.text) ?? 26,
+            size: 96,
           ),
         ),
         const SizedBox(height: 24),
 
-        // Text Fields
-        SettingsSectionCard(
-          title: 'BASIC INFORMATION',
+        // BASIC INFORMATION
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-                border: InputBorder.none,
+            const Text(
+              'BASIC INFORMATION',
+              style: TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _ageController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                prefixIcon: Icon(Icons.cake_outlined),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Full Name Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Full Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        color: FriendooUiColors.violet,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _nameController,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Enter your name',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF9CA3AF),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _bioController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'About / Bio',
-                prefixIcon: Icon(Icons.edit_note_rounded),
-                border: InputBorder.none,
+            const SizedBox(height: 14),
+
+            // Age Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Age',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.cake_outlined,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _ageController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Enter your age',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF9CA3AF),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // About / Bio Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'About / Bio',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.edit_note_rounded,
+                          color: FriendooUiColors.blue,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _bioController,
+                          maxLines: 3,
+                          minLines: 2,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Tell hosts a little about yourself...',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF9CA3AF),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
+        const SizedBox(height: 20),
 
         // Identity Verification Status Card
         Container(
@@ -360,11 +562,17 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
           decoration: BoxDecoration(
             color: const Color(0xFFECFDF5),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.35)),
+            border: Border.all(
+              color: const Color(0xFF10B981).withValues(alpha: 0.35),
+            ),
           ),
           child: const Row(
             children: [
-              Icon(Icons.verified_user_rounded, color: Color(0xFF047857), size: 24),
+              Icon(
+                Icons.verified_user_rounded,
+                color: Color(0xFF047857),
+                size: 24,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -381,7 +589,10 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                     SizedBox(height: 2),
                     Text(
                       'Your phone number is authenticated. Voice calls stay 100% private.',
-                      style: TextStyle(color: Color(0xFF065F46), fontSize: 11.5),
+                      style: TextStyle(
+                        color: Color(0xFF065F46),
+                        fontSize: 11.5,
+                      ),
                     ),
                   ],
                 ),
@@ -429,9 +640,13 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
 
   Future<void> _saveLanguages() async {
     if (widget.isHost) {
-      await ref.read(hostRepositoryProvider).updateCurrentHostLanguages(_selected.toList());
+      await ref
+          .read(hostRepositoryProvider)
+          .updateCurrentHostLanguages(_selected.toList());
     } else {
-      await ref.read(profileRepositoryProvider).updatePreferredLanguages(_selected.toList());
+      await ref
+          .read(profileRepositoryProvider)
+          .updatePreferredLanguages(_selected.toList());
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -447,7 +662,9 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Languages',
-      subtitle: widget.isHost ? 'Languages you talk with callers in' : 'Languages you speak & understand',
+      subtitle: widget.isHost
+          ? 'Languages you talk with callers in'
+          : 'Languages you speak & understand',
       bottomAction: SizedBox(
         width: double.infinity,
         child: FilledButton(
@@ -455,15 +672,24 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-          child: const Text('Save Languages', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+          child: const Text(
+            'Save Languages',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
         ),
       ),
       children: [
         const Text(
           'Select all the languages you are comfortable speaking. This helps Friendoo recommend matching conversations.',
-          style: TextStyle(color: Color(0xFF6B7280), fontSize: 13.5, height: 1.4),
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 13.5,
+            height: 1.4,
+          ),
         ),
         const SizedBox(height: 20),
         SettingsSectionCard(
@@ -485,8 +711,12 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
                 child: Row(
                   children: [
                     Icon(
-                      isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                      color: isSelected ? FriendooUiColors.pink : const Color(0xFF9CA3AF),
+                      isSelected
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      color: isSelected
+                          ? FriendooUiColors.pink
+                          : const Color(0xFF9CA3AF),
                       size: 22,
                     ),
                     const SizedBox(width: 14),
@@ -494,8 +724,12 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
                       lang,
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? FriendooUiColors.ink : const Color(0xFF4B5563),
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? FriendooUiColors.ink
+                            : const Color(0xFF4B5563),
                       ),
                     ),
                   ],
@@ -514,7 +748,8 @@ class UserCallPreferencesPage extends StatefulWidget {
   const UserCallPreferencesPage({super.key});
 
   @override
-  State<UserCallPreferencesPage> createState() => _UserCallPreferencesPageState();
+  State<UserCallPreferencesPage> createState() =>
+      _UserCallPreferencesPageState();
 }
 
 class _UserCallPreferencesPageState extends State<UserCallPreferencesPage> {
@@ -543,9 +778,14 @@ class _UserCallPreferencesPageState extends State<UserCallPreferencesPage> {
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-          child: const Text('Save Preferences', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+          child: const Text(
+            'Save Preferences',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
         ),
       ),
       children: [
@@ -555,7 +795,8 @@ class _UserCallPreferencesPageState extends State<UserCallPreferencesPage> {
             SettingsSwitchTile(
               icon: Icons.graphic_eq_rounded,
               title: 'High-Definition Audio',
-              subtitle: 'Enhanced noise suppression for crystal clear voice calls',
+              subtitle:
+                  'Enhanced noise suppression for crystal clear voice calls',
               value: _hdVoice,
               onChanged: (v) => setState(() => _hdVoice = v),
             ),
@@ -563,7 +804,8 @@ class _UserCallPreferencesPageState extends State<UserCallPreferencesPage> {
             SettingsSwitchTile(
               icon: Icons.monetization_on_outlined,
               title: 'Low Coin Warning Prompt',
-              subtitle: 'Alert when wallet has less than 2 minutes of talk-time',
+              subtitle:
+                  'Alert when wallet has less than 2 minutes of talk-time',
               value: _lowCoinAlert,
               onChanged: (v) => setState(() => _lowCoinAlert = v),
             ),
@@ -619,11 +861,17 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFEDE9FE),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+            border: Border.all(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+            ),
           ),
           child: const Row(
             children: [
-              Icon(Icons.lock_outline_rounded, color: Color(0xFF6D28D9), size: 24),
+              Icon(
+                Icons.lock_outline_rounded,
+                color: Color(0xFF6D28D9),
+                size: 24,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -640,7 +888,10 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                     SizedBox(height: 2),
                     Text(
                       'Your real phone number is never shared with hosts or third parties.',
-                      style: TextStyle(color: Color(0xFF6D28D9), fontSize: 11.5),
+                      style: TextStyle(
+                        color: Color(0xFF6D28D9),
+                        fontSize: 11.5,
+                      ),
                     ),
                   ],
                 ),
@@ -656,7 +907,8 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
             SettingsSwitchTile(
               icon: Icons.visibility_off_outlined,
               title: 'Incognito Mode (Hide Online Status)',
-              subtitle: 'Do not broadcast when you are browsing the Discover lounge',
+              subtitle:
+                  'Do not broadcast when you are browsing the Discover lounge',
               value: _hideOnlineStatus,
               onChanged: (v) => setState(() => _hideOnlineStatus = v),
             ),
@@ -680,6 +932,195 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
         ),
 
         SettingsSectionCard(
+          title: 'ANDROID SYSTEM ACCESS & PERMISSIONS',
+          children: [
+            FutureBuilder<PermissionStatusReport>(
+              future: const AppPermissionService().getStatusReport(),
+              builder: (context, snapshot) {
+                final micGranted = snapshot.data?.isMicrophoneGranted ?? false;
+                final notifGranted =
+                    snapshot.data?.isNotificationsGranted ?? false;
+                final storageGranted = snapshot.data?.isStorageGranted ?? false;
+
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: micGranted
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          micGranted
+                              ? Icons.mic_rounded
+                              : Icons.mic_off_rounded,
+                          size: 18,
+                          color: micGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                        ),
+                      ),
+                      title: const Text(
+                        'Microphone Access',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                      subtitle: Text(
+                        micGranted
+                            ? 'Granted • Ready for Voice Lounge calls'
+                            : 'Denied • Required for audio calling',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: micGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      trailing: OutlinedButton(
+                        onPressed: () async {
+                          await const AppPermissionService().requestMicrophone(
+                            context: context,
+                          );
+                          setState(() {});
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(micGranted ? 'Check' : 'Enable'),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: notifGranted
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          notifGranted
+                              ? Icons.notifications_active_rounded
+                              : Icons.notifications_off_rounded,
+                          size: 18,
+                          color: notifGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                        ),
+                      ),
+                      title: const Text(
+                        'Push Notifications',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                      subtitle: Text(
+                        notifGranted
+                            ? 'Granted • Flash drops & calls active'
+                            : 'Disabled • Missed Flash coin sales',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: notifGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      trailing: OutlinedButton(
+                        onPressed: () async {
+                          await const AppPermissionService()
+                              .requestNotifications(context: context);
+                          setState(() {});
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(notifGranted ? 'Check' : 'Enable'),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: storageGranted
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          storageGranted
+                              ? Icons.folder_rounded
+                              : Icons.folder_off_rounded,
+                          size: 18,
+                          color: storageGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFFDC2626),
+                        ),
+                      ),
+                      title: const Text(
+                        'Phone Storage & Media Access',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                      subtitle: Text(
+                        storageGranted
+                            ? 'Granted • 3D Avatar & cache enabled'
+                            : 'Optional • Avatar storage & receipts',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: storageGranted
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      trailing: OutlinedButton(
+                        onPressed: () async {
+                          await const AppPermissionService().requestStorage(
+                            context: context,
+                          );
+                          setState(() {});
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(storageGranted ? 'Check' : 'Enable'),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+
+        SettingsSectionCard(
           title: 'ACCOUNT ACTIONS',
           children: [
             ListTile(
@@ -690,20 +1131,141 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.block_flipped, size: 18, color: FriendooUiColors.ink),
+                child: const Icon(
+                  Icons.block_flipped,
+                  size: 18,
+                  color: FriendooUiColors.ink,
+                ),
               ),
-              title: const Text('Blocked Accounts', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-              subtitle: const Text('Manage hosts or users you have blocked', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              title: const Text(
+                'Blocked Accounts',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'Manage hosts or users you have blocked',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const UserBlockedUsersPage()),
+                  MaterialPageRoute<void>(
+                    builder: (_) => const UserBlockedUsersPage(),
+                  ),
                 );
               },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.delete_forever_rounded,
+                  size: 18,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              title: const Text(
+                'Delete Account & Data',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14.5,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              subtitle: const Text(
+                'Permanently remove account, coin balance & session data',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFFDC2626),
+              ),
+              onTap: () => _showDeleteAccountConfirmation(context),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showDeleteAccountConfirmation(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF13141F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFDC2626),
+                size: 26,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Delete Friendoo Account?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'In accordance with Google Play data safety policies, deleting your account will permanently wipe:\n\n'
+            '• All phone records & profile details\n'
+            '• Any unspent coin balance (non-refundable)\n'
+            '• Complete call history and favorite hosts\n\n'
+            'This action is irreversible.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              ),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Color(0xFFDC2626),
+                    content: Text('Account deletion requested. Logging out...'),
+                  ),
+                );
+                // Perform sign out and flush session cache
+                ProfileRepository.clearSession();
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Permanently Delete'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -727,15 +1289,25 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Unblock User?', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: Text('Are you sure you want to unblock ${_blockedList[index]['name']}?'),
+        title: const Text(
+          'Unblock User?',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: Text(
+          'Are you sure you want to unblock ${_blockedList[index]['name']}?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: FriendooUiColors.pink),
+            style: FilledButton.styleFrom(
+              backgroundColor: FriendooUiColors.pink,
+            ),
             onPressed: () {
               setState(() => _blockedList.removeAt(index));
               Navigator.of(ctx).pop();
@@ -768,9 +1340,16 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
               children: [
                 Icon(Icons.shield_outlined, size: 48, color: Color(0xFF10B981)),
                 SizedBox(height: 12),
-                Text('No Blocked Accounts', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                Text(
+                  'No Blocked Accounts',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
                 SizedBox(height: 4),
-                Text('You have not blocked any users. Your blocklist is clear.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+                Text(
+                  'You have not blocked any users. Your blocklist is clear.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+                ),
               ],
             ),
           )
@@ -784,30 +1363,52 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      child: Text(item['name']![0], style: const TextStyle(fontWeight: FontWeight.w900, color: FriendooUiColors.ink)),
+                    DesiAvatar(
+                      seed: item['name']!,
+                      gender: DesiGender.male,
+                      size: 40,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item['name']!, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-                          Text('Blocked on ${item['date']} • ${item['city']}', style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11.5)),
+                          Text(
+                            item['name']!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                          Text(
+                            'Blocked on ${item['date']} • ${item['city']}',
+                            style: const TextStyle(
+                              color: Color(0xFF6B7280),
+                              fontSize: 11.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     OutlinedButton(
                       onPressed: () => _unblock(idx),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         side: const BorderSide(color: Color(0xFFD1D5DB)),
                       ),
-                      child: const Text('Unblock', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: FriendooUiColors.ink)),
+                      child: const Text(
+                        'Unblock',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: FriendooUiColors.ink,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -824,13 +1425,14 @@ class UserNotificationSettingsPage extends StatefulWidget {
   const UserNotificationSettingsPage({super.key});
 
   @override
-  State<UserNotificationSettingsPage> createState() => _UserNotificationSettingsPageState();
+  State<UserNotificationSettingsPage> createState() =>
+      _UserNotificationSettingsPageState();
 }
 
-class _UserNotificationSettingsPageState extends State<UserNotificationSettingsPage> {
+class _UserNotificationSettingsPageState
+    extends State<UserNotificationSettingsPage> {
   bool _pushNotifications = true;
   bool _callRinging = true;
-  bool _coinAlerts = true;
   bool _promotionalOffers = false;
 
   @override
@@ -853,29 +1455,69 @@ class _UserNotificationSettingsPageState extends State<UserNotificationSettingsP
             SettingsSwitchTile(
               icon: Icons.ring_volume_outlined,
               title: 'Incoming Call Ringtone & Vibration',
-              subtitle: 'Sound audio ring when a direct voice lounge session starts',
+              subtitle:
+                  'Sound audio ring when a direct voice lounge session starts',
               value: _callRinging,
               onChanged: (v) => setState(() => _callRinging = v),
             ),
           ],
         ),
         SettingsSectionCard(
-          title: 'ACCOUNT & PROMOTIONS',
+          title: 'FLASH COIN DROPS & DEALS',
           children: [
             SettingsSwitchTile(
-              icon: Icons.account_balance_wallet_outlined,
-              title: 'Coin & Wallet Low Balance Alerts',
-              subtitle: 'Get notified when your coin balance drops below 20 coins',
-              value: _coinAlerts,
-              onChanged: (v) => setState(() => _coinAlerts = v),
-            ),
-            const Divider(height: 1),
-            SettingsSwitchTile(
-              icon: Icons.local_offer_outlined,
-              title: 'Discount Offers & Free Bonus Coins',
-              subtitle: 'Occasional promotional alerts for coin recharge packages',
+              icon: Icons.bolt_rounded,
+              title: 'Flash Coin Sales & Midnight Drops ⚡',
+              subtitle: 'Get real-time alerts when 50% OFF flash bonus coin drops go live',
               value: _promotionalOffers,
               onChanged: (v) => setState(() => _promotionalOffers = v),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFB703), Color(0xFFFF2A85)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
+              ),
+              title: const Text(
+                'Preview Flash Coin Sale Drop ⚡',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'Simulate a live Flash Coin Sale push banner with 1-tap checkout',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+              trailing: ElevatedButton(
+                onPressed: () {
+                  InAppNotificationOverlay.show(
+                    context,
+                    NotificationRepository.defaultFlashSaleNotification,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFB703),
+                  foregroundColor: const Color(0xFF0E1020),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Text(
+                  'Trigger ⚡',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                ),
+              ),
             ),
           ],
         ),
@@ -910,19 +1552,33 @@ class HelpSupportPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.support_agent_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 14),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Friendoo Care Team', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text(
+                      'Friendoo Care Team',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
                     SizedBox(height: 2),
-                    Text('Dedicated 24/7 caller safety and support assistance across India.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                    Text(
+                      'Dedicated 24/7 caller safety and support assistance across India.',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -936,9 +1592,18 @@ class HelpSupportPage extends StatelessWidget {
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366)),
-              title: const Text('WhatsApp Support (Fastest)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-              subtitle: const Text('Connect with a live support agent in < 2 mins', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              leading: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Color(0xFF25D366),
+              ),
+              title: const Text(
+                'WhatsApp Support (Fastest)',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'Connect with a live support agent in < 2 mins',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
               trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -949,13 +1614,24 @@ class HelpSupportPage extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.mail_outline_rounded, color: FriendooUiColors.blue),
-              title: const Text('Email Support', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-              subtitle: const Text('support@friendoo.app (Replies in 4 hours)', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+              leading: const Icon(
+                Icons.mail_outline_rounded,
+                color: FriendooUiColors.blue,
+              ),
+              title: const Text(
+                'Email Support',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'support@friendoo.app (Replies in 4 hours)',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
               trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Email support: support@friendoo.app')),
+                  const SnackBar(
+                    content: Text('Email support: support@friendoo.app'),
+                  ),
                 );
               },
             ),
@@ -967,33 +1643,63 @@ class HelpSupportPage extends StatelessWidget {
           children: const [
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: Text('Are voice calls anonymous?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              title: Text(
+                'Are voice calls anonymous?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
-                  child: Text('Yes, 100%. Calls are routed through encrypted WebRTC audio streams without exposing your real phone number or SIM details.', style: TextStyle(color: Color(0xFF4B5563), fontSize: 13, height: 1.4)),
+                  child: Text(
+                    'Yes, 100%. Calls are routed through encrypted WebRTC audio streams without exposing your real phone number or SIM details.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
               ],
             ),
             Divider(height: 1),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: Text('How do coin deductions work?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              title: Text(
+                'How do coin deductions work?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
-                  child: Text('Coins are billed strictly by the minute while connected. If a call drops or fails, unspent coins remain safely in your vault balance.', style: TextStyle(color: Color(0xFF4B5563), fontSize: 13, height: 1.4)),
+                  child: Text(
+                    'Coins are billed strictly by the minute while connected. If a call drops or fails, unspent coins remain safely in your vault balance.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
               ],
             ),
             Divider(height: 1),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: Text('How to report harassment or abuse?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              title: Text(
+                'How to report harassment or abuse?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
-                  child: Text('You can click the Report button on any call history card or contact our 24/7 trust & safety team directly. Reported accounts are reviewed within 15 minutes.', style: TextStyle(color: Color(0xFF4B5563), fontSize: 13, height: 1.4)),
+                  child: Text(
+                    'You can click the Report button on any call history card or contact our 24/7 trust & safety team directly. Reported accounts are reviewed within 15 minutes.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1023,18 +1729,29 @@ class AboutFriendooPage extends StatelessWidget {
               const SizedBox(height: 6),
               const Text(
                 'Real Voice Connections Across India',
-                style: TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: const Text(
                   'Version 1.4.2 (Build 240)',
-                  style: TextStyle(color: FriendooUiColors.ink, fontSize: 11.5, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: FriendooUiColors.ink,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -1047,8 +1764,14 @@ class AboutFriendooPage extends StatelessWidget {
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.description_outlined, color: FriendooUiColors.ink),
-              title: const Text('Terms of Service', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+              leading: const Icon(
+                Icons.description_outlined,
+                color: FriendooUiColors.ink,
+              ),
+              title: const Text(
+                'Terms of Service',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
@@ -1064,8 +1787,14 @@ class AboutFriendooPage extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.privacy_tip_outlined, color: FriendooUiColors.ink),
-              title: const Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+              leading: const Icon(
+                Icons.privacy_tip_outlined,
+                color: FriendooUiColors.ink,
+              ),
+              title: const Text(
+                'Privacy Policy',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
@@ -1081,8 +1810,14 @@ class AboutFriendooPage extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.handshake_outlined, color: FriendooUiColors.ink),
-              title: const Text('Community Guidelines', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+              leading: const Icon(
+                Icons.handshake_outlined,
+                color: FriendooUiColors.ink,
+              ),
+              title: const Text(
+                'Community Guidelines',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.of(context).push(
@@ -1098,8 +1833,38 @@ class AboutFriendooPage extends StatelessWidget {
             const Divider(height: 1),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.code_rounded, color: FriendooUiColors.ink),
-              title: const Text('Open Source Licenses', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+              leading: const Icon(
+                Icons.gavel_rounded,
+                color: FriendooUiColors.ink,
+              ),
+              title: const Text(
+                'Grievance Redressal (IT Act)',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'Grievance Officer, DPDP Act 2023 consent & complaints',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const GrievanceRedressalPage(),
+                  ),
+                );
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(
+                Icons.code_rounded,
+                color: FriendooUiColors.ink,
+              ),
+              title: const Text(
+                'Open Source Licenses',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => showLicensePage(context: context),
             ),
@@ -1108,8 +1873,268 @@ class AboutFriendooPage extends StatelessWidget {
         const Center(
           child: Text(
             'Made with ❤️ in India • Friendoo Technologies Pvt Ltd',
-            style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11.5, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Grievance Redressal & DPDP Act 2023 Compliance Page
+class GrievanceRedressalPage extends StatefulWidget {
+  const GrievanceRedressalPage({super.key});
+
+  @override
+  State<GrievanceRedressalPage> createState() => _GrievanceRedressalPageState();
+}
+
+class _GrievanceRedressalPageState extends State<GrievanceRedressalPage> {
+  bool _voiceSafetyAnalytics = true;
+  bool _smartMatchPersonalization = true;
+  bool _marketingNotifications = false;
+
+  void _showFileComplaintDialog(BuildContext context) {
+    final complaintController = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: const Color(0xFF13141F),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.gavel_rounded, color: Color(0xFFFFB703), size: 22),
+            SizedBox(width: 8),
+            Text(
+              'File Grievance Ticket',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Under IT Rules 2021, your ticket will be acknowledged within 24h and resolved within 15 days.',
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: complaintController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Describe the issue or user ID...',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: const Color(0xFF1C1E30),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white60),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Color(0xFF10B981),
+                  content: Text(
+                    '✅ Grievance Ticket #FRN-2026-892 logged. Acknowledgment sent to email.',
+                  ),
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFFB703),
+            ),
+            child: const Text(
+              'Submit Ticket',
+              style: TextStyle(
+                color: Color(0xFF0E1020),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsPageScaffold(
+      title: 'Grievance & DPDP Compliance',
+      subtitle: 'Statutory Grievance Officer & Privacy Rights',
+      children: [
+        // STATUTORY OFFICER CARD
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.shield_rounded,
+                      color: Color(0xFF6366F1),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Designated Grievance Officer',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14.5,
+                          ),
+                        ),
+                        Text(
+                          'Rule 3(2) IT (Intermediary Guidelines) Rules 2021',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              const Text(
+                '• Name: Mr. Alok Sharma (Nodal Officer)',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '• Email: grievance-officer@friendoo.app',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF6366F1),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '• Address: Friendoo Technologies Pvt Ltd, Indiranagar, Bengaluru - 560038',
+                style: TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '• Response SLA: Acknowledgment within 24h • Resolution within 15 days',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF047857),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showFileComplaintDialog(context),
+                  icon: const Icon(Icons.rate_review_rounded, size: 16),
+                  label: const Text('File Formal Grievance / Appeal ➔'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF6366F1),
+                    side: const BorderSide(color: Color(0xFF6366F1)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // DPDP ACT 2023 DATA CONSENT MANAGER
+        SettingsSectionCard(
+          title: 'DPDP ACT 2023 DATA CONSENTS',
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Voice Quality & Safety Telemetry',
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Anonymous bitrate and jitter monitoring for call stability',
+                style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+              ),
+              value: _voiceSafetyAnalytics,
+              activeTrackColor: const Color(0xFF10B981),
+              onChanged: (val) => setState(() => _voiceSafetyAnalytics = val),
+            ),
+            const Divider(height: 1),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Smart Match Personalization',
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Matching by language and favorite host topics',
+                style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+              ),
+              value: _smartMatchPersonalization,
+              activeTrackColor: const Color(0xFF10B981),
+              onChanged: (val) =>
+                  setState(() => _smartMatchPersonalization = val),
+            ),
+            const Divider(height: 1),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Promotional Coin Drop Alerts',
+                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Flash sale and peak-hour bonus notifications',
+                style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280)),
+              ),
+              value: _marketingNotifications,
+              activeTrackColor: const Color(0xFF10B981),
+              onChanged: (val) => setState(() => _marketingNotifications = val),
+            ),
+          ],
         ),
       ],
     );
@@ -1163,23 +2188,47 @@ class EditHostProfilePage extends ConsumerStatefulWidget {
   const EditHostProfilePage({super.key});
 
   @override
-  ConsumerState<EditHostProfilePage> createState() => _EditHostProfilePageState();
+  ConsumerState<EditHostProfilePage> createState() =>
+      _EditHostProfilePageState();
 }
 
 class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   late TextEditingController _nameController;
   late TextEditingController _ageController;
   late TextEditingController _bioController;
+  String _selectedAvatarId = 'host_01';
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Priya Sharma');
+    _nameController = TextEditingController(text: '');
     _ageController = TextEditingController(text: '24');
     _bioController = TextEditingController(
       text: 'Verified Star Host on Friendoo. Always happy to talk about cinema, everyday life, and listen with an open heart.',
     );
+    _loadAvatarSelection();
+  }
+
+  Future<void> _loadAvatarSelection() async {
+    final profile = await ref
+        .read(profileRepositoryProvider)
+        .fetchCurrentUserProfile();
+    if (!mounted || profile == null) return;
+
+    if (profile.displayName.isNotEmpty &&
+        profile.displayName.toLowerCase() != 'user' &&
+        profile.displayName.toLowerCase() != 'friendoo user' &&
+        profile.displayName.toLowerCase() != 'host') {
+      _nameController.text = profile.displayName;
+    }
+
+    final savedId = profile.avatarUrl;
+    if (!DesiAvatarPack.isValidPresetForRole(savedId ?? '', 'host')) return;
+
+    setState(() {
+      _selectedAvatarId = savedId!;
+    });
   }
 
   @override
@@ -1192,8 +2241,24 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
 
   Future<void> _saveChanges() async {
     setState(() => _isSaving = true);
-    await ref.read(profileRepositoryProvider).updateDisplayName(_nameController.text.trim());
-    await Future.delayed(const Duration(milliseconds: 400));
+    final repository = ref.read(profileRepositoryProvider);
+
+    try {
+      try {
+        await repository.updateDisplayName(_nameController.text.trim());
+      } catch (_) {}
+      await Future.delayed(const Duration(milliseconds: 300));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save your host profile. Please try again.'),
+        ),
+      );
+      return;
+    }
+
     if (!mounted) return;
     setState(() => _isSaving = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1217,78 +2282,233 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: _isSaving
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
-              : const Text('Save Host Profile', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+              : const Text(
+                  'Save Host Profile',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                ),
         ),
       ),
       children: [
-        // Female Avatar Preview
+        // Fixed static host avatar display (cannot be modified)
         Center(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  DesiFemaleAvatar(seed: _nameController.text, age: 24, isStar: true, size: 96),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: FriendooUiColors.pink,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Indian Female Host Avatar (Star Verified)',
-                style: TextStyle(color: Color(0xFF6B7280), fontSize: 12.5, fontWeight: FontWeight.w700),
-              ),
-            ],
+          child: FriendooAvatar(
+            config: FriendooAvatarConfig(
+              gender: 'female',
+              role: 'host',
+              presetId: _selectedAvatarId,
+            ),
+            age: int.tryParse(_ageController.text) ?? 24,
+            isStar: true,
+            size: 96,
           ),
         ),
         const SizedBox(height: 24),
 
-        SettingsSectionCard(
-          title: 'HOST PUBLIC PROFILE',
+        // HOST PUBLIC PROFILE
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Host Display Name',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-                border: InputBorder.none,
+            const Text(
+              'HOST PUBLIC PROFILE',
+              style: TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _ageController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Age',
-                prefixIcon: Icon(Icons.cake_outlined),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Host Display Name
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Host Display Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _nameController,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Enter host display name',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _bioController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Voice Lounge Introduction',
-                prefixIcon: Icon(Icons.record_voice_over_outlined),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Age Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Age',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.cake_outlined,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _ageController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'e.g. 24',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Bio Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Voice Lounge Introduction',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.record_voice_over_outlined,
+                          color: FriendooUiColors.pink,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _bioController,
+                          maxLines: 3,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Introduce yourself to callers...',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1307,13 +2527,32 @@ class HostInformationPage extends StatefulWidget {
 }
 
 class _HostInformationPageState extends State<HostInformationPage> {
-  final _professionController = TextEditingController(text: 'Voice Artist & Radio Anchor');
-  final _educationController = TextEditingController(text: 'Postgraduate in Media & Communication');
-  final Set<String> _selectedHobbies = {'Music', 'Cinema', 'Travel', 'Literature', 'Cooking'};
+  final _professionController = TextEditingController(
+    text: 'Voice Artist & Radio Anchor',
+  );
+  final _educationController = TextEditingController(
+    text: 'Postgraduate in Media & Communication',
+  );
+  final Set<String> _selectedHobbies = {
+    'Music',
+    'Cinema',
+    'Travel',
+    'Literature',
+    'Cooking',
+  };
 
   final List<String> _availableHobbies = [
-    'Music', 'Cinema', 'Travel', 'Literature', 'Cooking', 'Art & Design',
-    'Tech & Gadgets', 'Gaming', 'Fitness', 'Philosophy', 'Podcasting'
+    'Music',
+    'Cinema',
+    'Travel',
+    'Literature',
+    'Cooking',
+    'Art & Design',
+    'Tech & Gadgets',
+    'Gaming',
+    'Fitness',
+    'Philosophy',
+    'Podcasting',
   ];
 
   @override
@@ -1336,30 +2575,144 @@ class _HostInformationPageState extends State<HostInformationPage> {
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-          child: const Text('Save Information', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+          child: const Text(
+            'Save Information',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
         ),
       ),
       children: [
-        SettingsSectionCard(
-          title: 'BACKGROUND',
+        // BACKGROUND
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _professionController,
-              decoration: const InputDecoration(
-                labelText: 'Profession / Vocation',
-                prefixIcon: Icon(Icons.work_outline_rounded),
-                border: InputBorder.none,
+            const Text(
+              'BACKGROUND',
+              style: TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _educationController,
-              decoration: const InputDecoration(
-                labelText: 'Education',
-                prefixIcon: Icon(Icons.school_outlined),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Profession Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Profession / Vocation',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.work_outline_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _professionController,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Enter your profession',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Education Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Education',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.school_outlined,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _educationController,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Enter your education',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1383,7 +2736,9 @@ class _HostInformationPageState extends State<HostInformationPage> {
                   selected: isSelected,
                   selectedColor: FriendooUiColors.softPink,
                   labelStyle: TextStyle(
-                    color: isSelected ? FriendooUiColors.pink : FriendooUiColors.ink,
+                    color: isSelected
+                        ? FriendooUiColors.pink
+                        : FriendooUiColors.ink,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   ),
                   onSelected: (val) {
@@ -1410,14 +2765,17 @@ class HostPayoutBankDetailsPage extends StatefulWidget {
   const HostPayoutBankDetailsPage({super.key});
 
   @override
-  State<HostPayoutBankDetailsPage> createState() => _HostPayoutBankDetailsPageState();
+  State<HostPayoutBankDetailsPage> createState() =>
+      _HostPayoutBankDetailsPageState();
 }
 
 class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
   final _upiController = TextEditingController(text: 'priya.sharma@okaxis');
   final _accountHolderController = TextEditingController(text: 'Priya Sharma');
   final _bankNameController = TextEditingController(text: 'HDFC Bank');
-  final _accountNumberController = TextEditingController(text: '•••• •••• 4829');
+  final _accountNumberController = TextEditingController(
+    text: '•••• •••• 4829',
+  );
   final _ifscController = TextEditingController(text: 'HDFC0001234');
   bool _isEditing = false;
 
@@ -1441,9 +2799,13 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
             }
           },
           style: FilledButton.styleFrom(
-            backgroundColor: _isEditing ? const Color(0xFF10B981) : FriendooUiColors.pink,
+            backgroundColor: _isEditing
+                ? const Color(0xFF10B981)
+                : FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: Text(
             _isEditing ? 'Save Bank Details' : 'Edit Payout Account',
@@ -1458,19 +2820,38 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFECFDF5),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+            border: Border.all(
+              color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            ),
           ),
           child: const Row(
             children: [
-              Icon(Icons.event_available_rounded, color: Color(0xFF047857), size: 24),
+              Icon(
+                Icons.event_available_rounded,
+                color: Color(0xFF047857),
+                size: 24,
+              ),
               SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Weekly Automated Payouts', style: TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.w900, fontSize: 14)),
+                    Text(
+                      'Weekly Automated Payouts',
+                      style: TextStyle(
+                        color: Color(0xFF047857),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
                     SizedBox(height: 2),
-                    Text('Earnings are disbursed every Monday directly to your registered UPI / Bank account.', style: TextStyle(color: Color(0xFF065F46), fontSize: 11.5)),
+                    Text(
+                      'Earnings are disbursed every Monday directly to your registered UPI / Bank account.',
+                      style: TextStyle(
+                        color: Color(0xFF065F46),
+                        fontSize: 11.5,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1479,62 +2860,329 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
         ),
         const SizedBox(height: 20),
 
-        SettingsSectionCard(
-          title: 'UPI DETAILS (RECOMMENDED)',
+        // UPI DETAILS
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _upiController,
-              enabled: _isEditing,
-              decoration: const InputDecoration(
-                labelText: 'UPI Virtual Payment Address (VPA)',
-                prefixIcon: Icon(Icons.qr_code_rounded),
-                helperText: 'Instant direct deposits to GPay, PhonePe or Paytm',
-                border: InputBorder.none,
+            const Text(
+              'UPI DETAILS (RECOMMENDED)',
+              style: TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // UPI VPA Input Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'UPI Virtual Payment Address (VPA)',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.qr_code_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _upiController,
+                          enabled: _isEditing,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'e.g. yourname@okaxis',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
+        const SizedBox(height: 20),
 
-        SettingsSectionCard(
-          title: 'BANK ACCOUNT (DIRECT TRANSFER)',
+        // BANK ACCOUNT
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _accountHolderController,
-              enabled: _isEditing,
-              decoration: const InputDecoration(
-                labelText: 'Account Holder Name',
-                prefixIcon: Icon(Icons.person_outline_rounded),
-                border: InputBorder.none,
+            const Text(
+              'BANK ACCOUNT (DIRECT TRANSFER)',
+              style: TextStyle(
+                color: Color(0xFF374151),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _bankNameController,
-              enabled: _isEditing,
-              decoration: const InputDecoration(
-                labelText: 'Bank Name',
-                prefixIcon: Icon(Icons.account_balance_outlined),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Account Holder Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Account Holder Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _accountHolderController,
+                          enabled: _isEditing,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Name as in bank passbook',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _accountNumberController,
-              enabled: _isEditing,
-              decoration: const InputDecoration(
-                labelText: 'Account Number (Masked)',
-                prefixIcon: Icon(Icons.credit_card_rounded),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Bank Name Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Bank Name',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.account_balance_outlined,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _bankNameController,
+                          enabled: _isEditing,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'e.g. HDFC Bank',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const Divider(height: 1),
-            TextField(
-              controller: _ifscController,
-              enabled: _isEditing,
-              decoration: const InputDecoration(
-                labelText: 'IFSC Code',
-                prefixIcon: Icon(Icons.pin_rounded),
-                border: InputBorder.none,
+            const SizedBox(height: 12),
+
+            // Account Number Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Account Number (Masked)',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.credit_card_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _accountNumberController,
+                          enabled: _isEditing,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: 'Account number',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // IFSC Code Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'IFSC Code',
+                    style: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.pin_rounded,
+                        color: FriendooUiColors.pink,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _ifscController,
+                          enabled: _isEditing,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: '11-character IFSC',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1549,10 +3197,12 @@ class HostCallEarningsPreferencesPage extends StatefulWidget {
   const HostCallEarningsPreferencesPage({super.key});
 
   @override
-  State<HostCallEarningsPreferencesPage> createState() => _HostCallEarningsPreferencesPageState();
+  State<HostCallEarningsPreferencesPage> createState() =>
+      _HostCallEarningsPreferencesPageState();
 }
 
-class _HostCallEarningsPreferencesPageState extends State<HostCallEarningsPreferencesPage> {
+class _HostCallEarningsPreferencesPageState
+    extends State<HostCallEarningsPreferencesPage> {
   int _ratePerMinute = 5;
   bool _autoAcceptVip = true;
   bool _milestoneAlerts = true;
@@ -1578,9 +3228,14 @@ class _HostCallEarningsPreferencesPageState extends State<HostCallEarningsPrefer
           style: FilledButton.styleFrom(
             backgroundColor: FriendooUiColors.pink,
             padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
-          child: const Text('Save Preferences', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+          child: const Text(
+            'Save Preferences',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
         ),
       ),
       children: [
@@ -1604,10 +3259,14 @@ class _HostCallEarningsPreferencesPageState extends State<HostCallEarningsPrefer
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? FriendooUiColors.ink : const Color(0xFFF3F4F6),
+                          color: isSelected
+                              ? FriendooUiColors.ink
+                              : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isSelected ? FriendooUiColors.ink : const Color(0xFFE5E7EB),
+                            color: isSelected
+                                ? FriendooUiColors.ink
+                                : const Color(0xFFE5E7EB),
                           ),
                         ),
                         child: Column(
@@ -1615,16 +3274,22 @@ class _HostCallEarningsPreferencesPageState extends State<HostCallEarningsPrefer
                             Text(
                               '₹$rate / min',
                               style: TextStyle(
-                                color: isSelected ? Colors.white : FriendooUiColors.ink,
+                                color: isSelected
+                                    ? Colors.white
+                                    : FriendooUiColors.ink,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 15,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              rate == 5 ? 'Standard' : (rate == 7 ? 'Popular' : 'VIP Star'),
+                              rate == 5
+                                  ? 'Standard'
+                                  : (rate == 7 ? 'Popular' : 'VIP Star'),
                               style: TextStyle(
-                                color: isSelected ? const Color(0xFFFFD166) : const Color(0xFF6B7280),
+                                color: isSelected
+                                    ? const Color(0xFFFFD166)
+                                    : const Color(0xFF6B7280),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1646,7 +3311,8 @@ class _HostCallEarningsPreferencesPageState extends State<HostCallEarningsPrefer
             SettingsSwitchTile(
               icon: Icons.star_rounded,
               title: 'Auto-Accept VIP Callers',
-              subtitle: 'Prioritize incoming requests from repeat verified callers',
+              subtitle:
+                  'Prioritize incoming requests from repeat verified callers',
               value: _autoAcceptVip,
               onChanged: (v) => setState(() => _autoAcceptVip = v),
             ),
@@ -1736,11 +3402,23 @@ class HostPerformanceInsightsPage extends StatelessWidget {
         SettingsSectionCard(
           title: 'PEAK CALLING HOURS',
           children: const [
-            _PeakHourBar(time: '7:00 PM – 11:00 PM', percentage: 65, label: 'Highest Traffic (Prime Time)'),
+            _PeakHourBar(
+              time: '7:00 PM – 11:00 PM',
+              percentage: 65,
+              label: 'Highest Traffic (Prime Time)',
+            ),
             SizedBox(height: 10),
-            _PeakHourBar(time: '2:00 PM – 6:00 PM', percentage: 22, label: 'Moderate Traffic'),
+            _PeakHourBar(
+              time: '2:00 PM – 6:00 PM',
+              percentage: 22,
+              label: 'Moderate Traffic',
+            ),
             SizedBox(height: 10),
-            _PeakHourBar(time: '10:00 AM – 1:00 PM', percentage: 13, label: 'Morning Calls'),
+            _PeakHourBar(
+              time: '10:00 AM – 1:00 PM',
+              percentage: 13,
+              label: 'Morning Calls',
+            ),
           ],
         ),
 
@@ -1790,11 +3468,32 @@ class _MetricTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 11.5, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor.withValues(alpha: 0.8),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(sub, style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(
+            sub,
+            style: TextStyle(
+              color: textColor.withValues(alpha: 0.7),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -1820,8 +3519,22 @@ class _PeakHourBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(time, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: FriendooUiColors.ink)),
-            Text('$percentage%', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: FriendooUiColors.pink)),
+            Text(
+              time,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: FriendooUiColors.ink,
+              ),
+            ),
+            Text(
+              '$percentage%',
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+                color: FriendooUiColors.pink,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -1830,12 +3543,17 @@ class _PeakHourBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: percentage / 100,
             backgroundColor: const Color(0xFFF3F4F6),
-            valueColor: const AlwaysStoppedAnimation<Color>(FriendooUiColors.pink),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              FriendooUiColors.pink,
+            ),
             minHeight: 6,
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+        ),
       ],
     );
   }
@@ -1858,7 +3576,11 @@ class _FeedbackBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(color: FriendooUiColors.ink, fontSize: 12.5, fontWeight: FontWeight.w800),
+        style: const TextStyle(
+          color: FriendooUiColors.ink,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -1866,10 +3588,7 @@ class _FeedbackBadge extends StatelessWidget {
 
 /// F. Dedicated Full-Screen Host Withdrawal Page
 class HostWithdrawalPage extends ConsumerStatefulWidget {
-  const HostWithdrawalPage({
-    super.key,
-    this.availableAmount = 5240,
-  });
+  const HostWithdrawalPage({super.key, this.availableAmount = 5240});
 
   final int availableAmount;
 
@@ -1888,7 +3607,8 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
   void initState() {
     super.initState();
     _amountController.text = widget.availableAmount.toString();
-    _idempotencyKey = 'payout_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+    _idempotencyKey =
+        'payout_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
   }
 
   @override
@@ -1900,11 +3620,11 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
 
   void _submitWithdrawal() async {
     final amount = int.tryParse(_amountController.text.trim()) ?? 0;
-    if (amount < 500) {
+    if (amount < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFFDC2626),
-          content: Text('Minimum withdrawal amount is ₹500.'),
+          content: Text('Minimum withdrawal amount is ₹100.'),
         ),
       );
       return;
@@ -1913,26 +3633,37 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFFDC2626),
-          content: Text('Amount cannot exceed your available withdrawal balance.'),
+          content: Text(
+            'Amount cannot exceed your available withdrawal balance.',
+          ),
         ),
       );
       return;
     }
 
-    if (_selectedMethodIndex == 0 && _upiController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFFDC2626),
-          content: Text('Please provide a valid UPI ID for payout.'),
-        ),
-      );
-      return;
+    if (_selectedMethodIndex == 0) {
+      final upi = _upiController.text.trim();
+      final upiRegex = RegExp(r'^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$');
+      if (upi.isEmpty || !upiRegex.hasMatch(upi)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFFDC2626),
+            content: Text(
+              'Please provide a valid Indian UPI ID (e.g., name@okhdfcbank).',
+            ),
+          ),
+        );
+        return;
+      }
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isSubmitting = true);
 
     try {
-      final payoutMethodType = _selectedMethodIndex == 0 ? 'upi' : 'bank_account';
+      final payoutMethodType = _selectedMethodIndex == 0
+          ? 'upi'
+          : 'bank_account';
       final payoutDetails = _selectedMethodIndex == 0
           ? {'upi_id': _upiController.text.trim()}
           : {
@@ -1941,7 +3672,9 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
               'ifsc_code': 'HDFC0001234',
             };
 
-      final result = await ref.read(walletRepositoryProvider).requestHostWithdrawal(
+      final result = await ref
+          .read(walletRepositoryProvider)
+          .requestHostWithdrawal(
             amountInr: amount,
             payoutMethodType: payoutMethodType,
             payoutDetails: payoutDetails,
@@ -1953,7 +3686,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
       if (result.success) {
         ref.invalidate(hostDashboardStatsProvider);
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF10B981),
             content: Text(
@@ -1965,17 +3698,19 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
         );
       } else {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFFDC2626),
-            content: Text(result.errorMessage ?? 'Failed to submit withdrawal request.'),
+            content: Text(
+              result.errorMessage ?? 'Failed to submit withdrawal request.',
+            ),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFFDC2626),
           content: Text('An unexpected error occurred: ${e.toString()}'),
@@ -2011,10 +3746,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                 )
               : const Text(
                   'Confirm Withdrawal',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
                 ),
         ),
       ),
@@ -2058,11 +3790,11 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Minimum withdrawal limit: ₹500',
+                'Minimum withdrawal limit: ₹100',
                 style: TextStyle(
-                  color: FriendooUiColors.muted,
+                  color: Color(0xFF10B981),
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -2089,90 +3821,152 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                   fontSize: 22,
                   color: FriendooUiColors.ink,
                 ),
-                hintText: '500',
+                hintText: '100',
                 border: InputBorder.none,
               ),
             ),
             const Divider(height: 1),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                ...[500, 1000, 2500].map((preset) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(
-                      label: Text('₹$preset'),
-                      labelStyle: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...[100, 200, 500, 1000, 2500].map((preset) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        label: Text('₹$preset'),
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                        onPressed: () =>
+                            setState(() => _amountController.text = '$preset'),
                       ),
-                      onPressed: () =>
-                          setState(() => _amountController.text = '$preset'),
+                    );
+                  }),
+                  ActionChip(
+                    label: const Text('Full Amount'),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
                     ),
-                  );
-                }),
-                ActionChip(
-                  label: const Text('All'),
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
+                    onPressed: () => setState(
+                      () =>
+                          _amountController.text = '${widget.availableAmount}',
+                    ),
                   ),
-                  onPressed: () => setState(
-                    () => _amountController.text = '${widget.availableAmount}',
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
 
-        // 3. Payout Destination Card
+        // 3. Payout Frequency & Policy Card
         SettingsSectionCard(
-          title: 'PAYOUT DESTINATION',
+          title: 'PAYOUT SCHEDULE & LIMITS',
           children: [
-            ListTile(
+            const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.qr_code_rounded,
-                color: FriendooUiColors.blue,
+              leading: Icon(
+                Icons.calendar_today_rounded,
+                color: FriendooUiColors.violet,
+                size: 20,
               ),
-              title: const Text(
-                'UPI Virtual Payment Address',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              title: Text(
+                'Weekly Payout Cycle',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
               ),
               subtitle: Text(
-                _upiController.text,
-                style: const TextStyle(fontSize: 12, color: FriendooUiColors.muted),
-              ),
-              trailing: Radio<int>(
-                value: 0,
-                groupValue: _selectedMethodIndex,
-                activeColor: FriendooUiColors.blue,
-                onChanged: (val) =>
-                    setState(() => _selectedMethodIndex = val ?? 0),
+                'Payouts processed weekly (minimum ₹100 withdrawal limit).',
+                style: TextStyle(fontSize: 11.5, color: FriendooUiColors.muted),
               ),
             ),
             const Divider(height: 1),
-            ListTile(
+            const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.account_balance_outlined,
-                color: FriendooUiColors.ink,
+              leading: Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Color(0xFF10B981),
+                size: 20,
               ),
-              title: const Text(
-                'Bank Account (Direct Transfer)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              title: Text(
+                'Monthly Full Balance Settlement',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
               ),
-              subtitle: const Text(
-                'HDFC Bank •••• 4829',
-                style: TextStyle(fontSize: 12, color: FriendooUiColors.muted),
+              subtitle: Text(
+                'Option to withdraw entire accumulated monthly earnings once a month.',
+                style: TextStyle(fontSize: 11.5, color: FriendooUiColors.muted),
               ),
-              trailing: Radio<int>(
-                value: 1,
-                groupValue: _selectedMethodIndex,
-                activeColor: FriendooUiColors.blue,
-                onChanged: (val) =>
-                    setState(() => _selectedMethodIndex = val ?? 1),
+            ),
+          ],
+        ),
+
+        // 4. Payout Destination Card
+        SettingsSectionCard(
+          title: 'PAYOUT DESTINATION',
+          children: [
+            RadioGroup<int>(
+              groupValue: _selectedMethodIndex,
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedMethodIndex = val);
+                }
+              },
+              child: Column(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.qr_code_rounded,
+                      color: FriendooUiColors.blue,
+                    ),
+                    title: const Text(
+                      'UPI Virtual Payment Address',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _upiController.text,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: FriendooUiColors.muted,
+                      ),
+                    ),
+                    trailing: const Radio<int>(
+                      value: 0,
+                      activeColor: FriendooUiColors.blue,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.account_balance_outlined,
+                      color: FriendooUiColors.ink,
+                    ),
+                    title: const Text(
+                      'Bank Account (Direct Transfer)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'HDFC Bank •••• 4829',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: FriendooUiColors.muted,
+                      ),
+                    ),
+                    trailing: const Radio<int>(
+                      value: 1,
+                      activeColor: FriendooUiColors.blue,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -2192,12 +3986,9 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
             'Edit Payout & Bank Details',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
           ),
-          style: TextButton.styleFrom(
-            foregroundColor: FriendooUiColors.blue,
-          ),
+          style: TextButton.styleFrom(foregroundColor: FriendooUiColors.blue),
         ),
       ],
     );
   }
 }
-

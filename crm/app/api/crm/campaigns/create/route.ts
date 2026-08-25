@@ -1,44 +1,45 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getOperationalAdminActorId, getSupabaseAdmin } from '@/lib/supabaseServer';
 
-interface CreateCampaignBody {
-  name: string;
-  type: "push" | "inapp" | "both";
-  segment: string;
+export const dynamic = 'force-dynamic';
+
+type CreateCampaignBody = {
+  name?: string;
+  type?: 'push' | 'inapp' | 'both';
+  segment?: string;
   customFilter?: Record<string, unknown>;
-  title: string;
-  body: string;
+  title?: string;
+  body?: string;
   scheduledAt?: string | null;
-  createdBy?: string;
-}
+};
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const body = await parseJsonBody<CreateCampaignBody>(request);
-  if (!body.name || !body.type || !body.segment || !body.title || !body.body) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+  try {
+    const body = (await request.json()) as CreateCampaignBody;
+    if (!body.name?.trim() || !body.type || !body.segment?.trim() || !body.title?.trim() || !body.body?.trim()) {
+      return NextResponse.json({ error: 'name, type, segment, title, and body are required.' }, { status: 400 });
+    }
+    const channel = body.type === 'inapp' ? 'in_app' : 'push';
+    const audienceFilter = { segment: body.segment.trim(), delivery_mode: body.type, ...(body.customFilter ?? {}) };
+    const { data, error } = await getSupabaseAdmin()
+      .from('crm_campaigns')
+      .insert({
+        created_by: getOperationalAdminActorId(),
+        name: body.name.trim(),
+        channel,
+        audience_filter: audienceFilter,
+        title: body.title.trim(),
+        body: body.body.trim(),
+        status: body.scheduledAt ? 'scheduled' : 'draft',
+      })
+      .select('id, name, channel, audience_filter, title, body, status, created_at, updated_at')
+      .single();
+    if (error) throw error;
+    return NextResponse.json({ ok: true, campaignId: data.id, campaign: data });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not create campaign.' }, { status: 500 });
   }
-
-  const campaignRef = await adminDb.collection("campaigns").add({
-    name: body.name,
-    type: body.type,
-    segment: body.segment,
-    customFilter: body.customFilter || null,
-    title: body.title,
-    body: body.body,
-    status: body.scheduledAt ? "scheduled" : "draft",
-    scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
-    sentAt: null,
-    targetCount: 0,
-    deliveredCount: 0,
-    openedCount: 0,
-    createdAt: FieldValue.serverTimestamp(),
-    createdBy: body.createdBy || "admin",
-  });
-
-  return NextResponse.json({ ok: true, campaignId: campaignRef.id });
 }

@@ -1,90 +1,34 @@
-import { compareDesc } from "date-fns";
-import { NextRequest, NextResponse } from "next/server";
-import { requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { toDate, toNumber } from "@/lib/utils";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { uid: string } },
-) {
+export async function GET(request: NextRequest, context: { params: { uid: string } }) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const uid = params.uid;
-  const userDoc = await adminDb.collection("users").doc(uid).get();
-  if (!userDoc.exists) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  try {
+    const userId = context.params.uid;
+    const supabase = getSupabaseAdmin();
+    const [profileResult, walletResult, paymentsResult, transactionsResult, callsResult, reportsResult] = await Promise.all([
+      supabase.from('profiles').select('id, phone, display_name, role, is_banned, created_at, updated_at').eq('id', userId).maybeSingle(),
+      supabase.from('wallets').select('coin_balance, is_frozen, frozen_reason, updated_at').eq('user_id', userId).maybeSingle(),
+      supabase.from('payment_orders').select('id, amount_inr, coins, status, provider, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('wallet_transactions').select('id, type, coin_amount, balance_after, metadata, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100),
+      supabase.from('calls').select('id, status, call_type, total_coins_deducted, created_at, ended_at, end_reason').eq('caller_id', userId).order('created_at', { ascending: false }).limit(100),
+      supabase.from('reports').select('id, reason, status, created_at').eq('reporter_id', userId).order('created_at', { ascending: false }).limit(50),
+    ]);
+    for (const result of [profileResult, walletResult, paymentsResult, transactionsResult, callsResult, reportsResult]) if (result.error) throw result.error;
+    if (!profileResult.data) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    const timeline = [
+      { title: 'Account created', date: profileResult.data.created_at, detail: 'Joined Friendoo', level: 'ok' },
+      ...(paymentsResult.data ?? []).map((payment) => ({ title: 'Top-up ' + payment.status, date: payment.created_at, detail: payment.coins + ' coins', level: payment.status === 'success' ? 'ok' : 'warn' })),
+      ...(transactionsResult.data ?? []).map((transaction) => ({ title: 'Wallet ' + transaction.type, date: transaction.created_at, detail: transaction.coin_amount + ' coins', level: transaction.coin_amount >= 0 ? 'ok' : 'warn' })),
+      ...(callsResult.data ?? []).map((call) => ({ title: 'Call ' + call.status, date: call.ended_at ?? call.created_at, detail: call.total_coins_deducted + ' coins', level: call.status === 'ended' ? 'ok' : 'warn' })),
+      ...(reportsResult.data ?? []).map((report) => ({ title: 'Safety report ' + report.status, date: report.created_at, detail: report.reason, level: report.status === 'resolved' ? 'ok' : 'warn' })),
+    ].sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
+    return NextResponse.json({ user: { ...profileResult.data, coinBalance: walletResult.data?.coin_balance ?? 0, wallet: walletResult.data }, timeline, payments: paymentsResult.data ?? [], transactions: transactionsResult.data ?? [], calls: callsResult.data ?? [], reports: reportsResult.data ?? [] });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not load user journey.' }, { status: 500 });
   }
-
-  const [callsSnap, topupsSnap] = await Promise.all([
-    adminDb.collection("calls").where("fromUserId", "==", uid).orderBy("createdAt", "desc").limit(30).get(),
-    adminDb
-      .collection("coinTransactions")
-      .where("userId", "==", uid)
-      .where("type", "==", "topup")
-      .orderBy("createdAt", "desc")
-      .limit(20)
-      .get(),
-  ]);
-
-  const user = userDoc.data() as Record<string, unknown>;
-  const timeline: Array<{ title: string; date: Date; detail?: string; level?: "ok" | "warn" }> = [];
-
-  const createdAt = toDate(user.createdAt);
-  if (createdAt) {
-    timeline.push({ title: "Signed up", date: createdAt });
-  }
-  if (user.onboardingComplete && createdAt) {
-    timeline.push({ title: "Completed onboarding", date: createdAt });
-  }
-
-  topupsSnap.docs.forEach((doc) => {
-    const data = doc.data();
-    const date = toDate(data.createdAt);
-    if (!date) return;
-    const amount = toNumber(data.amountInr);
-    const coins = toNumber(data.amountCoins);
-    timeline.push({
-      title: "Top-up completed",
-      detail: `Rs ${amount.toFixed(0)} for ${coins} coins`,
-      date,
-      level: "ok",
-    });
-  });
-
-  callsSnap.docs.forEach((doc) => {
-    const data = doc.data();
-    const date = toDate(data.createdAt);
-    if (!date) return;
-    const seconds = toNumber(data.finalDurationSeconds);
-    const coins = toNumber(data.finalCoinsDeducted || data.coinsSpent);
-    timeline.push({
-      title: "Call completed",
-      detail: `${Math.max(1, Math.round(seconds / 60))} min, ${coins} coins`,
-      date,
-      level: seconds < 30 ? "warn" : "ok",
-    });
-  });
-
-  const lastActive = toDate(user.lastActive);
-  if (lastActive) {
-    const daysInactive = Math.floor((Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysInactive >= 3) {
-      timeline.push({
-        title: `Inactive for ${daysInactive} day(s)`,
-        date: new Date(),
-        level: "warn",
-      });
-    }
-  }
-
-  timeline.sort((a, b) => compareDesc(a.date, b.date));
-
-  return NextResponse.json({
-    user: { uid: userDoc.id, ...user },
-    timeline,
-  });
 }

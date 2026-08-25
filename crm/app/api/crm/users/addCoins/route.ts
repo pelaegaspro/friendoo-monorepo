@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
 import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import { toNumber } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 interface AddCoinsBody {
   uid: string;
@@ -14,42 +15,40 @@ export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
 
-  const body = await parseJsonBody<AddCoinsBody>(request);
-  const uid = body.uid;
-  const amount = Math.max(0, Math.floor(toNumber(body.amount)));
-  if (!uid || amount <= 0) {
-    return NextResponse.json({ error: "uid and positive amount are required." }, { status: 400 });
-  }
-
-  const userRef = adminDb.collection("users").doc(uid);
-  const transactionRef = adminDb.collection("coinTransactions").doc();
-
-  await adminDb.runTransaction(async (transaction) => {
-    const userDoc = await transaction.get(userRef);
-    if (!userDoc.exists) {
-      throw new Error("User not found");
+  try {
+    const body = await parseJsonBody<AddCoinsBody>(request);
+    const uid = body.uid;
+    const amount = Math.max(0, Math.floor(toNumber(body.amount)));
+    if (!uid || amount <= 0) {
+      return NextResponse.json({ error: "uid and positive amount are required." }, { status: 400 });
     }
-    const user = userDoc.data() as Record<string, unknown>;
-    const before = toNumber(user.coinBalance);
+
+    const supabase = getSupabaseAdmin();
+    const { data: wallet } = await supabase
+      .from("wallets")
+      .select("id, coin_balance")
+      .eq("user_id", uid)
+      .maybeSingle();
+
+    const before = toNumber(wallet?.coin_balance, 0);
     const after = before + amount;
 
-    transaction.update(userRef, {
-      coinBalance: after,
-      updatedAt: FieldValue.serverTimestamp(),
+    await supabase.from("wallets").upsert({
+      user_id: uid,
+      coin_balance: after,
+      updated_at: new Date().toISOString(),
     });
 
-    transaction.set(transactionRef, {
-      userId: uid,
+    await supabase.from("wallet_transactions").insert({
+      user_id: uid,
       type: "bonus",
-      amountCoins: amount,
-      balanceBefore: before,
-      balanceAfter: after,
-      amountInr: 0,
-      status: "success",
-      reason: body.reason ?? "CRM add coins",
-      createdAt: FieldValue.serverTimestamp(),
+      coin_amount: amount,
+      balance_after: after,
+      created_at: new Date().toISOString(),
     });
-  });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, balanceAfter: after });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to add coins" }, { status: 500 });
+  }
 }

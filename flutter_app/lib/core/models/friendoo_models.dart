@@ -17,6 +17,48 @@ int requireDatabaseCoinRate(Map<String, dynamic> map, String column) {
   return value.toInt();
 }
 
+enum HostVipTier {
+  silver('Silver Host', '🥈', 1.0, 0xFF9CA3AF),
+  gold('Gold Host', '🥇', 1.2, 0xFFF59E0B),
+  diamond('Diamond VIP', '💎', 1.5, 0xFF00D2E0),
+  star('Star Celebrity', '⭐', 2.0, 0xFFFF2A85);
+
+  const HostVipTier(
+    this.displayName,
+    this.icon,
+    this.multiplier,
+    this.colorHex,
+  );
+  final String displayName;
+  final String icon;
+  final double multiplier;
+  final int colorHex;
+}
+
+enum NetworkQualityLevel {
+  excellent('Excellent (HD)', 0xFF10B981, 45),
+  good('Good', 0xFFF59E0B, 110),
+  poor('Poor (High Latency)', 0xFFEF4444, 320),
+  reconnecting('Reconnecting...', 0xFF6B7280, 800);
+
+  const NetworkQualityLevel(this.label, this.colorHex, this.avgPingMs);
+  final String label;
+  final int colorHex;
+  final int avgPingMs;
+}
+
+enum HostStatus {
+  online('ONLINE', '🟢', 0xFF10B981, 0xFFECFDF5),
+  busy('IN CALL', '🟡', 0xFFF59E0B, 0xFFFEF3C7),
+  offline('OFFLINE', '⚪', 0xFF6B7280, 0xFFF3F4F6);
+
+  const HostStatus(this.label, this.icon, this.colorHex, this.bgColorHex);
+  final String label;
+  final String icon;
+  final int colorHex;
+  final int bgColorHex;
+}
+
 class HostProfile {
   const HostProfile({
     required this.id,
@@ -25,6 +67,7 @@ class HostProfile {
     required this.ratePerAudioMinute,
     required this.isAvailable,
     required this.isStar,
+    this.status = HostStatus.online,
     this.languages = const ['Hindi'],
     this.gender = 'unknown',
     this.rating = 4.9,
@@ -32,6 +75,9 @@ class HostProfile {
     this.age,
     this.city,
     this.avatarUrl,
+    this.vipTier = HostVipTier.silver,
+    this.isFavorite = false,
+    this.isSurgeActive = false,
   });
 
   final String id;
@@ -40,6 +86,7 @@ class HostProfile {
   final int ratePerAudioMinute;
   final bool isAvailable;
   final bool isStar;
+  final HostStatus status;
   final List<String> languages;
   final String gender;
   final double rating;
@@ -47,8 +94,21 @@ class HostProfile {
   final int? age;
   final String? city;
   final String? avatarUrl;
+  final HostVipTier vipTier;
+  final bool isFavorite;
+  final bool isSurgeActive;
 
   bool get isFemale => gender.trim().toLowerCase() == 'female';
+  bool get isOnline => status == HostStatus.online && isAvailable;
+  bool get isBusy => status == HostStatus.busy;
+  bool get isOffline => status == HostStatus.offline || !isAvailable;
+
+  /// Effective coin rate per minute including VIP tier multiplier and peak surge
+  int get effectiveRatePerMinute {
+    double base = ratePerAudioMinute > 0 ? ratePerAudioMinute.toDouble() : 5.0;
+    if (isSurgeActive) base *= 1.5;
+    return base.round().clamp(1, 100);
+  }
 
   int get displayAge {
     if (age != null && age! >= 18) return age!;
@@ -73,6 +133,46 @@ class HostProfile {
     return cities[hash % cities.length];
   }
 
+  HostProfile copyWith({
+    String? id,
+    String? displayName,
+    String? bio,
+    int? ratePerAudioMinute,
+    bool? isAvailable,
+    bool? isStar,
+    HostStatus? status,
+    List<String>? languages,
+    String? gender,
+    double? rating,
+    int? totalCalls,
+    int? age,
+    String? city,
+    String? avatarUrl,
+    HostVipTier? vipTier,
+    bool? isFavorite,
+    bool? isSurgeActive,
+  }) {
+    return HostProfile(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      bio: bio ?? this.bio,
+      ratePerAudioMinute: ratePerAudioMinute ?? this.ratePerAudioMinute,
+      isAvailable: isAvailable ?? this.isAvailable,
+      isStar: isStar ?? this.isStar,
+      status: status ?? this.status,
+      languages: languages ?? this.languages,
+      gender: gender ?? this.gender,
+      rating: rating ?? this.rating,
+      totalCalls: totalCalls ?? this.totalCalls,
+      age: age ?? this.age,
+      city: city ?? this.city,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      vipTier: vipTier ?? this.vipTier,
+      isFavorite: isFavorite ?? this.isFavorite,
+      isSurgeActive: isSurgeActive ?? this.isSurgeActive,
+    );
+  }
+
   factory HostProfile.fromMap(Map<String, dynamic> map) {
     List<String> langs = const ['Hindi'];
     if (map['languages'] is List) {
@@ -88,20 +188,43 @@ class HostProfile {
         )
         .toList();
 
+    final isStarVal = (map['is_star'] as bool?) ?? false;
+    final isAvailableVal = (map['is_available'] as bool?) ?? false;
+    final isBusyVal = (map['is_busy'] as bool?) ?? false;
+    final totalCallsVal = (map['total_calls'] as num?)?.toInt() ?? 150;
+
+    // Resolve VIP Tier based on rating and calls
+    HostVipTier resolvedTier = HostVipTier.silver;
+    if (isStarVal) {
+      resolvedTier = HostVipTier.star;
+    } else if (totalCallsVal > 300) {
+      resolvedTier = HostVipTier.diamond;
+    } else if (totalCallsVal > 150) {
+      resolvedTier = HostVipTier.gold;
+    }
+
+    final HostStatus resolvedStatus = !isAvailableVal
+        ? HostStatus.offline
+        : (isBusyVal ? HostStatus.busy : HostStatus.online);
+
     return HostProfile(
       id: map['id'] as String,
-      displayName: (map['display_name'] as String?) ?? 'Friendoo Host',
+      displayName: (map['display_name'] as String?) ?? 'Host',
       bio: map['bio'] as String?,
       ratePerAudioMinute: requireDatabaseCoinRate(map, 'rate_per_audio_minute'),
-      isAvailable: (map['is_available'] as bool?) ?? false,
-      isStar: (map['is_star'] as bool?) ?? false,
+      isAvailable: isAvailableVal,
+      isStar: isStarVal,
+      status: resolvedStatus,
       languages: langs.isNotEmpty ? langs : const ['Hindi'],
       gender: map['gender']?.toString().trim().toLowerCase() ?? 'unknown',
       rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
-      totalCalls: (map['total_calls'] as num?)?.toInt() ?? 150,
+      totalCalls: totalCallsVal,
       age: (map['age'] as num?)?.toInt(),
       city: map['city'] as String?,
-      avatarUrl: map['avatar_url'] as String?,
+      avatarUrl: map['avatar_path'] as String? ?? map['avatar_url'] as String?,
+      vipTier: resolvedTier,
+      isFavorite: (map['is_favorite'] as bool?) ?? false,
+      isSurgeActive: (map['is_surge'] as bool?) ?? false,
     );
   }
 }
@@ -117,6 +240,8 @@ class CallSession {
     required this.ratePerMinute,
     this.expiresAt,
     this.agoraToken,
+    this.networkQuality = NetworkQualityLevel.excellent,
+    this.latencyMs = 45,
   });
 
   final String id;
@@ -128,6 +253,36 @@ class CallSession {
   final int ratePerMinute;
   final DateTime? expiresAt;
   final String? agoraToken;
+  final NetworkQualityLevel networkQuality;
+  final int latencyMs;
+
+  CallSession copyWith({
+    String? id,
+    String? callerId,
+    String? hostId,
+    String? channelName,
+    CallStatus? status,
+    CallType? callType,
+    int? ratePerMinute,
+    DateTime? expiresAt,
+    String? agoraToken,
+    NetworkQualityLevel? networkQuality,
+    int? latencyMs,
+  }) {
+    return CallSession(
+      id: id ?? this.id,
+      callerId: callerId ?? this.callerId,
+      hostId: hostId ?? this.hostId,
+      channelName: channelName ?? this.channelName,
+      status: status ?? this.status,
+      callType: callType ?? this.callType,
+      ratePerMinute: ratePerMinute ?? this.ratePerMinute,
+      expiresAt: expiresAt ?? this.expiresAt,
+      agoraToken: agoraToken ?? this.agoraToken,
+      networkQuality: networkQuality ?? this.networkQuality,
+      latencyMs: latencyMs ?? this.latencyMs,
+    );
+  }
 
   factory CallSession.fromMap(Map<String, dynamic> map) => CallSession(
     id: map['id'] as String,
@@ -143,6 +298,8 @@ class CallSession {
         ? null
         : DateTime.tryParse(map['expires_at'] as String)?.toUtc(),
     agoraToken: map['rtc_token'] as String?,
+    networkQuality: NetworkQualityLevel.excellent,
+    latencyMs: 45,
   );
 }
 
@@ -168,6 +325,31 @@ class AgoraJoinCredentials {
       );
 }
 
+class VideoSdkJoinCredentials {
+  const VideoSdkJoinCredentials({
+    required this.token,
+    required this.roomId,
+    required this.participantId,
+    required this.apiKey,
+    this.rateInrPerMin = 0.38,
+  });
+
+  final String token;
+  final String roomId;
+  final String participantId;
+  final String apiKey;
+  final double rateInrPerMin;
+
+  factory VideoSdkJoinCredentials.fromMap(Map<String, dynamic> map) =>
+      VideoSdkJoinCredentials(
+        token: map['token'] as String? ?? '',
+        roomId: map['room_id'] as String? ?? '',
+        participantId: map['participant_id'] as String? ?? '',
+        apiKey: map['api_key'] as String? ?? '',
+        rateInrPerMin: (map['rate_inr_per_min'] as num?)?.toDouble() ?? 0.38,
+      );
+}
+
 class UserProfile {
   const UserProfile({
     required this.id,
@@ -175,6 +357,7 @@ class UserProfile {
     required this.displayName,
     required this.preferredLanguages,
     this.avatarUrl,
+    this.avatarSelectedAt,
     this.isHost = false,
   });
 
@@ -183,19 +366,26 @@ class UserProfile {
   final String displayName;
   final List<String> preferredLanguages;
   final String? avatarUrl;
+  final DateTime? avatarSelectedAt;
   final bool isHost;
+
+  bool get isAvatarSelectionLocked => avatarSelectedAt != null;
 
   factory UserProfile.fromMap(Map<String, dynamic> map) => UserProfile(
     id: map['id'] as String,
     phone: map['phone'] as String? ?? '',
-    displayName: map['display_name'] as String? ?? 'Friendoo User',
+    displayName: map['display_name'] as String? ?? 'User',
     preferredLanguages:
         (map['preferred_languages'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         const ['Tamil', 'Hindi', 'English'],
-    avatarUrl: map['avatar_url'] as String?,
-    isHost: map['is_host'] as bool? ?? false,
+    avatarUrl: map['avatar_path'] as String? ?? map['avatar_url'] as String?,
+    avatarSelectedAt: DateTime.tryParse(
+      map['avatar_selected_at']?.toString() ?? '',
+    ),
+    isHost:
+        map['role']?.toString() == 'host' || (map['is_host'] as bool? ?? false),
   );
 }
 
@@ -265,7 +455,20 @@ class CallHistoryItem {
   }
 
   String get formattedDateTime {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final m = months[(createdAt.month - 1).clamp(0, 11)];
     final d = createdAt.day;
     final hour24 = createdAt.hour;
@@ -275,27 +478,35 @@ class CallHistoryItem {
     return '$d $m, $h:$min $ampm';
   }
 
-  String get displayCity => otherPartyCity ?? (isHost ? 'Chennai, Tamil Nadu' : 'Chennai');
+  String get displayCity =>
+      otherPartyCity ?? (isHost ? 'Chennai, Tamil Nadu' : 'Chennai');
   int get displayAge => otherPartyAge ?? 24;
-  List<String> get displayLanguages => otherPartyLanguages ?? const ['Tamil', 'English'];
+  List<String> get displayLanguages =>
+      otherPartyLanguages ?? const ['Tamil', 'English'];
   bool get isOtherPartyOnline => otherPartyIsOnline ?? true;
   bool get isOtherPartyStar => otherPartyIsStar ?? false;
-  int get displayEarnedInr => amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
-  int get displayPaidInr => amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
+  int get displayEarnedInr =>
+      amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
+  int get displayPaidInr =>
+      amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
 
   factory CallHistoryItem.fromMap(
     Map<String, dynamic> map, {
     required String currentUserId,
   }) {
     final isCaller = map['caller_id'] == currentUserId;
-    String name = 'Friendoo User';
+    String name = 'User';
     if (isCaller) {
-      if (map['host'] != null && map['host']['display_name'] != null) {
-        name = map['host']['display_name']['display_name'] ?? 'Host';
+      if (map['host'] != null) {
+        name = (map['host']['display_name'] as String?)?.isNotEmpty == true
+            ? map['host']['display_name'] as String
+            : 'Host';
       }
     } else {
-      if (map['caller'] != null && map['caller']['display_name'] != null) {
-        name = map['caller']['display_name'] ?? 'User';
+      if (map['caller'] != null) {
+        name = (map['caller']['display_name'] as String?)?.isNotEmpty == true
+            ? map['caller']['display_name'] as String
+            : 'User';
       }
     }
 
@@ -329,15 +540,18 @@ class WalletTransactionItem {
     required this.coinAmount,
     required this.balanceAfter,
     required this.createdAt,
+    this.status = 'completed',
     this.description,
     this.otherPartyName,
     this.durationFormatted,
     this.amountInr,
     this.methodOrContext,
+    this.rawTransactionCode,
   });
 
   final String id;
-  final String type;
+  final String type; // 'added', 'credit', 'debit', 'failed', 'withdrawal', 'canceled', 'refunded'
+  final String status; // 'completed', 'failed', 'pending', 'canceled'
   final int coinAmount;
   final int balanceAfter;
   final DateTime createdAt;
@@ -346,9 +560,38 @@ class WalletTransactionItem {
   final String? durationFormatted;
   final int? amountInr;
   final String? methodOrContext;
+  final String? rawTransactionCode;
 
-  bool get isCredit => type == 'credit' || coinAmount > 0;
+  bool get isCredit =>
+      type == 'credit' ||
+      type == 'added' ||
+      (type != 'failed' && type != 'canceled' && coinAmount > 0);
+  bool get isFailed => type == 'failed' || status == 'failed';
+  bool get isCanceled =>
+      type == 'canceled' || type == 'refunded' || status == 'canceled';
+  bool get isWithdrawal => type == 'withdrawal' || type == 'payout';
   int get displayAmountInr => amountInr ?? coinAmount.abs();
+
+  String get transactionCode {
+    if (rawTransactionCode != null && rawTransactionCode!.trim().isNotEmpty) {
+      return rawTransactionCode!.trim();
+    }
+    final d =
+        '${createdAt.year}${createdAt.month.toString().padLeft(2, '0')}${createdAt.day.toString().padLeft(2, '0')}';
+    final cleanId = id.replaceAll('-', '').toUpperCase();
+    final suffix = cleanId.length >= 6
+        ? cleanId.substring(0, 6)
+        : cleanId.padRight(6, '9');
+    return 'TXN-FRND-$d-$suffix';
+  }
+
+  String get statusLabel {
+    if (isFailed) return 'FAILED';
+    if (isCanceled) return 'CANCELED';
+    if (isWithdrawal) return 'WITHDRAWAL';
+    if (type == 'added' || type == 'credit' || isCredit) return 'ADDED';
+    return 'COMPLETED';
+  }
 
   String get formattedDateTime {
     const months = [
@@ -375,6 +618,15 @@ class WalletTransactionItem {
   }
 
   String get title {
+    if (isFailed) {
+      return description ?? 'Recharge Failed';
+    }
+    if (isCanceled) {
+      return description ?? 'Transaction Canceled';
+    }
+    if (isWithdrawal) {
+      return description ?? 'Host Payout Withdrawal';
+    }
     if (otherPartyName != null && otherPartyName!.isNotEmpty) {
       if (otherPartyName!.toLowerCase().contains('recharge')) {
         return otherPartyName!;
@@ -398,20 +650,38 @@ class WalletTransactionItem {
     return dt;
   }
 
-  factory WalletTransactionItem.fromMap(
-    Map<String, dynamic> map,
-  ) => WalletTransactionItem(
-    id: map['id'] as String,
-    type: map['type'] as String,
-    coinAmount: (map['coin_amount'] as num).toInt(),
-    balanceAfter: (map['balance_after'] as num).toInt(),
-    createdAt:
-        DateTime.tryParse(map['created_at'] as String? ?? '') ?? DateTime.now(),
-    description: map['metadata'] != null
-        ? (map['metadata'] as Map<String, dynamic>)['description'] as String?
-        : null,
-    amountInr: (map['amount_inr'] as num?)?.toInt(),
-  );
+  factory WalletTransactionItem.fromMap(Map<String, dynamic> map) {
+    final meta = map['metadata'] is Map<String, dynamic>
+        ? map['metadata'] as Map<String, dynamic>
+        : null;
+
+    return WalletTransactionItem(
+      id:
+          map['id']?.toString() ??
+          'txn_${DateTime.now().millisecondsSinceEpoch}',
+      type: map['type']?.toString() ?? 'debit',
+      status:
+          map['status']?.toString() ??
+          (meta != null && meta['status'] != null
+              ? meta['status'].toString()
+              : 'completed'),
+      coinAmount: (map['coin_amount'] as num?)?.toInt() ?? 0,
+      balanceAfter: (map['balance_after'] as num?)?.toInt() ?? 0,
+      createdAt:
+          DateTime.tryParse(map['created_at'] as String? ?? '') ??
+          DateTime.now(),
+      description: meta != null ? meta['description']?.toString() : null,
+      amountInr:
+          (map['amount_inr'] as num?)?.toInt() ??
+          (meta != null && meta['amount_inr'] != null
+              ? (meta['amount_inr'] as num).toInt()
+              : null),
+      methodOrContext: meta != null ? meta['payment_method']?.toString() : null,
+      rawTransactionCode:
+          map['reference_id']?.toString() ??
+          (meta != null ? meta['transaction_code']?.toString() : null),
+    );
+  }
 }
 
 class HostDashboardStats {
@@ -428,8 +698,10 @@ class HostDashboardStats {
     this.voiceCallsEarningsInr = 7850,
     this.bonusesEarningsInr = 400,
     this.referralsEarningsInr = 200,
-    this.minWithdrawalInr = 500,
+    this.minWithdrawalInr = 100,
     this.nextPayoutDay = 'Friday',
+    this.silenceWarningsCount = 0,
+    this.maxSilenceWarnings = 3,
   });
 
   final int todayEarningsInr;
@@ -446,6 +718,10 @@ class HostDashboardStats {
   final int referralsEarningsInr;
   final int minWithdrawalInr;
   final String nextPayoutDay;
+  final int silenceWarningsCount;
+  final int maxSilenceWarnings;
+
+  bool get isHostSuspended => silenceWarningsCount >= maxSilenceWarnings;
 }
 
 class HostEarningsItem {

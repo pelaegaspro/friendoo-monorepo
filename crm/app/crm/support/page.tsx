@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { cn, toDate } from "@/lib/utils";
+import { crmFetch } from "@/lib/client";
 
 interface Ticket {
   id: string;
@@ -93,15 +94,9 @@ export default function SupportPage() {
   const loadTickets = useCallback(async () => {
     try {
       const query = status === "urgent" ? "all" : status;
-      const response = await fetch(`/api/crm/support/tickets?status=${query}`, { cache: "no-store" });
-      if (response.ok) {
-        const text = await response.text();
-        if (text) {
-          const json = JSON.parse(text);
-          if (json && Array.isArray(json.tickets)) {
-            setTickets(json.tickets);
-          }
-        }
+      const json = await crmFetch<{ tickets?: Ticket[] }>(`/api/crm/support/tickets?status=${query}`);
+      if (json && Array.isArray(json.tickets)) {
+        setTickets(json.tickets);
       }
     } catch (e) {
       console.warn("Using baseline tickets state:", e);

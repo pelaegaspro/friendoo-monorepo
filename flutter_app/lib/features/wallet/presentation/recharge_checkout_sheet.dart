@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../data/upi_payment_service.dart';
 import '../data/wallet_repository.dart';
 
+import 'coin_packages_page.dart';
+import 'select_payment_method_page.dart';
+
 class RechargeCheckoutSheet extends ConsumerStatefulWidget {
-  const RechargeCheckoutSheet({
-    super.key,
-    required this.package,
-  });
+  const RechargeCheckoutSheet({super.key, required this.package});
 
   final CoinPackage package;
 
   static Future<bool?> show(
     BuildContext context, {
-    required CoinPackage package,
+    CoinPackage? package,
   }) {
-    return showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => RechargeCheckoutSheet(package: package),
-    );
+    if (package != null) {
+      return SelectPaymentMethodPage.push(context, package: package);
+    }
+    return CoinPackagesPage.push(context);
   }
 
   @override
@@ -30,27 +30,27 @@ class RechargeCheckoutSheet extends ConsumerStatefulWidget {
 }
 
 class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
-  String _selectedMethod = 'UPI (GPay / PhonePe / Paytm)';
+  String _selectedMethod = 'UPI (PayU / GPay / PhonePe / Paytm)';
   bool _isProcessing = false;
 
   static const _paymentMethods = [
     {
-      'id': 'UPI (GPay / PhonePe / Paytm)',
-      'title': 'Instant UPI Payment',
-      'subtitle': 'Google Pay, PhonePe, Paytm, BHIM',
+      'id': 'UPI (PayU / GPay / PhonePe / Paytm)',
+      'title': 'Instant UPI (PayU Gateway)',
+      'subtitle': 'Google Pay, PhonePe, Paytm, CRED',
       'icon': Icons.flash_on_rounded,
       'badge': 'FASTEST',
     },
     {
-      'id': 'Credit / Debit Card',
-      'title': 'Debit / Credit Card',
+      'id': 'PayU Credit / Debit Card',
+      'title': 'PayU Debit / Credit Card',
       'subtitle': 'Visa, Mastercard, RuPay',
       'icon': Icons.credit_card_rounded,
       'badge': null,
     },
     {
-      'id': 'Net Banking & Wallets',
-      'title': 'Net Banking & Wallets',
+      'id': 'PayU Net Banking & Wallets',
+      'title': 'PayU Net Banking & Wallets',
       'subtitle': 'All major Indian banks',
       'icon': Icons.account_balance_rounded,
       'badge': null,
@@ -59,35 +59,48 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
 
   Future<void> _processPayment(bool isFirstTimeBuyer) async {
     setState(() => _isProcessing = true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    final txRef = 'tx_${DateTime.now().millisecondsSinceEpoch}';
 
-    final success = await ref.read(walletRepositoryProvider).rechargeWallet(
-          package: widget.package,
-          paymentMethod: _selectedMethod,
-          isFirstTimeBuyer: isFirstTimeBuyer,
-        );
+    // 1. Record pending order in backend
+    ref.read(walletRepositoryProvider).rechargeWallet(
+      package: widget.package,
+      paymentMethod: _selectedMethod,
+      isFirstTimeBuyer: isFirstTimeBuyer,
+    );
 
-    ref.invalidate(walletStreamProvider);
-    ref.invalidate(walletTransactionsProvider);
-    ref.invalidate(isFirstTimeBuyerProvider);
-
-    final finalCoins = isFirstTimeBuyer
-        ? (widget.package.coins * 1.5).round()
-        : widget.package.coins;
+    // 2. Real redirection to UPI or PayU
+    bool launched = false;
+    if (_selectedMethod.contains('UPI')) {
+      launched = await const UpiPaymentService().launchDirectUpiApp(
+        packageName: '',
+        amountInr: widget.package.amountInr.toDouble(),
+        transactionRef: txRef,
+        note: 'Friendoo Recharge ${widget.package.coins} Coins',
+      );
+    } else {
+      final payuUrl = Uri.parse(
+        'https://test.payu.in/_payment?key=7eMBxs&txnid=$txRef&amount=${widget.package.amountInr}.00&productinfo=Friendoo_${widget.package.coins}_Coins&firstname=FriendooUser&email=user@friendoo.in&phone=9999999999&surl=https://friendoo.in/api/payments/payu/webhook&furl=https://friendoo.in/api/payments/payu/webhook',
+      );
+      launched = await launchUrl(payuUrl, mode: LaunchMode.externalApplication);
+    }
 
     if (mounted) {
-      Navigator.of(context).pop(success);
+      Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: const Color(0xFF10B981),
+          backgroundColor: const Color(0xFF6366F1),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           content: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const Icon(Icons.open_in_new_rounded, color: Colors.white),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '🎉 +$finalCoins Coins added to your wallet successfully!',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  launched
+                      ? 'Redirecting to payment app... Please complete the transaction.'
+                      : 'Please complete your transaction.',
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ],
@@ -95,6 +108,10 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
         ),
       );
     }
+
+    ref.invalidate(walletStreamProvider);
+    ref.invalidate(walletTransactionsProvider);
+    ref.invalidate(isFirstTimeBuyerProvider);
   }
 
   @override
@@ -104,8 +121,9 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
     final isFirstTimeBuyer =
         ref.watch(isFirstTimeBuyerProvider).asData?.value ?? false;
 
-    final firstTimeBonusCoins =
-        isFirstTimeBuyer ? (widget.package.coins * 0.5).round() : 0;
+    final firstTimeBonusCoins = isFirstTimeBuyer
+        ? (widget.package.coins * 0.5).round()
+        : 0;
     final totalCoinsReceiving = widget.package.coins + firstTimeBonusCoins;
     final approxMinutes = (totalCoinsReceiving / 5).round();
     final isAbove800 = widget.package.amountInr >= 800;
@@ -145,11 +163,14 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.18),
+                    color: Colors.amber.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.monetization_on_rounded,
-                      color: Colors.amber, size: 28),
+                  child: const Icon(
+                    Icons.monetization_on_rounded,
+                    color: Colors.amber,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -187,7 +208,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -195,8 +216,11 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.card_giftcard_rounded,
-                        color: Colors.amber, size: 24),
+                    const Icon(
+                      Icons.card_giftcard_rounded,
+                      color: Colors.amber,
+                      size: 24,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -213,7 +237,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                           Text(
                             'You get +$firstTimeBonusCoins FREE bonus coins on this recharge.',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 11,
                             ),
                           ),
@@ -230,12 +254,14 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    colors.primary.withOpacity(0.08),
-                    colors.secondary.withOpacity(0.08),
+                    colors.primary.withValues(alpha: 0.08),
+                    colors.secondary.withValues(alpha: 0.08),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.primary.withOpacity(0.25)),
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.25),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -244,7 +270,9 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
                             Text(
                               '$totalCoinsReceiving Coins',
@@ -253,12 +281,13 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                               ),
                             ),
                             if (isAbove800) ...[
-                              const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.2),
+                                  color: Colors.amber.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
@@ -327,13 +356,15 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? colors.primaryContainer.withOpacity(0.3)
-                          : colors.surfaceVariant.withOpacity(0.35),
+                          ? colors.primaryContainer.withValues(alpha: 0.3)
+                          : colors.surfaceContainerHighest.withValues(
+                              alpha: 0.35,
+                            ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
                             ? colors.primary
-                            : colors.outlineVariant.withOpacity(0.4),
+                            : colors.outlineVariant.withValues(alpha: 0.4),
                         width: isSelected ? 1.5 : 1,
                       ),
                     ),
@@ -351,7 +382,9 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
                                 children: [
                                   Text(
                                     m['title']! as String,
@@ -363,14 +396,16 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                                     ),
                                   ),
                                   if (m['badge'] != null) ...[
-                                    const SizedBox(width: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        color: Colors.green.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         m['badge']! as String,
@@ -396,8 +431,10 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                         ),
                         Radio<String>(
                           value: m['id']! as String,
+                          // ignore: deprecated_member_use
                           groupValue: _selectedMethod,
                           activeColor: colors.primary,
+                          // ignore: deprecated_member_use
                           onChanged: (val) {
                             if (val != null) {
                               setState(() => _selectedMethod = val);
@@ -419,12 +456,15 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
               children: [
                 Icon(Icons.lock_rounded, size: 14, color: Colors.green[700]),
                 const SizedBox(width: 6),
-                Text(
-                  '100% Secure Checkout via Cashfree Payment Gateway',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.green[800],
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    '100% Secure 256-Bit Encrypted Checkout via PayU Payment Gateway',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green[800],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

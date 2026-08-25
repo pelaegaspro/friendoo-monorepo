@@ -50,12 +50,45 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
 
   @override
   HostCallGuardState build() {
-    return HostCallGuardState(
+    // Start with offline (false) as a safe default — the guard will sync the
+    // real DB value immediately via _seedOnlineStatusFromDb().
+    // Starting offline prevents auto-accepting calls before we know if the
+    // host actually toggled themselves offline in a previous session.
+    final initial = HostCallGuardState(
       dateKey: _currentDateKey(),
       skippedToday: 0,
-      isOnline: true,
+      isOnline: false, // conservative default — overwritten by _seedOnlineStatusFromDb
       maxAllowedSkips: 5,
     );
+    _seedOnlineStatusFromDb();
+    return initial;
+  }
+
+  /// Fetches the host's actual availability from the database and updates
+  /// local state. Called once on startup to resolve the real online status.
+  Future<void> _seedOnlineStatusFromDb() async {
+    try {
+      final client = ref.read(supabaseProvider);
+      final user = client.auth.currentUser;
+      if (user == null) return;
+
+      final row = await client
+          .from('hosts')
+          .select('is_available')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (row != null) {
+        final dbAvailable = (row['is_available'] as bool?) ?? false;
+        state = state.copyWith(isOnline: dbAvailable);
+        if (kDebugMode) {
+          debugPrint('HostCallGuard: seeded isOnline=$dbAvailable from DB');
+        }
+      }
+      // If row is null (not a host), leave isOnline: false — irrelevant.
+    } catch (_) {
+      // Network error — leave at conservative false; host can toggle manually.
+    }
   }
 
   void _ensureToday() {

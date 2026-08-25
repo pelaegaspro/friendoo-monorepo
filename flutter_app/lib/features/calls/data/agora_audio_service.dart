@@ -1,26 +1,33 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 
-class AgoraAudioService {
+import 'rtc_audio_service.dart';
+
+class AgoraAudioService implements RtcAudioService {
   RtcEngine? _engine;
   bool _isMuted = false;
   bool _isSpeaker = true;
 
+  @override
   bool get isMuted => _isMuted;
+
+  @override
   bool get isSpeaker => _isSpeaker;
 
+  @override
   Future<void> join({
-    required String appId,
-    required String token,
-    required String channel,
-    required int uid,
+    required String appIdOrToken,
+    required String channelOrRoomId,
+    required String uid,
+    String? token,
+    Map<String, dynamic>? extra,
   }) async {
     await dispose();
     try {
       final engine = createAgoraRtcEngine();
       _engine = engine;
 
-      await engine.initialize(RtcEngineContext(appId: appId));
+      await engine.initialize(RtcEngineContext(appId: appIdOrToken));
       await engine.setChannelProfile(
         ChannelProfileType.channelProfileCommunication,
       );
@@ -28,10 +35,11 @@ class AgoraAudioService {
       await engine.setEnableSpeakerphone(_isSpeaker);
       await engine.muteLocalAudioStream(_isMuted);
 
+      final numericUid = int.tryParse(uid) ?? 0;
       await engine.joinChannel(
-        token: token,
-        channelId: channel,
-        uid: uid,
+        token: token ?? appIdOrToken,
+        channelId: channelOrRoomId,
+        uid: numericUid,
         options: const ChannelMediaOptions(
           publishMicrophoneTrack: true,
           autoSubscribeAudio: true,
@@ -44,6 +52,7 @@ class AgoraAudioService {
     }
   }
 
+  @override
   Future<void> setMuted(bool muted) async {
     _isMuted = muted;
     try {
@@ -51,6 +60,7 @@ class AgoraAudioService {
     } catch (_) {}
   }
 
+  @override
   Future<void> setSpeakerphone(bool enabled) async {
     _isSpeaker = enabled;
     try {
@@ -58,6 +68,14 @@ class AgoraAudioService {
     } catch (_) {}
   }
 
+  @override
+  Future<void> leave() async {
+    try {
+      await _engine?.leaveChannel();
+    } catch (_) {}
+  }
+
+  @override
   Future<void> dispose() async {
     final engine = _engine;
     _engine = null;

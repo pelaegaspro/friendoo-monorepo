@@ -26,6 +26,7 @@ import { LiveChart } from "@/components/crm/LiveChart";
 import { KPICard } from "@/components/crm/KPICard";
 import { Button } from "@/components/ui/button";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { crmFetch } from "@/lib/client";
 
 interface Host {
   uid: string;
@@ -58,8 +59,7 @@ export default function HostsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/crm/hosts/list", { cache: "no-store" });
-    const json = await response.json();
+    const json = await crmFetch<{ hosts?: Host[]; pendingApplications?: PendingApplication[] }>("/api/crm/hosts/list");
     setHosts(json.hosts || []);
     setPendingApplications(json.pendingApplications || []);
     setLoading(false);

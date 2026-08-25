@@ -24,11 +24,17 @@ import '../features/presence/data/presence_service.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
 import '../features/wallet/data/wallet_repository.dart';
+import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import 'friendoo_ui.dart';
 import '../features/discover/presentation/desi_avatar.dart';
+import '../features/ads/presentation/live_ad_banner_widget.dart';
+import '../features/auth/presentation/onboarding_avatar_setup_page.dart';
 
 final debugMockSessionProvider = StateProvider<bool>((ref) => false);
+final isHostModeProvider = StateProvider<bool>((ref) => false);
+
+bool resolveIsHostNavigation(UserProfile? profile) => profile?.isHost ?? false;
 
 class FriendooApp extends StatelessWidget {
   const FriendooApp({super.key});
@@ -76,6 +82,8 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   bool _loading = false;
   String? _error;
 
+  bool _isHostMode = false;
+
   static const _debugMockPhone = '+919000000000';
   static const _debugMockOtp = '123456';
 
@@ -102,6 +110,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
           if (_otpController.text.trim() != _debugMockOtp) {
             throw StateError('Invalid test code');
           }
+          ref.read(isHostModeProvider.notifier).state = _isHostMode;
           ref.read(debugMockSessionProvider.notifier).state = true;
         } else {
           if (mounted) setState(() => _otpRequested = true);
@@ -114,6 +123,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
           phone: _phoneController.text.trim(),
           code: _otpController.text.trim(),
         );
+        ref.read(isHostModeProvider.notifier).state = _isHostMode;
       } else {
         await _auth.requestSmsOtp(_phoneController.text.trim());
         if (mounted) setState(() => _otpRequested = true);
@@ -140,42 +150,16 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 84,
-                      height: 84,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF6366F1),
-                            Color(0xFF8B5CF6),
-                            Color(0xFFFF2A85),
-                          ],
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x406366F1),
-                            blurRadius: 24,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.graphic_eq_rounded,
-                          color: Colors.white,
-                          size: 42,
-                        ),
-                      ),
-                    ),
+                  const Center(
+                    child: FriendooLogo(fontSize: 42),
                   ),
                   const SizedBox(height: 24),
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF6366F1), Color(0xFFFF2A85)],
@@ -216,6 +200,17 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                     ),
                   ),
                   const SizedBox(height: 32),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: false, label: Text('User')),
+                      ButtonSegment(value: true, label: Text('Host')),
+                    ],
+                    selected: {_isHostMode},
+                    onSelectionChanged: (selected) {
+                      setState(() => _isHostMode = selected.first);
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
@@ -242,7 +237,10 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEE2E2),
                         borderRadius: BorderRadius.circular(12),
@@ -250,7 +248,11 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            color: Color(0xFFDC2626),
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -340,7 +342,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   late Future<List<HostProfile>> _hosts;
   int _selectedFilter = 0;
   int _currentTabIndex = 0;
-  bool _isHostMode = false;
 
   @override
   void initState() {
@@ -368,9 +369,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   Widget build(BuildContext context) {
     ref.listen(activeCallProvider, (previous, next) {
       if (next.hasError && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not start call: ${next.error}')),
-        );
+        final err = next.error.toString();
+        if (err.contains('15 coins') || err.contains('recharge')) {
+          CoinPackagesPage.push(context, isCallRecharge: true);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not start call: ${next.error}')),
+          );
+        }
       }
     });
 
@@ -384,156 +390,163 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     });
 
     final activeCall = ref.watch(activeCallProvider).asData?.value;
+    final isHost = ref.watch(isHostModeProvider);
+
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
-                    value: false,
-                    label: Text('User flow'),
-                    icon: Icon(Icons.person_rounded, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    label: Text('Host flow'),
-                    icon: Icon(Icons.stars_rounded, size: 16),
-                  ),
-                ],
-                selected: {_isHostMode},
-                onSelectionChanged: (set) {
-                  setState(() {
-                    _isHostMode = set.first;
-                    _currentTabIndex = 0;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
       bottomSheet: activeCall == null
           ? null
           : LiveCallOverlay(call: activeCall),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentTabIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentTabIndex = index;
-          });
-        },
-        destinations: _isHostMode
-            ? const [
-                NavigationDestination(
-                  icon: Icon(Icons.dashboard_outlined),
-                  selectedIcon: Icon(Icons.dashboard_rounded),
-                  label: 'Dashboard',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.call_outlined),
-                  selectedIcon: Icon(Icons.call_rounded),
-                  label: 'Requests',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.monetization_on_outlined),
-                  selectedIcon: Icon(Icons.monetization_on_rounded),
-                  label: 'Earnings',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.badge_outlined),
-                  selectedIcon: Icon(Icons.badge_rounded),
-                  label: 'Host Profile',
-                ),
-              ]
-            : const [
-                NavigationDestination(
-                  icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore_rounded),
-                  label: 'Discover',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.call_outlined),
-                  selectedIcon: Icon(Icons.call_rounded),
-                  label: 'Calls',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.account_balance_wallet_outlined),
-                  selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-                  label: 'Wallet',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  selectedIcon: Icon(Icons.person_rounded),
-                  label: 'Profile',
-                ),
-              ],
-      ),
-      body: IndexedStack(
-        index: _currentTabIndex,
-        children: _isHostMode
-            ? [
-                const _HostDashboardTab(),
-                _CallsTab(onStartCall: _startAudioCall),
-                const FriendooHostEarningsView(),
-                _ProfileTab(onSignOut: _signOut),
-              ]
-            : [
-                // Tab 0: Discover Lounge
-                RefreshIndicator(
-                  onRefresh: _refreshHosts,
-                  child: FutureBuilder<List<HostProfile>>(
-                    future: _hosts,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState != ConnectionState.done) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return _DiscoverMessageState(
-                          icon: Icons.wifi_off_rounded,
-                          title: 'The host lounge is taking a breath',
-                          message: 'Pull down to reconnect and see who is available.',
-                          onRetry: _refreshHosts,
-                        );
-                      }
-
-                      final hosts = snapshot.data ?? const <HostProfile>[];
-                      return FriendooDashboardView(
-                        hosts: hosts,
-                        selectedFilter: _selectedFilter,
-                        filters: _filters,
-                        onFilterSelected: (index) {
-                          setState(() => _selectedFilter = index);
-                        },
-                        onStartCall: _startAudioCall,
-                        onSignOut: _signOut,
-                        onOpenActivity: () {
-                          setState(() => _currentTabIndex = 1);
-                        },
-                        onOpenWallet: () {
-                          setState(() => _currentTabIndex = 2);
-                        },
-                      );
-                    },
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFEDE9FE), // Soft lavender pill
+          elevation: 8,
+          shadowColor: Colors.black.withValues(alpha: 0.08),
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF4F46E5),
+              );
+            }
+            return const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF94A3B8),
+            );
+          }),
+          iconTheme: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const IconThemeData(
+                color: Color(0xFF4F46E5),
+                size: 24,
+              );
+            }
+            return const IconThemeData(
+              color: Color(0xFF94A3B8),
+              size: 24,
+            );
+          }),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentTabIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentTabIndex = index;
+            });
+          },
+          destinations: isHost
+              ? const [
+                  NavigationDestination(
+                    icon: Icon(Icons.dashboard_outlined),
+                    selectedIcon: Icon(Icons.dashboard_rounded),
+                    label: 'Dashboard',
                   ),
-                ),
-                // Tab 1: Calls History
-                FriendooAnalyticsView(
-                  onExplore: () {
-                    setState(() => _currentTabIndex = 0);
-                  },
-                  onStartCall: _startAudioCall,
-                ),
-                // Tab 2: Wallet & Coins Shop
-                const FriendooWalletView(),
-                // Tab 3: User Profile & Account Settings
-                FriendooProfileView(onSignOut: _signOut),
-              ],
+                  NavigationDestination(
+                    icon: Icon(Icons.call_outlined),
+                    selectedIcon: Icon(Icons.call_rounded),
+                    label: 'Requests',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.monetization_on_outlined),
+                    selectedIcon: Icon(Icons.monetization_on_rounded),
+                    label: 'Earnings',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.badge_outlined),
+                    selectedIcon: Icon(Icons.badge_rounded),
+                    label: 'Host Profile',
+                  ),
+                ]
+              : const [
+                  NavigationDestination(
+                    icon: Icon(Icons.explore_outlined),
+                    selectedIcon: Icon(Icons.explore_rounded),
+                    label: 'Discover',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.call_outlined),
+                    selectedIcon: Icon(Icons.call_rounded),
+                    label: 'Calls',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.account_balance_wallet_outlined),
+                    selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+                    label: 'Wallet',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded),
+                    selectedIcon: Icon(Icons.person_rounded),
+                    label: 'Profile',
+                  ),
+                ],
+        ),
+      ),
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: IndexedStack(
+          index: _currentTabIndex,
+          children: isHost
+              ? [
+                  const _HostDashboardTab(),
+                  _CallsTab(onStartCall: _startAudioCall),
+                  const FriendooHostEarningsView(),
+                  _ProfileTab(onSignOut: _signOut),
+                ]
+              : [
+                  // Tab 0: Discover Lounge
+                  RefreshIndicator(
+                    onRefresh: _refreshHosts,
+                    child: FutureBuilder<List<HostProfile>>(
+                      future: _hosts,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return _DiscoverMessageState(
+                            icon: Icons.wifi_off_rounded,
+                            title: 'The host lounge is taking a breath',
+                            message: 'Pull down to reconnect and see who is available.',
+                            onRetry: _refreshHosts,
+                          );
+                        }
+
+                        final hosts = snapshot.data ?? const <HostProfile>[];
+                        return FriendooDashboardView(
+                          hosts: hosts,
+                          selectedFilter: _selectedFilter,
+                          filters: _filters,
+                          onFilterSelected: (index) {
+                            setState(() => _selectedFilter = index);
+                          },
+                          onStartCall: _startAudioCall,
+                          onSignOut: _signOut,
+                          onOpenActivity: () {
+                            setState(() => _currentTabIndex = 1);
+                          },
+                          onOpenWallet: () {
+                            setState(() => _currentTabIndex = 2);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  // Tab 1: Calls History
+                  FriendooAnalyticsView(
+                    onExplore: () {
+                      setState(() => _currentTabIndex = 0);
+                    },
+                    onStartCall: _startAudioCall,
+                  ),
+                  // Tab 2: Wallet & Coins Shop
+                  const FriendooWalletView(),
+                  // Tab 3: User Profile & Account Settings
+                  FriendooProfileView(onSignOut: _signOut),
+                ],
+        ),
       ),
     );
   }
@@ -1288,8 +1301,37 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const IncomingCallListener(child: DiscoverPage());
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(currentUserProfileStreamProvider);
+    final isHostMode = ref.watch(isHostModeProvider);
+
+    return IncomingCallListener(
+      child: profileAsync.when(
+        data: (profile) {
+          final trimmed = profile?.displayName.trim().toLowerCase() ?? '';
+          final isProfileIncomplete = profile == null ||
+              trimmed.isEmpty ||
+              trimmed == 'user' ||
+              trimmed == 'friendoo user' ||
+              trimmed == 'host' ||
+              profile.avatarUrl == null ||
+              profile.avatarUrl!.isEmpty;
+
+          if (isProfileIncomplete) {
+            return NameAndDobSetupPage(
+              isHostInitial: isHostMode,
+            );
+          }
+
+          return const DiscoverPage();
+        },
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, st) => const DiscoverPage(),
+      ),
+    );
+  }
 }
 
 class IncomingCallListener extends ConsumerStatefulWidget {
@@ -1405,14 +1447,18 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
         );
       } else {
         _reportedCallIds.add(call.id);
-        ref.read(callRepositoryProvider).submitCallReport(
-          callId: call.id,
-          reason: 'Reported by host from call history',
-        );
+        ref
+            .read(callRepositoryProvider)
+            .submitCallReport(
+              callId: call.id,
+              reason: 'Reported by host from call history',
+            );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFFDC2626),
-            content: Text('User ${call.otherPartyName} reported to Trust & Safety team.'),
+            content: Text(
+              'User ${call.otherPartyName} reported to Trust & Safety team.',
+            ),
             action: SnackBarAction(
               label: 'Undo',
               textColor: Colors.white,
@@ -1436,7 +1482,8 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
         children: [
           _HostCallsHeader(
             onFilter: () => _showHostFilterSheet(context, const []),
-            onToggleReportMode: () => setState(() => _isReportMode = !_isReportMode),
+            onToggleReportMode: () =>
+                setState(() => _isReportMode = !_isReportMode),
             isReportMode: _isReportMode,
           ),
           const SizedBox(height: 24),
@@ -1450,32 +1497,45 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
         List<CallHistoryItem> filtered = List.from(allCalls);
         if (_selectedFilterIndex == 1) {
           // Today
-          filtered = filtered.where((c) =>
-            c.createdAt.year == now.year &&
-            c.createdAt.month == now.month &&
-            c.createdAt.day == now.day
-          ).toList();
+          filtered = filtered
+              .where(
+                (c) =>
+                    c.createdAt.year == now.year &&
+                    c.createdAt.month == now.month &&
+                    c.createdAt.day == now.day,
+              )
+              .toList();
         } else if (_selectedFilterIndex == 2) {
           // This Week (last 7 days)
-          filtered = filtered.where((c) => now.difference(c.createdAt).inDays <= 7).toList();
+          filtered = filtered
+              .where((c) => now.difference(c.createdAt).inDays <= 7)
+              .toList();
         } else if (_selectedFilterIndex == 3) {
           // This Month
-          filtered = filtered.where((c) =>
-            c.createdAt.year == now.year &&
-            c.createdAt.month == now.month
-          ).toList();
+          filtered = filtered
+              .where(
+                (c) =>
+                    c.createdAt.year == now.year &&
+                    c.createdAt.month == now.month,
+              )
+              .toList();
         } else if (_selectedFilterIndex == 4) {
           // Highest Earnings
-          filtered.sort((a, b) => b.displayEarnedInr.compareTo(a.displayEarnedInr));
+          filtered.sort(
+            (a, b) => b.displayEarnedInr.compareTo(a.displayEarnedInr),
+          );
         } else if (_selectedFilterIndex == 5) {
           // Longest Calls
-          filtered.sort((a, b) => (b.durationSeconds ?? (b.durationMinutes * 60))
-              .compareTo(a.durationSeconds ?? (a.durationMinutes * 60)));
+          filtered.sort(
+            (a, b) => (b.durationSeconds ?? (b.durationMinutes * 60)).compareTo(
+              a.durationSeconds ?? (a.durationMinutes * 60),
+            ),
+          );
         }
 
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
           children: [
             // ==========================================
             // 1. HOST CALLS HEADER
@@ -1484,57 +1544,11 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
             // ==========================================
             _HostCallsHeader(
               onFilter: () => _showHostFilterSheet(context, allCalls),
-              onToggleReportMode: () => setState(() => _isReportMode = !_isReportMode),
+              onToggleReportMode: () =>
+                  setState(() => _isReportMode = !_isReportMode),
               isReportMode: _isReportMode,
             ),
             const SizedBox(height: 14),
-
-            // Horizontal Filter Chips (All Calls, Today, This Week, This Month, Highest Earnings, Longest Calls)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _HostFilterChip(
-                    label: 'All Calls',
-                    selected: _selectedFilterIndex == 0,
-                    onTap: () => setState(() => _selectedFilterIndex = 0),
-                  ),
-                  const SizedBox(width: 8),
-                  _HostFilterChip(
-                    label: 'Today',
-                    selected: _selectedFilterIndex == 1,
-                    onTap: () => setState(() => _selectedFilterIndex = 1),
-                  ),
-                  const SizedBox(width: 8),
-                  _HostFilterChip(
-                    label: 'This Week',
-                    selected: _selectedFilterIndex == 2,
-                    onTap: () => setState(() => _selectedFilterIndex = 2),
-                  ),
-                  const SizedBox(width: 8),
-                  _HostFilterChip(
-                    label: 'This Month',
-                    selected: _selectedFilterIndex == 3,
-                    onTap: () => setState(() => _selectedFilterIndex = 3),
-                  ),
-                  const SizedBox(width: 8),
-                  _HostFilterChip(
-                    label: 'Highest Earnings',
-                    icon: Icons.trending_up_rounded,
-                    selected: _selectedFilterIndex == 4,
-                    onTap: () => setState(() => _selectedFilterIndex = 4),
-                  ),
-                  const SizedBox(width: 8),
-                  _HostFilterChip(
-                    label: 'Longest Calls',
-                    icon: Icons.timer_outlined,
-                    selected: _selectedFilterIndex == 5,
-                    onTap: () => setState(() => _selectedFilterIndex = 5),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
 
             // ==========================================
             // 2. HOST CALL HISTORY ITEMS (User called Host)
@@ -1562,92 +1576,101 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
   void _showHostFilterSheet(BuildContext context, List<CallHistoryItem> calls) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => SafeArea(
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Filter Call History',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: FriendooUiColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _HostFilterOptionTile(
+                  title: 'All Calls',
+                  subtitle: 'Show all recorded caller sessions',
+                  selected: _selectedFilterIndex == 0,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 0);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _HostFilterOptionTile(
+                  title: 'Today',
+                  subtitle: 'Calls received today',
+                  selected: _selectedFilterIndex == 1,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 1);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _HostFilterOptionTile(
+                  title: 'This Week',
+                  subtitle: 'Calls from the past 7 days',
+                  selected: _selectedFilterIndex == 2,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 2);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _HostFilterOptionTile(
+                  title: 'This Month',
+                  subtitle: 'Calls during the current calendar month',
+                  selected: _selectedFilterIndex == 3,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 3);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _HostFilterOptionTile(
+                  title: 'Highest Earnings',
+                  subtitle: 'Sorted by amount earned descending',
+                  selected: _selectedFilterIndex == 4,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 4);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+                _HostFilterOptionTile(
+                  title: 'Longest Calls',
+                  subtitle: 'Sorted by duration descending',
+                  selected: _selectedFilterIndex == 5,
+                  onTap: () {
+                    setState(() => _selectedFilterIndex = 5);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Filter Call History',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: FriendooUiColors.ink,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _HostFilterOptionTile(
-              title: 'All Calls',
-              subtitle: 'Show all recorded caller sessions',
-              selected: _selectedFilterIndex == 0,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 0);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _HostFilterOptionTile(
-              title: 'Today',
-              subtitle: 'Calls received today',
-              selected: _selectedFilterIndex == 1,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 1);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _HostFilterOptionTile(
-              title: 'This Week',
-              subtitle: 'Calls from the past 7 days',
-              selected: _selectedFilterIndex == 2,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 2);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _HostFilterOptionTile(
-              title: 'This Month',
-              subtitle: 'Calls during the current calendar month',
-              selected: _selectedFilterIndex == 3,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 3);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _HostFilterOptionTile(
-              title: 'Highest Earnings',
-              subtitle: 'Sorted by amount earned descending',
-              selected: _selectedFilterIndex == 4,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 4);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _HostFilterOptionTile(
-              title: 'Longest Calls',
-              subtitle: 'Sorted by duration descending',
-              selected: _selectedFilterIndex == 5,
-              onTap: () {
-                setState(() => _selectedFilterIndex = 5);
-                Navigator.of(ctx).pop();
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1685,15 +1708,6 @@ class _HostCallsHeader extends StatelessWidget {
                   height: 1.15,
                 ),
               ),
-              SizedBox(height: 4),
-              Text(
-                'Your call history and earnings',
-                style: TextStyle(
-                  color: FriendooUiColors.muted,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ],
           ),
         ),
@@ -1707,7 +1721,10 @@ class _HostCallsHeader extends StatelessWidget {
               onTap: onFilter,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(12),
@@ -1716,7 +1733,11 @@ class _HostCallsHeader extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.filter_list_rounded, size: 16, color: FriendooUiColors.ink),
+                    Icon(
+                      Icons.filter_list_rounded,
+                      size: 16,
+                      color: FriendooUiColors.ink,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Filter',
@@ -1738,20 +1759,32 @@ class _HostCallsHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
-                  color: isReportMode ? const Color(0xFFDC2626) : const Color(0xFFFEF2F2),
+                  color: isReportMode
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isReportMode ? const Color(0xFFDC2626) : const Color(0xFFFECACA)),
+                    color: isReportMode
+                        ? const Color(0xFFDC2626)
+                        : const Color(0xFFFECACA),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isReportMode ? Icons.check_rounded : Icons.shield_outlined,
+                      isReportMode
+                          ? Icons.check_rounded
+                          : Icons.shield_outlined,
                       size: 16,
-                      color: isReportMode ? Colors.white : const Color(0xFFDC2626),
+                      color: isReportMode
+                          ? Colors.white
+                          : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -1759,7 +1792,9 @@ class _HostCallsHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: isReportMode ? Colors.white : const Color(0xFFDC2626),
+                        color: isReportMode
+                            ? Colors.white
+                            : const Color(0xFFDC2626),
                       ),
                     ),
                   ],
@@ -1797,9 +1832,7 @@ class _HostCallHistoryCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isReported
-              ? const Color(0xFFFCA5A5)
-              : const Color(0xFFE5E7EB),
+          color: isReported ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB),
           width: isReported ? 1.4 : 1.1,
         ),
         boxShadow: [
@@ -1825,7 +1858,9 @@ class _HostCallHistoryCard extends StatelessWidget {
                 colors: [Color(0xFFEDE9FE), Color(0xFFE0E7FF)],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFC7D2FE).withOpacity(0.6)),
+              border: Border.all(
+                color: const Color(0xFFC7D2FE).withOpacity(0.6),
+              ),
             ),
             child: Center(
               child: Text(
@@ -1885,28 +1920,36 @@ class _HostCallHistoryCard extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 // Call Date/Time and Duration
-                Row(
-                  children: [
-                    Text(
-                      call.formattedDateTime,
-                      style: const TextStyle(
-                        color: Color(0xFF4B5563),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        call.formattedDateTime,
+                        style: const TextStyle(
+                          color: Color(0xFF4B5563),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    const Text('•', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
-                    const SizedBox(width: 5),
-                    Text(
-                      call.formattedDuration,
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(width: 5),
+                      const Text(
+                        '•',
+                        style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Text(
+                        call.formattedDuration,
+                        style: const TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1919,7 +1962,11 @@ class _HostCallHistoryCard extends StatelessWidget {
             isReported
                 ? OutlinedButton.icon(
                     onPressed: onToggleReport,
-                    icon: const Icon(Icons.undo_rounded, size: 14, color: Color(0xFFDC2626)),
+                    icon: const Icon(
+                      Icons.undo_rounded,
+                      size: 14,
+                      color: Color(0xFFDC2626),
+                    ),
                     label: const Text(
                       'Undo',
                       style: TextStyle(
@@ -1931,7 +1978,10 @@ class _HostCallHistoryCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFDC2626)),
                       backgroundColor: const Color(0xFFFEF2F2),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
@@ -1941,7 +1991,11 @@ class _HostCallHistoryCard extends StatelessWidget {
                   )
                 : FilledButton.icon(
                     onPressed: onToggleReport,
-                    icon: const Icon(Icons.shield_outlined, size: 14, color: Colors.white),
+                    icon: const Icon(
+                      Icons.shield_outlined,
+                      size: 14,
+                      color: Colors.white,
+                    ),
                     label: const Text(
                       'Report',
                       style: TextStyle(
@@ -1952,7 +2006,10 @@ class _HostCallHistoryCard extends StatelessWidget {
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFFDC2626),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
@@ -1976,11 +2033,16 @@ class _HostCallHistoryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFECFDF5),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.3),
+                    ),
                   ),
                   child: const Text(
                     'Earned',
@@ -2041,7 +2103,11 @@ class _HostFilterChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 13, color: selected ? Colors.white : const Color(0xFF6B7280)),
+              Icon(
+                icon,
+                size: 13,
+                color: selected ? Colors.white : const Color(0xFF6B7280),
+              ),
               const SizedBox(width: 4),
             ],
             Text(
@@ -2098,7 +2164,9 @@ class _HostFilterOptionTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w800,
-                      color: selected ? FriendooUiColors.blue : FriendooUiColors.ink,
+                      color: selected
+                          ? FriendooUiColors.blue
+                          : FriendooUiColors.ink,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -2113,7 +2181,9 @@ class _HostFilterOptionTile extends StatelessWidget {
               ),
             ),
             Icon(
-              selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
               color: selected ? FriendooUiColors.blue : const Color(0xFF9CA3AF),
               size: 20,
             ),
@@ -2138,7 +2208,11 @@ class _EmptyHostCallsSurface extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(Icons.phone_in_talk_outlined, size: 42, color: FriendooUiColors.blue),
+          Icon(
+            Icons.phone_in_talk_outlined,
+            size: 42,
+            color: FriendooUiColors.blue,
+          ),
           SizedBox(height: 12),
           Text(
             'No calls recorded for this filter',
@@ -2820,24 +2894,40 @@ class _ProfileTab extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text(
           'Sign out of Host Account?',
-          style: TextStyle(fontWeight: FontWeight.w900, color: FriendooUiColors.ink),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: FriendooUiColors.ink,
+          ),
         ),
-        content: const Text('Are you sure you want to log out of your Friendoo Host account?'),
+        content: const Text(
+          'Are you sure you want to log out of your Friendoo Host account?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: FriendooUiColors.pink,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
               onSignOut();
             },
-            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -2846,51 +2936,16 @@ class _ProfileTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileRepo = ref.watch(profileRepositoryProvider);
+    final profile = ref.watch(currentUserProfileStreamProvider).asData?.value;
     final hostStatsAsync = ref.watch(hostDashboardStatsProvider);
+    final hostName = profile?.displayName ?? 'Host';
+    final languages = profile?.preferredLanguages.isNotEmpty == true
+        ? profile!.preferredLanguages
+        : const <String>['Tamil', 'Hindi', 'English'];
 
-    return StreamBuilder<UserProfile?>(
-      stream: profileRepo.watchCurrentUserProfile(),
-      builder: (context, snapshot) {
-        final profile = snapshot.data;
-        final hostName = profile?.displayName ?? 'Priya Sharma';
-        final languages = profile?.preferredLanguages.isNotEmpty == true
-            ? profile!.preferredLanguages
-            : const <String>['Tamil', 'Hindi', 'English'];
-
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
           children: [
-            // Category Chip
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0xFFFFB703).withOpacity(0.5)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.stars_rounded, size: 14, color: Color(0xFFD97706)),
-                      SizedBox(width: 5),
-                      Text(
-                        'HOST PARTNER PROFILE',
-                        style: TextStyle(
-                          color: Color(0xFFB45309),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
             const Text(
               'Host Profile & Settings',
               style: TextStyle(
@@ -2899,11 +2954,6 @@ class _ProfileTab extends ConsumerWidget {
                 color: FriendooUiColors.ink,
                 letterSpacing: -0.8,
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Manage your host profile, payouts, earnings preferences, and performance insights.',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 12.5, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 20),
 
@@ -2977,10 +3027,16 @@ class _ProfileTab extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
+                                      colors: [
+                                        Color(0xFFFFB703),
+                                        Color(0xFFFF5400),
+                                      ],
                                     ),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -2995,7 +3051,10 @@ class _ProfileTab extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF3F4F6),
                                     borderRadius: BorderRadius.circular(6),
@@ -3038,12 +3097,20 @@ class _ProfileTab extends ConsumerWidget {
                         );
                       },
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Edit Host Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                      label: const Text(
+                        'Edit Host Profile',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: FriendooUiColors.ink,
                         side: const BorderSide(color: Color(0xFFE5E7EB)),
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
@@ -3066,20 +3133,51 @@ class _ProfileTab extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text('Rating', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w700)),
+                        const Text(
+                          'Rating',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        const Text('⭐ 4.9', style: TextStyle(color: FriendooUiColors.ink, fontSize: 16, fontWeight: FontWeight.w900)),
+                        const Text(
+                          '⭐ 4.9',
+                          style: TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                         const SizedBox(height: 1),
-                        const Text('142 reviews', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10)),
+                        const Text(
+                          '142 reviews',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(height: 36, width: 1, color: const Color(0xFFE5E7EB)),
+                  Container(
+                    height: 36,
+                    width: 1,
+                    color: const Color(0xFFE5E7EB),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text('Calls Done', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w700)),
+                        const Text(
+                          'Calls Done',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           hostStatsAsync.when(
@@ -3087,23 +3185,57 @@ class _ProfileTab extends ConsumerWidget {
                             loading: () => '150+',
                             error: (_, __) => '150+',
                           ),
-                          style: const TextStyle(color: Color(0xFF10B981), fontSize: 16, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                         const SizedBox(height: 1),
-                        const Text('Completed', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10)),
+                        const Text(
+                          'Completed',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(height: 36, width: 1, color: const Color(0xFFE5E7EB)),
+                  Container(
+                    height: 36,
+                    width: 1,
+                    color: const Color(0xFFE5E7EB),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text('Views', style: TextStyle(color: Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w700)),
+                        const Text(
+                          'Views',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        const Text('1.4k', style: TextStyle(color: FriendooUiColors.blue, fontSize: 16, fontWeight: FontWeight.w900)),
+                        const Text(
+                          '1.4k',
+                          style: TextStyle(
+                            color: FriendooUiColors.blue,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                         const SizedBox(height: 1),
-                        const Text('This month', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10)),
+                        const Text(
+                          'This month',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -3276,8 +3408,6 @@ class _ProfileTab extends ConsumerWidget {
             ),
           ],
         );
-      },
-    );
   }
 }
 
@@ -3374,72 +3504,15 @@ class _HostDashboardTab extends ConsumerStatefulWidget {
 class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
   bool? _isOnlineLocal;
 
-  static const _hostPromoItems = [
-    FriendooPromoItem(
-      title: 'BOOST YOUR PROFILE',
-      highlight: 'Get More Visibility',
-      subtitle: 'Higher placement in caller discovery searches',
-      badge: 'GROWTH 🚀',
-      gradient: LinearGradient(
-        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      icon: Icons.rocket_launch_rounded,
-    ),
-    FriendooPromoItem(
-      title: 'NEW OPPORTUNITIES',
-      highlight: 'High Caller Demand',
-      subtitle: 'Users are actively looking for friendly hosts right now',
-      badge: 'DEMAND ⚡',
-      gradient: LinearGradient(
-        colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      icon: Icons.phone_in_talk_rounded,
-    ),
-    FriendooPromoItem(
-      title: 'EARN MORE',
-      highlight: 'Peak Hours Bonus',
-      subtitle: 'Stay available during peak hours (8 PM – 12 AM)',
-      badge: 'PEAK HOURS 💰',
-      gradient: LinearGradient(
-        colors: [Color(0xFF10B981), Color(0xFF047857)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      icon: Icons.trending_up_rounded,
-    ),
-    FriendooPromoItem(
-      title: 'PRIVACY & SAFETY',
-      highlight: 'Your Safety Matters',
-      subtitle: 'Caller phone numbers are 100% masked and private',
-      badge: 'SECURITY 🛡️',
-      gradient: LinearGradient(
-        colors: [Color(0xFF141738), Color(0xFF4338CA)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      icon: Icons.verified_user_rounded,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(hostDashboardStatsProvider);
-    final profileAsync = ref
-        .watch(profileRepositoryProvider)
-        .watchCurrentUserProfile();
+    final userProfile = ref.watch(currentUserProfileStreamProvider).asData?.value;
+    final hostName = userProfile?.displayName ?? 'Host';
+    final languages =
+        userProfile?.preferredLanguages ?? const ['Tamil', 'English'];
 
-    return StreamBuilder<UserProfile?>(
-      stream: profileAsync,
-      builder: (context, profileSnap) {
-        final hostName = profileSnap.data?.displayName ?? 'Ananya S';
-        final userProfile = profileSnap.data;
-        final languages = userProfile?.preferredLanguages ?? const ['Tamil', 'English'];
-
-        return statsAsync.when(
+    return statsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
             child: Text(
@@ -3453,7 +3526,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
 
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
               children: [
                 // ==========================================
                 // 1. HOST FLOW HEADER
@@ -3465,9 +3538,14 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     const FriendooLogo(fontSize: 21),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3.5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isOnline ? const Color(0xFFECFDF5) : const Color(0xFFF3F4F6),
+                        color: isOnline
+                            ? const Color(0xFFECFDF5)
+                            : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: isOnline
@@ -3480,14 +3558,18 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         children: [
                           Icon(
                             Icons.circle_rounded,
-                            color: isOnline ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+                            color: isOnline
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF9CA3AF),
                             size: 6.5,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             isOnline ? 'Live' : 'Offline',
                             style: TextStyle(
-                              color: isOnline ? const Color(0xFF047857) : const Color(0xFF6B7280),
+                              color: isOnline
+                                  ? const Color(0xFF047857)
+                                  : const Color(0xFF6B7280),
                               fontSize: 10.5,
                               fontWeight: FontWeight.w900,
                             ),
@@ -3499,19 +3581,31 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
 
                     // Host Earnings Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: FriendooUiColors.softGold,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFFFD166).withOpacity(0.6)),
+                        border: Border.all(
+                          color: const Color(0xFFFFD166).withOpacity(0.6),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.currency_rupee_rounded, color: Color(0xFFD97706), size: 15),
+                          const Icon(
+                            Icons.currency_rupee_rounded,
+                            color: Color(0xFFD97706),
+                            size: 15,
+                          ),
                           const SizedBox(width: 2),
                           Text(
-                            '${stats.todayEarningsInr}',
+                            stats.totalEarningsInr.toString().replaceAllMapped(
+                              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                              (Match m) => '${m[1]},',
+                            ),
                             style: const TextStyle(
                               color: Color(0xFFB45309),
                               fontSize: 13,
@@ -3521,30 +3615,37 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
 
-                    // Notification Icon
-                    IconButton(
-                      icon: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Icon(Icons.notifications_none_rounded, color: FriendooUiColors.ink, size: 23),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: FriendooUiColors.pink,
-                                shape: BoxShape.circle,
+                    // Notification Icon (Compact, zero-overflow)
+                    InkWell(
+                      onTap: () => showFriendooNotificationsSheet(context),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Icon(
+                              Icons.notifications_none_rounded,
+                              color: FriendooUiColors.ink,
+                              size: 22,
+                            ),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: FriendooUiColors.pink,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      tooltip: 'Notifications',
-                      onPressed: () => showFriendooNotificationsSheet(context),
                     ),
                   ],
                 ),
@@ -3565,15 +3666,6 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Manage your availability and see what\'s happening',
-                  style: TextStyle(
-                    color: FriendooUiColors.muted,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
                 const SizedBox(height: 18),
 
                 // ==========================================
@@ -3584,7 +3676,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     color: isOnline ? const Color(0xFFECFDF5) : Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isOnline ? const Color(0xFF10B981) : const Color(0xFFE5E7EB),
+                      color: isOnline
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFE5E7EB),
                       width: isOnline ? 2.0 : 1.2,
                     ),
                     boxShadow: [
@@ -3610,12 +3704,15 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                 width: 12,
                                 height: 12,
                                 decoration: BoxDecoration(
-                                  color: isOnline ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+                                  color: isOnline
+                                      ? const Color(0xFF10B981)
+                                      : const Color(0xFF9CA3AF),
                                   shape: BoxShape.circle,
                                   boxShadow: isOnline
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF10B981).withOpacity(0.6),
+                                            color: const Color(0xFF10B981)
+                                                .withOpacity(0.6),
                                             blurRadius: 8,
                                             spreadRadius: 2,
                                           ),
@@ -3627,7 +3724,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                               Text(
                                 isOnline ? 'YOU ARE LIVE' : 'YOU ARE OFFLINE',
                                 style: TextStyle(
-                                  color: isOnline ? const Color(0xFF047857) : const Color(0xFF4B5563),
+                                  color: isOnline
+                                      ? const Color(0xFF047857)
+                                      : const Color(0xFF4B5563),
                                   fontSize: 15,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
@@ -3636,7 +3735,10 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: FriendooUiColors.softBlue,
                               borderRadius: BorderRadius.circular(10),
@@ -3678,7 +3780,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                             ref.invalidate(hostDashboardStatsProvider);
                           },
                           icon: Icon(
-                            isOnline ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                            isOnline
+                                ? Icons.pause_circle_filled_rounded
+                                : Icons.play_circle_fill_rounded,
                             size: 20,
                           ),
                           label: Text(
@@ -3689,7 +3793,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                             ),
                           ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: isOnline ? const Color(0xFFDC2626) : const Color(0xFF10B981),
+                            backgroundColor: isOnline
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF10B981),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -3762,8 +3868,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _HostStatCard(
-                        label: 'Today\'s Earnings',
-                        value: '₹${stats.todayEarningsInr}',
+                        label: 'Total Earnings',
+                        value:
+                            '₹${stats.totalEarningsInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
                         unit: 'Earned',
                         icon: Icons.monetization_on_rounded,
                         tint: FriendooUiColors.softGold,
@@ -3801,9 +3908,15 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                 const SizedBox(height: 24),
 
                 // ==========================================
-                // 5. HOST PROMOTIONAL / INFORMATION CAROUSEL
+                // 5. HOST TOP AD BANNER (SAME AS USER DISCOVER)
                 // ==========================================
-                const FriendooPromoCarousel(items: _hostPromoItems),
+                const LiveAdBannerWidget(placement: 'host_top_banner'),
+                const SizedBox(height: 24),
+
+                // ==========================================
+                // 5b. HOST BOTTOM AD BANNER (ABOVE RECENT ACTIVITY)
+                // ==========================================
+                const LiveAdBannerWidget(placement: 'host_bottom_banner'),
                 const SizedBox(height: 24),
 
                 // ==========================================
@@ -3934,10 +4047,16 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
+                                      colors: [
+                                        Color(0xFFFFB703),
+                                        Color(0xFFFF5400),
+                                      ],
                                     ),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -3986,7 +4105,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                           ref.invalidate(hostDashboardStatsProvider);
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor: isOnline ? const Color(0xFFDC2626) : const Color(0xFF10B981),
+                          backgroundColor: isOnline
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF10B981),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -4020,7 +4141,10 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: FriendooUiColors.ink,
-                          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.5),
+                          side: const BorderSide(
+                            color: Color(0xFFD1D5DB),
+                            width: 1.5,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -4072,7 +4196,10 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+                                  border: Border.all(
+                                    color: const Color(0xFF10B981),
+                                    width: 1.5,
+                                  ),
                                   boxShadow: const [
                                     BoxShadow(
                                       color: Color(0x1810B981),
@@ -4095,7 +4222,8 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Incoming ${c.callType.name.toUpperCase()} Call',
@@ -4119,9 +4247,13 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                     ),
                                     FilledButton(
                                       style: FilledButton.styleFrom(
-                                        backgroundColor: const Color(0xFF10B981),
+                                        backgroundColor: const Color(
+                                          0xFF10B981,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                       ),
                                       onPressed: () => ref
@@ -4143,8 +4275,6 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
             );
           },
         );
-      },
-    );
   }
 }
 
@@ -4185,16 +4315,22 @@ class _HostStatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: FriendooUiColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: FriendooUiColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
@@ -4289,13 +4425,3 @@ class _HostActivityTile extends StatelessWidget {
     );
   }
 }
-
-class _HostEarningsTab extends StatelessWidget {
-  const _HostEarningsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return const FriendooHostEarningsView();
-  }
-}
-

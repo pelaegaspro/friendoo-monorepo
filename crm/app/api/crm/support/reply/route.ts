@@ -1,61 +1,42 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { createInAppNotification, sendPushToUser } from "@/lib/notifications";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getOperationalAdminActorId, getSupabaseAdmin } from '@/lib/supabaseServer';
 
-interface SupportReplyBody {
-  ticketId: string;
-  message: string;
-  sendPush?: boolean;
-  sendInApp?: boolean;
-}
+export const dynamic = 'force-dynamic';
+
+type ReplyBody = { ticketId?: string; message?: string; internal?: boolean };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const body = await parseJsonBody<SupportReplyBody>(request);
-  if (!body.ticketId || !body.message?.trim()) {
-    return NextResponse.json({ error: "ticketId and message are required." }, { status: 400 });
-  }
-
-  const ticketRef = adminDb.collection("supportTickets").doc(body.ticketId);
-  const ticketDoc = await ticketRef.get();
-  if (!ticketDoc.exists) {
-    return NextResponse.json({ error: "Ticket not found." }, { status: 404 });
-  }
-  const ticket = ticketDoc.data() as Record<string, unknown>;
-  const text = body.message.trim();
-
-  await ticketRef.update({
-    messages: FieldValue.arrayUnion({
-      senderId: "admin",
-      senderName: "Support Team",
-      text,
-      sentAt: new Date(),
-      isAdmin: true,
-    }),
-    status: ticket.status === "open" ? "in_progress" : ticket.status,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  const userId = String(ticket.userId || "");
-  if (userId && body.sendPush !== false) {
-    await sendPushToUser(userId, "Friendoo Support", text.slice(0, 100), {
-      type: "support_reply",
-      ticketId: body.ticketId,
+  try {
+    const body = (await request.json()) as ReplyBody;
+    if (!body.ticketId || !body.message?.trim()) return NextResponse.json({ error: 'ticketId and message are required.' }, { status: 400 });
+    const supabase = getSupabaseAdmin();
+    const actorId = getOperationalAdminActorId();
+    const { data: ticket, error: ticketError } = await supabase.from('support_tickets').select('id, status').eq('id', body.ticketId).maybeSingle();
+    if (ticketError) throw ticketError;
+    if (!ticket) return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 });
+    if (ticket.status === 'closed') return NextResponse.json({ error: 'Closed tickets cannot receive replies.' }, { status: 409 });
+    const { data: message, error: messageError } = await supabase
+      .from('support_messages')
+      .insert({ ticket_id: body.ticketId, author_id: actorId, body: body.message.trim(), is_internal: Boolean(body.internal) })
+      .select('id, created_at')
+      .single();
+    if (messageError) throw messageError;
+    const { error: updateError } = await supabase.from('support_tickets').update({ assigned_to: actorId, status: body.internal ? 'in_progress' : 'waiting_for_user' }).eq('id', body.ticketId);
+    if (updateError) throw updateError;
+    const { error: eventError } = await supabase.from('operational_events').insert({
+      event_key: 'support-reply:' + message.id,
+      event_type: 'support_ticket.reply_added',
+      aggregate_type: 'support_ticket',
+      aggregate_id: body.ticketId,
+      actor_id: actorId,
+      payload: { internal: Boolean(body.internal) },
     });
+    if (eventError) throw eventError;
+    return NextResponse.json({ ok: true, messageId: message.id });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not add support reply.' }, { status: 500 });
   }
-  if (userId && body.sendInApp !== false) {
-    await createInAppNotification(userId, {
-      type: "support_reply",
-      title: "Support Team replied",
-      message: text,
-      ticketId: body.ticketId,
-      read: false,
-    });
-  }
-
-  return NextResponse.json({ ok: true });
 }

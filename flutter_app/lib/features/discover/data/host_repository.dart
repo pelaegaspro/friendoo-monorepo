@@ -14,7 +14,7 @@ final selectedRegionalLanguageProvider = StateProvider<String>(
 ); // Default to Tamil as requested
 
 final hostDashboardStatsProvider =
-    FutureProvider.autoDispose<HostDashboardStats>((ref) {
+    FutureProvider<HostDashboardStats>((ref) {
       final repo = ref.watch(hostRepositoryProvider);
       return repo.fetchHostDashboardStats();
     });
@@ -24,28 +24,52 @@ class HostRepository {
 
   final SupabaseClient _client;
 
+  /// Applies the 3/10 Star Host rule (Top 30% ranked hosts are marked as Star Hosts):
+  /// e.g. 10 hosts -> 3 star hosts, 20 hosts -> 6 star hosts, 30 hosts -> 9 star hosts.
+  static List<HostProfile> applyStarHostQuota(List<HostProfile> list) {
+    if (list.isEmpty) return list;
+
+    final sorted = List<HostProfile>.from(list)
+      ..sort((a, b) {
+        final scoreA = (a.rating * 1000) + a.totalCalls;
+        final scoreB = (b.rating * 1000) + b.totalCalls;
+        return scoreB.compareTo(scoreA);
+      });
+
+    final starQuota = (sorted.length * 0.3).ceil().clamp(1, sorted.length);
+    final Set<String> starIds = sorted.take(starQuota).map((h) => h.id).toSet();
+
+    return list.map((host) {
+      final isStar = starIds.contains(host.id);
+      return host.copyWith(
+        isStar: isStar,
+        vipTier: isStar ? HostVipTier.star : host.vipTier,
+      );
+    }).toList();
+  }
+
   Future<List<HostProfile>> fetchAvailableHosts() async {
     try {
       final rows = await _client
           .from('hosts')
           .select(
-            'id, bio, rate_per_audio_minute, is_available, is_star, gender, languages, profile:profiles!id(display_name)',
+            'id, bio, rate_per_audio_minute, is_available, is_star, gender, languages, profile:profiles!id(display_name, avatar_path)',
           )
           .eq('is_available', true);
 
       final hosts = (rows as List<dynamic>)
           .map((row) {
             final map = Map<String, dynamic>.from(row as Map<String, dynamic>);
-            if (map['profile'] != null &&
-                map['profile']['display_name'] != null) {
-              map['display_name'] = map['profile']['display_name'];
+            if (map['profile'] != null) {
+              map['display_name'] ??= map['profile']['display_name'];
+              map['avatar_path'] ??= map['profile']['avatar_path'];
             }
             return HostProfile.fromMap(map);
           })
           .where((host) => host.isFemale)
           .toList();
 
-      if (hosts.isNotEmpty) return hosts;
+      if (hosts.isNotEmpty) return applyStarHostQuota(hosts);
     } catch (_) {
       try {
         final rows = await _client
@@ -60,12 +84,12 @@ class HostRepository {
             .where((host) => host.isFemale)
             .toList();
 
-        if (hosts.isNotEmpty) return hosts;
+        if (hosts.isNotEmpty) return applyStarHostQuota(hosts);
       } catch (_) {}
     }
 
     // Female-only fallback hosts across the supported regional languages and age brackets.
-    return const [
+    return applyStarHostQuota(const [
       HostProfile(
         id: 'host_tamil_3',
         displayName: 'Ananya S',
@@ -178,7 +202,7 @@ class HostRepository {
         age: 52,
         city: 'Varanasi, Uttar Pradesh',
       ),
-    ];
+    ]);
   }
 
   Future<void> updateCurrentHostLanguages(List<String> languages) async {
@@ -296,6 +320,42 @@ class HostRepository {
         ratePerMinute: 5,
       );
     }
+  }
+
+  /// Checks if current Indian Standard Time (IST) is within Peak Surge Hours (8 PM - 12 AM)
+  static bool get isPeakSurgeHour {
+    final nowUtc = DateTime.now().toUtc();
+    final ist = nowUtc.add(const Duration(hours: 5, minutes: 30));
+    return ist.hour >= 20 || ist.hour < 1;
+  }
+
+  /// First-Call Guarantee Smart Match: Picks the highest rated available host
+  /// matching the user's preferred language in under 5 seconds.
+  Future<HostProfile?> findSmartMatchHost({String? preferredLanguage}) async {
+    final hosts = await fetchAvailableHosts();
+    if (hosts.isEmpty) return null;
+
+    if (preferredLanguage != null &&
+        preferredLanguage.isNotEmpty &&
+        preferredLanguage != 'All') {
+      final matching = hosts
+          .where(
+            (h) => h.languages.any(
+              (l) =>
+                  l.toLowerCase().trim() ==
+                  preferredLanguage.toLowerCase().trim(),
+            ),
+          )
+          .toList();
+      if (matching.isNotEmpty) {
+        matching.sort((a, b) => b.rating.compareTo(a.rating));
+        return matching.first;
+      }
+    }
+
+    final sorted = List<HostProfile>.from(hosts)
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    return sorted.first;
   }
 
   Future<void> setHostAvailability(bool isAvailable) async {

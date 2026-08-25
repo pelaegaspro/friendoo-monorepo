@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../../discover/presentation/desi_avatar.dart';
 import '../application/call_controller.dart';
 import '../data/call_repository.dart';
 
@@ -24,10 +25,8 @@ class CallReportBottomSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CallReportBottomSheet(
-        callId: callId,
-        autoEndCall: autoEndCall,
-      ),
+      builder: (_) =>
+          CallReportBottomSheet(callId: callId, autoEndCall: autoEndCall),
     );
   }
 
@@ -121,26 +120,18 @@ class CallReportBottomSheet extends ConsumerStatefulWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: calls.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (ctx, idx) {
                   final call = calls[idx];
-                  final initial = call.otherPartyName.isNotEmpty
-                      ? call.otherPartyName.substring(0, 1).toUpperCase()
-                      : 'U';
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF374151),
-                        ),
-                      ),
+                    leading: DesiAvatar(
+                      seed: call.otherPartyName,
+                      gender: DesiGender.female,
+                      size: 44,
                     ),
                     title: Text(
                       call.otherPartyName,
@@ -187,10 +178,11 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
   bool _isSubmitting = false;
 
   static const _reasons = [
+    'Host Silent / Not Speaking / Time Wasting (100% User Refund & Host Strike)',
     'Harassment or Abusive Language',
     'Asked for Money / UPI / Offline Payment',
     'Spam, Scams or Solicitation',
-    'Silent Call / Distorted Audio',
+    'Distorted Audio / Echo Loop',
     'Safety or Privacy Violation',
     'Other Inappropriate Behavior',
   ];
@@ -202,24 +194,29 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
   }
 
   Future<void> _submitReport() async {
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isSubmitting = true);
     try {
       if (widget.autoEndCall) {
-        await ref.read(activeCallProvider.notifier).reportAndEndActiveCall(
-          reason: _selectedReason,
-          details: _detailsController.text.trim(),
-        );
+        await ref
+            .read(activeCallProvider.notifier)
+            .reportAndEndActiveCall(
+              reason: _selectedReason,
+              details: _detailsController.text.trim(),
+            );
       } else {
-        await ref.read(callRepositoryProvider).submitCallReport(
-          callId: widget.callId,
-          reason: _selectedReason,
-          details: _detailsController.text.trim(),
-        );
+        await ref
+            .read(callRepositoryProvider)
+            .submitCallReport(
+              callId: widget.callId,
+              reason: _selectedReason,
+              details: _detailsController.text.trim(),
+            );
       }
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             backgroundColor: Color(0xFF10B981),
             content: Row(
@@ -239,7 +236,12 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
     } catch (_) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        Navigator.of(context).pop();
+        messenger.showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFFDC2626),
+            content: Text('Unable to submit the report. Please try again.'),
+          ),
+        );
       }
     }
   }
@@ -330,8 +332,12 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
                   selected: isSelected,
                   selectedColor: colors.errorContainer,
                   labelStyle: TextStyle(
-                    color: isSelected ? colors.onErrorContainer : colors.onSurface,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected
+                        ? colors.onErrorContainer
+                        : colors.onSurface,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     fontSize: 13,
                   ),
                   onSelected: (_) {
@@ -381,7 +387,9 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+              onPressed: _isSubmitting
+                  ? null
+                  : () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
           ],

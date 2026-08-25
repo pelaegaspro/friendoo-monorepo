@@ -1,102 +1,43 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-interface CreateTicketBody {
-  userId: string;
-  hostId?: string;
-  type: "user_complaint" | "host_complaint" | "refund_request" | "general";
-  subject: string;
-  description: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  assignedTo?: string;
-  flaggedUserId?: string;
+function profileNameMap(rows: { id: string; display_name: string }[] | null) {
+  return new Map((rows ?? []).map((row) => [row.id, row.display_name]));
 }
 
 export async function GET(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const status = request.nextUrl.searchParams.get("status");
   try {
-    let query = adminDb.collection("supportTickets").orderBy("updatedAt", "desc");
-    if (status && status !== "all") {
-      query = query.where("status", "==", status) as typeof query;
-    }
-    const ticketsSnap = await query.limit(100).get();
-    const tickets = ticketsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    return NextResponse.json({ tickets });
-  } catch {
-    const mockTickets = [
-      {
-        id: "t-001",
-        userId: "usr_99182",
-        type: "refund_request",
-        subject: "Coin deduction on disconnected call",
-        description: "Call disconnected after 4 seconds but 20 coins were deducted from wallet balance.",
-        status: "open",
-        priority: "high",
-        assignedTo: "Support Lead",
-        createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-        updatedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      },
-      {
-        id: "t-002",
-        userId: "usr_88210",
-        type: "user_complaint",
-        subject: "Audio echo during host session",
-        description: "Severe robotic feedback heard on mobile audio connection with host Priya.",
-        status: "open",
-        priority: "medium",
-        assignedTo: "Quality Agent",
-        createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-        updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      },
-      {
-        id: "t-003",
-        userId: "usr_33190",
-        type: "general",
-        subject: "VIP Tier badge unlock inquiry",
-        description: "User purchased 500 coins package and requested VIP Gold Lounge badge activation.",
-        status: "resolved",
-        priority: "low",
-        assignedTo: "Concierge Team",
-        createdAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-        updatedAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-      },
-    ];
-    const filtered = status && status !== "all" ? mockTickets.filter(t => t.status === status) : mockTickets;
-    return NextResponse.json({ tickets: filtered });
+    const supabase = getSupabaseAdmin();
+    const { data: rows, error } = await supabase
+      .from('support_tickets')
+      .select('id, reporter_id, subject, category, priority, status, assigned_to, metadata, created_at, updated_at, resolved_at')
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    const ids = Array.from(new Set((rows ?? []).flatMap((ticket) => [ticket.reporter_id, ticket.assigned_to]).filter(Boolean)));
+    const { data: profiles, error: profilesError } = ids.length
+      ? await supabase.from('profiles').select('id, display_name').in('id', ids)
+      : { data: [], error: null };
+    if (profilesError) throw profilesError;
+    const names = profileNameMap(profiles);
+    const ticketList = (rows ?? []).map((ticket) => ({
+      ...ticket,
+      userId: ticket.reporter_id,
+      userName: ticket.reporter_id ? names.get(ticket.reporter_id) ?? 'Anonymous' : 'Anonymous',
+      assignedToName: ticket.assigned_to ? names.get(ticket.assigned_to) ?? null : null,
+      createdAt: ticket.created_at,
+      updatedAt: ticket.updated_at,
+      resolvedAt: ticket.resolved_at,
+      internalNotes: (ticket.metadata as Record<string, unknown> | null)?.internal_notes ?? '',
+    }));
+    return NextResponse.json({ tickets: ticketList });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not load support tickets.' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
-  const unauthorized = requireCrmAuth(request);
-  if (unauthorized) return unauthorized;
-
-  const body = await parseJsonBody<CreateTicketBody>(request);
-  if (!body.userId || !body.subject?.trim()) {
-    return NextResponse.json({ error: "userId and subject are required." }, { status: 400 });
-  }
-
-  const ticketRef = await adminDb.collection("supportTickets").add({
-    userId: body.userId,
-    hostId: body.hostId || null,
-    type: body.type,
-    subject: body.subject,
-    description: body.description || "",
-    status: "open",
-    priority: body.priority || "medium",
-    assignedTo: body.assignedTo || "",
-    flaggedUserId: body.flaggedUserId || null,
-    messages: [],
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-    resolvedAt: null,
-  });
-
-  return NextResponse.json({ ok: true, ticketId: ticketRef.id });
-}

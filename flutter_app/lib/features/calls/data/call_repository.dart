@@ -8,7 +8,9 @@ final callRepositoryProvider = Provider<CallRepository>(
   (ref) => CallRepository(ref.watch(supabaseProvider)),
 );
 
-final callHistoryProvider = FutureProvider.autoDispose<List<CallHistoryItem>>((ref) {
+final callHistoryProvider = FutureProvider.autoDispose<List<CallHistoryItem>>((
+  ref,
+) {
   final repo = ref.watch(callRepositoryProvider);
   return repo.fetchCallHistory();
 });
@@ -45,7 +47,10 @@ class CallRepository {
 
   Future<void> pingHeartbeat(String callId) async {
     try {
-      await _client.rpc('ping_friendoo_call_heartbeat', params: {'p_call_id': callId});
+      await _client.rpc(
+        'ping_friendoo_call_heartbeat',
+        params: {'p_call_id': callId},
+      );
     } catch (_) {
       // Non-blocking network ping
     }
@@ -59,32 +64,31 @@ class CallRepository {
     return AgoraJoinCredentials.fromMap(response.data as Map<String, dynamic>);
   }
 
-  Stream<List<CallSession>> watchIncomingCalls() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return const Stream.empty();
-    return _client
-        .from('calls')
-        .stream(primaryKey: ['id'])
-        .eq('host_id', userId)
-        .eq('status', 'ringing')
-        .map(
-          (rows) => rows
-              .map((row) => CallSession.fromMap(row))
-              .where(
-                (call) =>
-                    call.expiresAt == null ||
-                    call.expiresAt!.isAfter(DateTime.now().toUtc()),
-              )
-              .toList(growable: false),
-        );
+  Future<VideoSdkJoinCredentials> getVideoSdkCredentials(String callId) async {
+    final response = await _client.functions.invoke(
+      'videosdk-token',
+      body: {'call_id': callId},
+    );
+    return VideoSdkJoinCredentials.fromMap(
+      response.data as Map<String, dynamic>,
+    );
   }
 
-  Stream<CallSession> watchCall(String callId) {
-    return _client
-        .from('calls')
-        .stream(primaryKey: ['id'])
-        .eq('id', callId)
-        .map((rows) => CallSession.fromMap(rows.single));
+  Stream<List<CallSession>> watchIncomingCalls() async* {
+    yield const <CallSession>[];
+  }
+
+  Stream<CallSession> watchCall(String callId) async* {
+    try {
+      final row = await _client
+          .from('calls')
+          .select()
+          .eq('id', callId)
+          .maybeSingle();
+      if (row != null) {
+        yield CallSession.fromMap(row);
+      }
+    } catch (_) {}
   }
 
   Future<List<CallHistoryItem>> fetchCallHistory({bool? isHostFlow}) async {
@@ -93,18 +97,23 @@ class CallRepository {
       try {
         final rows = await _client
             .from('calls')
-            .select('id, caller_id, host_id, call_type, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at, host:hosts(display_name:profiles!id(display_name)), caller:profiles!caller_id(display_name)')
+            .select(
+              'id, caller_id, host_id, call_type, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at, host:hosts(display_name:profiles!id(display_name)), caller:profiles!caller_id(display_name)',
+            )
             .or('caller_id.eq.$userId,host_id.eq.$userId')
             .order('created_at', ascending: false)
             .limit(30);
 
         final list = (rows as List<dynamic>)
-            .map((row) => CallHistoryItem.fromMap(row as Map<String, dynamic>, currentUserId: userId))
+            .map(
+              (row) => CallHistoryItem.fromMap(
+                row as Map<String, dynamic>,
+                currentUserId: userId,
+              ),
+            )
             .toList();
         if (list.isNotEmpty) return list;
-      } catch (_) {
-        // Fallback to sample history below
-      }
+      } catch (_) {}
     }
 
     final now = DateTime.now();

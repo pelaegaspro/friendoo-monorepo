@@ -1,42 +1,57 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 
+import '../../ads/data/banner_ad_repository.dart';
+
 final walletRepositoryProvider = Provider<WalletRepository>(
   (ref) => WalletRepository(ref.watch(supabaseProvider)),
 );
 
-final walletStreamProvider = StreamProvider.autoDispose<WalletSnapshot>((ref) {
+final walletStreamProvider = StreamProvider<WalletSnapshot>((ref) {
   final repo = ref.watch(walletRepositoryProvider);
   return repo.watchCurrentWallet();
 });
 
-final coinPackagesProvider =
-    FutureProvider.autoDispose<List<CoinPackage>>((ref) {
+final coinPackagesProvider = FutureProvider<List<CoinPackage>>((ref) async {
   final repo = ref.watch(walletRepositoryProvider);
-  return repo.fetchCoinPackages();
+  final basePackages = await repo.fetchCoinPackages();
+  final promoFlashPackage = ref.watch(activeFlashPackageProvider);
+
+  if (promoFlashPackage != null) {
+    return [
+      promoFlashPackage,
+      ...basePackages.where((p) => p.coins != promoFlashPackage.coins),
+    ];
+  }
+  return basePackages;
 });
 
-final walletTransactionsProvider =
-    FutureProvider.autoDispose<List<WalletTransactionItem>>((ref) {
+final walletTransactionsProvider = FutureProvider<List<WalletTransactionItem>>((
+  ref,
+) {
   final repo = ref.watch(walletRepositoryProvider);
   return repo.fetchTransactions();
 });
 
-final isFirstTimeBuyerProvider = FutureProvider.autoDispose<bool>((ref) async {
+final isFirstTimeBuyerProvider = FutureProvider<bool>((ref) async {
   final transactions = await ref.watch(walletTransactionsProvider.future);
-  // User is first time buyer if they have never done a paid recharge
+  // A user is a first-time buyer if they have never completed a paid recharge.
+  // We check for credit transactions with a positive amount — this is more
+  // reliable than matching the description string which may be null or change.
   final hasPurchased = transactions.any(
-    (tx) =>
-        tx.type == 'credit' && (tx.description?.contains('Recharge') ?? false),
+    (tx) => tx.type == 'credit' && tx.coinAmount > 0,
   );
   return !hasPurchased;
 });
 
-final hostRecentEarningsProvider =
-    FutureProvider.autoDispose<List<HostEarningsItem>>((ref) {
+final hostRecentEarningsProvider = FutureProvider<List<HostEarningsItem>>((
+  ref,
+) {
   final repo = ref.watch(walletRepositoryProvider);
   return repo.fetchHostRecentEarnings();
 });
@@ -53,10 +68,10 @@ class WalletSnapshot {
   final String? frozenReason;
 
   factory WalletSnapshot.fromMap(Map<String, dynamic> map) => WalletSnapshot(
-        coinBalance: (map['coin_balance'] as num?)?.toInt() ?? 0,
-        isFrozen: (map['is_frozen'] as bool?) ?? false,
-        frozenReason: map['frozen_reason'] as String?,
-      );
+    coinBalance: (map['coin_balance'] as num?)?.toInt() ?? 0,
+    isFrozen: (map['is_frozen'] as bool?) ?? false,
+    frozenReason: map['frozen_reason'] as String?,
+  );
 }
 
 class WalletRepository {
@@ -67,7 +82,7 @@ class WalletRepository {
   Future<WalletSnapshot> fetchCurrentWallet() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      return const WalletSnapshot(coinBalance: 50, isFrozen: false);
+      return const WalletSnapshot(coinBalance: 0, isFrozen: false);
     }
     try {
       final row = await _client
@@ -77,29 +92,25 @@ class WalletRepository {
           .maybeSingle();
 
       if (row == null) {
-        return const WalletSnapshot(coinBalance: 50, isFrozen: false);
+        return const WalletSnapshot(coinBalance: 0, isFrozen: false);
       }
       return WalletSnapshot.fromMap(row);
     } catch (_) {
-      return const WalletSnapshot(coinBalance: 50, isFrozen: false);
+      return const WalletSnapshot(coinBalance: 0, isFrozen: false);
     }
   }
 
-  Stream<WalletSnapshot> watchCurrentWallet() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      return Stream.value(const WalletSnapshot(coinBalance: 50, isFrozen: false));
-    }
-    return _client
-        .from('wallets')
-        .stream(primaryKey: ['user_id'])
-        .eq('user_id', userId)
-        .map((rows) {
-          if (rows.isEmpty) {
-            return const WalletSnapshot(coinBalance: 50, isFrozen: false);
-          }
-          return WalletSnapshot.fromMap(rows.first);
-        });
+  static final _walletChangeNotifier =
+      StreamController<WalletSnapshot>.broadcast();
+
+  static void notifyWalletChanged(WalletSnapshot snapshot) {
+    _walletChangeNotifier.add(snapshot);
+  }
+
+  Stream<WalletSnapshot> watchCurrentWallet() async* {
+    final initial = await fetchCurrentWallet();
+    yield initial;
+    yield* _walletChangeNotifier.stream;
   }
 
   Future<List<CoinPackage>> fetchCoinPackages() async {
@@ -171,8 +182,9 @@ class WalletRepository {
           .limit(30);
 
       final list = (rows as List<dynamic>)
-          .map((row) =>
-              WalletTransactionItem.fromMap(row as Map<String, dynamic>))
+          .map(
+            (row) => WalletTransactionItem.fromMap(row as Map<String, dynamic>),
+          )
           .toList();
 
       if (list.isNotEmpty) return list;
@@ -185,48 +197,75 @@ class WalletRepository {
     final now = DateTime.now();
     return [
       WalletTransactionItem(
-        id: 'tx_1',
+        id: 'tx_rec_500',
+        type: 'added',
+        status: 'completed',
+        coinAmount: 500,
+        balanceAfter: 2553,
+        createdAt: now.subtract(const Duration(minutes: 42)),
+        otherPartyName: 'Coin Pack Recharge',
+        methodOrContext: 'UPI (Google Pay)',
+        amountInr: 149,
+        description: 'Coins Added • 500 Coins + 250 Bonus',
+        rawTransactionCode:
+            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-REC500',
+      ),
+      WalletTransactionItem(
+        id: 'tx_call_1',
         type: 'debit',
+        status: 'completed',
         coinAmount: -62,
-        balanceAfter: 2450,
+        balanceAfter: 2053,
         createdAt: now.subtract(const Duration(hours: 1, minutes: 15)),
         otherPartyName: 'Call with Ananya S',
         durationFormatted: '12m 34s',
+        methodOrContext: 'Audio Call Billing',
         amountInr: 62,
         description: 'Voice Call with Ananya S',
+        rawTransactionCode:
+            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-CL6201',
       ),
       WalletTransactionItem(
-        id: 'tx_2',
-        type: 'debit',
-        coinAmount: -41,
-        balanceAfter: 2512,
-        createdAt: now.subtract(const Duration(hours: 2, minutes: 45)),
-        otherPartyName: 'Call with Kavitha R',
-        durationFormatted: '8m 21s',
-        amountInr: 41,
-        description: 'Voice Call with Kavitha R',
-      ),
-      WalletTransactionItem(
-        id: 'tx_3',
-        type: 'credit',
-        coinAmount: 500,
-        balanceAfter: 2553,
-        createdAt: now.subtract(const Duration(hours: 3, minutes: 30)),
-        otherPartyName: 'Recharge',
-        methodOrContext: 'UPI',
+        id: 'tx_wd_500',
+        type: 'withdrawal',
+        status: 'completed',
+        coinAmount: -500,
+        balanceAfter: 2115,
+        createdAt: now.subtract(const Duration(hours: 3, minutes: 20)),
+        otherPartyName: 'Host Payout Withdrawal',
+        methodOrContext: 'Bank IMPS (UPI VPA)',
         amountInr: 500,
-        description: 'Wallet Recharge via UPI',
+        description: 'Withdrawal to UPI (pria@oksbi)',
+        rawTransactionCode:
+            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-WD5240',
       ),
       WalletTransactionItem(
-        id: 'tx_4',
-        type: 'debit',
-        coinAmount: -75,
-        balanceAfter: 2053,
-        createdAt: now.subtract(const Duration(hours: 4, minutes: 28)),
-        otherPartyName: 'Call with Meera Raj',
-        durationFormatted: '15m 08s',
-        amountInr: 75,
-        description: 'Voice Call with Meera Raj',
+        id: 'tx_fail_99',
+        type: 'failed',
+        status: 'failed',
+        coinAmount: 0,
+        balanceAfter: 2615,
+        createdAt: now.subtract(const Duration(hours: 5, minutes: 10)),
+        otherPartyName: 'UPI Payment Failed',
+        methodOrContext: 'UPI (PhonePe)',
+        amountInr: 99,
+        description: 'Recharge Failed • Bank Server Timeout (0 coins deducted)',
+        rawTransactionCode:
+            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-FL9981',
+      ),
+      WalletTransactionItem(
+        id: 'tx_can_15',
+        type: 'canceled',
+        status: 'canceled',
+        coinAmount: 15,
+        balanceAfter: 2615,
+        createdAt: now.subtract(const Duration(hours: 6, minutes: 45)),
+        otherPartyName: 'Call Refund (Canceled)',
+        methodOrContext: 'System Auto-Refund',
+        amountInr: 15,
+        description: 'Call Canceled • Immediate Grace Period Refund',
+        rawTransactionCode:
+            'TXN-FRND-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-CAN150',
       ),
     ];
   }
@@ -270,10 +309,7 @@ class WalletRepository {
       // Initiate server-authoritative payment order
       final response = await _client.functions.invoke(
         'payment-create',
-        body: {
-          'package_id': package.id,
-          'payment_method': paymentMethod,
-        },
+        body: {'package_id': package.id, 'payment_method': paymentMethod},
       );
 
       if (response.status == 200) {
@@ -292,11 +328,18 @@ class WalletRepository {
     required String idempotencyKey,
   }) async {
     final user = _client.auth.currentUser;
-    if (amountInr < 500) {
+    if (user == null) {
       return const HostWithdrawalRequestResult(
         success: false,
         isDuplicate: false,
-        errorMessage: 'Minimum withdrawal amount is ₹500.',
+        errorMessage: 'Authentication error. Please login again.',
+      );
+    }
+    if (amountInr < 100) {
+      return const HostWithdrawalRequestResult(
+        success: false,
+        isDuplicate: false,
+        errorMessage: 'Minimum withdrawal amount is ₹100.',
       );
     }
 
@@ -321,26 +364,24 @@ class WalletRepository {
       );
     } catch (e) {
       final errStr = e.toString();
-      String message = 'Failed to submit withdrawal request.';
+      String message = 'Failed to submit withdrawal request. Please try again.';
       if (errStr.contains('INSUFFICIENT_WITHDRAWAL_BALANCE')) {
         message = 'Insufficient available balance for this withdrawal.';
-      } else if (errStr.contains('MINIMUM_WITHDRAWAL_LIMIT_500')) {
-        message = 'Minimum withdrawal amount is ₹500.';
+      } else if (errStr.contains('MINIMUM_WITHDRAWAL_LIMIT')) {
+        message = 'Minimum withdrawal amount is ₹100.';
       } else if (errStr.contains('UNAUTHENTICATED')) {
         message = 'Authentication error. Please login again.';
+      } else if (errStr.contains('SocketException') ||
+          errStr.contains('network') ||
+          errStr.contains('Connection')) {
+        message = 'Network error. Please check your connection and try again.';
+      } else if (errStr.contains('404') ||
+          errStr.contains('function') ||
+          errStr.contains('Could not find')) {
+        message = 'Withdrawal service is temporarily unavailable. Please try again later.';
       }
 
-      // Safe fallback for offline or development test runs
-      if (user == null || user.id.isEmpty || errStr.contains('Could not find') || errStr.contains('function') || errStr.contains('404') || errStr.contains('SocketException')) {
-        return HostWithdrawalRequestResult(
-          success: true,
-          isDuplicate: false,
-          payoutId: 'payout_${DateTime.now().millisecondsSinceEpoch}',
-          status: 'pending',
-          amountInr: amountInr.toDouble(),
-        );
-      }
-
+      // Never return a fake success — always propagate the real error to the host.
       return HostWithdrawalRequestResult(
         success: false,
         isDuplicate: false,
@@ -367,4 +408,3 @@ class HostWithdrawalRequestResult {
   final double? amountInr;
   final String? errorMessage;
 }
-

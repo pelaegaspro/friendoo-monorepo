@@ -1,11 +1,11 @@
-import { Timestamp } from 'firebase/firestore'
+export type DateType = string | Date | null | undefined
 
 export interface AdminUser {
   uid: string
   email: string
   name: string
   role: 'superadmin' | 'admin'
-  createdAt: Timestamp
+  createdAt?: DateType
 }
 
 export interface AppUser {
@@ -18,8 +18,8 @@ export interface AppUser {
   role: 'user' | 'host'
   status: 'active' | 'banned' | 'suspended'
   isVerified: boolean
-  createdAt: Timestamp
-  lastActive: Timestamp
+  createdAt?: DateType
+  lastActive?: DateType
   coins?: number
   fcmToken?: string
 }
@@ -38,7 +38,7 @@ export interface Host {
   totalEarnings: number
   status: 'pending' | 'active' | 'rejected' | 'suspended'
   rejectionReason?: string
-  createdAt: Timestamp
+  createdAt?: DateType
 }
 
 export interface Booking {
@@ -47,13 +47,13 @@ export interface Booking {
   hostId: string
   userName: string
   hostName: string
-  scheduledAt: Timestamp
+  scheduledAt?: DateType
   duration: number
   amount: number
   status: 'pending' | 'active' | 'completed' | 'cancelled'
   paymentStatus: 'pending' | 'paid' | 'refunded'
   callId?: string
-  createdAt: Timestamp
+  createdAt?: DateType
 }
 
 export interface Payment {
@@ -64,7 +64,7 @@ export interface Payment {
   amount: number
   status: 'captured' | 'refunded' | 'failed'
   type: 'booking' | 'coins' | 'subscription'
-  createdAt: Timestamp
+  createdAt?: DateType
 }
 
 export interface Call {
@@ -75,8 +75,8 @@ export interface Call {
   userName: string
   hostName: string
   status: 'active' | 'ended'
-  startedAt: Timestamp
-  endedAt?: Timestamp
+  startedAt?: DateType
+  endedAt?: DateType
   duration?: number
   agoraToken?: string
 }
@@ -85,7 +85,7 @@ export interface ActionEntry {
   action: string
   adminId: string
   note?: string
-  timestamp: Timestamp
+  timestamp?: DateType
 }
 
 export interface Report {
@@ -101,8 +101,8 @@ export interface Report {
   priority: 'high' | 'medium' | 'low'
   adminNotes?: string
   actionHistory?: ActionEntry[]
-  createdAt: Timestamp
-  updatedAt?: Timestamp
+  createdAt?: DateType
+  updatedAt?: DateType
 }
 
 export interface CoinPackage {
@@ -123,7 +123,7 @@ export interface EmailLog {
   to: string
   subject: string
   template: string
-  sentAt: Timestamp
+  sentAt?: DateType
   status: 'sent' | 'failed'
   adminId: string
 }
@@ -134,7 +134,7 @@ export interface NotificationLog {
   targetId?: string
   title: string
   body: string
-  sentAt: Timestamp
+  sentAt?: DateType
   status: 'sent' | 'failed'
   adminId: string
 }

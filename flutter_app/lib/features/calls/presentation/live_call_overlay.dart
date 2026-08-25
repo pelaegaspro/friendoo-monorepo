@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../wallet/data/wallet_repository.dart';
+import '../../wallet/presentation/coin_packages_page.dart';
 import '../application/call_controller.dart';
 import 'call_report_bottom_sheet.dart';
 
@@ -101,17 +103,23 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     // Available duration from coins (e.g. 50 coins @ 5 coins/min = 10 mins = 600s)
     final maxSeconds = (startingCoins ~/ widget.call.ratePerMinute) * 60;
-    final remainingSeconds = (maxSeconds - _secondsElapsed).clamp(0, maxSeconds);
+    final remainingSeconds = (maxSeconds - _secondsElapsed).clamp(
+      0,
+      maxSeconds,
+    );
 
     // 5-Second Grace Period Rule:
     // If <= 5s: 0 coins charged
     // If > 5s: billed per minute (e.g., 10s = 1 min charged = 5 coins)
     final bool isGracePeriod = _secondsElapsed <= 5;
-    final int billedMinutes =
-        isGracePeriod ? 0 : (_secondsElapsed / 60).ceil().clamp(1, 999);
+    final int billedMinutes = isGracePeriod
+        ? 0
+        : (_secondsElapsed / 60).ceil().clamp(1, 999);
     final int coinsSpent = billedMinutes * widget.call.ratePerMinute;
-    final int remainingCoins =
-        (startingCoins - coinsSpent).clamp(0, startingCoins);
+    final int remainingCoins = (startingCoins - coinsSpent).clamp(
+      0,
+      startingCoins,
+    );
 
     final bool isLowBalance = remainingSeconds <= 60 && remainingSeconds > 0;
 
@@ -122,13 +130,13 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           end: Alignment.bottomCenter,
           colors: [
             colors.surface,
-            colors.surfaceContainerHighest.withOpacity(0.95),
+            colors.surfaceContainerHighest.withValues(alpha: 0.95),
             const Color(0xFF101322),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.45),
+            color: Colors.black.withValues(alpha: 0.45),
             blurRadius: 28,
             offset: const Offset(0, -6),
           ),
@@ -157,12 +165,17 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.18),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF10B981), width: 1),
+                    border: Border.all(
+                      color: const Color(0xFF10B981),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -190,7 +203,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                 ),
                 IconButton.filledTonal(
                   style: IconButton.styleFrom(
-                    backgroundColor: colors.errorContainer.withOpacity(0.7),
+                    backgroundColor: colors.errorContainer.withValues(
+                      alpha: 0.7,
+                    ),
                     foregroundColor: colors.error,
                   ),
                   tooltip: 'Report Call',
@@ -218,8 +233,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isLowBalance
-                            ? Colors.redAccent.withOpacity(0.15)
-                            : colors.primary.withOpacity(0.14),
+                            ? Colors.redAccent.withValues(alpha: 0.15)
+                            : colors.primary.withValues(alpha: 0.14),
                       ),
                     ),
                     Container(
@@ -270,8 +285,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                 color: isLowBalance
                     ? Colors.redAccent
                     : isGracePeriod
-                        ? Colors.greenAccent[700]
-                        : colors.primary,
+                    ? Colors.greenAccent[700]
+                    : colors.primary,
               ),
             ),
             Text(
@@ -286,18 +301,23 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
             // GRACE PERIOD OR COIN BALANCE BADGE
             if (isGracePeriod)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.14),
+                  color: Colors.green.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.green, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.verified_user_rounded,
-                        color: Colors.green, size: 16),
+                    const Icon(
+                      Icons.verified_user_rounded,
+                      color: Colors.green,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '5s Grace Period (${5 - _secondsElapsed}s) • Free if ended now',
@@ -312,17 +332,22 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
               )
             else
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: colors.surfaceVariant.withOpacity(0.6),
+                  color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.monetization_on_rounded,
-                        color: Colors.amber, size: 16),
+                    const Icon(
+                      Icons.monetization_on_rounded,
+                      color: Colors.amber,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       '$remainingCoins Coins Remaining • Min $billedMinutes charged ($coinsSpent coins)',
@@ -335,22 +360,45 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                 ),
               ),
 
-            // Low Balance Warning
+            // Low Balance Warning & Quick In-Call Recharge Button
             if (isLowBalance) ...[
               const SizedBox(height: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  '⚠️ Less than 1 minute remaining before call ends',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+              InkWell(
+                onTap: () =>
+                    CoinPackagesPage.push(context, isCallRecharge: true),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '⚠️ < 1 min left • ',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Quick Top-Up (₹15 / ₹25) ➔',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -372,14 +420,16 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                         padding: const EdgeInsets.all(16),
                         backgroundColor: isMuted
                             ? colors.errorContainer
-                            : colors.surfaceVariant,
-                        foregroundColor:
-                            isMuted ? colors.error : colors.onSurface,
+                            : colors.surfaceContainerHighest,
+                        foregroundColor: isMuted
+                            ? colors.error
+                            : colors.onSurface,
                       ),
                       onPressed: () =>
                           ref.read(activeCallProvider.notifier).toggleMute(),
                       icon: Icon(
-                          isMuted ? Icons.mic_off_rounded : Icons.mic_rounded),
+                        isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -399,9 +449,10 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                         padding: const EdgeInsets.all(16),
                         backgroundColor: isSpeaker
                             ? colors.primaryContainer
-                            : colors.surfaceVariant,
-                        foregroundColor:
-                            isSpeaker ? colors.primary : colors.onSurface,
+                            : colors.surfaceContainerHighest,
+                        foregroundColor: isSpeaker
+                            ? colors.primary
+                            : colors.onSurface,
                       ),
                       onPressed: () =>
                           ref.read(activeCallProvider.notifier).toggleSpeaker(),

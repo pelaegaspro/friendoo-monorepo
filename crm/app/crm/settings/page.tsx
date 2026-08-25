@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { crmFetch } from "@/lib/client";
 
 export default function SettingsPage() {
   const [revenue, setRevenue] = useState({
@@ -20,18 +21,16 @@ export default function SettingsPage() {
   useEffect(() => {
     const load = async () => {
       const [revenueRes, segmentsRes] = await Promise.all([
-        fetch("/api/crm/config/revenue", { cache: "no-store" }),
-        fetch("/api/crm/config/segments", { cache: "no-store" }),
+        crmFetch<{ data?: Record<string, number> }>("/api/crm/config/revenue"),
+        crmFetch<{ data?: Record<string, string> }>("/api/crm/config/segments"),
       ]);
-      const revenueJson = await revenueRes.json();
-      const segmentsJson = await segmentsRes.json();
-      if (revenueJson.data) {
-        setRevenue((current) => ({ ...current, ...(revenueJson.data as Record<string, number>) }));
+      if (revenueRes.data) {
+        setRevenue((current) => ({ ...current, ...revenueRes.data }));
       }
-      if (segmentsJson.data) {
+      if (segmentsRes.data) {
         setSegmentConfig((current) => ({
           ...current,
-          ...(segmentsJson.data as Record<string, string>),
+          ...segmentsRes.data,
         }));
       }
     };

@@ -25,6 +25,7 @@ import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { useCrmStore } from "@/store/useCrmStore";
 import { CustomSegmentFilter, SegmentKey } from "@/lib/types";
 import { toDate } from "@/lib/utils";
+import { crmFetch } from "@/lib/client";
 
 type UserRow = {
   uid: string;
@@ -74,8 +75,7 @@ export default function UsersPage() {
     const params = new URLSearchParams();
     params.set("segment", activeCustom ? "custom" : selectedSegment);
     if (activeCustom) params.set("customFilter", JSON.stringify(activeCustom.filters));
-    const response = await fetch(`/api/crm/users/list?${params.toString()}`, { cache: "no-store" });
-    const json = await response.json();
+    const json = await crmFetch<{ users?: UserRow[] }>(`/api/crm/users/list?${params.toString()}`);
     setUsers(json.users || []);
     setLoading(false);
   }, [activeCustom, selectedSegment]);
@@ -103,8 +103,7 @@ export default function UsersPage() {
   }, [query, users]);
 
   const openJourney = async (uid: string) => {
-    const response = await fetch(`/api/crm/users/journey/${uid}`, { cache: "no-store" });
-    const json = await response.json();
+    const json = await crmFetch<{ user?: { displayName?: string; username?: string }; timeline?: Array<{ title: string; detail?: string; level?: "ok" | "warn"; date: Date }> }>(`/api/crm/users/journey/${uid}`);
     setJourneyUserName(json.user?.displayName || json.user?.username || "User");
     setJourneyTimeline(
       (json.timeline || []).map((event: { title: string; detail?: string; level?: "ok" | "warn"; date: Date }) => ({

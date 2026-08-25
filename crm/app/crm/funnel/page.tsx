@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { crmFetch } from "@/lib/client";
 
 interface FunnelStep {
   step: string;
@@ -26,8 +27,7 @@ export default function FunnelPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/crm/stats/live", { cache: "no-store" });
-    const json = await response.json();
+    const json = await crmFetch<{ funnel?: FunnelStep[] }>("/api/crm/stats/live");
     setSteps(json.funnel || []);
     setLoading(false);
   }, []);

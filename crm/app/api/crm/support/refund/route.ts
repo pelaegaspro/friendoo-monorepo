@@ -1,115 +1,42 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { toNumber } from "@/lib/utils";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getOperationalAdminActorId, getSupabaseAdmin } from '@/lib/supabaseServer';
 
-interface RefundBody {
-  ticketId: string;
-  userId: string;
-  coinsAmount: number;
-}
+export const dynamic = 'force-dynamic';
+
+type RefundBody = { ticketId?: string; userId?: string; coinsAmount?: number; reason?: string };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const body = await parseJsonBody<RefundBody>(request);
-  const coinsAmount = Math.max(1, Math.floor(toNumber(body.coinsAmount)));
-  if (!body.ticketId || !body.userId || coinsAmount <= 0) {
-    return NextResponse.json({ error: "ticketId, userId and coinsAmount are required." }, { status: 400 });
-  }
-
-  const userRef = adminDb.collection("users").doc(body.userId);
-  const ticketRef = adminDb.collection("supportTickets").doc(body.ticketId);
-  const refundTxId = `refund_ticket_${body.ticketId}`;
-  const txRef = adminDb.collection("coinTransactions").doc(refundTxId);
-
-  let alreadyRefunded = false;
-
-  await adminDb.runTransaction(async (transaction) => {
-    const [userDoc, ticketDoc, existingTxDoc] = await Promise.all([
-      transaction.get(userRef),
-      transaction.get(ticketRef),
-      transaction.get(txRef),
-    ]);
-
-    if (!userDoc.exists) {
-      throw new Error("User not found");
+  try {
+    const body = (await request.json()) as RefundBody;
+    const coins = Math.floor(Number(body.coinsAmount));
+    if (!body.ticketId || !body.userId || !Number.isFinite(coins) || coins < 1) {
+      return NextResponse.json({ error: 'ticketId, userId, and a positive coinsAmount are required.' }, { status: 400 });
     }
-
-    if (!ticketDoc.exists) {
-      throw new Error("Ticket not found");
-    }
-
-    // Idempotency check: ticket already refunded or transaction already recorded
-    const ticketData = ticketDoc.data() as Record<string, unknown>;
-    if (existingTxDoc.exists || ticketData.status === "resolved" || (ticketData.refundAmount && Number(ticketData.refundAmount) > 0)) {
-      alreadyRefunded = true;
-      return;
-    }
-
-    const relatedCallId = typeof ticketData.callId === "string" ? ticketData.callId : undefined;
-    const before = toNumber(userDoc.data()?.coinBalance);
-    const after = before + coinsAmount;
-
-    transaction.update(userRef, { coinBalance: after, updatedAt: FieldValue.serverTimestamp() });
-    transaction.set(txRef, {
-      idempotencyKey: `refund:ticket:${body.ticketId}`,
-      userId: body.userId,
-      type: "refund",
-      amountCoins: coinsAmount,
-      balanceBefore: before,
-      balanceAfter: after,
-      amountInr: 0,
-      status: "success",
-      callId: relatedCallId || null,
-      createdAt: FieldValue.serverTimestamp(),
-      reason: `Support refund for ticket ${body.ticketId}`,
+    const supabase = getSupabaseAdmin();
+    const actorId = getOperationalAdminActorId();
+    const { data: ticket, error: ticketError } = await supabase.from('support_tickets').select('id, reporter_id, status, metadata').eq('id', body.ticketId).maybeSingle();
+    if (ticketError) throw ticketError;
+    if (!ticket) return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 });
+    if (ticket.reporter_id && ticket.reporter_id !== body.userId) return NextResponse.json({ error: 'The ticket does not belong to the specified user.' }, { status: 409 });
+    const idempotencyKey = 'support-refund:' + body.ticketId + ':' + body.userId;
+    const { data: balance, error: adjustmentError } = await supabase.rpc('admin_adjust_wallet', {
+      p_actor_id: actorId,
+      p_user_id: body.userId,
+      p_coin_delta: coins,
+      p_reason: body.reason?.trim() || 'Support-approved coin refund for ticket ' + body.ticketId,
+      p_idempotency_key: idempotencyKey,
     });
-    transaction.update(ticketRef, {
-      status: "resolved",
-      refundAmount: coinsAmount,
-      resolvedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      messages: FieldValue.arrayUnion({
-        senderId: "admin",
-        senderName: "Friendoo Support",
-        text: `Refund of ${coinsAmount} coins has been processed.`,
-        sentAt: new Date(),
-        isAdmin: true,
-      }),
-    });
-  });
-
-  if (alreadyRefunded) {
-    return NextResponse.json({ ok: true, status: "already_refunded", message: "Refund was already credited previously" });
+    if (adjustmentError) throw adjustmentError;
+    const metadata = { ...(ticket.metadata as Record<string, unknown> ?? {}), refund_coins: coins, refund_idempotency_key: idempotencyKey };
+    const { error: ticketUpdateError } = await supabase.from('support_tickets').update({ status: 'resolved', assigned_to: actorId, resolved_at: new Date().toISOString(), metadata }).eq('id', body.ticketId);
+    if (ticketUpdateError) throw ticketUpdateError;
+    const { error: auditError } = await supabase.from('admin_audit_logs').insert({ actor_id: actorId, action: 'support_ticket.coin_refund', resource_type: 'support_ticket', resource_id: body.ticketId, before_state: { status: ticket.status, metadata: ticket.metadata }, after_state: { status: 'resolved', coins, balance, idempotencyKey } });
+    if (auditError) throw auditError;
+    return NextResponse.json({ ok: true, ticketId: body.ticketId, newCoinBalance: balance, idempotencyKey });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not process coin refund.' }, { status: 500 });
   }
-
-  const openAlerts = await adminDb
-    .collection("fraudAlerts")
-    .where("userId", "==", body.userId)
-    .where("status", "==", "open")
-    .get();
-  await Promise.all(
-    openAlerts.docs
-      .filter((doc) => {
-        const data = doc.data() as Record<string, unknown>;
-        if (data.type !== "call_refund_needed") return false;
-        if (!relatedCallId) return true;
-        return data.relatedCallId === relatedCallId;
-      })
-      .map((doc) =>
-        doc.ref.set(
-          {
-            status: "reviewed",
-            reviewedAt: FieldValue.serverTimestamp(),
-            reviewedBy: "crm_admin",
-          },
-          { merge: true },
-        ),
-      ),
-  );
-
-  return NextResponse.json({ ok: true });
 }

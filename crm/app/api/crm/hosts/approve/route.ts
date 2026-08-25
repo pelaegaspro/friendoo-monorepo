@@ -1,7 +1,8 @@
-import { FieldValue } from "firebase-admin/firestore";
 import { NextRequest, NextResponse } from "next/server";
 import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { getOperationalAdminActorId, getSupabaseAdmin } from "@/lib/supabaseServer";
+
+export const dynamic = "force-dynamic";
 
 interface ApproveBody {
   applicationId: string;
@@ -11,50 +12,53 @@ export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
 
-  const { applicationId } = await parseJsonBody<ApproveBody>(request);
-  if (!applicationId) {
-    return NextResponse.json({ error: "applicationId is required." }, { status: 400 });
-  }
+  try {
+    const { applicationId } = await parseJsonBody<ApproveBody>(request);
+    if (!applicationId) {
+      return NextResponse.json({ error: "applicationId is required." }, { status: 400 });
+    }
 
-  const applicationRef = adminDb.collection("hostApplications").doc(applicationId);
-  const applicationDoc = await applicationRef.get();
-  if (!applicationDoc.exists) {
-    return NextResponse.json({ error: "Application not found." }, { status: 404 });
-  }
+    const supabase = getSupabaseAdmin();
+    const actorId = getOperationalAdminActorId();
 
-  const application = applicationDoc.data() as Record<string, unknown>;
-  const phone = String(application.phone || "");
-  let uid = String(application.userId || "");
+    const { data: application, error: appError } = await supabase
+      .from("host_applications")
+      .select("id, application_profile_id, display_name, phone, city, languages, bio, status")
+      .eq("id", applicationId)
+      .maybeSingle();
 
-  if (!uid) {
-    const createdUser = await adminAuth.createUser({
-      phoneNumber: phone || undefined,
-      displayName: String(application.name || "Friendoo Host"),
-      disabled: false,
+    if (appError) throw appError;
+    if (!application) {
+      return NextResponse.json({ error: "Application not found." }, { status: 404 });
+    }
+
+    const profileId = application.application_profile_id || crypto.randomUUID();
+    await supabase.from("profiles").upsert({
+      id: profileId,
+      display_name: application.display_name,
+      phone: application.phone || null,
+      role: "host",
+      about: application.bio || null,
+      updated_at: new Date().toISOString(),
     });
-    uid = createdUser.uid;
+
+    await supabase.from("hosts").upsert({
+      id: profileId,
+      bio: application.bio || null,
+      rate_per_audio_minute: 5,
+      rate_per_video_minute: 10,
+      is_available: true,
+      updated_at: new Date().toISOString(),
+    });
+
+    await supabase.from("host_applications").update({
+      status: "approved",
+      reviewed_by: actorId,
+      reviewed_at: new Date().toISOString(),
+    }).eq("id", applicationId);
+
+    return NextResponse.json({ ok: true, uid: profileId });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Approval failed" }, { status: 500 });
   }
-
-  await adminDb.collection("users").doc(uid).set(
-    {
-      displayName: application.name || "Friendoo Host",
-      phone,
-      city: application.city || null,
-      languages: application.languages || [],
-      photos: application.photos || [],
-      isHost: true,
-      hostStatus: "approved",
-      onboardingComplete: true,
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
-
-  await applicationRef.update({
-    userId: uid,
-    status: "approved",
-    reviewedAt: FieldValue.serverTimestamp(),
-  });
-
-  return NextResponse.json({ ok: true, uid });
 }

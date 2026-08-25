@@ -1,86 +1,49 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { getSegmentedUsers } from "@/lib/crmData";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { createInAppNotification, sendMulticast } from "@/lib/notifications";
-import { SegmentKey } from "@/lib/types";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getOperationalAdminActorId, getSupabaseAdmin } from '@/lib/supabaseServer';
 
-interface SendCampaignBody {
-  campaignId: string;
-}
+export const dynamic = 'force-dynamic';
+
+type SendCampaignBody = { campaignId?: string };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
+  try {
+    const body = (await request.json()) as SendCampaignBody;
+    if (!body.campaignId) return NextResponse.json({ error: 'campaignId is required.' }, { status: 400 });
 
-  const { campaignId } = await parseJsonBody<SendCampaignBody>(request);
-  if (!campaignId) {
-    return NextResponse.json({ error: "campaignId is required." }, { status: 400 });
-  }
-
-  const campaignRef = adminDb.collection("campaigns").doc(campaignId);
-  const campaignDoc = await campaignRef.get();
-  if (!campaignDoc.exists) {
-    return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
-  }
-
-  const campaign = campaignDoc.data() as Record<string, unknown>;
-  const segment = (campaign.segment as SegmentKey) || "all";
-  const customFilter = campaign.customFilter;
-  const users = await getSegmentedUsers(segment, customFilter);
-  const title = String(campaign.title || "Friendoo");
-  const body = String(campaign.body || "New update from Friendoo.");
-  const type = String(campaign.type || "both");
-
-  const tokens: string[] = [];
-  const userIds: string[] = [];
-  users.forEach((user) => {
-    userIds.push(user.uid);
-    if (Array.isArray(user.fcmTokens)) {
-      tokens.push(...user.fcmTokens.filter((token) => typeof token === "string"));
+    const supabase = getSupabaseAdmin();
+    const actorId = getOperationalAdminActorId();
+    const { data: campaign, error: campaignError } = await supabase
+      .from('crm_campaigns')
+      .select('id, name, channel, audience_filter, title, body, status')
+      .eq('id', body.campaignId)
+      .maybeSingle();
+    if (campaignError) throw campaignError;
+    if (!campaign) return NextResponse.json({ error: 'Campaign not found.' }, { status: 404 });
+    if (campaign.status === 'sent' || campaign.status === 'cancelled') {
+      return NextResponse.json({ error: 'This campaign cannot be queued from its current status.' }, { status: 409 });
     }
-  });
 
-  let deliveredCount = 0;
-  if (type === "push" || type === "both") {
-    const push = await sendMulticast(tokens, title, body, {
-      type: "campaign",
-      campaignId,
+    const { error: updateError } = await supabase
+      .from('crm_campaigns')
+      .update({ status: 'scheduled' })
+      .eq('id', campaign.id);
+    if (updateError) throw updateError;
+
+    const { error: eventError } = await supabase.from('operational_events').insert({
+      event_key: 'campaign-request:' + campaign.id + ':' + Date.now().toString(),
+      event_type: 'crm_campaign.delivery_requested',
+      aggregate_type: 'crm_campaign',
+      aggregate_id: campaign.id,
+      actor_id: actorId,
+      payload: { channel: campaign.channel, audience_filter: campaign.audience_filter, title: campaign.title },
     });
-    deliveredCount = push.delivered;
+    if (eventError) throw eventError;
+
+    return NextResponse.json({ ok: true, campaignId: campaign.id, queued: true, targetCount: 0, deliveredCount: 0 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not queue campaign.' }, { status: 500 });
   }
-
-  if (type === "inapp" || type === "both") {
-    await Promise.all(
-      userIds.map((uid) =>
-        createInAppNotification(uid, {
-          type: "campaign",
-          campaignId,
-          title,
-          message: body,
-          read: false,
-        }),
-      ),
-    );
-  }
-
-  await campaignRef.set(
-    {
-      status: "sent",
-      sentAt: FieldValue.serverTimestamp(),
-      targetCount: userIds.length,
-      deliveredCount,
-      openedCount: campaign.openedCount || 0,
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
-
-  return NextResponse.json({
-    ok: true,
-    campaignId,
-    targetCount: userIds.length,
-    deliveredCount,
-  });
 }

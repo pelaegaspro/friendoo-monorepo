@@ -1,18 +1,22 @@
+// ignore_for_file: unused_element, unused_element_parameter
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/models/friendoo_models.dart';
 import '../features/calls/data/call_repository.dart';
-import '../features/calls/presentation/call_report_bottom_sheet.dart';
 import '../features/discover/data/host_repository.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
 import '../features/wallet/data/wallet_repository.dart';
+import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
+import '../features/wallet/presentation/select_payment_method_page.dart';
+import '../features/ads/presentation/cloud_banner_ad_widget.dart';
 
 abstract final class FriendooUiColors {
   static const canvas = Color(0xFFF7F7FB);
@@ -97,7 +101,9 @@ Future<void> showFriendooLanguagePicker(
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      isHost ? 'Host speaking languages' : 'Language preference',
+                      isHost
+                          ? 'Host speaking languages'
+                          : 'Language preference',
                       style: Theme.of(context).textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w900),
                     ),
@@ -216,21 +222,45 @@ Future<void> showFriendooPrivacySheet(BuildContext context) async {
             const SizedBox(height: 14),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.visibility_off_outlined, color: FriendooUiColors.blue),
-              title: Text('100% Anonymous by design', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('Your real phone number and identity remain completely hidden.'),
+              leading: Icon(
+                Icons.visibility_off_outlined,
+                color: FriendooUiColors.blue,
+              ),
+              title: Text(
+                '100% Anonymous by design',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                'Your real phone number and identity remain completely hidden.',
+              ),
             ),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.verified_user_outlined, color: Color(0xFF10B981)),
-              title: Text('Verified Hosts Only', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('Every host undergoes identity review before going live.'),
+              leading: Icon(
+                Icons.verified_user_outlined,
+                color: Color(0xFF10B981),
+              ),
+              title: Text(
+                'Verified Hosts Only',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                'Every host undergoes identity review before going live.',
+              ),
             ),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.shield_outlined, color: FriendooUiColors.pink),
-              title: Text('Total Caller Control', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('End, report, or instant-block any conversation at any moment.'),
+              leading: Icon(
+                Icons.shield_outlined,
+                color: FriendooUiColors.pink,
+              ),
+              title: Text(
+                'Total Caller Control',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                'End, report, or instant-block any conversation at any moment.',
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -291,8 +321,14 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
             const SizedBox(height: 14),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.mail_outline_rounded, color: FriendooUiColors.blue),
-              title: const Text('Direct Concierge Support', style: TextStyle(fontWeight: FontWeight.w800)),
+              leading: const Icon(
+                Icons.mail_outline_rounded,
+                color: FriendooUiColors.blue,
+              ),
+              title: const Text(
+                'Direct Concierge Support',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
               subtitle: const Text('support@friendoo.app'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -305,9 +341,17 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.report_problem_outlined, color: FriendooUiColors.pink),
-              title: const Text('Report a Call or Host', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: const Text('Use the report button during any active conversation.'),
+              leading: const Icon(
+                Icons.report_problem_outlined,
+                color: FriendooUiColors.pink,
+              ),
+              title: const Text(
+                'Report a Call or Host',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Use the report button during any active conversation.',
+              ),
               onTap: () => Navigator.of(sheetContext).pop(),
             ),
             const SizedBox(height: 12),
@@ -352,7 +396,7 @@ class FriendooLogo extends StatelessWidget {
             borderRadius: BorderRadius.circular(fontSize * 0.42),
             boxShadow: [
               BoxShadow(
-                color: FriendooUiColors.violet.withOpacity(0.32),
+                color: FriendooUiColors.violet.withValues(alpha: 0.32),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -465,7 +509,9 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
-                        color: item.gradient.colors.first.withOpacity(0.32),
+                        color: item.gradient.colors.first.withValues(
+                          alpha: 0.32,
+                        ),
                         blurRadius: 14,
                         offset: const Offset(0, 5),
                       ),
@@ -482,7 +528,7 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
                           height: 125,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.12),
+                            color: Colors.white.withValues(alpha: 0.12),
                           ),
                         ),
                       ),
@@ -492,7 +538,7 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
                         child: Icon(
                           item.icon,
                           size: 60,
-                          color: Colors.white.withOpacity(0.18),
+                          color: Colors.white.withValues(alpha: 0.18),
                         ),
                       ),
                       Padding(
@@ -504,29 +550,44 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.22),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    item.badge,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.5,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.22,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      item.badge,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                Text(
-                                  item.title,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.85),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    item.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -550,7 +611,7 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.92),
+                                    color: Colors.white.withValues(alpha: 0.92),
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -631,15 +692,31 @@ void showFriendooNotificationsSheet(BuildContext context) {
             const SizedBox(height: 16),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.celebration_rounded, color: FriendooUiColors.pink),
-              title: Text('Welcome to Friendoo Voice Lounge!', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('Enjoy 20% off bonus coins on your first voice call recharge.'),
+              leading: Icon(
+                Icons.celebration_rounded,
+                color: FriendooUiColors.pink,
+              ),
+              title: Text(
+                'Welcome to Friendoo Voice Lounge!',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                'Enjoy 20% off bonus coins on your first voice call recharge.',
+              ),
             ),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.verified_user_rounded, color: Color(0xFF10B981)),
-              title: Text('100% Female Verified Hosts', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('All hosts undergo verified identity vetting before taking calls.'),
+              leading: Icon(
+                Icons.verified_user_rounded,
+                color: Color(0xFF10B981),
+              ),
+              title: Text(
+                '100% Female Verified Hosts',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                'All hosts undergo verified identity vetting before taking calls.',
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -698,248 +775,154 @@ class FriendooDashboardView extends ConsumerWidget {
       });
     final onlineCount = femaleHosts.where((host) => host.isAvailable).length;
 
-    const promoItems = [
-      FriendooPromoItem(
-        title: 'FIRST CALL OFFER',
-        highlight: '20% OFF',
-        subtitle: 'On your first call with any host',
-        badge: 'WELCOME 🎁',
-        gradient: LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        icon: Icons.local_offer_rounded,
-      ),
-      FriendooPromoItem(
-        title: 'PRIVACY FIRST',
-        highlight: 'Your Privacy',
-        subtitle: 'Our Priority • 100% Anonymous Voice',
-        badge: 'SAFETY 🛡️',
-        gradient: LinearGradient(
-          colors: [Color(0xFF00B4D8), Color(0xFF0077B6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        icon: Icons.security_rounded,
-      ),
-      FriendooPromoItem(
-        title: 'REFER & EARN',
-        highlight: 'Earn Rewards',
-        subtitle: 'Earn rewards by inviting friends',
-        badge: 'BONUS ⚡',
-        gradient: LinearGradient(
-          colors: [Color(0xFFFF2A85), Color(0xFFFF758C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        icon: Icons.card_giftcard_rounded,
-      ),
-      FriendooPromoItem(
-        title: 'LATE NIGHT TALKS',
-        highlight: 'Night Lounge',
-        subtitle: 'Special hosts available 12 AM – 6 AM',
-        badge: '12 AM - 6 AM 🌙',
-        gradient: LinearGradient(
-          colors: [Color(0xFF141738), Color(0xFF4338CA)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        icon: Icons.nightlife_rounded,
-      ),
-    ];
-
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
         // ==========================================
         // 1. HEADER
-        // Left: Friendoo Logo + User Online Status Pill
-        // Right: Wallet / coin balance, Recharge (+) button, Notification icon
+        // Left: Friendoo Logo
+        // Right: Wallet Coin Balance (Click to Recharge) + Notification Icon
         // ==========================================
         Row(
           children: [
-            const FriendooLogo(fontSize: 21),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.35)),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.circle_rounded, color: Color(0xFF10B981), size: 6.5),
-                  SizedBox(width: 4),
-                  Text(
-                    'Online',
-                    style: TextStyle(
-                      color: Color(0xFF047857),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const FriendooLogo(fontSize: 22),
             const Spacer(),
 
-            // Wallet / Coin Balance
-            GestureDetector(
-              onTap: onOpenWallet,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: FriendooUiColors.softGold,
+            // Right Action Cluster: Coin Balance Chip (Tap -> Recharge) + Notifications
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Wallet Coin Balance Chip (Click redirects directly to recharge)
+                InkWell(
+                  onTap: () => CoinPackagesPage.push(context),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFFFD166).withOpacity(0.6)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.monetization_on_rounded, color: Color(0xFFD97706), size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      walletAsync.when(
-                        data: (w) => '${w.coinBalance}',
-                        loading: () => '...',
-                        error: (_, __) => '50',
-                      ),
-                      style: const TextStyle(
-                        color: Color(0xFFB45309),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 6,
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            // Recharge (+) Button
-            FilledButton.icon(
-              onPressed: onOpenWallet,
-              icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-              label: const Text(
-                'Recharge',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: FriendooUiColors.pink,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-            const SizedBox(width: 4),
-
-            // Notification Icon
-            IconButton(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.notifications_none_rounded, color: FriendooUiColors.ink, size: 23),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: FriendooUiColors.pink,
-                        shape: BoxShape.circle,
+                    decoration: BoxDecoration(
+                      color: FriendooUiColors.softGold,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFFFD166).withValues(alpha: 0.7),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD97706).withValues(alpha: 0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.monetization_on_rounded,
+                          color: Color(0xFFD97706),
+                          size: 17,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${walletAsync.asData?.value.coinBalance ?? 0}',
+                          style: const TextStyle(
+                            color: Color(0xFFB45309),
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.add_circle_rounded,
+                          color: Color(0xFFD97706),
+                          size: 15,
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              tooltip: 'Notifications',
-              onPressed: () => showFriendooNotificationsSheet(context),
+                ),
+              ],
             ),
           ],
         ),
         const SizedBox(height: 20),
 
         // ==========================================
-        // 2. TITLE & SUBTITLE
-        // "Discover a Host"
-        // "Find someone you'd love to talk with"
-        // (Removed: Search bar, search filter, language selection, language chips)
+        // 2. TITLE
+        // "Discover a Host" (Clean heading, no standalone subtitle)
         // ==========================================
         const Text(
           'Discover a Host',
           style: TextStyle(
             color: FriendooUiColors.ink,
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: FontWeight.w900,
-            letterSpacing: -0.8,
+            letterSpacing: -0.6,
             height: 1.15,
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Find someone you\'d love to talk with',
-          style: TextStyle(
-            color: FriendooUiColors.muted,
-            fontSize: 14.5,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
 
         // ==========================================
-        // 3. PROMOTIONAL CAROUSEL
+        // 3. TOP CLOUD PROMOTIONAL BANNER (6-SEC AUTO-SLIDER)
         // ==========================================
-        const FriendooPromoCarousel(items: promoItems),
-        const SizedBox(height: 24),
+        const CloudBannerAdCard(placement: 'user_top_banner'),
+        const SizedBox(height: 22),
 
         // ==========================================
         // 4. HOST SECTION HEADER & COUNTER
         // ==========================================
         Row(
           children: [
-            const Text(
-              'Available Hosts',
-              style: TextStyle(
-                color: FriendooUiColors.ink,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.3,
+            const Flexible(
+              child: Text(
+                'Available Hosts',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: FriendooUiColors.ink,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                ),
               ),
             ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.circle_rounded, color: Color(0xFF10B981), size: 8),
-                  const SizedBox(width: 5),
-                  Text(
-                    '$onlineCount Live Now',
-                    style: const TextStyle(
-                      color: Color(0xFF047857),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
-                    ),
+            const SizedBox(width: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
                   ),
-                ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.circle_rounded,
+                      color: Color(0xFF10B981),
+                      size: 8,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '$onlineCount Live Now',
+                      style: const TextStyle(
+                        color: Color(0xFF047857),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -976,6 +959,7 @@ class FriendooDashboardView extends ConsumerWidget {
 
 class _DesiHostCard extends StatelessWidget {
   const _DesiHostCard({
+    super.key,
     required this.host,
     required this.onStartCall,
   });
@@ -993,44 +977,62 @@ class _DesiHostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languagesText = host.languages.join(' · ');
+    final savedAvatarId = host.avatarUrl?.trim();
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: host.isStar
-              ? const Color(0xFFFFB703).withOpacity(0.55)
-              : (host.isAvailable ? const Color(0xFF6366F1).withOpacity(0.22) : const Color(0xFFE5E7EB)),
+              ? const Color(0xFFFFB703).withValues(alpha: 0.55)
+              : (host.isAvailable
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.22)
+                    : const Color(0xFFE5E7EB)),
           width: host.isStar ? 1.8 : 1.2,
         ),
         boxShadow: [
           BoxShadow(
             color: host.isStar
                 ? const Color(0x18FFB703)
-                : (host.isAvailable ? const Color(0x126366F1) : Colors.black.withOpacity(0.02)),
+                : (host.isAvailable
+                      ? const Color(0x126366F1)
+                      : Colors.black.withValues(alpha: 0.02)),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // LEFT: Large Desi Female Avatar (Clean vector, NO age badge on avatar)
-              DesiFemaleAvatar(
-                seed: host.displayName,
-                age: host.displayAge,
-                isStar: host.isStar,
-                size: 74,
-                showPresence: true,
-                isOnline: host.isAvailable,
-              ),
-              const SizedBox(width: 14),
+              // LEFT: Persisted host avatar when available, deterministic pack fallback otherwise.
+              savedAvatarId != null && savedAvatarId.isNotEmpty
+                  ? FriendooAvatar(
+                      config: FriendooAvatarConfig.fromRawString(
+                        savedAvatarId,
+                        gender: 'female',
+                        role: 'host',
+                      ),
+                      age: host.displayAge,
+                      isStar: host.isStar,
+                      size: 68,
+                      showPresence: true,
+                      isOnline: host.isAvailable,
+                    )
+                  : DesiFemaleAvatar(
+                      seed: host.displayName,
+                      age: host.displayAge,
+                      isStar: host.isStar,
+                      size: 68,
+                      showPresence: true,
+                      isOnline: host.isAvailable,
+                    ),
+              const SizedBox(width: 12),
 
               // CENTER: Host Information
               Expanded(
@@ -1047,7 +1049,7 @@ class _DesiHostCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: FriendooUiColors.ink,
-                              fontSize: 17,
+                              fontSize: 16,
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.3,
                             ),
@@ -1057,50 +1059,62 @@ class _DesiHostCard extends StatelessWidget {
                         const Icon(
                           Icons.verified_rounded,
                           color: Color(0xFF10B981),
-                          size: 16,
+                          size: 15,
                         ),
                         if (host.isStar) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
+                          const SizedBox(width: 5),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
                               ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              '⭐ STAR HOST',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.3,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFFB703),
+                                    Color(0xFFFF5400),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '⭐ STAR',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.2,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
 
-                    // Age & Languages (Exact age displayed outside avatar)
+                    // Age & Languages
                     Row(
                       children: [
                         Text(
                           '${host.displayAge} yrs',
                           style: const TextStyle(
                             color: Color(0xFF4B5563),
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         const Text(
                           '•',
-                          style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13),
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 12,
+                          ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Flexible(
                           child: Text(
                             languagesText,
@@ -1108,7 +1122,7 @@ class _DesiHostCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: FriendooUiColors.violet,
-                              fontSize: 13,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1120,14 +1134,22 @@ class _DesiHostCard extends StatelessWidget {
                     // Rating & Call Count
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded, color: Color(0xFFFFB703), size: 16),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFB703),
+                          size: 15,
+                        ),
                         const SizedBox(width: 3),
-                        Text(
-                          '${host.rating.toStringAsFixed(1)} (${_formatCalls(host.totalCalls)} calls)',
-                          style: const TextStyle(
-                            color: Color(0xFF374151),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
+                        Flexible(
+                          child: Text(
+                            '${host.rating.toStringAsFixed(1)} (${_formatCalls(host.totalCalls)} calls)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF374151),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ],
@@ -1135,23 +1157,27 @@ class _DesiHostCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
 
               // RIGHT: Rate Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: FriendooUiColors.softBlue,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: FriendooUiColors.blue.withOpacity(0.2)),
+                  border: Border.all(
+                    color: FriendooUiColors.blue.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       '₹${host.ratePerAudioMinute}',
                       style: const TextStyle(
                         color: FriendooUiColors.blue,
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w900,
                         height: 1.0,
                       ),
@@ -1160,7 +1186,7 @@ class _DesiHostCard extends StatelessWidget {
                       '/min',
                       style: TextStyle(
                         color: FriendooUiColors.muted,
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1190,96 +1216,119 @@ class _DesiHostCard extends StatelessWidget {
           // Footer Row: City + Availability + Call Now CTA
           Row(
             children: [
-              // City
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: FriendooUiColors.muted,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    host.displayCity,
-                    style: const TextStyle(
-                      color: FriendooUiColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-
-              // Availability status (ONLINE / OFFLINE)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                decoration: BoxDecoration(
-                  color: host.isAvailable
-                      ? const Color(0xFFECFDF5)
-                      : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: host.isAvailable
-                        ? const Color(0xFF10B981).withOpacity(0.3)
-                        : const Color(0xFFE5E7EB),
-                  ),
-                ),
+              // City + Availability
+              Expanded(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.circle_rounded,
-                      size: 7,
-                      color: host.isAvailable
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFF9CA3AF),
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: FriendooUiColors.muted,
+                          ),
+                          const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              host.displayCity,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: FriendooUiColors.muted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      host.isAvailable ? 'ONLINE' : 'OFFLINE',
-                      style: TextStyle(
-                        color: host.isAvailable
-                            ? const Color(0xFF047857)
-                            : const Color(0xFF6B7280),
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.3,
+                    const SizedBox(width: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: host.isAvailable
+                              ? const Color(0xFFECFDF5)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: host.isAvailable
+                                ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                                : const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.circle_rounded,
+                              size: 6.5,
+                              color: host.isAvailable
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF9CA3AF),
+                            ),
+                            const SizedBox(width: 3.5),
+                            Text(
+                              host.isAvailable ? 'ONLINE' : 'OFFLINE',
+                              style: TextStyle(
+                                color: host.isAvailable
+                                    ? const Color(0xFF047857)
+                                    : const Color(0xFF6B7280),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const Spacer(),
+              const SizedBox(width: 8),
 
               // [ Call Now ] Button
-              ElevatedButton.icon(
-                onPressed: host.isAvailable ? onStartCall : null,
-                icon: Icon(
-                  host.isAvailable ? Icons.call_rounded : Icons.phone_disabled_rounded,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  host.isAvailable ? 'Call Now' : 'Offline',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: ElevatedButton.icon(
+                  onPressed: host.isAvailable ? onStartCall : null,
+                  icon: Icon(
+                    host.isAvailable
+                        ? Icons.call_rounded
+                        : Icons.phone_disabled_rounded,
+                    size: 15,
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: host.isAvailable
-                      ? FriendooUiColors.ink
-                      : const Color(0xFF9CA3AF),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  label: Text(
+                    host.isAvailable ? 'Call Now' : 'Busy',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
+                    ),
                   ),
-                  elevation: host.isAvailable ? 3 : 0,
-                  shadowColor: Colors.black.withOpacity(0.2),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: host.isAvailable
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFE5E7EB),
+                    foregroundColor: host.isAvailable
+                        ? Colors.white
+                        : const Color(0xFF9CA3AF),
+                    elevation: host.isAvailable ? 2 : 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ),
             ],
@@ -1289,6 +1338,12 @@ class _DesiHostCard extends StatelessWidget {
     );
   }
 }
+
+enum UserTimeFilter { allTime, today, thisWeek, thisMonth }
+
+enum UserHostStatusFilter { allHosts, onlineOnly, offlineOnly }
+
+enum UserCallSortFilter { newest, longestCalls, starHostsFirst }
 
 class FriendooAnalyticsView extends ConsumerStatefulWidget {
   const FriendooAnalyticsView({
@@ -1301,14 +1356,76 @@ class FriendooAnalyticsView extends ConsumerStatefulWidget {
   final ValueChanged<HostProfile>? onStartCall;
 
   @override
-  ConsumerState<FriendooAnalyticsView> createState() => _FriendooAnalyticsViewState();
+  ConsumerState<FriendooAnalyticsView> createState() =>
+      _FriendooAnalyticsViewState();
 }
 
 class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
-  // 0: All Calls, 1: Online Hosts, 2: Offline Hosts, 3: Completed
-  int _filterIndex = 0;
+  UserTimeFilter _selectedTimeFilter = UserTimeFilter.allTime;
+  UserHostStatusFilter _selectedHostStatus = UserHostStatusFilter.allHosts;
+  UserCallSortFilter _selectedSortFilter = UserCallSortFilter.newest;
+  bool _onlyConnectedCalls = false;
   bool _isReportMode = false;
   final Set<String> _reportedCallIds = <String>{};
+
+  int get _activeFilterCount {
+    int count = 0;
+    if (_selectedTimeFilter != UserTimeFilter.allTime) count++;
+    if (_selectedHostStatus != UserHostStatusFilter.allHosts) count++;
+    if (_selectedSortFilter != UserCallSortFilter.newest) count++;
+    if (_onlyConnectedCalls) count++;
+    return count;
+  }
+
+  String get _activeFilterLabel {
+    final parts = <String>[];
+    switch (_selectedTimeFilter) {
+      case UserTimeFilter.today:
+        parts.add('Today');
+        break;
+      case UserTimeFilter.thisWeek:
+        parts.add('This Week');
+        break;
+      case UserTimeFilter.thisMonth:
+        parts.add('This Month');
+        break;
+      case UserTimeFilter.allTime:
+        break;
+    }
+    switch (_selectedHostStatus) {
+      case UserHostStatusFilter.onlineOnly:
+        parts.add('Online Hosts 🟢');
+        break;
+      case UserHostStatusFilter.offlineOnly:
+        parts.add('Offline Hosts ⚪');
+        break;
+      case UserHostStatusFilter.allHosts:
+        break;
+    }
+    switch (_selectedSortFilter) {
+      case UserCallSortFilter.longestCalls:
+        parts.add('Longest Calls ⏱️');
+        break;
+      case UserCallSortFilter.starHostsFirst:
+        parts.add('⭐ Star Hosts First');
+        break;
+      case UserCallSortFilter.newest:
+        break;
+    }
+    if (_onlyConnectedCalls) {
+      parts.add('Connected Only');
+    }
+    return parts.isEmpty ? 'All Calls' : parts.join(' • ');
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedTimeFilter = UserTimeFilter.allTime;
+      _selectedHostStatus = UserHostStatusFilter.allHosts;
+      _selectedSortFilter = UserCallSortFilter.newest;
+      _onlyConnectedCalls = false;
+    });
+  }
 
   void _toggleReport(CallHistoryItem call) {
     setState(() {
@@ -1323,14 +1440,18 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
         );
       } else {
         _reportedCallIds.add(call.id);
-        ref.read(callRepositoryProvider).submitCallReport(
-          callId: call.id,
-          reason: 'Reported by user from call history',
-        );
+        ref
+            .read(callRepositoryProvider)
+            .submitCallReport(
+              callId: call.id,
+              reason: 'Reported by user from call history',
+            );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFFDC2626),
-            content: Text('Host ${call.otherPartyName} reported to Trust & Safety team.'),
+            content: Text(
+              'Host ${call.otherPartyName} reported to Trust & Safety team.',
+            ),
             action: SnackBarAction(
               label: 'Undo',
               textColor: Colors.white,
@@ -1343,19 +1464,305 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
     });
   }
 
+  void _showUserFilterSheet(BuildContext context, List<CallHistoryItem> calls) {
+    var tempTime = _selectedTimeFilter;
+    var tempHostStatus = _selectedHostStatus;
+    var tempSort = _selectedSortFilter;
+    var tempConnected = _onlyConnectedCalls;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return SafeArea(
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Filter & Sort Calls',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900,
+                            color: FriendooUiColors.ink,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setSheetState(() {
+                              tempTime = UserTimeFilter.allTime;
+                              tempHostStatus = UserHostStatusFilter.allHosts;
+                              tempSort = UserCallSortFilter.newest;
+                              tempConnected = false;
+                            });
+                          },
+                          child: const Text(
+                            'Reset',
+                            style: TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // SECTION 1: TIME PERIOD
+                    const Text(
+                      'TIME PERIOD',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _CallsFilterChip(
+                          label: 'All Time',
+                          selected: tempTime == UserTimeFilter.allTime,
+                          onTap: () => setSheetState(
+                            () => tempTime = UserTimeFilter.allTime,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'Today',
+                          selected: tempTime == UserTimeFilter.today,
+                          onTap: () => setSheetState(
+                            () => tempTime = UserTimeFilter.today,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'This Week',
+                          selected: tempTime == UserTimeFilter.thisWeek,
+                          onTap: () => setSheetState(
+                            () => tempTime = UserTimeFilter.thisWeek,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'This Month',
+                          selected: tempTime == UserTimeFilter.thisMonth,
+                          onTap: () => setSheetState(
+                            () => tempTime = UserTimeFilter.thisMonth,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // SECTION 2: HOST STATUS
+                    const Text(
+                      'HOST AVAILABILITY',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _CallsFilterChip(
+                          label: 'All Hosts',
+                          selected:
+                              tempHostStatus == UserHostStatusFilter.allHosts,
+                          onTap: () => setSheetState(
+                            () =>
+                                tempHostStatus = UserHostStatusFilter.allHosts,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'Online Now',
+                          icon: Icons.circle_rounded,
+                          iconColor: const Color(0xFF10B981),
+                          selected:
+                              tempHostStatus == UserHostStatusFilter.onlineOnly,
+                          onTap: () => setSheetState(
+                            () => tempHostStatus =
+                                UserHostStatusFilter.onlineOnly,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'Offline Hosts',
+                          icon: Icons.circle_outlined,
+                          iconColor: const Color(0xFF9CA3AF),
+                          selected:
+                              tempHostStatus ==
+                              UserHostStatusFilter.offlineOnly,
+                          onTap: () => setSheetState(
+                            () => tempHostStatus =
+                                UserHostStatusFilter.offlineOnly,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // SECTION 3: SORT BY
+                    const Text(
+                      'SORT BY',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _CallsFilterChip(
+                          label: 'Newest First',
+                          icon: Icons.history_rounded,
+                          selected: tempSort == UserCallSortFilter.newest,
+                          onTap: () => setSheetState(
+                            () => tempSort = UserCallSortFilter.newest,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: 'Longest Calls ⏱️',
+                          icon: Icons.timer_outlined,
+                          selected: tempSort == UserCallSortFilter.longestCalls,
+                          onTap: () => setSheetState(
+                            () => tempSort = UserCallSortFilter.longestCalls,
+                          ),
+                        ),
+                        _CallsFilterChip(
+                          label: '⭐ Star Hosts First',
+                          icon: Icons.star_rounded,
+                          iconColor: const Color(0xFFFFB703),
+                          selected:
+                              tempSort == UserCallSortFilter.starHostsFirst,
+                          onTap: () => setSheetState(
+                            () => tempSort = UserCallSortFilter.starHostsFirst,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // SECTION 4: ADDITIONAL FILTERS
+                    const Text(
+                      'ADDITIONAL FILTERS',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FilterChip(
+                      label: const Text('Connected Calls Only (> 0s)'),
+                      avatar: const Icon(Icons.phone_in_talk_rounded, size: 16),
+                      selected: tempConnected,
+                      selectedColor: const Color(0xFFDCFCE7),
+                      checkmarkColor: const Color(0xFF15803D),
+                      labelStyle: TextStyle(
+                        color: tempConnected
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFF374151),
+                        fontWeight: tempConnected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      onSelected: (val) =>
+                          setSheetState(() => tempConnected = val),
+                    ),
+                    const SizedBox(height: 26),
+
+                    // APPLY CTA
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTimeFilter = tempTime;
+                            _selectedHostStatus = tempHostStatus;
+                            _selectedSortFilter = tempSort;
+                            _onlyConnectedCalls = tempConnected;
+                          });
+                          Navigator.of(ctx).pop();
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: FriendooUiColors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Apply Filters',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(callHistoryProvider);
 
     return historyAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => ListView(
+      error: (_, _) => ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
         children: [
           _UserCallsHeader(
-            onToggleReportMode: () => setState(() => _isReportMode = !_isReportMode),
+            onToggleReportMode: () =>
+                setState(() => _isReportMode = !_isReportMode),
             isReportMode: _isReportMode,
             onFilter: () => _showUserFilterSheet(context, const []),
+            activeFilterCount: _activeFilterCount,
           ),
           const SizedBox(height: 24),
           _EmptySurface(
@@ -1368,63 +1775,168 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
         ],
       ),
       data: (allCalls) {
-        // Apply Filter
-        final filteredCalls = allCalls.where((call) {
-          if (_filterIndex == 1) return call.isOtherPartyOnline;
-          if (_filterIndex == 2) return !call.isOtherPartyOnline;
-          if (_filterIndex == 3) return call.status == 'ended';
-          return true;
-        }).toList();
+        final now = DateTime.now();
+
+        // Apply multi-select filters
+        List<CallHistoryItem> filteredCalls = List.from(allCalls);
+
+        // 1. Time Filter
+        switch (_selectedTimeFilter) {
+          case UserTimeFilter.today:
+            filteredCalls = filteredCalls
+                .where(
+                  (c) =>
+                      c.createdAt.year == now.year &&
+                      c.createdAt.month == now.month &&
+                      c.createdAt.day == now.day,
+                )
+                .toList();
+            break;
+          case UserTimeFilter.thisWeek:
+            filteredCalls = filteredCalls
+                .where((c) => now.difference(c.createdAt).inDays <= 7)
+                .toList();
+            break;
+          case UserTimeFilter.thisMonth:
+            filteredCalls = filteredCalls
+                .where(
+                  (c) =>
+                      c.createdAt.year == now.year &&
+                      c.createdAt.month == now.month,
+                )
+                .toList();
+            break;
+          case UserTimeFilter.allTime:
+            break;
+        }
+
+        // 2. Host Status Filter
+        switch (_selectedHostStatus) {
+          case UserHostStatusFilter.onlineOnly:
+            filteredCalls = filteredCalls
+                .where((c) => c.isOtherPartyOnline)
+                .toList();
+            break;
+          case UserHostStatusFilter.offlineOnly:
+            filteredCalls = filteredCalls
+                .where((c) => !c.isOtherPartyOnline)
+                .toList();
+            break;
+          case UserHostStatusFilter.allHosts:
+            break;
+        }
+
+        // 3. Connected Calls Filter
+        if (_onlyConnectedCalls) {
+          filteredCalls = filteredCalls
+              .where((c) => (c.durationSeconds ?? (c.durationMinutes * 60)) > 0)
+              .toList();
+        }
+
+        // 4. Sort Filter
+        switch (_selectedSortFilter) {
+          case UserCallSortFilter.longestCalls:
+            filteredCalls.sort(
+              (a, b) => (b.durationSeconds ?? (b.durationMinutes * 60))
+                  .compareTo(a.durationSeconds ?? (a.durationMinutes * 60)),
+            );
+            break;
+          case UserCallSortFilter.starHostsFirst:
+            filteredCalls.sort(
+              (a, b) => (b.isOtherPartyStar ? 1 : 0).compareTo(
+                a.isOtherPartyStar ? 1 : 0,
+              ),
+            );
+            break;
+          case UserCallSortFilter.newest:
+            filteredCalls.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            break;
+        }
 
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
           children: [
             // ==========================================
             // 1. USER CALLS HEADER
-            // Left: Title "Call History" + Subtitle "Recent voice conversations with verified hosts"
-            // Right: [ Filter ] [ Report ] (NO notification icon)
+            // Left: Title "Call History"
+            // Right: [ Filter (count) ] [ Report ]
             // ==========================================
             _UserCallsHeader(
-              onToggleReportMode: () => setState(() => _isReportMode = !_isReportMode),
+              onToggleReportMode: () =>
+                  setState(() => _isReportMode = !_isReportMode),
               isReportMode: _isReportMode,
               onFilter: () => _showUserFilterSheet(context, allCalls),
+              activeFilterCount: _activeFilterCount,
             ),
             const SizedBox(height: 14),
 
-            // Horizontal Filter Chips for Quick Access (All / Online Hosts / Offline Hosts)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _CallsFilterChip(
-                    label: 'All Calls',
-                    selected: _filterIndex == 0,
-                    count: allCalls.length,
-                    onTap: () => setState(() => _filterIndex = 0),
-                  ),
-                  const SizedBox(width: 8),
-                  _CallsFilterChip(
-                    label: 'Online Hosts',
-                    icon: Icons.circle_rounded,
-                    iconColor: const Color(0xFF10B981),
-                    selected: _filterIndex == 1,
-                    count: allCalls.where((c) => c.isOtherPartyOnline).length,
-                    onTap: () => setState(() => _filterIndex = 1),
-                  ),
-                  const SizedBox(width: 8),
-                  _CallsFilterChip(
-                    label: 'Offline Hosts',
-                    icon: Icons.circle_outlined,
-                    iconColor: const Color(0xFF9CA3AF),
-                    selected: _filterIndex == 2,
-                    count: allCalls.where((c) => !c.isOtherPartyOnline).length,
-                    onTap: () => setState(() => _filterIndex = 2),
-                  ),
-                ],
+            // Active Filters Banner (If any filter applied)
+            if (_activeFilterCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.tune_rounded,
+                      size: 14,
+                      color: FriendooUiColors.violet,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _activeFilterLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _clearFilters,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Clear',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFEF4444),
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Icon(
+                              Icons.close_rounded,
+                              size: 13,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 14),
+            ],
 
             // ==========================================
             // 2. CALL HISTORY CARDS (User -> Host)
@@ -1473,73 +1985,6 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
       },
     );
   }
-
-  void _showUserFilterSheet(BuildContext context, List<CallHistoryItem> calls) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Filter Call History',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: FriendooUiColors.ink,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _FilterRadioTile(
-              title: 'All Calls',
-              subtitle: 'Show all recent conversations',
-              selected: _filterIndex == 0,
-              onTap: () {
-                setState(() => _filterIndex = 0);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _FilterRadioTile(
-              title: 'Online Hosts',
-              subtitle: 'Hosts who are currently available for calls',
-              selected: _filterIndex == 1,
-              onTap: () {
-                setState(() => _filterIndex = 1);
-                Navigator.of(ctx).pop();
-              },
-            ),
-            _FilterRadioTile(
-              title: 'Offline Hosts',
-              subtitle: 'Hosts currently away or resting',
-              selected: _filterIndex == 2,
-              onTap: () {
-                setState(() => _filterIndex = 2);
-                Navigator.of(ctx).pop();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _UserCallsHeader extends StatelessWidget {
@@ -1547,46 +1992,34 @@ class _UserCallsHeader extends StatelessWidget {
     required this.onToggleReportMode,
     required this.onFilter,
     required this.isReportMode,
+    this.activeFilterCount = 0,
   });
 
   final VoidCallback? onToggleReportMode;
   final VoidCallback? onFilter;
   final bool isReportMode;
+  final int activeFilterCount;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Left Title & Subtitle
+        // Left Title
         const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Call History',
-                style: TextStyle(
-                  color: FriendooUiColors.ink,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.7,
-                  height: 1.15,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Recent voice conversations with verified hosts',
-                style: TextStyle(
-                  color: FriendooUiColors.muted,
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          child: Text(
+            'Call History',
+            style: TextStyle(
+              color: FriendooUiColors.ink,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.7,
+              height: 1.15,
+            ),
           ),
         ),
 
-        // Right Actions: [ Filter ] [ Report ] (NO notification icon)
+        // Right Actions: [ Filter ] [ Report ]
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1594,24 +2027,45 @@ class _UserCallsHeader extends StatelessWidget {
             InkWell(
               onTap: onFilter,
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 7.5,
                 ),
-                child: const Row(
+                decoration: BoxDecoration(
+                  color: activeFilterCount > 0
+                      ? const Color(0xFFEDE9FE)
+                      : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: activeFilterCount > 0
+                        ? FriendooUiColors.violet.withValues(alpha: 0.5)
+                        : const Color(0xFFE5E7EB),
+                    width: activeFilterCount > 0 ? 1.4 : 1.0,
+                  ),
+                ),
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.filter_list_rounded, size: 16, color: FriendooUiColors.ink),
-                    SizedBox(width: 4),
+                    Icon(
+                      Icons.filter_list_rounded,
+                      size: 16,
+                      color: activeFilterCount > 0
+                          ? FriendooUiColors.violet
+                          : FriendooUiColors.ink,
+                    ),
+                    const SizedBox(width: 5),
                     Text(
-                      'Filter',
+                      activeFilterCount > 0
+                          ? 'Filter ($activeFilterCount)'
+                          : 'Filter',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: FriendooUiColors.ink,
+                        color: activeFilterCount > 0
+                            ? FriendooUiColors.violet
+                            : FriendooUiColors.ink,
                       ),
                     ),
                   ],
@@ -1626,29 +2080,42 @@ class _UserCallsHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 7.5,
+                ),
                 decoration: BoxDecoration(
-                  color: isReportMode ? const Color(0xFFDC2626) : const Color(0xFFFEF2F2),
+                  color: isReportMode
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isReportMode ? const Color(0xFFDC2626) : const Color(0xFFFECACA),
+                    color: isReportMode
+                        ? const Color(0xFFDC2626)
+                        : const Color(0xFFFECACA),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isReportMode ? Icons.check_rounded : Icons.shield_outlined,
+                      isReportMode
+                          ? Icons.check_rounded
+                          : Icons.shield_outlined,
                       size: 16,
-                      color: isReportMode ? Colors.white : const Color(0xFFDC2626),
+                      color: isReportMode
+                          ? Colors.white
+                          : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       isReportMode ? 'Done' : 'Report',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: isReportMode ? Colors.white : const Color(0xFFDC2626),
+                        color: isReportMode
+                            ? Colors.white
+                            : const Color(0xFFDC2626),
                       ),
                     ),
                   ],
@@ -1689,12 +2156,16 @@ class _UserCallCard extends StatelessWidget {
         border: Border.all(
           color: isReported
               ? const Color(0xFFFCA5A5)
-              : (isOnline ? const Color(0xFF6366F1).withOpacity(0.2) : const Color(0xFFE5E7EB)),
+              : (isOnline
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                    : const Color(0xFFE5E7EB)),
           width: isReported ? 1.4 : 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: isOnline ? const Color(0x106366F1) : Colors.black.withOpacity(0.02),
+            color: isOnline
+                ? const Color(0x106366F1)
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -1760,7 +2231,13 @@ class _UserCallCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 5),
-                        const Text('•', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+                        const Text(
+                          '•',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(width: 5),
                         Flexible(
                           child: Text(
@@ -1780,13 +2257,18 @@ class _UserCallCard extends StatelessWidget {
 
                     // Online / Offline Status Pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isOnline ? const Color(0xFFECFDF5) : const Color(0xFFF3F4F6),
+                        color: isOnline
+                            ? const Color(0xFFECFDF5)
+                            : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isOnline
-                              ? const Color(0xFF10B981).withOpacity(0.3)
+                              ? const Color(0xFF10B981).withValues(alpha: 0.3)
                               : const Color(0xFFE5E7EB),
                         ),
                       ),
@@ -1796,13 +2278,17 @@ class _UserCallCard extends StatelessWidget {
                           Icon(
                             Icons.circle_rounded,
                             size: 6.5,
-                            color: isOnline ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+                            color: isOnline
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFF9CA3AF),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             isOnline ? 'ONLINE' : 'OFFLINE',
                             style: TextStyle(
-                              color: isOnline ? const Color(0xFF047857) : const Color(0xFF6B7280),
+                              color: isOnline
+                                  ? const Color(0xFF047857)
+                                  : const Color(0xFF6B7280),
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.3,
@@ -1829,7 +2315,10 @@ class _UserCallCard extends StatelessWidget {
                   ),
                   Container(
                     margin: const EdgeInsets.only(top: 2),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1.5,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(4),
@@ -1861,7 +2350,11 @@ class _UserCallCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFF6B7280)),
+                        const Icon(
+                          Icons.schedule_rounded,
+                          size: 13,
+                          color: Color(0xFF6B7280),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           call.formattedDateTime,
@@ -1876,7 +2369,11 @@ class _UserCallCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.timer_outlined, size: 13, color: Color(0xFF9CA3AF)),
+                        const Icon(
+                          Icons.timer_outlined,
+                          size: 13,
+                          color: Color(0xFF9CA3AF),
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           call.formattedDuration,
@@ -1897,7 +2394,11 @@ class _UserCallCard extends StatelessWidget {
                 isReported
                     ? OutlinedButton.icon(
                         onPressed: onToggleReport,
-                        icon: const Icon(Icons.undo_rounded, size: 14, color: Color(0xFFDC2626)),
+                        icon: const Icon(
+                          Icons.undo_rounded,
+                          size: 14,
+                          color: Color(0xFFDC2626),
+                        ),
                         label: const Text(
                           'Undo',
                           style: TextStyle(
@@ -1909,7 +2410,10 @@ class _UserCallCard extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFDC2626)),
                           backgroundColor: const Color(0xFFFEF2F2),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1917,7 +2421,11 @@ class _UserCallCard extends StatelessWidget {
                       )
                     : FilledButton.icon(
                         onPressed: onToggleReport,
-                        icon: const Icon(Icons.shield_outlined, size: 14, color: Colors.white),
+                        icon: const Icon(
+                          Icons.shield_outlined,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                         label: const Text(
                           'Report',
                           style: TextStyle(
@@ -1928,7 +2436,10 @@ class _UserCallCard extends StatelessWidget {
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFDC2626),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1938,7 +2449,9 @@ class _UserCallCard extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: isOnline ? onCallAgain : null,
                   icon: Icon(
-                    isOnline ? Icons.call_rounded : Icons.phone_disabled_rounded,
+                    isOnline
+                        ? Icons.call_rounded
+                        : Icons.phone_disabled_rounded,
                     size: 15,
                     color: Colors.white,
                   ),
@@ -1951,8 +2464,13 @@ class _UserCallCard extends StatelessWidget {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isOnline ? FriendooUiColors.ink : const Color(0xFF9CA3AF),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    backgroundColor: isOnline
+                        ? FriendooUiColors.ink
+                        : const Color(0xFF9CA3AF),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -2001,7 +2519,7 @@ class _CallsFilterChip extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: FriendooUiColors.ink.withOpacity(0.18),
+                    color: FriendooUiColors.ink.withValues(alpha: 0.18),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -2012,7 +2530,13 @@ class _CallsFilterChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 8, color: selected ? Colors.white : (iconColor ?? const Color(0xFF10B981))),
+              Icon(
+                icon,
+                size: 8,
+                color: selected
+                    ? Colors.white
+                    : (iconColor ?? const Color(0xFF10B981)),
+              ),
               const SizedBox(width: 5),
             ],
             Text(
@@ -2028,7 +2552,9 @@ class _CallsFilterChip extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
-                  color: selected ? Colors.white.withOpacity(0.2) : const Color(0xFFF3F4F6),
+                  color: selected
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
@@ -2045,71 +2571,6 @@ class _CallsFilterChip extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _FilterRadioTile extends StatelessWidget {
-  const _FilterRadioTile({
-    required this.title,
-    required this.subtitle,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEDE9FE) : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? FriendooUiColors.blue : const Color(0xFFE5E7EB),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: selected ? FriendooUiColors.blue : FriendooUiColors.ink,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-                          selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                          color: selected ? FriendooUiColors.blue : const Color(0xFF9CA3AF),
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
   }
 }
 
@@ -2148,16 +2609,41 @@ class _FriendooWalletViewState extends ConsumerState<FriendooWalletView> {
     final walletAsync = ref.watch(walletStreamProvider);
     final packagesAsync = ref.watch(coinPackagesProvider);
     final transactionsAsync = ref.watch(walletTransactionsProvider);
+    final callHistoryAsync = ref.watch(callHistoryProvider);
+
+    final now = DateTime.now();
+    final thisMonthCalls =
+        (callHistoryAsync.asData?.value ?? const <CallHistoryItem>[])
+            .where(
+              (c) =>
+                  c.createdAt.year == now.year &&
+                  c.createdAt.month == now.month,
+            )
+            .toList();
+    final callsCount = thisMonthCalls.length;
+    final totalSeconds = thisMonthCalls.fold<int>(
+      0,
+      (sum, c) => sum + (c.durationSeconds ?? (c.durationMinutes * 60)),
+    );
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final totalDurationStr = hours > 0
+        ? '${hours}h ${minutes}m'
+        : '${minutes}m';
+    final amountSpent = thisMonthCalls.fold<int>(
+      0,
+      (sum, c) => sum + (c.amountInr ?? 0),
+    );
 
     return ListView(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
-        // HEADER: Title, Subtitle, Help info icon (NO notification icons)
+        // HEADER: Title, Subtitle, Customer Support icon
         _WalletHeader(
           title: 'Wallet',
           subtitle: 'Your balance, recharge and spending',
-          onInfoTap: () => _showWalletInfoSheet(context),
+          onInfoTap: () => _showWalletSupportSheet(context),
         ),
         const SizedBox(height: 20),
 
@@ -2165,52 +2651,40 @@ class _FriendooWalletViewState extends ConsumerState<FriendooWalletView> {
         _UserBalanceCard(
           walletAsync: walletAsync,
           onAddCoinsTap: () {
-            packagesAsync.whenData((packages) {
-              if (packages.isNotEmpty) {
-                // Open Popular or Starter package checkout directly or scroll
-                final popular = packages.firstWhere(
-                  (p) => p.bonus?.contains('Popular') ?? false,
-                  orElse: () => packages.first,
-                );
-                RechargeCheckoutSheet.show(context, package: popular);
-              } else {
-                _scrollToRecharge();
-              }
-            });
+            CoinPackagesPage.push(context);
           },
         ),
         const SizedBox(height: 24),
 
-        // SECTION B: RECHARGE COINS
+        // SECTION B: POPULAR PACKS
         packagesAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => const SizedBox.shrink(),
-          data: (packages) => _RechargeCoinsHorizontalSection(
+          error: (_, _) => const SizedBox.shrink(),
+          data: (packages) => _PopularPacksHorizontalSection(
             packages: packages,
-            onViewAll: () => _showAllPackagesSheet(context, packages),
-            onSelectPackage: (pkg) => RechargeCheckoutSheet.show(
-              context,
-              package: pkg,
-            ),
+            onViewAll: () => CoinPackagesPage.push(context),
+            onSelectPackage: (pkg) =>
+                SelectPaymentMethodPage.push(context, package: pkg),
           ),
         ),
         const SizedBox(height: 24),
 
         // SECTION C: MONTHLY SUMMARY (Calls, Duration, Amount Spent)
-        const _UserMonthlySummaryCard(
-          callsCount: 12,
-          totalDuration: '6h 18m',
-          amountSpentInr: 1240,
+        _UserMonthlySummaryCard(
+          callsCount: callsCount,
+          totalDuration: totalDurationStr,
+          amountSpentInr: amountSpent,
         ),
         const SizedBox(height: 28),
 
         // SECTION D: RECENT TRANSACTIONS (Paid / Added)
         transactionsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (transactions) => _UserRecentTransactionsSection(
             transactions: transactions,
-            onViewAll: () => _showAllUserTransactionsSheet(context, transactions),
+            onViewAll: () =>
+                _showAllUserTransactionsSheet(context, transactions),
           ),
         ),
         const SizedBox(height: 20),
@@ -2234,24 +2708,40 @@ class FriendooProfileView extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text(
           'Sign out of Friendoo?',
-          style: TextStyle(fontWeight: FontWeight.w900, color: FriendooUiColors.ink),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: FriendooUiColors.ink,
+          ),
         ),
-        content: const Text('Are you sure you want to log out of your Friendoo account?'),
+        content: const Text(
+          'Are you sure you want to log out of your Friendoo account?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: FriendooUiColors.pink,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               Navigator.of(ctx).pop();
               onSignOut();
             },
-            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -2260,422 +2750,322 @@ class FriendooProfileView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileRepository = ref.watch(profileRepositoryProvider);
-    final history =
-        ref.watch(callHistoryProvider).asData?.value ??
-        const <CallHistoryItem>[];
-    final wallet = ref.watch(walletStreamProvider).asData?.value;
+    final profile = ref.watch(currentUserProfileStreamProvider).asData?.value;
 
-    return StreamBuilder<UserProfile?>(
-      stream: profileRepository.watchCurrentUserProfile(),
-      builder: (context, snapshot) {
-        final profile = snapshot.data;
-        final name = profile?.displayName ?? 'Rahul Sharma';
-        final languages = profile?.preferredLanguages ?? const <String>['Hindi', 'Tamil', 'English'];
-        final totalCalls = history.length;
-        final coinBalance = wallet?.coinBalance ?? 120;
+    final name = profile?.displayName ?? 'User';
+    final languages =
+        profile?.preferredLanguages ??
+        const <String>['Hindi', 'Tamil', 'English'];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
-          children: [
-            // User Category Chip
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: FriendooUiColors.softBlue,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_rounded, size: 13, color: FriendooUiColors.blue),
-                      SizedBox(width: 5),
-                      Text(
-                        'MEMBER PROFILE',
-                        style: TextStyle(
-                          color: FriendooUiColors.blue,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Text('Account & Settings', style: _FriendooTitle()),
-            const SizedBox(height: 4),
-            const Text(
-              'Manage your identity, safety preferences, and call controls.',
-              style: _FriendooMuted(),
-            ),
-            const SizedBox(height: 20),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+      children: [
+        const Text('Account & Settings', style: _FriendooTitle()),
+        const SizedBox(height: 4),
+        const Text(
+          'Manage your identity, safety preferences, and call controls.',
+          style: _FriendooMuted(),
+        ),
+        const SizedBox(height: 20),
 
-            // 1. Male User Profile Hero Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        // 1. Male User Profile Hero Card
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
-              padding: const EdgeInsets.all(18),
-              child: Column(
+            ],
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      // Male Avatar
-                      DesiMaleAvatar(
-                        seed: name,
-                        age: 26,
-                        size: 74,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: FriendooUiColors.ink,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.verified_rounded,
-                                  color: Color(0xFF10B981),
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            Row(
-                              children: [
-                                const Text(
-                                  '26 yrs',
-                                  style: TextStyle(
-                                    color: Color(0xFF4B5563),
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'ID: FRND-9482',
-                                    style: TextStyle(
-                                      color: Color(0xFF6B7280),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              languages.join(' · '),
-                              style: const TextStyle(
-                                color: FriendooUiColors.blue,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  // Edit Profile Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const EditUserProfilePage(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: FriendooUiColors.ink,
-                        side: const BorderSide(color: Color(0xFFE5E7EB)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
+                  // Male Avatar using saved preset
+                  FriendooAvatar(
+                    config: FriendooAvatarConfig(
+                      gender: 'male',
+                      role: 'user',
+                      presetId: profile?.avatarUrl ?? 'user_01',
                     ),
+                    age: 26,
+                    size: 74,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 2. Caller Stats Summary Card (Total Calls & Vault Coins)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'TALK VAULT',
-                          style: TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
                         Row(
                           children: [
-                            const Icon(Icons.monetization_on_rounded, color: Color(0xFFFFD166), size: 18),
+                            Flexible(
+                              child: Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: FriendooUiColors.ink,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: Color(0xFF10B981),
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Text(
+                              '26 yrs',
+                              style: TextStyle(
+                                color: Color(0xFF4B5563),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             const SizedBox(width: 6),
-                            Text(
-                              '$coinBalance Coins',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F4F6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'ID: FRND-9482',
+                                style: TextStyle(
+                                  color: Color(0xFF6B7280),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          languages.join(' · '),
+                          style: const TextStyle(
+                            color: FriendooUiColors.blue,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
-                    ),
-                  ),
-                  Container(height: 32, width: 1, color: const Color(0xFF334155)),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'COMPLETED CALLS',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF38BDF8), size: 17),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$totalCalls Sessions',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // 3. ACCOUNT & PREFERENCES SECTION
-            const Text(
-              'ACCOUNT & PREFERENCES',
-              style: TextStyle(
-                color: Color(0xFF4B5563),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Dedicated Page Navigation Rows (Entire Card is Clickable)
-            _ProfileNavigationRow(
-              icon: Icons.phone_in_talk_outlined,
-              iconBg: const Color(0xFFEDE9FE),
-              iconColor: const Color(0xFF7C3AED),
-              title: 'Call Preferences',
-              subtitle: 'Audio quality, balance alerts & auto-filters',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserCallPreferencesPage(),
+              const SizedBox(height: 14),
+              // Edit Profile Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const EditUserProfilePage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text(
+                    'Edit Profile',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.security_rounded,
-              iconBg: const Color(0xFFECFDF5),
-              iconColor: const Color(0xFF059669),
-              title: 'Privacy & Safety',
-              subtitle: 'Incognito mode, encryption & visibility controls',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserPrivacySafetyPage(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: FriendooUiColors.ink,
+                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.block_flipped,
-              iconBg: const Color(0xFFFEF2F2),
-              iconColor: const Color(0xFFDC2626),
-              title: 'Blocked Users',
-              subtitle: 'Manage and unblock previously blocked accounts',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserBlockedUsersPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.notifications_none_rounded,
-              iconBg: const Color(0xFFFEF3C7),
-              iconColor: const Color(0xFFD97706),
-              title: 'Notification Settings',
-              subtitle: 'Incoming calls, coin alerts & sound toggles',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserNotificationSettingsPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.headset_mic_outlined,
-              iconBg: const Color(0xFFE0F2FE),
-              iconColor: const Color(0xFF0284C7),
-              title: 'Help & Support',
-              subtitle: '24/7 caller assistance, FAQs & safety guidelines',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const HelpSupportPage(isHost: false),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.info_outline_rounded,
-              iconBg: const Color(0xFFF3F4F6),
-              iconColor: FriendooUiColors.ink,
-              title: 'About Friendoo',
-              subtitle: 'App version, terms, privacy & licenses',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AboutFriendooPage(isHost: false),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.translate_rounded,
-              iconBg: const Color(0xFFFDF2F8),
-              iconColor: const Color(0xFFDB2777),
-              title: 'Languages',
-              subtitle: 'Select languages you speak & understand',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const UserLanguagesPage(isHost: false),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            _ProfileNavigationRow(
-              icon: Icons.person_outline_rounded,
-              iconBg: const Color(0xFFF5F3FF),
-              iconColor: const Color(0xFF6366F1),
-              title: 'Edit Profile',
-              subtitle: 'Update your name, age, bio & avatar',
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const EditUserProfilePage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Sign Out Button
-            OutlinedButton.icon(
-              onPressed: () => _confirmSignOut(context),
-              icon: const Icon(Icons.logout_rounded),
-              label: const Text('Sign out of Friendoo'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: FriendooUiColors.pink,
-                side: const BorderSide(color: Color(0xFFFFD1DC), width: 1.5),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // 2. Cloud-Based Dynamic Banner Ad (Admin Managed)
+        const CloudBannerAdCard(placement: 'account_settings'),
+        const SizedBox(height: 24),
+
+        // 3. ACCOUNT & PREFERENCES SECTION
+        const Text(
+          'ACCOUNT & PREFERENCES',
+          style: TextStyle(
+            color: Color(0xFF4B5563),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Dedicated Page Navigation Rows (Entire Card is Clickable)
+        _ProfileNavigationRow(
+          icon: Icons.phone_in_talk_outlined,
+          iconBg: const Color(0xFFEDE9FE),
+          iconColor: const Color(0xFF7C3AED),
+          title: 'Call Preferences',
+          subtitle: 'Audio quality, balance alerts & auto-filters',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserCallPreferencesPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.security_rounded,
+          iconBg: const Color(0xFFECFDF5),
+          iconColor: const Color(0xFF059669),
+          title: 'Privacy & Safety',
+          subtitle: 'Incognito mode, encryption & visibility controls',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserPrivacySafetyPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.block_flipped,
+          iconBg: const Color(0xFFFEF2F2),
+          iconColor: const Color(0xFFDC2626),
+          title: 'Blocked Users',
+          subtitle: 'Manage and unblock previously blocked accounts',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserBlockedUsersPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.notifications_none_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          title: 'Notification Settings',
+          subtitle: 'Incoming calls, coin alerts & sound toggles',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserNotificationSettingsPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.headset_mic_outlined,
+          iconBg: const Color(0xFFE0F2FE),
+          iconColor: const Color(0xFF0284C7),
+          title: 'Help & Support',
+          subtitle: '24/7 caller assistance, FAQs & safety guidelines',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HelpSupportPage(isHost: false),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.info_outline_rounded,
+          iconBg: const Color(0xFFF3F4F6),
+          iconColor: FriendooUiColors.ink,
+          title: 'About Friendoo',
+          subtitle: 'App version, terms, privacy & licenses',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AboutFriendooPage(isHost: false),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.translate_rounded,
+          iconBg: const Color(0xFFFDF2F8),
+          iconColor: const Color(0xFFDB2777),
+          title: 'Languages',
+          subtitle: 'Select languages you speak & understand',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const UserLanguagesPage(isHost: false),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
+          icon: Icons.person_outline_rounded,
+          iconBg: const Color(0xFFF5F3FF),
+          iconColor: const Color(0xFF6366F1),
+          title: 'Edit Profile',
+          subtitle: 'Update your name, age, bio & avatar',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const EditUserProfilePage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Sign Out Button
+        OutlinedButton.icon(
+          onPressed: () => _confirmSignOut(context),
+          icon: const Icon(Icons.logout_rounded),
+          label: const Text('Sign out of Friendoo'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: FriendooUiColors.pink,
+            side: const BorderSide(color: Color(0xFFFFD1DC), width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2784,28 +3174,37 @@ class _FriendooHostEarningsViewState
     final hostStatsAsync = ref.watch(hostDashboardStatsProvider);
     final recentEarningsAsync = ref.watch(hostRecentEarningsProvider);
 
+    final hostStats = hostStatsAsync.asData?.value;
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
         // HEADER: Title, Subtitle, Help info icon (NO wallet balance / NO recharge)
         _WalletHeader(
           title: 'Earnings',
-          subtitle: 'Your earnings, withdrawals and performance',
+          subtitle: null,
           onInfoTap: () => _showHostEarningsInfoSheet(context),
         ),
         const SizedBox(height: 20),
 
+        // SILENCE / INACTIVITY 3-STRIKE WARNING BANNER
+        if (hostStats != null && hostStats.silenceWarningsCount > 0) ...[
+          _HostSilenceWarningBanner(
+            warningCount: hostStats.silenceWarningsCount,
+            maxWarnings: hostStats.maxSilenceWarnings,
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // SECTION A: TOTAL EARNINGS CARD
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => _HostTotalEarningsCard(
+          error: (_, _) => _HostTotalEarningsCard(
             totalEarningsInr: 8450,
             availableToWithdrawInr: 5240,
             onWithdraw: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const HostWithdrawalPage(
-                  availableAmount: 5240,
-                ),
+                builder: (_) => const HostWithdrawalPage(availableAmount: 5240),
               ),
             ),
           ),
@@ -2826,7 +3225,7 @@ class _FriendooHostEarningsViewState
         // SECTION B: QUICK STATS (This Week, This Month, Total Calls)
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => const _HostQuickStatsRow(
+          error: (_, _) => const _HostQuickStatsRow(
             thisWeekInr: 2340,
             thisMonthInr: 8450,
             totalCalls: 126,
@@ -2849,7 +3248,7 @@ class _FriendooHostEarningsViewState
         // SECTION D: HOW YOU EARNED (Voice Calls, Bonuses, Referrals, Total)
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => const _HostHowYouEarnedCard(
+          error: (_, _) => const _HostHowYouEarnedCard(
             voiceCallsInr: 7850,
             bonusesInr: 400,
             referralsInr: 200,
@@ -2867,13 +3266,11 @@ class _FriendooHostEarningsViewState
         // SECTION E: WITHDRAWAL CARD
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => _HostWithdrawalCard(
+          error: (_, _) => _HostWithdrawalCard(
             availableToWithdrawInr: 5240,
             onWithdraw: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const HostWithdrawalPage(
-                  availableAmount: 5240,
-                ),
+                builder: (_) => const HostWithdrawalPage(availableAmount: 5240),
               ),
             ),
           ),
@@ -2893,7 +3290,7 @@ class _FriendooHostEarningsViewState
         // SECTION F: RECENT EARNINGS (Earned transactions with Initials Avatar)
         recentEarningsAsync.when(
           loading: () => const _LoadingSurface(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (earnings) => _HostRecentEarningsSection(
             earnings: earnings,
             onViewAll: () => _showAllHostEarningsSheet(context, earnings),
@@ -2912,16 +3309,92 @@ class _FriendooHostEarningsViewState
 // SHARED WALLET & EARNINGS SUBCOMPONENTS
 // ============================================================================
 
+/// In-Screen Host Warning Banner for Inactivity / Silence Violations
+class _HostSilenceWarningBanner extends StatelessWidget {
+  const _HostSilenceWarningBanner({
+    required this.warningCount,
+    required this.maxWarnings,
+  });
+
+  final int warningCount;
+  final int maxWarnings;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSuspended = warningCount >= maxWarnings;
+    final bgColor = isSuspended
+        ? const Color(0xFFFEE2E2)
+        : const Color(0xFFFEF3C7);
+    final borderColor = isSuspended
+        ? const Color(0xFFEF4444)
+        : const Color(0xFFF59E0B);
+    final textColor = isSuspended
+        ? const Color(0xFF991B1B)
+        : const Color(0xFF92400E);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isSuspended ? Icons.block_rounded : Icons.warning_amber_rounded,
+            color: borderColor,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isSuspended
+                      ? '⚠️ Host Account Suspended ($warningCount/$maxWarnings Strikes)'
+                      : '⚠️ Inactivity Strike [$warningCount/$maxWarnings]',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isSuspended
+                      ? 'Your host account has been suspended due to 3 silence/muting violations. The caller was refunded in full.'
+                      : 'You received a penalty for being inactive/silent during a paid call. The user was refunded in full. $maxWarnings strikes will result in account suspension.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: textColor.withValues(alpha: 0.9),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Clean Shared Header for Wallet and Earnings
 class _WalletHeader extends StatelessWidget {
   const _WalletHeader({
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.onInfoTap,
   });
 
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final VoidCallback onInfoTap;
 
   @override
@@ -2934,22 +3407,324 @@ class _WalletHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const _FriendooTitle()),
-              const SizedBox(height: 4),
-              Text(subtitle, style: const _FriendooMuted()),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(subtitle!, style: const _FriendooMuted()),
+              ],
             ],
           ),
         ),
-        _UiIconButton(
-          icon: Icons.info_outline_rounded,
-          tooltip: '$title info',
-          onPressed: onInfoTap,
+        InkWell(
+          onTap: onInfoTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3E8FF),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE9D5FF)),
+            ),
+            child: const Icon(
+              Icons.headset_mic_rounded,
+              color: Color(0xFF7C3AED),
+              size: 22,
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-/// User Section A: Available Balance Card
+/// 3D Vector Wallet & Bursting Gold Coin Illustration with Sparkles
+class _3DWalletIllustration extends StatelessWidget {
+  const _3DWalletIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 104,
+      height: 94,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Soft base shadow
+          Positioned(
+            bottom: 0,
+            child: Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E1B4B).withValues(alpha: 0.6),
+                    blurRadius: 14,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Sparkle 1 (Gold)
+          const Positioned(
+            top: 2,
+            right: 4,
+            child: Text(
+              '✦',
+              style: TextStyle(
+                color: Color(0xFFFDE047),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Sparkle 2 (White)
+          const Positioned(
+            top: 14,
+            left: 0,
+            child: Text(
+              '✦',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Large Gold Coin emerging from wallet
+          Positioned(
+            top: 4,
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const RadialGradient(
+                  colors: [
+                    Color(0xFFFEF08A),
+                    Color(0xFFF59E0B),
+                    Color(0xFFD97706),
+                  ],
+                  center: Alignment(-0.3, -0.3),
+                  radius: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.5),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+                border: Border.all(color: const Color(0xFFFEF9C3), width: 1.5),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFFEF08A),
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+          // 3D Purple Leather Wallet Body
+          Positioned(
+            bottom: 4,
+            child: Container(
+              width: 82,
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFA855F7),
+                    Color(0xFF8B5CF6),
+                    Color(0xFF7C3AED),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFC084FC),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Wallet flap with metallic snap button
+                  Positioned(
+                    right: 0,
+                    top: 16,
+                    child: Container(
+                      width: 28,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF7C3AED),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 3,
+                            offset: Offset(-2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFE2E8F0),
+                            border: Border.all(
+                              color: const Color(0xFF94A3B8),
+                              width: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 3D Stack of Gold Coins Graphic
+class _3DCoinStackIllustration extends StatelessWidget {
+  const _3DCoinStackIllustration({
+    required this.backgroundColor,
+    this.showStar = false,
+  });
+
+  final Color backgroundColor;
+  final bool showStar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        shape: BoxShape.circle,
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Base coin
+          Positioned(
+            bottom: 10,
+            child: Container(
+              width: 36,
+              height: 13,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFBBF24), Color(0xFFD97706)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x2A000000),
+                    blurRadius: 3,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Middle coin
+          Positioned(
+            bottom: 16,
+            child: Container(
+              width: 36,
+              height: 13,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFDE047), Color(0xFFF59E0B)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          // Top coin
+          Positioned(
+            bottom: 22,
+            child: Container(
+              width: 36,
+              height: 15,
+              decoration: BoxDecoration(
+                gradient: const RadialGradient(
+                  colors: [Color(0xFFFEF08A), Color(0xFFF59E0B)],
+                  center: Alignment(-0.2, -0.2),
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFEF9C3), width: 1),
+              ),
+              child: showStar
+                  ? const Center(
+                      child: Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFB45309),
+                        size: 11,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Corner Ribbon Bookmark Tag
+class _CornerRibbonTag extends StatelessWidget {
+  const _CornerRibbonTag({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(18),
+          bottomLeft: Radius.circular(8),
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+/// User Section A: Premium Purple/Indigo Available Balance Card
 class _UserBalanceCard extends StatelessWidget {
   const _UserBalanceCard({
     required this.walletAsync,
@@ -2962,48 +3737,57 @@ class _UserBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wallet = walletAsync.asData?.value;
-    final int coins = (wallet?.coinBalance == null || wallet?.coinBalance == 50)
-        ? 2450
-        : wallet!.coinBalance;
-    final int approxMins = (coins / 5).floor();
+    final int coins = wallet?.coinBalance ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFF0E1020),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF26294A)),
-        boxShadow: const [
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF2E1065), // Deep Midnight Purple
+            Color(0xFF4338CA), // Royal Indigo
+            Color(0xFF6366F1), // Electric Purple
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: const Color(0xFF818CF8).withValues(alpha: 0.25),
+          width: 1.0,
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1A0E1020),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+            color: const Color(0xFF4338CA).withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top row: Wallet icon + AVAILABLE BALANCE
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1B4B),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_rounded,
-                  color: FriendooUiColors.blue,
-                  size: 20,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               const Text(
                 'AVAILABLE BALANCE',
                 style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
+                  color: Color(0xFFE0E7FF),
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.8,
                 ),
@@ -3011,40 +3795,74 @@ class _UserBalanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text(
-            '₹${coins.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 34,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$coins coins ≈ $approxMins mins at ₹5/min',
-            style: const TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+
+          // Middle section: Balance + 3D Wallet Illustration side by side
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '₹${(coins * 0.14).toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.8,
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$coins Coins Available',
+                    style: const TextStyle(
+                      color: Color(0xFFC7D2FE),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const _3DWalletIllustration(),
+            ],
           ),
           const SizedBox(height: 18),
-          FilledButton.icon(
+
+          // Bottom CTA: Full-width white button
+          FilledButton(
             onPressed: onAddCoinsTap,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text(
-              '+ Add Coins',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-            ),
             style: FilledButton.styleFrom(
-              backgroundColor: FriendooUiColors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 20),
-              minimumSize: const Size(double.infinity, 48),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF4F46E5),
+              elevation: 3,
+              shadowColor: Colors.black.withValues(alpha: 0.15),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
               ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_rounded,
+                  size: 20,
+                  color: Color(0xFF4F46E5),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Add Coins',
+                  style: TextStyle(
+                    color: Color(0xFF4F46E5),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -3053,9 +3871,9 @@ class _UserBalanceCard extends StatelessWidget {
   }
 }
 
-/// User Section B: Horizontal Recharge Coins Section
-class _RechargeCoinsHorizontalSection extends StatelessWidget {
-  const _RechargeCoinsHorizontalSection({
+/// User Section B: Popular Packs Section
+class _PopularPacksHorizontalSection extends StatelessWidget {
+  const _PopularPacksHorizontalSection({
     required this.packages,
     required this.onViewAll,
     required this.onSelectPackage,
@@ -3071,34 +3889,22 @@ class _RechargeCoinsHorizontalSection extends StatelessWidget {
         ? packages
         : const [
             CoinPackage(
-              id: 'pkg_starter_49',
-              coins: 50,
-              amountInr: 49,
-              bonus: 'Starter',
-            ),
-            CoinPackage(
-              id: 'pkg_popular_99',
-              coins: 100,
-              amountInr: 99,
-              bonus: '+10 Bonus',
-            ),
-            CoinPackage(
-              id: 'pkg_value_249',
-              coins: 250,
-              amountInr: 249,
-              bonus: '+40 Bonus',
-            ),
-            CoinPackage(
-              id: 'pkg_pro_499',
+              id: 'pkg_500',
               coins: 500,
-              amountInr: 499,
-              bonus: '+100 Bonus',
+              amountInr: 149,
+              bonus: '+250 Bonus Coins\n(50% OFF)',
             ),
             CoinPackage(
-              id: 'pkg_max_999',
-              coins: 1000,
-              amountInr: 999,
-              bonus: '+250 Bonus',
+              id: 'pkg_900',
+              coins: 900,
+              amountInr: 900,
+              bonus: '',
+            ),
+            CoinPackage(
+              id: 'pkg_300',
+              coins: 300,
+              amountInr: 300,
+              bonus: '',
             ),
           ];
 
@@ -3108,40 +3914,100 @@ class _RechargeCoinsHorizontalSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Recharge Coins', style: _SectionTitle()),
+            const Text(
+              'Popular Packs',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.4,
+              ),
+            ),
             TextButton(
               onPressed: onViewAll,
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: FriendooUiColors.blue,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Color(0xFF6366F1),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: Color(0xFF6366F1),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 148,
+          height: 220,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
             itemCount: displayPackages.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final pkg = displayPackages[index];
-              final isPopular =
-                  pkg.bonus?.toLowerCase().contains('popular') ??
-                  (pkg.coins == 100);
-              return _HorizontalCoinPackCard(
+              final isMostPopular = index == 1 || (pkg.coins == 900);
+              final isBestSeller = index == 0 || (pkg.coins == 500);
+
+              String badgeLabel;
+              Color badgeBg;
+              Color badgeText;
+              String ribbonLabel;
+              Color ribbonColor;
+              Color illustrationBg;
+              bool showStar;
+
+              if (isBestSeller) {
+                badgeLabel = '🔥 Best Seller';
+                badgeBg = const Color(0xFFFEE2E2);
+                badgeText = const Color(0xFFDC2626);
+                ribbonLabel = 'Pro';
+                ribbonColor = const Color(0xFF6366F1);
+                illustrationBg = const Color(0xFFFFF1F2);
+                showStar = true;
+              } else if (isMostPopular) {
+                badgeLabel = '👑 Most Popular';
+                badgeBg = const Color(0xFFFEF3C7);
+                badgeText = const Color(0xFFD97706);
+                ribbonLabel = 'Max';
+                ribbonColor = const Color(0xFF4338CA);
+                illustrationBg = const Color(0xFFFEF3C7);
+                showStar = false;
+              } else {
+                badgeLabel = 'Value';
+                badgeBg = const Color(0xFFD1FAE5);
+                badgeText = const Color(0xFF059669);
+                ribbonLabel = 'Pro';
+                ribbonColor = const Color(0xFF6366F1);
+                illustrationBg = const Color(0xFFF0FDF4);
+                showStar = false;
+              }
+
+              return _ExactPopularPackCard(
                 package: pkg,
-                isPopular: isPopular,
+                badgeLabel: badgeLabel,
+                badgeBg: badgeBg,
+                badgeText: badgeText,
+                ribbonLabel: ribbonLabel,
+                ribbonColor: ribbonColor,
+                illustrationBg: illustrationBg,
+                showStar: showStar,
+                isHighlighted: isMostPopular,
                 onTap: () => onSelectPackage(pkg),
               );
             },
@@ -3152,136 +4018,168 @@ class _RechargeCoinsHorizontalSection extends StatelessWidget {
   }
 }
 
-/// Compact Horizontal Recharge Package Card
-class _HorizontalCoinPackCard extends StatelessWidget {
-  const _HorizontalCoinPackCard({
+/// Exact Match Popular Pack Card
+class _ExactPopularPackCard extends StatelessWidget {
+  const _ExactPopularPackCard({
     required this.package,
-    required this.isPopular,
+    required this.badgeLabel,
+    required this.badgeBg,
+    required this.badgeText,
+    required this.ribbonLabel,
+    required this.ribbonColor,
+    required this.illustrationBg,
+    required this.showStar,
+    required this.isHighlighted,
     required this.onTap,
   });
 
   final CoinPackage package;
-  final bool isPopular;
+  final String badgeLabel;
+  final Color badgeBg;
+  final Color badgeText;
+  final String ribbonLabel;
+  final Color ribbonColor;
+  final Color illustrationBg;
+  final bool showStar;
+  final bool isHighlighted;
   final VoidCallback onTap;
-
-  String _getTierName(int coins) {
-    if (coins <= 50) return 'Starter';
-    if (coins <= 100) return 'Popular';
-    if (coins <= 250) return 'Value';
-    if (coins <= 500) return 'Pro';
-    return 'Max';
-  }
 
   @override
   Widget build(BuildContext context) {
-    final tierName = _getTierName(package.coins);
-    final hasBonus = package.bonus != null && package.bonus!.contains('+');
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
-        width: 126,
-        padding: const EdgeInsets.all(12),
+        width: 130,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isPopular ? FriendooUiColors.violet : const Color(0xFFE2E4ED),
-            width: isPopular ? 1.5 : 1.0,
+            color: isHighlighted
+                ? const Color(0xFF6366F1)
+                : const Color(0xFFE2E8F0),
+            width: isHighlighted ? 2.0 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: isPopular
-                  ? const Color(0x188B5CF6)
-                  : Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
+              color: isHighlighted
+                  ? const Color(0x286366F1)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: isHighlighted ? 18 : 8,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Stack(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  tierName,
-                  style: TextStyle(
-                    color: isPopular
-                        ? FriendooUiColors.violet
-                        : FriendooUiColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (isPopular)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: FriendooUiColors.softViolet,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'POPULAR',
-                      style: TextStyle(
-                        color: FriendooUiColors.violet,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
+            // Top Right Bookmark Tag
+            Positioned(
+              top: 0,
+              right: 0,
+              child: _CornerRibbonTag(
+                label: ribbonLabel,
+                color: ribbonColor,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Top Left Badge
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeLabel,
+                        style: TextStyle(
+                          color: badgeText,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${package.coins} Coins',
-                  style: const TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
+
+                  // Center Illustration
+                  _3DCoinStackIllustration(
+                    backgroundColor: illustrationBg,
+                    showStar: showStar,
                   ),
-                ),
-                if (hasBonus)
+
+                  // Coin Count Title
                   Text(
-                    package.bonus!,
+                    '${package.coins} Coins',
                     style: const TextStyle(
-                      color: Color(0xFF10B981),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
                     ),
-                  )
-                else
-                  const SizedBox(height: 14),
-              ],
-            ),
-            SizedBox(
-              width: double.infinity,
-              height: 32,
-              child: FilledButton(
-                onPressed: onTap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: isPopular
-                      ? FriendooUiColors.violet
-                      : FriendooUiColors.ink,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                ),
-                child: Text(
-                  '₹${package.amountInr}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+
+                  // Bonus text or divider line
+                  if (package.bonus != null && package.bonus!.isNotEmpty)
+                    Text(
+                      package.bonus!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF059669),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 40,
+                      height: 1.5,
+                      color: const Color(0xFFE2E8F0),
+                    ),
+
+                  // Bottom Button
+                  Container(
+                    width: double.infinity,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: isHighlighted
+                          ? const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF7C3AED)],
+                            )
+                          : (package.coins == 300
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF7C3AED),
+                                      Color(0xFF9333EA),
+                                    ],
+                                  )
+                                : null),
+                      color: (!isHighlighted && package.coins != 300)
+                          ? const Color(0xFF6366F1)
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '₹${package.amountInr}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -3291,7 +4189,7 @@ class _HorizontalCoinPackCard extends StatelessWidget {
   }
 }
 
-/// User Section C: Monthly Summary Card (3 columns)
+/// User Section C: Premium Monthly Summary Card (Exact Match to Design)
 class _UserMonthlySummaryCard extends StatelessWidget {
   const _UserMonthlySummaryCard({
     required this.callsCount,
@@ -3309,42 +4207,66 @@ class _UserMonthlySummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E4ED)),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x060E1020),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
             blurRadius: 16,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('This Month Summary', style: _CardTitle()),
-          const SizedBox(height: 14),
+          const Text(
+            'This Month Summary',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 16),
           IntrinsicHeight(
             child: Row(
               children: [
+                // Col 1: Calls
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        '$callsCount',
-                        style: const TextStyle(
-                          color: FriendooUiColors.ink,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEEF2FF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.phone_outlined,
+                          color: Color(0xFF6366F1),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '$callsCount',
+                          style: const TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       const Text(
                         'Calls',
                         style: TextStyle(
-                          color: FriendooUiColors.muted,
-                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -3354,26 +4276,43 @@ class _UserMonthlySummaryCard extends StatelessWidget {
                 const VerticalDivider(
                   width: 16,
                   thickness: 1,
-                  color: Color(0xFFE2E4ED),
+                  color: Color(0xFFF1F5F9),
                 ),
+                // Col 2: Total Duration
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        totalDuration,
-                        style: const TextStyle(
-                          color: FriendooUiColors.ink,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEDE9FE),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.access_time_rounded,
+                          color: Color(0xFF7C3AED),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          totalDuration,
+                          style: const TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       const Text(
                         'Total Duration',
                         style: TextStyle(
-                          color: FriendooUiColors.muted,
-                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -3383,26 +4322,43 @@ class _UserMonthlySummaryCard extends StatelessWidget {
                 const VerticalDivider(
                   width: 16,
                   thickness: 1,
-                  color: Color(0xFFE2E4ED),
+                  color: Color(0xFFF1F5F9),
                 ),
+                // Col 3: Amount Spent
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        '₹$amountSpentInr',
-                        style: const TextStyle(
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFE4E6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
                           color: Color(0xFFE11D48),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '₹$amountSpentInr',
+                          style: const TextStyle(
+                            color: Color(0xFFE11D48),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 2),
                       const Text(
                         'Amount Spent',
                         style: TextStyle(
-                          color: FriendooUiColors.muted,
-                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -3444,11 +4400,11 @@ class _UserRecentTransactionsSection extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text(
-                'View All',
+                'View All →',
                 style: TextStyle(
-                  color: FriendooUiColors.blue,
+                  color: Color(0xFF6366F1),
                   fontWeight: FontWeight.w800,
-                  fontSize: 13,
+                  fontSize: 13.5,
                 ),
               ),
             ),
@@ -3468,9 +4424,7 @@ class _UserRecentTransactionsSection extends StatelessWidget {
                 .map(
                   (tx) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: _UserTransactionRow(
-                      transaction: tx,
-                    ),
+                    child: _UserTransactionRow(transaction: tx),
                   ),
                 )
                 .toList(),
@@ -3480,7 +4434,7 @@ class _UserRecentTransactionsSection extends StatelessWidget {
   }
 }
 
-/// Compact User Transaction Row (Red for spent, Green for added)
+/// Compact User Transaction Row (Clickable, shows full receipt with transaction code)
 class _UserTransactionRow extends StatelessWidget {
   const _UserTransactionRow({required this.transaction});
 
@@ -3489,121 +4443,528 @@ class _UserTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCredit = transaction.isCredit;
-    final isRecharge =
-        isCredit || (transaction.otherPartyName?.contains('Recharge') ?? false);
+    final isFailed = transaction.isFailed;
+    final isCanceled = transaction.isCanceled;
+    final isWithdrawal = transaction.isWithdrawal;
+
+    final themeColor = isFailed
+        ? const Color(0xFFEF4444)
+        : isCanceled
+            ? const Color(0xFF6B7280)
+            : isWithdrawal
+                ? const Color(0xFFF59E0B)
+                : isCredit
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFE11D48);
+
     final amount = transaction.displayAmountInr;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => showTransactionDetailsSheet(context, transaction),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E4ED)),
-      ),
-      child: Row(
-        children: [
-          // Avatar: Host initials / Recharge icon
-          if (isRecharge)
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: Color(0xFFECFDF5),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
-                color: Color(0xFF10B981),
-                size: 20,
-              ),
-            )
-          else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                color: FriendooUiColors.softPink,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  _extractInitials(transaction.otherPartyName ?? 'Ananya S'),
-                  style: const TextStyle(
-                    color: FriendooUiColors.pink,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.title,
-                  style: const TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  transaction.subtitle,
-                  style: const TextStyle(
-                    color: FriendooUiColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFE2E4ED)),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Row(
             children: [
-              Text(
-                '${isCredit ? '+' : '-'} ₹$amount',
-                style: TextStyle(
-                  color: isCredit
+              // Avatar: Host initials / Recharge icon / Status icon
+              if (isFailed)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    color: Color(0xFFEF4444),
+                    size: 20,
+                  ),
+                )
+              else if (isCanceled)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.remove_circle_outline_rounded,
+                    color: Color(0xFF64748B),
+                    size: 20,
+                  ),
+                )
+              else if (isWithdrawal)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF3C7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_rounded,
+                    color: Color(0xFFD97706),
+                    size: 20,
+                  ),
+                )
+              else if (isCredit)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFECFDF5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: Color(0xFF10B981),
+                    size: 20,
+                  ),
+                )
+              else
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: FriendooUiColors.softPink,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _extractInitials(transaction.otherPartyName ?? 'Ananya S'),
+                      style: const TextStyle(
+                        color: FriendooUiColors.pink,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.title,
+                      style: const TextStyle(
+                        color: FriendooUiColors.ink,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      transaction.subtitle,
+                      style: const TextStyle(
+                        color: FriendooUiColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${isCredit || isCanceled ? '+' : '-'} ₹$amount',
+                    style: TextStyle(
+                      color: themeColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: themeColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      transaction.statusLabel,
+                      style: TextStyle(
+                        color: themeColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Detailed Transaction Receipt Modal Sheet with Copyable Transaction Code
+void showTransactionDetailsSheet(
+  BuildContext context,
+  WalletTransactionItem transaction,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (context) {
+      final isCredit = transaction.isCredit;
+      final isFailed = transaction.isFailed;
+      final isCanceled = transaction.isCanceled;
+      final isWithdrawal = transaction.isWithdrawal;
+
+      final themeColor = isFailed
+          ? const Color(0xFFEF4444)
+          : isCanceled
+              ? const Color(0xFF6B7280)
+              : isWithdrawal
+                  ? const Color(0xFFF59E0B)
+                  : isCredit
                       ? const Color(0xFF10B981)
-                      : const Color(0xFFE11D48),
-                  fontSize: 15,
+                      : const Color(0xFFFF2A85);
+
+      final iconData = isFailed
+          ? Icons.error_outline_rounded
+          : isCanceled
+              ? Icons.remove_circle_outline_rounded
+              : isWithdrawal
+                  ? Icons.account_balance_rounded
+                  : isCredit
+                      ? Icons.check_circle_rounded
+                      : Icons.phone_in_talk_rounded;
+
+      final statusHeader = isFailed
+          ? 'Payment Failed'
+          : isCanceled
+              ? 'Transaction Canceled & Refunded'
+              : isWithdrawal
+                  ? 'Host Payout Withdrawal'
+                  : isCredit
+                      ? 'Coins Added to Vault'
+                      : 'Voice Lounge Call Spend';
+
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Status Icon & Header
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: themeColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(iconData, color: themeColor, size: 34),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                statusHeader,
+                style: const TextStyle(
+                  color: FriendooUiColors.ink,
+                  fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 2),
-              Text(
-                isCredit ? 'Added' : 'Paid',
-                style: TextStyle(
-                  color: isCredit
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFE11D48),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 6),
+
+              // 2. Big Amount Display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${isCredit || isCanceled ? '+' : '-'}${transaction.coinAmount.abs()} Coins',
+                    style: TextStyle(
+                      color: themeColor,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (transaction.amountInr != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '(₹${transaction.amountInr})',
+                      style: const TextStyle(
+                        color: FriendooUiColors.muted,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Transaction Code Box with 1-Tap Copy
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.receipt_long_rounded,
+                      color: Color(0xFF64748B),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'TRANSACTION CODE',
+                            style: TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          SelectableText(
+                            transaction.transactionCode,
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'monospace',
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Clipboard.setData(
+                          ClipboardData(text: transaction.transactionCode),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '✓ Copied transaction code: ${transaction.transactionCode}',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF1E293B),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.copy_rounded,
+                              size: 14,
+                              color: Color(0xFF4F46E5),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Copy',
+                              style: TextStyle(
+                                color: Color(0xFF4F46E5),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 4. Detailed metadata table
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE2E4ED)),
+                ),
+                child: Column(
+                  children: [
+                    _ReceiptRow(
+                      label: 'Status',
+                      valueWidget: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: themeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          transaction.statusLabel,
+                          style: TextStyle(
+                            color: themeColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    _ReceiptRow(
+                      label: 'Type',
+                      value: transaction.type.toUpperCase(),
+                    ),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    _ReceiptRow(
+                      label: 'Date & Time',
+                      value: transaction.formattedDateTime,
+                    ),
+                    if (transaction.methodOrContext != null) ...[
+                      const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                      _ReceiptRow(
+                        label: 'Payment Method',
+                        value: transaction.methodOrContext!,
+                      ),
+                    ],
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    _ReceiptRow(
+                      label: 'Vault Balance After',
+                      value: '${transaction.balanceAfter} Coins',
+                    ),
+                    if (transaction.description != null) ...[
+                      const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                      _ReceiptRow(
+                        label: 'Details',
+                        value: transaction.description!,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 5. Close CTA
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      );
+    },
+  );
+}
+
+class _ReceiptRow extends StatelessWidget {
+  const _ReceiptRow({
+    required this.label,
+    this.value,
+    this.valueWidget,
+  });
+
+  final String label;
+  final String? value;
+  final Widget? valueWidget;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (valueWidget != null)
+          valueWidget!
+        else
+          Flexible(
+            child: Text(
+              value ?? '-',
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
     );
   }
+}
 
-  String _extractInitials(String name) {
-    final clean = name.replaceAll('Call with', '').trim();
-    if (clean.isEmpty) return 'AS';
-    final parts = clean.split(' ').where((p) => p.isNotEmpty).toList();
-    if (parts.length == 1) {
-      return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
-    }
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+String _extractInitials(String name) {
+  final clean = name.replaceAll('Call with', '').trim();
+  if (clean.isEmpty) return 'AS';
+  final parts = clean.split(' ').where((p) => p.isNotEmpty).toList();
+  if (parts.length == 1) {
+    return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
   }
+  return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
 }
 
 // ============================================================================
@@ -3668,22 +5029,32 @@ class _HostTotalEarningsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text(
-            '₹${totalEarningsInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 34,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '₹${totalEarningsInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 34,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.6,
+              ),
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            'Available to withdraw: ₹${availableToWithdrawInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
-            style: const TextStyle(
-              color: Color(0xFF34D399),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Available to withdraw: ₹${availableToWithdrawInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF34D399),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(height: 18),
@@ -3728,23 +5099,22 @@ class _HostQuickStatsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _HostStatCard(
-            value: '₹${thisWeekInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+            value:
+                '₹${thisWeekInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
             label: 'This Week',
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _HostStatCard(
-            value: '₹${thisMonthInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+            value:
+                '₹${thisMonthInr.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
             label: 'This Month',
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: _HostStatCard(
-            value: '$totalCalls',
-            label: 'Total Calls',
-          ),
+          child: _HostStatCard(value: '$totalCalls', label: 'Total Calls'),
         ),
       ],
     );
@@ -3910,9 +5280,9 @@ class _HostEarningsOverviewCardState extends State<_HostEarningsOverviewCard> {
                 final width = box.size.width - 36;
                 final step = width / (points.length - 1);
                 final tappedIndex = ((localX - 18) / step).round().clamp(
-                      0,
-                      points.length - 1,
-                    );
+                  0,
+                  points.length - 1,
+                );
                 setState(() => _selectedDayIndex = tappedIndex);
               }
             },
@@ -4039,9 +5409,8 @@ class _EarningsLineChartPainter extends CustomPainter {
 
     // Stroke line
     final linePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [primaryColor, accentColor],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..shader = LinearGradient(colors: [primaryColor, accentColor])
+          .createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
@@ -4059,7 +5428,9 @@ class _EarningsLineChartPainter extends CustomPainter {
         ..color = Colors.white
         ..style = PaintingStyle.fill;
       final dotBorderPaint = Paint()
-        ..color = isSelected ? primaryColor : primaryColor.withValues(alpha: 0.6)
+        ..color = isSelected
+            ? primaryColor
+            : primaryColor.withValues(alpha: 0.6)
         ..strokeWidth = isSelected ? 3.0 : 2.0
         ..style = PaintingStyle.stroke;
 
@@ -4086,10 +5457,7 @@ class _EarningsLineChartPainter extends CustomPainter {
         final bubbleRect = RRect.fromRectAndRadius(
           Rect.fromCenter(
             center: Offset(
-              p.dx.clamp(
-                bubbleWidth / 2 + 4,
-                size.width - bubbleWidth / 2 - 4,
-              ),
+              p.dx.clamp(bubbleWidth / 2 + 4, size.width - bubbleWidth / 2 - 4),
               p.dy - 16,
             ),
             width: bubbleWidth,
@@ -4350,8 +5718,10 @@ class _HostWithdrawalCard extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -4380,7 +5750,7 @@ class _HostWithdrawalCard extends StatelessWidget {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Minimum withdrawal: ₹500',
+                    'Minimum withdrawal: ₹100',
                     style: TextStyle(
                       color: FriendooUiColors.muted,
                       fontSize: 11,
@@ -4438,7 +5808,8 @@ class _HostRecentEarningsSection extends StatelessWidget {
           const _EmptySurface(
             icon: Icons.payments_outlined,
             title: 'No recent earnings',
-            message: 'Answer incoming caller requests to start earning rewards.',
+            message:
+                'Answer incoming caller requests to start earning rewards.',
           )
         else
           Column(
@@ -4554,30 +5925,343 @@ class _HostPayoutFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.account_balance_wallet_outlined,
-          color: FriendooUiColors.muted,
-          size: 15,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          'Withdrawals are transferred to your registered payout account',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: FriendooUiColors.muted,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      ],
-    );
+    return const SizedBox.shrink();
   }
 }
 
 // ============================================================================
 // DIALOGS & BOTTOM SHEETS (INFO, ALL TRANSACTIONS)
 // ============================================================================
+
+/// User Wallet Support / Help Desk Sheet
+void _showWalletSupportSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (context, scrollController) {
+          return ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          FriendooUiColors.violet,
+                          FriendooUiColors.pink,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: FriendooUiColors.violet.withValues(
+                            alpha: 0.25,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.support_agent_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Wallet & Recharge Help',
+                          style: TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '24x7 Instant Support & Dispute Resolution',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Scenario 1: Money debited but coins not credited
+              _SupportQueryCard(
+                icon: Icons.currency_rupee_rounded,
+                color: const Color(0xFFDC2626),
+                title: 'Money debited but Coins not credited?',
+                subtitle: 'UPI/Bank payment was successful, but wallet balance not updated.',
+                solution: 'Bank servers sometimes take 2 to 10 minutes to notify the payment gateway. If your coins do not appear within 10 minutes, tap below to check reconciliation or submit your 12-digit UPI Reference / UTR number for immediate credit.',
+                actionText: 'Submit UTR / Ref Number',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF10B981),
+                      content: Text(
+                        'Checking bank reconciliation status with payment gateway...',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Scenario 2: Recharge payment failed / cancelled
+              _SupportQueryCard(
+                icon: Icons.cancel_outlined,
+                color: const Color(0xFFD97706),
+                title: 'Recharge Failed or Cancelled?',
+                subtitle: 'UPI app timed out or bank rejected transaction.',
+                solution: 'If money was not deducted from your account, you can safely retry using Google Pay, PhonePe, Paytm, or debit/credit card. Any deducted amount for a failed attempt is auto-refunded by your bank in 24-48 hours.',
+                actionText: 'Retry Recharge Now',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Scenario 3: Call disconnected early / coins deducted
+              _SupportQueryCard(
+                icon: Icons.phone_missed_rounded,
+                color: FriendooUiColors.blue,
+                title: 'Call Disconnected early or Host dropped?',
+                subtitle: 'Audio dropped within initial seconds of connection.',
+                solution: 'Friendoo automatically detects network drops under 15 seconds and refunds talk time coins back to your vault. If you experienced poor audio quality, you can submit a quick dispute.',
+                actionText: 'Dispute Call Deduction',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF374151),
+                      content: Text(
+                        'Call logs reviewed. No improper deduction detected.',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Scenario 4: Live Agent Contact
+              _SupportQueryCard(
+                icon: Icons.headset_mic_rounded,
+                color: const Color(0xFF10B981),
+                title: 'Chat with Friendoo Support Team',
+                subtitle: 'Average reply time: under 5 minutes',
+                solution: 'Our dedicated support executives are available 24x7 to assist with payment queries, host reports, account inquiries, and billing questions.',
+                actionText: 'Contact 24x7 Support Desk',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Color(0xFF6366F1),
+                      content: Text('Connecting to Friendoo Support Desk...'),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close Help Desk',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+class _SupportQueryCard extends StatefulWidget {
+  const _SupportQueryCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.solution,
+    required this.actionText,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final String solution;
+  final String actionText;
+  final VoidCallback onAction;
+
+  @override
+  State<_SupportQueryCard> createState() => _SupportQueryCardState();
+}
+
+class _SupportQueryCardState extends State<_SupportQueryCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _expanded
+              ? widget.color.withValues(alpha: 0.4)
+              : const Color(0xFFE5E7EB),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: widget.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.subtitle,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  const SizedBox(height: 10),
+                  Text(
+                    widget.solution,
+                    style: const TextStyle(
+                      color: Color(0xFF374151),
+                      fontSize: 12.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton.tonal(
+                      onPressed: widget.onAction,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: widget.color.withValues(alpha: 0.12),
+                        foregroundColor: widget.color,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        widget.actionText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 /// User Wallet Info Modal Sheet
 void _showWalletInfoSheet(BuildContext context) {
@@ -4613,24 +6297,21 @@ void _showWalletInfoSheet(BuildContext context) {
               icon: Icons.toll_rounded,
               color: FriendooUiColors.blue,
               title: '5 Coins = 1 Minute Talk Time',
-              description:
-                  'Calls are billed per minute with no hidden fees or setup charges.',
+              description: 'Calls are billed per minute with no hidden fees or setup charges.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
               icon: Icons.flash_on_rounded,
               color: const Color(0xFF10B981),
               title: 'Instant Recharge via UPI & Cards',
-              description:
-                  'Coins are added to your vault immediately after payment confirmation.',
+              description: 'Coins are added to your vault immediately after payment confirmation.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
               icon: Icons.card_giftcard_rounded,
               color: const Color(0xFFD97706),
               title: 'Bonus Coins on Higher Packs',
-              description:
-                  'Enjoy extra bonus talk time on value, pro, and max recharge packages.',
+              description: 'Enjoy extra bonus talk time on value, pro, and max recharge packages.',
             ),
             const SizedBox(height: 22),
             FilledButton(
@@ -4685,24 +6366,21 @@ void _showHostEarningsInfoSheet(BuildContext context) {
               icon: Icons.currency_rupee_rounded,
               color: const Color(0xFF10B981),
               title: 'Earn ₹5 / Minute',
-              description:
-                  'Earn directly for every minute of audio conversation you host.',
+              description: 'Earn directly for every minute of audio conversation you host.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
               icon: Icons.account_balance_wallet_outlined,
               color: FriendooUiColors.blue,
               title: 'Registered Payout Accounts',
-              description:
-                  'Earnings can be withdrawn directly to your registered UPI or Bank account.',
+              description: 'Earnings can be withdrawn directly to your registered UPI or Bank account.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
               icon: Icons.account_balance_rounded,
               color: const Color(0xFFD97706),
-              title: 'Minimum Withdrawal ₹500',
-              description:
-                  'Submit withdrawal requests anytime once your available balance reaches ₹500.',
+              title: 'Minimum Withdrawal ₹100',
+              description: 'Submit withdrawal requests anytime once your available balance reaches ₹100.',
             ),
             const SizedBox(height: 22),
             FilledButton(
@@ -5004,7 +6682,8 @@ class _PolishedHostPreviewCard extends StatelessWidget {
       const LinearGradient(colors: [Color(0xFF00D2E0), Color(0xFF06D6A0)]),
       const LinearGradient(colors: [Color(0xFFFFB703), Color(0xFFFF5400)]),
     ];
-    final currentGradient = avatarGradients[colorIndex % avatarGradients.length];
+    final currentGradient =
+        avatarGradients[colorIndex % avatarGradients.length];
 
     final initial = host.displayName.isEmpty
         ? '?'
@@ -5017,7 +6696,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: host.isAvailable
-              ? const Color(0xFF6366F1).withOpacity(0.35)
+              ? const Color(0xFF6366F1).withValues(alpha: 0.35)
               : const Color(0xFFE2E4ED),
           width: 1.5,
         ),
@@ -5025,7 +6704,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
           BoxShadow(
             color: host.isAvailable
                 ? const Color(0x186366F1)
-                : Colors.black.withOpacity(0.03),
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -5050,7 +6729,9 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: currentGradient.colors.first.withOpacity(0.4),
+                          color: currentGradient.colors.first.withValues(
+                            alpha: 0.4,
+                          ),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -5115,7 +6796,10 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                         if (host.isStar) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
@@ -5138,7 +6822,10 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: host.isAvailable
                                 ? const Color(0xFFECFDF5)
@@ -5218,7 +6905,8 @@ class _PolishedHostPreviewCard extends StatelessWidget {
 
           const SizedBox(height: 12),
           Text(
-            host.bio ?? 'Verified female companion ready for friendly voice chats.',
+            host.bio ??
+                'Verified female companion ready for friendly voice chats.',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -5264,7 +6952,11 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                     ),
                     child: ElevatedButton.icon(
                       onPressed: onStartCall,
-                      icon: const Icon(Icons.call_rounded, size: 19, color: Colors.white),
+                      icon: const Icon(
+                        Icons.call_rounded,
+                        size: 19,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'Start Voice Call Now',
                         style: TextStyle(
@@ -5286,7 +6978,10 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                   )
                 : OutlinedButton.icon(
                     onPressed: null,
-                    icon: const Icon(Icons.notifications_none_rounded, size: 18),
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 18,
+                    ),
                     label: const Text('Currently Offline'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 13),
@@ -5484,7 +7179,7 @@ class _TrendCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E4ED)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -5502,11 +7197,17 @@ class _TrendCard extends StatelessWidget {
                 children: [
                   Text('Daily Coin Spend Trend', style: _CardTitle()),
                   SizedBox(height: 4),
-                  Text('Past 7-day activity visualizer', style: _FriendooMuted()),
+                  Text(
+                    'Past 7-day activity visualizer',
+                    style: _FriendooMuted(),
+                  ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [FriendooUiColors.violet, FriendooUiColors.pink],
@@ -5651,7 +7352,7 @@ class _MetricCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E4ED)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -5666,7 +7367,11 @@ class _MetricCard extends StatelessWidget {
               color: tint,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: iconColor ?? FriendooUiColors.ink, size: 21),
+            child: Icon(
+              icon,
+              color: iconColor ?? FriendooUiColors.ink,
+              size: 21,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -5698,10 +7403,6 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = call.otherPartyName.isEmpty
-        ? '?'
-        : call.otherPartyName.substring(0, 1).toUpperCase();
-    final isCompleted = call.status == 'ended';
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -5711,18 +7412,10 @@ class _ActivityTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: isCompleted
-                ? FriendooUiColors.softBlue
-                : FriendooUiColors.softPink,
-            child: Text(
-              initial,
-              style: TextStyle(
-                color: isCompleted ? FriendooUiColors.blue : FriendooUiColors.pink,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+          DesiAvatar(
+            seed: call.otherPartyName,
+            gender: DesiGender.female,
+            size: 44,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -5757,57 +7450,73 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCredit = transaction.coinAmount >= 0;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => showTransactionDetailsSheet(context, transaction),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E4ED)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: isCredit
-                  ? const Color(0xFFECFDF5)
-                  : FriendooUiColors.softPink,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(
-              isCredit ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: isCredit
-                  ? const Color(0xFF10B981)
-                  : FriendooUiColors.pink,
-              size: 18,
-            ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E4ED)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              transaction.description ??
-                  (isCredit ? 'Coins added to vault' : 'Voice call spend'),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: FriendooUiColors.ink,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: isCredit
+                      ? const Color(0xFFECFDF5)
+                      : FriendooUiColors.softPink,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  isCredit ? Icons.south_west_rounded : Icons.north_east_rounded,
+                  color: isCredit ? const Color(0xFF10B981) : FriendooUiColors.pink,
+                  size: 18,
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: FriendooUiColors.ink,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${transaction.formattedDateTime} • ${transaction.transactionCode}',
+                      style: const TextStyle(
+                        color: FriendooUiColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${isCredit || transaction.isCanceled ? '+' : ''}${transaction.coinAmount}',
+                style: TextStyle(
+                  color: isCredit ? const Color(0xFF10B981) : FriendooUiColors.pink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            '${isCredit ? '+' : ''}${transaction.coinAmount}',
-            style: TextStyle(
-              color: isCredit
-                  ? const Color(0xFF10B981)
-                  : FriendooUiColors.pink,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -5843,7 +7552,7 @@ class _CoinPackCard extends StatelessWidget {
             BoxShadow(
               color: featured
                   ? const Color(0x248B5CF6)
-                  : Colors.black.withOpacity(0.03),
+                  : Colors.black.withValues(alpha: 0.03),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -5871,10 +7580,16 @@ class _CoinPackCard extends StatelessWidget {
                 ),
                 if (featured)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [FriendooUiColors.violet, FriendooUiColors.pink],
+                        colors: [
+                          FriendooUiColors.violet,
+                          FriendooUiColors.pink,
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -5899,7 +7614,9 @@ class _CoinPackCard extends StatelessWidget {
               child: FilledButton(
                 onPressed: onTap,
                 style: FilledButton.styleFrom(
-                  backgroundColor: featured ? FriendooUiColors.violet : FriendooUiColors.ink,
+                  backgroundColor: featured
+                      ? FriendooUiColors.violet
+                      : FriendooUiColors.ink,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -6046,7 +7763,10 @@ class _ProgressCard extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: FriendooUiColors.softGold,
                   borderRadius: BorderRadius.circular(8),
@@ -6131,7 +7851,9 @@ class _BadgeTile extends StatelessWidget {
         color: earned ? Colors.white : const Color(0xFFFAFAFD),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: earned ? FriendooUiColors.violet.withOpacity(0.3) : const Color(0xFFE2E4ED),
+          color: earned
+              ? FriendooUiColors.violet.withValues(alpha: 0.3)
+              : const Color(0xFFE2E4ED),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
@@ -6169,7 +7891,9 @@ class _BadgeTile extends StatelessWidget {
             child: Text(
               earned ? 'UNLOCKED' : 'LOCKED',
               style: TextStyle(
-                color: earned ? const Color(0xFF047857) : FriendooUiColors.muted,
+                color: earned
+                    ? const Color(0xFF047857)
+                    : FriendooUiColors.muted,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
               ),
@@ -6269,7 +7993,7 @@ class _QuickAction extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE2E4ED)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.035),
+              color: Colors.black.withValues(alpha: 0.035),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -6285,7 +8009,7 @@ class _QuickAction extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: gradient.colors.first.withOpacity(0.35),
+                    color: gradient.colors.first.withValues(alpha: 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -6359,11 +8083,8 @@ class _UiIconButton extends StatelessWidget {
 }
 
 class _UiCard extends StatelessWidget {
-  const _UiCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.color = Colors.white,
-  });
+  const _UiCard({required this.child, this.padding = const EdgeInsets.all(16)})
+    : color = Colors.white;
 
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -6379,7 +8100,7 @@ class _UiCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E4ED)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -6519,11 +8240,7 @@ class _OfferCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       child: const Row(
         children: [
-          Icon(
-            Icons.card_giftcard_rounded,
-            color: Color(0xFFFFD166),
-            size: 26,
-          ),
+          Icon(Icons.card_giftcard_rounded, color: Color(0xFFFFD166), size: 26),
           SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -6541,7 +8258,11 @@ class _OfferCard extends StatelessWidget {
                 SizedBox(height: 3),
                 Text(
                   'Get 50% extra talk coins on your first recharge.',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -6562,11 +8283,16 @@ class _SecurityFooter extends StatelessWidget {
       children: [
         const Icon(Icons.lock_rounded, color: Color(0xFF10B981), size: 15),
         const SizedBox(width: 6),
-        Text(
-          'Secure 256-bit SSL checkout powered by Cashfree',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: FriendooUiColors.muted,
-            fontWeight: FontWeight.w700,
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Secure 256-bit SSL checkout powered by Cashfree',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: FriendooUiColors.muted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
       ],
@@ -6635,7 +8361,7 @@ class _DarkPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(99),
       ),
       child: Text(
@@ -6739,6 +8465,8 @@ Set<String> _earnedBadges(int completedCalls, int coinBalance) {
   final earned = <String>{};
   if (completedCalls >= 1) earned.add('First Hello ✦');
   if (completedCalls >= 5) earned.add('Good Listener 🎧');
-  if (completedCalls >= 10 || coinBalance >= 1000) earned.add('Lounge Regular 👑');
+  if (completedCalls >= 10 || coinBalance >= 1000) {
+    earned.add('Lounge Regular 👑');
+  }
   return earned;
 }

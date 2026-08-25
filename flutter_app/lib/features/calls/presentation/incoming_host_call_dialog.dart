@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +9,7 @@ import '../application/host_call_guard.dart';
 enum IncomingCallDecision { accept, decline, goOffline }
 
 class IncomingHostCallDialog extends ConsumerStatefulWidget {
-  const IncomingHostCallDialog({
-    super.key,
-    required this.call,
-  });
+  const IncomingHostCallDialog({super.key, required this.call});
 
   final CallSession call;
 
@@ -77,7 +75,7 @@ class _IncomingHostCallDialogState
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _isAutoAttending
-              ? Colors.amber.withOpacity(0.18)
+              ? Colors.amber.withValues(alpha: 0.18)
               : colors.primaryContainer,
           shape: BoxShape.circle,
         ),
@@ -90,9 +88,7 @@ class _IncomingHostCallDialogState
         ),
       ),
       title: Text(
-        _isAutoAttending
-            ? 'Auto-Attending Call ⚡'
-            : 'Incoming Voice Call 📞',
+        _isAutoAttending ? 'Auto-Attending Call ⚡' : 'Incoming Voice Call 📞',
         textAlign: TextAlign.center,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
@@ -111,10 +107,9 @@ class _IncomingHostCallDialogState
 
             // Rate Badge
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: colors.secondaryContainer.withOpacity(0.5),
+                color: colors.secondaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -133,7 +128,7 @@ class _IncomingHostCallDialogState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.15),
+                  color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.amber, width: 1),
                 ),
@@ -142,8 +137,11 @@ class _IncomingHostCallDialogState
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.timer_rounded,
-                            color: Colors.amber, size: 18),
+                        const Icon(
+                          Icons.timer_rounded,
+                          color: Colors.amber,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Answering in $_countdownSeconds seconds...',
@@ -167,17 +165,22 @@ class _IncomingHostCallDialogState
             ] else ...[
               // NORMAL SKIP QUOTA BADGE
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: colors.surfaceVariant.withOpacity(0.5),
+                  color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.swipe_right_alt_rounded,
-                        size: 16, color: colors.onSurfaceVariant),
+                    Icon(
+                      Icons.swipe_right_alt_rounded,
+                      size: 16,
+                      color: colors.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Daily Skips: ${guard.skippedToday} / 5 used (${guard.remainingSkips} left)',
@@ -199,8 +202,7 @@ class _IncomingHostCallDialogState
           // Go Offline button to stop auto-attend
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -208,19 +210,23 @@ class _IncomingHostCallDialogState
             ),
             onPressed: () =>
                 Navigator.of(context).pop(IncomingCallDecision.goOffline),
-            icon: const Icon(Icons.pause_circle_filled_rounded,
-                color: Colors.redAccent, size: 18),
+            icon: const Icon(
+              Icons.pause_circle_filled_rounded,
+              color: Colors.redAccent,
+              size: 18,
+            ),
             label: const Text(
               'Go Offline',
               style: TextStyle(
-                  color: Colors.redAccent, fontWeight: FontWeight.bold),
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: Colors.green,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -234,16 +240,18 @@ class _IncomingHostCallDialogState
           // Normal Decline and Accept
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
             onPressed: () =>
                 Navigator.of(context).pop(IncomingCallDecision.decline),
-            icon: const Icon(Icons.call_end_rounded,
-                color: Colors.redAccent, size: 18),
+            icon: const Icon(
+              Icons.call_end_rounded,
+              color: Colors.redAccent,
+              size: 18,
+            ),
             label: Text(
               'Skip (${guard.remainingSkips} left)',
               style: const TextStyle(color: Colors.redAccent),
@@ -251,8 +259,7 @@ class _IncomingHostCallDialogState
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

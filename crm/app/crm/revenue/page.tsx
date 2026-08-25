@@ -28,6 +28,7 @@ import {
 import { KPICard } from "@/components/crm/KPICard";
 import { LiveChart } from "@/components/crm/LiveChart";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { crmFetch } from "@/lib/client";
 
 const pieColors = ["#a855f7", "#06b6d4", "#22c55e", "#f59e0b", "#ec4899", "#6366f1"];
 
@@ -107,15 +108,9 @@ export default function RevenuePage() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/crm/revenue/stats", { cache: "no-store" });
-      if (response.ok) {
-        const text = await response.text();
-        if (text) {
-          const json = JSON.parse(text) as RevenueResponse;
-          if (json && json.kpis) {
-            setData(json);
-          }
-        }
+      const json = await crmFetch<RevenueResponse>("/api/crm/revenue/stats");
+      if (json && json.kpis) {
+        setData(json);
       }
     } catch (e) {
       console.warn("Using baseline revenue state:", e);

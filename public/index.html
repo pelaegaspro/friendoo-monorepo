@@ -1,11 +1,13 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Friendoo — Real Conversations with Verified Female Hosts</title>
-<meta name="description" content="Friendoo connects users with verified female hosts for real conversations via chat and voice calls.">
+<title>Friendoo | Real Conversations with Verified Hosts</title>
+<meta name="description" content="Friendoo connects you with verified female hosts for genuine conversations by chat and voice call, with safe payments and weekly host earnings.">
+<link rel="icon" type="image/png" href="/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--brand:#7c5cff;--teal:#18c6b8;--pink:#ff7ab6;--dark:#060810;--panel:rgba(255,255,255,.05);--border:rgba(255,255,255,.08);--muted:rgba(255,255,255,.5);--r:22px}
-*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
-body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:#fff;line-height:1.7;overflow-x:hidden}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:'Space Grotesk',sans-serif;background:var(--dark);color:#fff;line-height:1.7;overflow-x:hidden;max-width:100%}
+img,svg,video{max-width:100%;height:auto}h1,h2,h3,h4,p,li,a,button,label{overflow-wrap:anywhere}
 a{color:inherit;text-decoration:none}
 .lang-bar{background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);padding:6px 6vw;display:flex;gap:6px;align-items:center;justify-content:flex-end}
 .lang-bar>span{color:var(--muted);font-size:12px}
@@ -15,10 +17,12 @@ a{color:inherit;text-decoration:none}
 nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 6vw;background:rgba(6,8,16,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
 .logo{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px}.logo svg,.logo img{width:36px;height:36px;object-fit:contain;border-radius:8px}
 .nav-right{display:flex;gap:22px;align-items:center}.nav-right a{color:var(--muted);font-size:14px}.nav-right a:hover{color:#fff}
+.menu-toggle{display:none;background:transparent;border:1px solid var(--border);color:#fff;border-radius:10px;padding:8px 10px;font:inherit;font-size:20px;line-height:1;cursor:pointer}.mobile-menu{display:none}
 .btn{display:inline-block;padding:10px 22px;border-radius:999px;font-weight:700;font-size:14px;font-family:inherit;background:linear-gradient(135deg,var(--brand),var(--pink));color:#fff;border:none;cursor:pointer;transition:transform .2s}.btn:hover{transform:translateY(-2px)}
 .btn-lg{padding:16px 36px;font-size:16px}.btn-outline{background:transparent!important;color:#fff!important;border:1.5px solid rgba(255,255,255,.25)!important}
 .view{display:none}.view:target{display:block}
 body:not(:has(.view:target)) #home-view{display:block}
+body.route-404 #home-view{display:none}body.route-404 #not-found-view{display:block}
 .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6vw 80px;position:relative;background:var(--dark);overflow:hidden}
 .hero-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(124,92,255,.22) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 20% 70%,rgba(255,122,182,.14) 0%,transparent 55%)}
 .hero-content{position:relative;z-index:2}
@@ -51,7 +55,7 @@ h2{font-size:clamp(34px,5.5vw,68px);font-weight:800;line-height:1.1;letter-spaci
 .step-num{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--pink));display:grid;place-items:center;font-size:20px;font-weight:800;margin:0 auto 14px}.step-card h4{font-size:18px;margin-bottom:8px;line-height:1.3}.step-card p{font-size:14px;color:var(--muted);line-height:1.5}
 .potential-section{background:linear-gradient(135deg,rgba(124,92,255,.14),rgba(255,122,182,.10),rgba(24,198,184,.10));border:1px solid var(--border);border-radius:32px;padding:48px}
 .potential-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:32px}.potential-card{padding:24px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px}.potential-card h4{font-size:20px;margin-bottom:14px;line-height:1.3}
-.potential-card table{width:100%;font-size:14px;color:rgba(255,255,255,.75)}.potential-card td{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}.potential-card td:last-child{text-align:right;font-weight:700;color:#fff}
+.potential-card table{width:100%;font-size:14px;color:rgba(255,255,255,.75);display:block;overflow-x:auto}.potential-card td{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}.potential-card td:last-child{text-align:right;font-weight:700;color:#fff}
 .prob-bar{margin-top:6px;height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}.prob-fill{height:100%;border-radius:999px}.prob-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
 .calc-section{background:linear-gradient(135deg,rgba(124,92,255,.14),rgba(255,122,182,.10),rgba(24,198,184,.10));border:1px solid var(--border);border-radius:32px;padding:48px}
 .calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px}.calc-input label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
@@ -65,7 +69,7 @@ h2{font-size:clamp(34px,5.5vw,68px);font-weight:800;line-height:1.1;letter-spaci
 input[type=text],input[type=email],input[type=tel],select,textarea{width:100%;padding:14px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:14px;color:#fff;font-family:inherit;font-size:14px;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--brand)}textarea{min-height:110px;resize:vertical}
 .form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-.success-msg{display:none;margin-top:16px;padding:14px 18px;border-radius:14px;background:rgba(88,214,141,.15);border:1px solid rgba(88,214,141,.3);color:#a3f5be}
+.success-msg{display:none;margin-top:16px;padding:14px 18px;border-radius:14px;background:rgba(88,214,141,.15);border:1px solid rgba(88,214,141,.3);color:#a3f5be}.success-msg[aria-hidden="false"],.error-msg[aria-hidden="false"]{display:block}
 .error-msg{display:none;margin-top:16px;padding:14px 18px;border-radius:14px;background:rgba(255,90,90,.15);border:1px solid rgba(255,90,90,.3);color:#ffb3b3}
 .cta-band{margin:0 6vw 80px;padding:64px 6vw;background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(255,122,182,.16),rgba(24,198,184,.16));border:1px solid rgba(255,255,255,.10);border-radius:32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}.cta-band h2{font-size:clamp(30px,4vw,48px);max-width:560px}
 .legal-hero{padding:64px 6vw 40px;max-width:880px;margin:0 auto;border-bottom:1px solid var(--border)}.legal-content{max-width:880px;margin:0 auto;padding:40px 6vw 80px}
@@ -90,7 +94,7 @@ footer .links{display:flex;gap:22px}footer .links a{color:var(--muted);font-size
 @media(max-width:600px){
 nav{padding:12px 4vw}
 .logo{font-size:17px}.logo svg,.logo img{width:28px;height:28px}
-.nav-right{gap:10px}
+.nav-right{display:none}.menu-toggle{display:block}.mobile-menu{position:absolute;top:100%;left:0;right:0;padding:12px 4vw 18px;background:rgba(6,8,16,.98);border-bottom:1px solid var(--border)}.mobile-menu.is-open{display:grid;gap:4px}.mobile-menu a{display:block;padding:12px 8px;color:rgba(255,255,255,.8);font-size:15px}.mobile-menu .btn{color:#fff;text-align:center;margin-top:6px}
 .lang-bar{padding:8px 4vw;justify-content:center}
 .lang-select{font-size:11px}
 section{padding:52px 4vw}
@@ -143,6 +147,8 @@ footer .links{flex-wrap:wrap;gap:14px}
 <nav>
 <a class="logo" href="#home"><img src="/logo.png" alt="Friendoo Logo" />Friendoo</a>
 <div class="nav-right"><a href="#features" data-t="nav.features">Features</a><a href="#for-users">For Users</a><a href="#hosts">Hosts</a><a href="#tiers" data-t="nav.tiers">Host Tiers</a><a href="#apply" data-t="nav.apply">Apply</a><a href="#safety-view">Safety</a><a href="#privacy-view">Privacy</a><a href="#terms-view">Terms</a><a class="btn" href="#apply" data-t="nav.join">Join as Host</a></div>
+<button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">☰</button>
+<div class="mobile-menu" id="mobileMenu"><a href="#features">Features</a><a href="#for-users">For Users</a><a href="#hosts">Hosts</a><a href="#tiers">Host Tiers</a><a href="#apply">Apply</a><a href="#safety-view">Safety</a><a href="#privacy-view">Privacy</a><a href="#terms-view">Terms</a><a class="btn" href="#apply">Join as Host</a></div>
 </nav>
 <div id="home-view" class="view">
 <section class="hero"><div class="hero-bg"></div><div class="hero-content">
@@ -240,11 +246,11 @@ footer .links{flex-wrap:wrap;gap:14px}
 <p class="section-lead" data-t="form.lead">Only female applicants accepted. Our team will review your application within 48 hours.</p>
 <div style="background:rgba(255,122,182,.1);border:1px solid rgba(255,122,182,.3);border-radius:14px;padding:16px 20px;margin:20px 0;color:rgba(255,255,255,.85);font-size:14px">&#128161; Host earnings start only after verification. Paid weekly via UPI.</div>
 <form class="form-grid" id="hostForm">
-<div><label class="form-label" data-t="form.field.name">Full name</label><input type="text" name="name" placeholder="Your full name" required></div>
-<div><label class="form-label" data-t="form.field.city">City</label><input type="text" name="city" placeholder="Mumbai, Chennai&#8230;" required></div>
-<div><label class="form-label" data-t="form.field.phone">Phone / WhatsApp</label><input type="tel" name="phone" placeholder="+91XXXXXXXXXX" required></div>
+<div><label class="form-label" data-t="form.field.name">Full name</label><input type="text" name="name" autocomplete="name" required></div>
+<div><label class="form-label" data-t="form.field.city">City</label><input type="text" name="city" autocomplete="address-level2" required></div>
+<div><label class="form-label" data-t="form.field.phone">Phone / WhatsApp</label><input type="tel" name="phone" autocomplete="tel" required></div>
 <div class="form-full"><label class="form-label" data-t="form.field.lang">Languages you can speak (select all that apply)</label><div id="langCheckboxes" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px"><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Hindi" style="width:auto"> हिंदी</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Tamil" style="width:auto"> தமிழ்</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Telugu" style="width:auto"> తెలుగు</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Kannada" style="width:auto"> ಕನ್ನಡ</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Malayalam" style="width:auto"> മലയാളം</label><label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px"><input type="checkbox" name="language" value="Urdu" style="width:auto"> اردو</label></div></div>
-<div class="form-full"><label class="form-label" data-t="form.field.about">Why do you want to join as a host?</label><textarea name="about" placeholder="I love talking about movies and music&#8230;"></textarea></div>
+<div class="form-full"><label class="form-label" data-t="form.field.about">Why do you want to join as a host?</label><textarea name="about"></textarea></div>
 <div class="form-full"><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><input type="checkbox" id="confirm" required style="width:auto"><label for="confirm" style="display:inline;color:rgba(255,255,255,.7);font-size:14px" data-t="form.confirm">I confirm I am 18+ female and agree to the Terms of Service and Privacy Policy</label></div>
 <button type="submit" class="btn btn-lg" id="submitBtn" style="width:100%;text-align:center;border-radius:14px" data-t="form.submit">Submit application</button>
 <div class="success-msg" id="successMsg">&#9989; Application received! Our team will review your profile and contact you on WhatsApp within 48 hours.</div>
@@ -270,11 +276,11 @@ footer .links{flex-wrap:wrap;gap:14px}
 </div>
 </div>
 </section>
-<div class="cta-band"><div><h2>Join Friendoo today</h2><p style="color:var(--muted);margin-top:10px;font-size:15px">Whether you want real conversations or real earnings &mdash; Friendoo has a place for you.</p></div><div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-lg" href="#for-users">Start Chatting</a><a class="btn btn-lg" href="#apply" style="background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000">Join as Host</a><a class="btn btn-lg btn-outline" href="mailto:support@friendoo.app">Contact us</a></div></div>
-</div><div id="privacy-view" class="view"><div class="legal-hero">
+<div class="cta-band"><div><h2>Join Friendoo today</h2><p style="color:var(--muted);margin-top:10px;font-size:15px">Whether you want real conversations or real earnings &mdash; Friendoo has a place for you.</p></div><div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-lg" href="#for-users">Start Chatting</a><a class="btn btn-lg" href="#apply" style="background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000">Join as Host</a><a class="btn btn-lg btn-outline" href="mailto:contact@friendoo.in">Contact us</a></div></div>
+ </div><div id="not-found-view" class="view"><div class="legal-hero"><div class="label">Page not found</div><h1>We could not find that page.</h1><p style="color:var(--muted);margin-top:12px;font-size:15px">The link may be outdated or the page may have moved.</p><a class="btn btn-lg" href="#home" style="margin-top:24px">Back to Friendoo</a></div></div><div id="privacy-view" class="view"><div class="legal-hero">
   <div class="label">Legal</div>
   <h1 style="font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.1">Privacy Policy</h1>
-  <p style="color:var(--muted);margin-top:12px;font-size:15px">Last updated: May 2026 &nbsp;&middot;&nbsp; Friendoo Platform operated by [Your Company Name] (&ldquo;Company&rdquo;)</p>
+  <p style="color:var(--muted);margin-top:12px;font-size:15px">Last updated: May 2026 &nbsp;&middot;&nbsp; Friendoo Platform (&ldquo;Company&rdquo;)</p>
 </div>
 <div class="legal-content">
   <div class="legal-toc">
@@ -329,9 +335,9 @@ footer .links{flex-wrap:wrap;gap:14px}
   <p>Friendoo is intended for users aged <strong>18 and above</strong>. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us immediately at privacy@friendoo.in.</p>
   <h2 id="pp8">8. Grievance Officer</h2>
   <div class="legal-contact">
-    <p><strong>Grievance Officer:</strong> [Name]</p>
+     <p><strong>Grievance Officer:</strong> Friendoo Operations Team</p>
     <p><strong>Email:</strong> grievance@friendoo.in</p>
-    <p><strong>Address:</strong> [Registered Office Address, India]</p>
+     <p><strong>Address:</strong> Registered office in India</p>
     <p style="margin-top:10px;font-size:13px;color:var(--muted)">We will acknowledge your grievance within 48 hours and resolve it within 30 days as per applicable law.</p>
   </div>
   <h2 id="pp9">9. Changes to This Policy</h2>
@@ -396,12 +402,12 @@ footer .links{flex-wrap:wrap;gap:14px}
   <h2 id="tc9">9. Disclaimer &amp; Limitation of Liability</h2>
   <p>The Platform is provided &ldquo;as is&rdquo; without warranties of any kind. Friendoo does not guarantee uninterrupted service, and is not liable for any indirect, incidental, or consequential damages arising from use of the Platform. Our total liability shall not exceed the amount you paid to us in the 30 days preceding the claim.</p>
   <h2 id="tc10">10. Governing Law</h2>
-  <p>These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in [City], India. We encourage you to contact us first to resolve any dispute amicably.</p>
+  <p>These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in India. We encourage you to contact us first to resolve any dispute amicably.</p>
   <h2 id="tc11">11. Contact Us</h2>
   <div class="legal-contact">
-    <p><strong>Email:</strong> legal@friendoo.in</p>
-    <p><strong>Support:</strong> support@friendoo.in</p>
-    <p><strong>Address:</strong> [Registered Office Address, India]</p>
+    <p><strong>Email:</strong> <a href="mailto:legal@friendoo.in">legal@friendoo.in</a></p>
+    <p><strong>Support:</strong> <a href="mailto:support@friendoo.in">support@friendoo.in</a></p>
+    <p><strong>Address:</strong> Registered office in India</p>
   </div>
 </div></div>
 <div id="refund-view" class="view"><div class="legal-hero"><span class="label">Legal</span><h1>Refund &amp; Cancellation Policy</h1><p style="color:var(--muted);font-size:14px">Effective date: 6 May 2026 &nbsp;&bull;&nbsp; Last updated: 9 May 2026</p></div><div class="legal-content">
@@ -468,7 +474,7 @@ footer .links{flex-wrap:wrap;gap:14px}
   <ol>
     <li>Use the in-app <strong>Report</strong> button on any host profile or during a call</li>
     <li>Email our safety team at <strong>safety@friendoo.in</strong></li>
-    <li>For urgent issues, call our helpline: <strong>[Helpline Number]</strong></li>
+     <li>For urgent issues, email our safety team at <a href="mailto:safety@friendoo.in">safety@friendoo.in</a></li>
   </ol>
   <p>All reports are confidential. We do not share reporter identities with the reported user.</p>
   <h2>For Hosts: Your Safety Matters Too</h2>
@@ -516,6 +522,12 @@ document.getElementById('hostForm').addEventListener('submit', async function(e)
   finally { btn.disabled = false; btn.textContent = 'Submit application'; }
 });
 </script><script>
+var routeViewIds=['privacy-view','terms-view','refund-view','guidelines-view','safety-view','not-found-view'];
+function updateRoute(){var hash=window.location.hash.slice(1),known=hash===''||hash==='home'||document.getElementById(hash)||document.querySelector('[id="'+hash+'"]');document.body.classList.toggle('route-404',Boolean(hash&&!known));}
+window.addEventListener('hashchange',updateRoute);updateRoute();
+var menuToggle=document.querySelector('.menu-toggle'),mobileMenu=document.getElementById('mobileMenu');
+if(menuToggle&&mobileMenu){menuToggle.addEventListener('click',function(){var open=mobileMenu.classList.toggle('is-open');menuToggle.setAttribute('aria-expanded',String(open));menuToggle.setAttribute('aria-label',open?'Close menu':'Open menu');});mobileMenu.addEventListener('click',function(e){if(e.target.closest('a')){mobileMenu.classList.remove('is-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Open menu');}});}
+document.querySelectorAll('a[href="#"]').forEach(function(link){link.href='#apply';link.textContent='Get started';});
 var I18N={};var currentLang='en';
 function t(k,fb){if(fb===undefined)fb='';var keys=k.split('.'),val=I18N[currentLang];for(var i=0;i<keys.length;i++){if(val==null){val=undefined;break;}val=val[keys[i]];}if(val!==undefined&&val!==null)return val;val=I18N['en'];for(var j=0;j<keys.length;j++){if(val==null){val=undefined;break;}val=val[keys[j]];}return(val!==undefined&&val!==null)?val:fb;}
 function setHtml(sel,html){var el=document.querySelector(sel);if(el)el.innerHTML=html;}

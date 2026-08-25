@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { toDate } from "@/lib/utils";
+import { crmFetch } from "@/lib/client";
 
 interface Campaign {
   id: string;
@@ -26,8 +27,7 @@ export default function CampaignsPage() {
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
-    const response = await fetch("/api/crm/campaigns/list", { cache: "no-store" });
-    const json = await response.json();
+    const json = await crmFetch<{ campaigns?: Campaign[] }>("/api/crm/campaigns/list");
     setCampaigns(json.campaigns || []);
     setLoading(false);
   }, []);

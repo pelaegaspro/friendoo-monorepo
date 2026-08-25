@@ -1,4 +1,4 @@
-﻿# Node / Next.js
+# Node / Next.js
 node_modules/
 .next/
 dist/
@@ -27,9 +27,16 @@ Thumbs.db
 *.iws
 *.ipr
 
-# Environment
+# Environment & Secrets
 .env
 .env.local
 *.env
 assets/.env
 assets/.env.local
+flutter_app/assets/.env
+flutter_app/assets/.env.local
+
+# Binaries
+*.apk
+*.aab
+*.zip

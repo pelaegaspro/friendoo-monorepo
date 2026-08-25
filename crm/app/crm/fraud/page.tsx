@@ -6,6 +6,7 @@ import { FraudAlertCard } from "@/components/crm/FraudAlertCard";
 import { KPICard } from "@/components/crm/KPICard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { crmFetch } from "@/lib/client";
 
 interface FraudAlert {
   id: string;
@@ -34,14 +35,12 @@ export default function FraudPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [alertsResponse, configResponse] = await Promise.all([
-      fetch("/api/crm/fraud/alerts", { cache: "no-store" }),
-      fetch("/api/crm/config/alerts", { cache: "no-store" }),
+      crmFetch<{ alerts?: FraudAlert[] }>("/api/crm/fraud/alerts"),
+      crmFetch<{ data?: Record<string, number> }>("/api/crm/config/alerts"),
     ]);
-    const alertsJson = await alertsResponse.json();
-    const configJson = await configResponse.json();
-    setAlerts(alertsJson.alerts || []);
-    if (configJson.data) {
-      setConfig((current) => ({ ...current, ...(configJson.data as Record<string, number>) }));
+    setAlerts(alertsResponse.alerts || []);
+    if (configResponse.data) {
+      setConfig((current) => ({ ...current, ...configResponse.data }));
     }
     setLoading(false);
   }, []);

@@ -5,10 +5,7 @@ import '../application/call_controller.dart';
 import '../data/call_repository.dart';
 
 class CallSummaryDialog extends ConsumerStatefulWidget {
-  const CallSummaryDialog({
-    super.key,
-    required this.summary,
-  });
+  const CallSummaryDialog({super.key, required this.summary});
 
   final LastEndedCallSummary summary;
 
@@ -28,6 +25,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
   int _rating = 5;
   final _feedbackController = TextEditingController();
   bool _submitted = false;
+  String? _submitError;
 
   @override
   void dispose() {
@@ -42,14 +40,33 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
   }
 
   Future<void> _submitFeedback() async {
-    setState(() => _submitted = true);
-    await ref.read(callRepositoryProvider).submitCallRating(
-      callId: widget.summary.callId,
-      rating: _rating,
-      feedback: _feedbackController.text.trim(),
-    );
+    setState(() {
+      _submitted = true;
+      _submitError = null;
+    });
+
+    try {
+      await ref
+          .read(callRepositoryProvider)
+          .submitCallRating(
+            callId: widget.summary.callId,
+            rating: _rating,
+            feedback: _feedbackController.text.trim(),
+          );
+      ref.read(lastEndedCallSummaryProvider.notifier).state = null;
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _submitted = false;
+        _submitError = 'We could not save your feedback. Please try again.';
+      });
+    }
+  }
+
+  void _skipFeedback() {
     ref.read(lastEndedCallSummaryProvider.notifier).state = null;
-    if (mounted) Navigator.of(context).pop();
+    Navigator.of(context).pop();
   }
 
   @override
@@ -65,7 +82,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: widget.summary.wasGracePeriod
-                  ? Colors.green.withOpacity(0.15)
+                  ? Colors.green.withValues(alpha: 0.15)
                   : colors.primaryContainer,
               shape: BoxShape.circle,
             ),
@@ -95,7 +112,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colors.surfaceVariant.withOpacity(0.4),
+                color: colors.surfaceContainerHighest.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
@@ -123,7 +140,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                       Container(
                         height: 36,
                         width: 1,
-                        color: colors.outlineVariant.withOpacity(0.5),
+                        color: colors.outlineVariant.withValues(alpha: 0.5),
                       ),
                       Column(
                         children: [
@@ -136,8 +153,11 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.monetization_on_rounded,
-                                  color: Colors.amber, size: 18),
+                              const Icon(
+                                Icons.monetization_on_rounded,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${widget.summary.coinsDeducted}',
@@ -158,9 +178,11 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.12),
+                        color: Colors.green.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -216,7 +238,9 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
               decoration: InputDecoration(
                 hintText: 'Leave a note or feedback (optional)',
                 hintStyle: TextStyle(
-                    fontSize: 13, color: colors.onSurfaceVariant),
+                  fontSize: 13,
+                  color: colors.onSurfaceVariant,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -226,11 +250,27 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                 ),
               ),
             ),
+            if (_submitError != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _submitError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ],
         ),
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
+        TextButton(
+          onPressed: _submitted ? null : _skipFeedback,
+          child: const Text('Skip'),
+        ),
         FilledButton(
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),

@@ -1,99 +1,37 @@
-import { FieldValue } from "firebase-admin/firestore";
-import { NextRequest, NextResponse } from "next/server";
-import { parseJsonBody, requireCrmAuth } from "@/app/api/crm/_utils";
-import { escalateSeverity, normalizeSeverity } from "@/lib/fraudDetector";
-import { adminDb } from "@/lib/firebaseAdmin";
-import { createInAppNotification } from "@/lib/notifications";
-import { toNumber } from "@/lib/utils";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireCrmAuth } from '@/app/api/crm/_utils';
+import { getOperationalAdminActorId, getSupabaseAdmin } from '@/lib/supabaseServer';
 
-interface FraudActionBody {
-  alertId: string;
-  action: "dismiss" | "warn_user" | "auto_refund" | "ban_user" | "escalate";
-}
+export const dynamic = 'force-dynamic';
+
+type FraudActionBody = { alertId?: string; action?: 'review' | 'dismiss' | 'resolve'; status?: 'open' | 'reviewing' | 'dismissed' | 'resolved'; assignedTo?: string | null; notes?: string };
 
 export async function POST(request: NextRequest) {
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
-
-  const { alertId, action } = await parseJsonBody<FraudActionBody>(request);
-  if (!alertId || !action) {
-    return NextResponse.json({ error: "alertId and action are required." }, { status: 400 });
+  try {
+    const body = (await request.json()) as FraudActionBody;
+    if (!body.alertId) return NextResponse.json({ error: 'alertId is required.' }, { status: 400 });
+    const statusByAction: Record<string, FraudActionBody['status']> = { review: 'reviewing', dismiss: 'dismissed', resolve: 'resolved' };
+    const nextStatus = body.status ?? (body.action ? statusByAction[body.action] : undefined);
+    if (!nextStatus) return NextResponse.json({ error: 'A valid action or status is required.' }, { status: 400 });
+    const supabase = getSupabaseAdmin();
+    const actorId = getOperationalAdminActorId();
+    const { data: before, error: beforeError } = await supabase.from('fraud_alerts').select('id, status, assigned_to, resolution_note, resolved_at').eq('id', body.alertId).maybeSingle();
+    if (beforeError) throw beforeError;
+    if (!before) return NextResponse.json({ error: 'Fraud alert not found.' }, { status: 404 });
+    const patch: Record<string, unknown> = { status: nextStatus };
+    if (typeof body.assignedTo !== 'undefined') patch.assigned_to = body.assignedTo;
+    if (typeof body.notes === 'string') patch.resolution_note = body.notes.slice(0, 5000);
+    if (nextStatus === 'resolved' || nextStatus === 'dismissed') patch.resolved_at = new Date().toISOString();
+    const { data: after, error: updateError } = await supabase.from('fraud_alerts').update(patch).eq('id', body.alertId).select('id, status, assigned_to, resolution_note, resolved_at').single();
+    if (updateError) throw updateError;
+    const { error: auditError } = await supabase.from('admin_audit_logs').insert({ actor_id: actorId, action: 'fraud_alert.' + nextStatus, resource_type: 'fraud_alert', resource_id: body.alertId, before_state: before, after_state: after });
+    if (auditError) throw auditError;
+    const { error: eventError } = await supabase.from('operational_events').insert({ event_key: 'fraud-alert-action:' + body.alertId + ':' + Date.now().toString(), event_type: 'fraud_alert.' + nextStatus, aggregate_type: 'fraud_alert', aggregate_id: body.alertId, actor_id: actorId, payload: { status: nextStatus } });
+    if (eventError) throw eventError;
+    return NextResponse.json({ ok: true, alert: after });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not update fraud alert.' }, { status: 500 });
   }
-
-  const alertRef = adminDb.collection("fraudAlerts").doc(alertId);
-  const alertDoc = await alertRef.get();
-  if (!alertDoc.exists) {
-    return NextResponse.json({ error: "Alert not found." }, { status: 404 });
-  }
-  const alert = alertDoc.data() as Record<string, unknown>;
-
-  if (action === "dismiss") {
-    await alertRef.update({
-      status: "dismissed",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: "crm_admin",
-    });
-  } else if (action === "escalate") {
-    await alertRef.update({
-      severity: escalateSeverity(normalizeSeverity(alert.severity)),
-      status: "reviewed",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: "crm_admin",
-    });
-  } else if (action === "ban_user") {
-    const userId = String(alert.userId || "");
-    if (userId) {
-      await adminDb.collection("users").doc(userId).set({ isBanned: true }, { merge: true });
-    }
-    await alertRef.update({
-      status: "reviewed",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: "crm_admin",
-    });
-  } else if (action === "warn_user") {
-    const userId = String(alert.userId || "");
-    if (userId) {
-      await createInAppNotification(userId, {
-        type: "risk_warning",
-        message: "Your account activity has been flagged. Please follow community guidelines.",
-      });
-    }
-    await alertRef.update({
-      status: "reviewed",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: "crm_admin",
-    });
-  } else if (action === "auto_refund") {
-    const userId = String(alert.userId || "");
-    const coins = Math.max(1, Math.floor(toNumber(alert.amount)));
-    if (userId) {
-      const userRef = adminDb.collection("users").doc(userId);
-      const txRef = adminDb.collection("coinTransactions").doc();
-      await adminDb.runTransaction(async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) return;
-        const before = toNumber(userDoc.data()?.coinBalance);
-        const after = before + coins;
-        transaction.update(userRef, { coinBalance: after, updatedAt: FieldValue.serverTimestamp() });
-        transaction.set(txRef, {
-          userId,
-          type: "refund",
-          amountCoins: coins,
-          balanceBefore: before,
-          balanceAfter: after,
-          amountInr: 0,
-          status: "success",
-          reason: "Fraud alert auto refund",
-          createdAt: FieldValue.serverTimestamp(),
-        });
-      });
-    }
-    await alertRef.update({
-      status: "reviewed",
-      reviewedAt: FieldValue.serverTimestamp(),
-      reviewedBy: "crm_admin",
-    });
-  }
-
-  return NextResponse.json({ ok: true });
 }
