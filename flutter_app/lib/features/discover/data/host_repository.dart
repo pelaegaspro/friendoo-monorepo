@@ -85,15 +85,32 @@ class HostRepository {
       } catch (_) {}
     }
 
-    bool is7604Online = true;
+    bool is7604Online = false;
     try {
       final hostRow = await _client
           .from('hosts')
-          .select('is_available')
+          .select('is_available, last_seen_at')
           .eq('id', '00000000-0000-0000-0000-007604991136')
           .maybeSingle();
       if (hostRow != null && hostRow['is_available'] != null) {
-        is7604Online = (hostRow['is_available'] as bool);
+        final isAvail = (hostRow['is_available'] as bool);
+        final lastSeenStr = hostRow['last_seen_at'] as String?;
+        if (isAvail) {
+          if (lastSeenStr != null) {
+            final lastSeen = DateTime.tryParse(lastSeenStr);
+            if (lastSeen != null) {
+              final diff = DateTime.now().toUtc().difference(lastSeen);
+              // If heartbeat received within last 20 seconds, host is online
+              is7604Online = diff.inSeconds <= 20;
+            } else {
+              is7604Online = true;
+            }
+          } else {
+            is7604Online = true;
+          }
+        } else {
+          is7604Online = false;
+        }
       }
     } catch (_) {}
 
