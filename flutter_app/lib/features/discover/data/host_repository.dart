@@ -85,24 +85,49 @@ class HostRepository {
       } catch (_) {}
     }
 
+    bool is7604Online = true;
     try {
       final hostRow = await _client
           .from('hosts')
           .select('is_available')
           .eq('id', '00000000-0000-0000-0000-007604991136')
           .maybeSingle();
-      final is7604Online = hostRow != null
-          ? (hostRow['is_available'] as bool? ?? false)
-          : false;
-
-      if (!is7604Online) {
-        hosts.removeWhere(
-          (h) =>
-              h.id == '00000000-0000-0000-0000-007604991136' ||
-              h.displayName.toLowerCase().contains('testing host'),
-        );
+      if (hostRow != null && hostRow['is_available'] != null) {
+        is7604Online = (hostRow['is_available'] as bool);
       }
     } catch (_) {}
+
+    final has7604Host = hosts.any(
+      (h) =>
+          h.id == '00000000-0000-0000-0000-007604991136' ||
+          h.displayName.toLowerCase().contains('testing host') ||
+          h.displayName.contains('7604991136'),
+    );
+
+    if (is7604Online && !has7604Host) {
+      hosts.add(
+        const HostProfile(
+          id: '00000000-0000-0000-0000-007604991136',
+          displayName: 'Testing Host',
+          bio: 'Verified Friendoo Host · Live & Ready for Audio Calls',
+          ratePerAudioMinute: 5,
+          isAvailable: true,
+          isStar: true,
+          languages: ['Tamil', 'Hindi', 'English'],
+          gender: 'female',
+          rating: 5.0,
+          totalCalls: 120,
+          age: 24,
+          city: 'Chennai, Tamil Nadu',
+        ),
+      );
+    } else if (!is7604Online) {
+      hosts.removeWhere(
+        (h) =>
+            h.id == '00000000-0000-0000-0000-007604991136' ||
+            h.displayName.toLowerCase().contains('testing host'),
+      );
+    }
 
     return applyStarHostQuota(hosts);
   }
