@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/friendoo_app.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../../profile/data/profile_repository.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Step 1: Profile Creation Page (Name & Date of Birth with live Age calculation).
 class NameAndDobSetupPage extends ConsumerStatefulWidget {
@@ -154,201 +157,229 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
     );
   }
 
+  Future<void> _handleExitOrBack() async {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (_) {}
+    ref.read(hasEnteredAppProvider.notifier).state = false;
+    ref.read(debugMockSessionProvider.notifier).state = false;
+    ProfileRepository.currentActiveProfile = null;
+    try {
+      await AuthRepository(ref.read(supabaseProvider)).signOut();
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeColor = _isHost
         ? const Color(0xFFFF2A85)
         : const Color(0xFF6366F1);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Profile Details',
-          style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
+    return PopScope(
+      canPop: Navigator.of(context).canPop(),
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          await _handleExitOrBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9FAFB),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: Color(0xFF111827),
+            ),
+            onPressed: _handleExitOrBack,
+          ),
+          title: const Text(
+            'Profile Details',
+            style: TextStyle(
+              color: Color(0xFF111827),
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Enter your details',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF111827),
-                  letterSpacing: -0.5,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Enter your details',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF111827),
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Please enter your name and date of birth to continue.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 6),
+                const Text(
+                  'Please enter your name and date of birth to continue.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // Name Field
-              const Text(
-                'Name',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF374151),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  hintText: 'Enter your full name',
-                  prefixIcon: Icon(
-                    Icons.person_outline_rounded,
-                    color: themeColor,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: themeColor, width: 2),
+                // Name Field
+                const Text(
+                  'Name',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF374151),
                   ),
                 ),
-              ),
-              const SizedBox(height: 22),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your full name',
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                      color: themeColor,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: themeColor, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
 
-              // Date of Birth Field
-              const Text(
-                'Date of Birth',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF374151),
+                // Date of Birth Field
+                const Text(
+                  'Date of Birth',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF374151),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: _pickDateOfBirth,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        color: themeColor,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          _selectedDob != null
-                              ? _formatDob(_selectedDob!)
-                              : 'Select date of birth',
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                            color: _selectedDob != null
-                                ? const Color(0xFF111827)
-                                : const Color(0xFF9CA3AF),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: _pickDateOfBirth,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          color: themeColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            _selectedDob != null
+                                ? _formatDob(_selectedDob!)
+                                : 'Select date of birth',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: _selectedDob != null
+                                  ? const Color(0xFF111827)
+                                  : const Color(0xFF9CA3AF),
+                            ),
                           ),
                         ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF9CA3AF),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Live Current Age Display
-              if (_computedAge != null && _selectedDob != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.cake_outlined,
-                        color: Color(0xFF4B5563),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Age: $_computedAge years',
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1F2937),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF9CA3AF),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              const SizedBox(height: 36),
+                const SizedBox(height: 16),
 
-              // Continue Button
-              FilledButton(
-                onPressed: _createProfileAndProceed,
-                style: FilledButton.styleFrom(
-                  backgroundColor: themeColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                // Live Current Age Display
+                if (_computedAge != null && _selectedDob != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.cake_outlined,
+                          color: Color(0xFF4B5563),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Age: $_computedAge years',
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  elevation: 2,
-                ),
-                child: const Text(
-                  'Continue ➔',
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                const SizedBox(height: 36),
+
+                // Continue Button
+                FilledButton(
+                  onPressed: _createProfileAndProceed,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: themeColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Continue ➔',
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

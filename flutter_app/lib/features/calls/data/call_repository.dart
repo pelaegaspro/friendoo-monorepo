@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -23,7 +25,8 @@ class CallRepository {
   final SupabaseClient _client;
 
   Future<CallSession> initiateAudioCall(String hostId) async {
-    final cleanHostId = (hostId == 'host_7604991136' || hostId.contains('7604991136'))
+    final cleanHostId =
+        (hostId == 'host_7604991136' || hostId.contains('7604991136'))
         ? '00000000-0000-0000-0000-007604991136'
         : hostId;
     try {
@@ -34,7 +37,8 @@ class CallRepository {
       final data = response.data as Map<String, dynamic>;
       return CallSession.fromMap(data['call'] as Map<String, dynamic>);
     } catch (_) {
-      final callerId = _client.auth.currentUser?.id ??
+      final callerId =
+          _client.auth.currentUser?.id ??
           '00000000-0000-0000-0000-008870947891';
       final newCallId = const Uuid().v4();
       try {
@@ -136,7 +140,9 @@ class CallRepository {
         'agora-token',
         body: {'call_id': callId},
       );
-      return AgoraJoinCredentials.fromMap(response.data as Map<String, dynamic>);
+      return AgoraJoinCredentials.fromMap(
+        response.data as Map<String, dynamic>,
+      );
     } catch (_) {
       return AgoraJoinCredentials(
         channel: 'friendoo_$callId',
@@ -167,38 +173,97 @@ class CallRepository {
   }
 
   Stream<List<CallSession>> watchIncomingCalls() {
-    final activeProfile = ProfileRepository.currentActiveProfile;
-    final userId = _client.auth.currentUser?.id ??
-        '00000000-0000-0000-0000-007604991136';
-    try {
-      return _client
-          .from('calls')
-          .stream(primaryKey: ['id'])
-          .map((rows) {
-            return rows
-                .where((r) {
-                  final hId = r['host_id']?.toString() ?? '';
-                  final isTargetHost = hId == userId ||
-                      hId == '00000000-0000-0000-0000-007604991136' ||
-                      hId.contains('7604991136') ||
-                      (activeProfile?.isHost == true);
-                  final status = r['status']?.toString() ?? '';
-                  return isTargetHost &&
-                      (status == 'ringing' ||
-                          status == 'connecting' ||
-                          status == 'initiated');
-                })
-                .map((r) => CallSession.fromMap(r))
-                .toList();
-          })
-          .handleError((_) => const <CallSession>[]);
-    } catch (_) {
-      return Stream.value(const <CallSession>[]);
+    final controller = StreamController<List<CallSession>>.broadcast();
+    Timer? pollTimer;
+
+    Future<void> pollOnce() async {
+      final activeProfile = ProfileRepository.currentActiveProfile;
+      final userId =
+          _client.auth.currentUser?.id ??
+          activeProfile?.id ??
+          '00000000-0000-0000-0000-007604991136';
+
+      try {
+        final rows = await _client
+            .from('calls')
+            .select()
+            .or('status.eq.ringing,status.eq.connecting,status.eq.initiated')
+            .order('created_at', ascending: false)
+            .limit(10);
+
+        final matches = (rows as List<dynamic>)
+            .where((r) {
+              final hId = r['host_id']?.toString() ?? '';
+              final isTargetHost =
+                  hId == userId ||
+                  hId == '00000000-0000-0000-0000-007604991136' ||
+                  hId.contains('7604991136') ||
+                  (activeProfile?.isHost == true);
+              final status = r['status']?.toString() ?? '';
+              return isTargetHost &&
+                  (status == 'ringing' ||
+                      status == 'connecting' ||
+                      status == 'initiated');
+            })
+            .map((r) => CallSession.fromMap(r as Map<String, dynamic>))
+            .toList();
+
+        if (!controller.isClosed) {
+          controller.add(matches);
+        }
+      } catch (_) {}
     }
+
+    StreamSubscription? sub;
+    try {
+      sub = _client.from('calls').stream(primaryKey: ['id']).listen((rows) {
+        final activeProfile = ProfileRepository.currentActiveProfile;
+        final userId =
+            _client.auth.currentUser?.id ??
+            activeProfile?.id ??
+            '00000000-0000-0000-0000-007604991136';
+
+        final matches = rows
+            .where((r) {
+              final hId = r['host_id']?.toString() ?? '';
+              final isTargetHost =
+                  hId == userId ||
+                  hId == '00000000-0000-0000-0000-007604991136' ||
+                  hId.contains('7604991136') ||
+                  (activeProfile?.isHost == true);
+              final status = r['status']?.toString() ?? '';
+              return isTargetHost &&
+                  (status == 'ringing' ||
+                      status == 'connecting' ||
+                      status == 'initiated');
+            })
+            .map((r) => CallSession.fromMap(r))
+            .toList();
+
+        if (!controller.isClosed) {
+          controller.add(matches);
+        }
+      }, onError: (_) {});
+    } catch (_) {}
+
+    pollOnce();
+    pollTimer = Timer.periodic(
+      const Duration(milliseconds: 1500),
+      (_) => pollOnce(),
+    );
+
+    controller.onCancel = () {
+      pollTimer?.cancel();
+      sub?.cancel();
+    };
+
+    return controller.stream;
   }
 
   Stream<CallSession> watchCall(String callId) {
-    if (!RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(callId)) {
+    if (!RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(callId)) {
       return Stream.value(
         CallSession(
           id: callId,
