@@ -6,8 +6,8 @@ package com.friendoo.app.presentation.auth
  */
 object MockAuthConfig {
     const val phoneNumber: String = "+919000000000"
-    const val otp: String = "123456"
+    const val otp: String = ""
 
-    fun isMockPhone(phone: String): Boolean = phone == phoneNumber
-    fun isMockOtp(code: String): Boolean = code == otp
+    fun isMockPhone(phone: String): Boolean = false
+    fun isMockOtp(code: String): Boolean = false
 }

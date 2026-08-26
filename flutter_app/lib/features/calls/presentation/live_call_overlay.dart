@@ -66,11 +66,11 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     final activeProfile = ProfileRepository.currentActiveProfile;
     final isHost =
         activeProfile?.isHost == true ||
-        activeProfile?.phone.contains('7604991136') == true ||
         activeProfile?.id == widget.call.hostId;
     if (isHost) return;
 
-    final startCoins = _initialCoinBalance ?? 999999;
+    final startCoins = _initialCoinBalance;
+    if (startCoins == null) return;
     final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
     final maxSeconds = (startCoins ~/ rate) * 60;
     final remainingSeconds = maxSeconds - _secondsElapsed;
@@ -108,20 +108,21 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     // Cache initial balance at start of call
     if (_initialCoinBalance == null && wallet != null) {
-      _initialCoinBalance = wallet.coinBalance > 0
-          ? wallet.coinBalance
-          : 999999;
+      _initialCoinBalance = wallet.coinBalance;
     }
-    final startingCoins = _initialCoinBalance ?? 999999;
+    final startingCoins = _initialCoinBalance;
     final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
 
     // Maximum talk time in seconds calculated directly from user's coins
-    final maxSeconds = (startingCoins ~/ rate) * 60;
-    final remainingSeconds = (maxSeconds - _secondsElapsed).clamp(
-      0,
-      maxSeconds,
-    );
-    final availableMinutesLeft = (remainingSeconds / 60).toStringAsFixed(1);
+    final maxSeconds = startingCoins == null
+        ? null
+        : (startingCoins ~/ rate) * 60;
+    final remainingSeconds = maxSeconds == null
+        ? null
+        : (maxSeconds - _secondsElapsed).clamp(0, maxSeconds);
+    final availableMinutesLeft = remainingSeconds == null
+        ? 'unavailable'
+        : (remainingSeconds / 60).toStringAsFixed(1);
 
     // 5-Second Grace Period Rule:
     final bool isGracePeriod = _secondsElapsed <= 5;
@@ -129,12 +130,14 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
         ? 0
         : (_secondsElapsed / 60).ceil().clamp(1, 99999);
     final int coinsSpent = billedMinutes * rate;
-    final int remainingCoins = (startingCoins - coinsSpent).clamp(
-      0,
-      startingCoins,
-    );
+    final remainingCoins = startingCoins == null
+        ? null
+        : (startingCoins - coinsSpent).clamp(0, startingCoins);
 
-    final bool isLowBalance = remainingSeconds <= 60 && remainingSeconds > 0;
+    final bool isLowBalance =
+        remainingSeconds != null &&
+        remainingSeconds <= 60 &&
+        remainingSeconds > 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B0E17),
@@ -352,7 +355,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                       const SizedBox(height: 4),
                       // Huge Countdown Clock
                       Text(
-                        _formatTimer(remainingSeconds),
+                        remainingSeconds == null
+                            ? '—'
+                            : _formatTimer(remainingSeconds),
                         style: TextStyle(
                           fontSize: 42,
                           fontWeight: FontWeight.w900,
@@ -430,7 +435,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '$remainingCoins Coins Left · $rate coins/min',
+                          remainingCoins == null
+                              ? 'Balance unavailable · $rate coins/min'
+                              : '$remainingCoins Coins Left · $rate coins/min',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,

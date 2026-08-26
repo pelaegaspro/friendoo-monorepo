@@ -119,11 +119,20 @@ export default function UsersPage() {
     if (!amountRaw) return;
     const amount = Number(amountRaw);
     if (!Number.isFinite(amount) || amount <= 0) return;
-    await fetch("/api/crm/users/addCoins", {
+    const response = await fetch("/api/crm/users/addCoins", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uid, amount, reason: "CRM manual credit" }),
+      body: JSON.stringify({
+        uid,
+        amount,
+        reason: "CRM manual credit",
+        idempotencyKey: `crm_adjust:${uid}:${crypto.randomUUID()}`,
+      }),
     });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || "Failed to add coins");
+    }
     await loadUsers();
   };
 

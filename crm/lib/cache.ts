@@ -46,9 +46,9 @@ export async function getCachedOrFetch<T>(
     }
     return fresh;
   } catch (error) {
-    if (cached) {
-      return cached.data;
-    }
+    // A cached value was already returned above when present. At this point
+    // TypeScript correctly knows this is a cold-cache fetch, so propagate the
+    // failure instead of masking it with an impossible stale-cache branch.
     throw error;
   }
 }
@@ -59,7 +59,7 @@ export function invalidateCache(keyOrPrefix?: string) {
     return;
   }
 
-  for (const key of memoryStore.keys()) {
+  for (const key of Array.from(memoryStore.keys())) {
     if (key === keyOrPrefix || key.startsWith(keyOrPrefix)) {
       memoryStore.delete(key);
     }

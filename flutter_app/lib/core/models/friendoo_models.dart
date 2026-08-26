@@ -99,7 +99,7 @@ class HostProfile {
   final bool isSurgeActive;
 
   bool get isFemale =>
-      gender.trim().isEmpty || gender.trim().toLowerCase() != 'male';
+      gender.trim().toLowerCase() == 'female';
   bool get isOnline => status == HostStatus.online && isAvailable;
   bool get isBusy => status == HostStatus.busy;
   bool get isOffline => status == HostStatus.offline || !isAvailable;
@@ -175,7 +175,7 @@ class HostProfile {
   }
 
   factory HostProfile.fromMap(Map<String, dynamic> map) {
-    List<String> langs = const ['Hindi'];
+    List<String> langs = const <String>[];
     if (map['languages'] is List) {
       langs = (map['languages'] as List).map((e) => e.toString()).toList();
     } else if (map['language'] is String) {
@@ -189,16 +189,13 @@ class HostProfile {
         )
         .toList();
 
-    final isStarVal = (map['is_star'] as bool?) ?? false;
     final isAvailableVal = (map['is_available'] as bool?) ?? false;
     final isBusyVal = (map['is_busy'] as bool?) ?? false;
     final totalCallsVal = (map['total_calls'] as num?)?.toInt() ?? 150;
 
     // Resolve VIP Tier based on rating and calls
     HostVipTier resolvedTier = HostVipTier.silver;
-    if (isStarVal) {
-      resolvedTier = HostVipTier.star;
-    } else if (totalCallsVal > 300) {
+    if (totalCallsVal > 300) {
       resolvedTier = HostVipTier.diamond;
     } else if (totalCallsVal > 150) {
       resolvedTier = HostVipTier.gold;
@@ -214,9 +211,10 @@ class HostProfile {
       bio: map['bio'] as String?,
       ratePerAudioMinute: requireDatabaseCoinRate(map, 'rate_per_audio_minute'),
       isAvailable: isAvailableVal,
-      isStar: isStarVal,
+      // Star status is assigned by HostRepository.applyStarHostQuota().
+      isStar: false,
       status: resolvedStatus,
-      languages: langs.isNotEmpty ? langs : const ['Hindi'],
+      languages: langs,
       gender: map['gender']?.toString().trim().toLowerCase() ?? 'unknown',
       rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
       totalCalls: totalCallsVal,
@@ -392,7 +390,6 @@ class UserProfile {
 
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     final phone = map['phone']?.toString() ?? '';
-    final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
     return UserProfile(
       id: map['id'] as String,
       phone: phone,
@@ -409,7 +406,7 @@ class UserProfile {
       isHost:
           map['role']?.toString() == 'host' ||
           (map['is_host'] as bool? ?? false) ||
-          isKnownHostPhone,
+          false,
     );
   }
 }

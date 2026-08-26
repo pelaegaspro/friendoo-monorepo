@@ -7,7 +7,6 @@ import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 
 import '../../ads/data/banner_ad_repository.dart';
-import '../../profile/data/profile_repository.dart';
 
 final walletRepositoryProvider = Provider<WalletRepository>(
   (ref) => WalletRepository(ref.watch(supabaseProvider)),
@@ -68,11 +67,27 @@ class WalletSnapshot {
   final bool isFrozen;
   final String? frozenReason;
 
-  factory WalletSnapshot.fromMap(Map<String, dynamic> map) => WalletSnapshot(
-    coinBalance: (map['coin_balance'] as num?)?.toInt() ?? 0,
-    isFrozen: (map['is_frozen'] as bool?) ?? false,
-    frozenReason: map['frozen_reason'] as String?,
-  );
+  factory WalletSnapshot.fromMap(Map<String, dynamic> map) {
+    final rawBalance = map['coin_balance'];
+    if (rawBalance is! num) {
+      throw const FormatException('Wallet response has no valid coin balance');
+    }
+    return WalletSnapshot(
+      coinBalance: rawBalance.toInt(),
+      isFrozen: map['is_frozen'] as bool? ?? false,
+      frozenReason: map['frozen_reason'] as String?,
+    );
+  }
+}
+
+class WalletUnavailableException implements Exception {
+  const WalletUnavailableException(this.message, [this.cause]);
+
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() => 'WalletUnavailableException: $message';
 }
 
 class WalletRepository {
@@ -81,21 +96,12 @@ class WalletRepository {
   final SupabaseClient _client;
 
   Future<WalletSnapshot> fetchCurrentWallet() async {
-    final activeProfile = ProfileRepository.currentActiveProfile;
     final user = _client.auth.currentUser;
-    final phone = activeProfile?.phone ?? user?.phone ?? '';
-    final isUnlimitedTester = phone.replaceAll(' ', '').contains('8870947891');
-    if (isUnlimitedTester) {
-      return const WalletSnapshot(
-        coinBalance: 999999,
-        isFrozen: false,
-        frozenReason: null,
-      );
-    }
-
-    final userId = activeProfile?.id ?? user?.id;
+    // Wallet data must never fall back to the cached profile. That cache can
+    // belong to the previous phone during session restoration.
+    final userId = user?.id;
     if (userId == null) {
-      return const WalletSnapshot(coinBalance: 0, isFrozen: false);
+      throw const WalletUnavailableException('No authenticated user session');
     }
     try {
       final row = await _client
@@ -105,11 +111,12 @@ class WalletRepository {
           .maybeSingle();
 
       if (row == null) {
-        return const WalletSnapshot(coinBalance: 0, isFrozen: false);
+        throw const WalletUnavailableException('Wallet record was not found');
       }
       return WalletSnapshot.fromMap(row);
-    } catch (_) {
-      return const WalletSnapshot(coinBalance: 0, isFrozen: false);
+    } catch (error) {
+      if (error is WalletUnavailableException) rethrow;
+      throw WalletUnavailableException('Unable to load wallet balance', error);
     }
   }
 
@@ -124,35 +131,24 @@ class WalletRepository {
     final initial = await fetchCurrentWallet();
     yield initial;
 
-    final activeProfile = ProfileRepository.currentActiveProfile;
     final user = _client.auth.currentUser;
-    final phone = activeProfile?.phone ?? user?.phone ?? '';
-    final isUnlimitedTester = phone.replaceAll(' ', '').contains('8870947891');
-    if (isUnlimitedTester) {
-      yield* _walletChangeNotifier.stream;
-      return;
+    final userId = user?.id;
+    if (userId == null) {
+      throw const WalletUnavailableException('No authenticated user session');
     }
 
-    final userId = activeProfile?.id ?? user?.id;
-    if (userId != null) {
-      try {
-        final realtimeStream = _client
-            .from('wallets')
-            .stream(primaryKey: ['id'])
-            .eq('user_id', userId)
-            .map((rows) {
-              if (rows.isNotEmpty) {
-                return WalletSnapshot.fromMap(rows.first);
-              }
-              return initial;
-            });
-        yield* realtimeStream;
-      } catch (_) {
-        yield* _walletChangeNotifier.stream;
-      }
-    } else {
-      yield* _walletChangeNotifier.stream;
-    }
+    final realtimeStream = _client
+        .from('wallets')
+        // wallets.user_id is the table primary key; there is no id column.
+        .stream(primaryKey: ['user_id'])
+        .eq('user_id', userId)
+        .map((rows) {
+          if (rows.isEmpty) {
+            throw const WalletUnavailableException('Wallet record was removed');
+          }
+          return WalletSnapshot.fromMap(rows.first);
+        });
+    yield* realtimeStream;
   }
 
   Future<List<CoinPackage>> fetchCoinPackages() async {
@@ -280,13 +276,13 @@ class WalletRepository {
     }
   }
 
-  Future<bool> rechargeWallet({
+  Future<Map<String, dynamic>?> rechargeWallet({
     required CoinPackage package,
     required String paymentMethod,
     bool isFirstTimeBuyer = false,
   }) async {
     final user = _client.auth.currentUser;
-    if (user == null) return false;
+    if (user == null) return null;
 
     try {
       // Initiate server-authoritative payment order
@@ -295,10 +291,27 @@ class WalletRepository {
         body: {'package_id': package.id, 'payment_method': paymentMethod},
       );
 
-      if (response.status == 200) {
-        return true;
+      if (response.status == 200 && response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
       }
-      return false;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> confirmCashfreePayment({required String providerOrderId}) async {
+    final user = _client.auth.currentUser;
+    if (user == null || providerOrderId.isEmpty) return false;
+
+    try {
+      final response = await _client.functions.invoke(
+        'payment-confirm',
+        body: {'provider_order_id': providerOrderId},
+      );
+      if (response.status != 200 || response.data is! Map) return false;
+      final data = Map<String, dynamic>.from(response.data as Map);
+      return data['paid'] == true && data['settled'] == true;
     } catch (_) {
       return false;
     }

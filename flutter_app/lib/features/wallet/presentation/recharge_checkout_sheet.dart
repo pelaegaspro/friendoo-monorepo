@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/models/friendoo_models.dart';
-import '../data/upi_payment_service.dart';
 import '../data/wallet_repository.dart';
 
 import 'coin_packages_page.dart';
 import 'select_payment_method_page.dart';
+import 'cashfree_checkout_page.dart';
 
 class RechargeCheckoutSheet extends ConsumerStatefulWidget {
   const RechargeCheckoutSheet({super.key, required this.package});
 
   final CoinPackage package;
 
-  static Future<bool?> show(
-    BuildContext context, {
-    CoinPackage? package,
-  }) {
+  static Future<bool?> show(BuildContext context, {CoinPackage? package}) {
     if (package != null) {
       return SelectPaymentMethodPage.push(context, package: package);
     }
@@ -30,88 +26,62 @@ class RechargeCheckoutSheet extends ConsumerStatefulWidget {
 }
 
 class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
-  String _selectedMethod = 'UPI (PayU / GPay / PhonePe / Paytm)';
+  String _selectedMethod = 'Cashfree';
   bool _isProcessing = false;
 
   static const _paymentMethods = [
     {
-      'id': 'UPI (PayU / GPay / PhonePe / Paytm)',
-      'title': 'Instant UPI (PayU Gateway)',
-      'subtitle': 'Google Pay, PhonePe, Paytm, CRED',
-      'icon': Icons.flash_on_rounded,
-      'badge': 'FASTEST',
-    },
-    {
-      'id': 'PayU Credit / Debit Card',
-      'title': 'PayU Debit / Credit Card',
-      'subtitle': 'Visa, Mastercard, RuPay',
-      'icon': Icons.credit_card_rounded,
-      'badge': null,
-    },
-    {
-      'id': 'PayU Net Banking & Wallets',
-      'title': 'PayU Net Banking & Wallets',
-      'subtitle': 'All major Indian banks',
-      'icon': Icons.account_balance_rounded,
-      'badge': null,
+      'id': 'Cashfree',
+      'title': 'Cashfree Secure Checkout',
+      'subtitle': 'UPI, cards, net banking and wallets',
+      'icon': Icons.lock_rounded,
+      'badge': 'SECURE',
     },
   ];
 
   Future<void> _processPayment(bool isFirstTimeBuyer) async {
     setState(() => _isProcessing = true);
-    final txRef = 'tx_${DateTime.now().millisecondsSinceEpoch}';
-
-    // 1. Record pending order in backend
-    ref.read(walletRepositoryProvider).rechargeWallet(
-      package: widget.package,
-      paymentMethod: _selectedMethod,
-      isFirstTimeBuyer: isFirstTimeBuyer,
-    );
-
-    // 2. Real redirection to UPI or PayU
-    bool launched = false;
-    if (_selectedMethod.contains('UPI')) {
-      launched = await const UpiPaymentService().launchDirectUpiApp(
-        packageName: '',
-        amountInr: widget.package.amountInr.toDouble(),
-        transactionRef: txRef,
-        note: 'Friendoo Recharge ${widget.package.coins} Coins',
-      );
-    } else {
-      final payuUrl = Uri.parse(
-        'https://test.payu.in/_payment?key=7eMBxs&txnid=$txRef&amount=${widget.package.amountInr}.00&productinfo=Friendoo_${widget.package.coins}_Coins&firstname=FriendooUser&email=user@friendoo.in&phone=9999999999&surl=https://friendoo.in/api/payments/payu/webhook&furl=https://friendoo.in/api/payments/payu/webhook',
-      );
-      launched = await launchUrl(payuUrl, mode: LaunchMode.externalApplication);
-    }
-
-    if (mounted) {
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF6366F1),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          content: Row(
-            children: [
-              const Icon(Icons.open_in_new_rounded, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  launched
-                      ? 'Redirecting to payment app... Please complete the transaction.'
-                      : 'Please complete your transaction.',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-              ),
-            ],
+    try {
+      final order = await ref
+          .read(walletRepositoryProvider)
+          .rechargeWallet(
+            package: widget.package,
+            paymentMethod: _selectedMethod,
+            isFirstTimeBuyer: isFirstTimeBuyer,
+          );
+      if (!mounted) return;
+      final sessionId = order?['payment_session_id'] as String?;
+      final providerOrderId = order?['provider_order_id'] as String?;
+      if (sessionId == null ||
+          sessionId.isEmpty ||
+          providerOrderId == null ||
+          providerOrderId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to create a secure Cashfree payment order.'),
+          ),
+        );
+        return;
+      }
+      final completed = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => CashfreeCheckoutPage(
+            paymentSessionId: sessionId,
+            providerOrderId: providerOrderId,
+            sandbox: order!['environment'] != 'production',
+            verifyPayment: (orderId) => ref
+                .read(walletRepositoryProvider)
+                .confirmCashfreePayment(providerOrderId: orderId),
           ),
         ),
       );
+      if (completed == true && mounted) Navigator.of(context).pop(true);
+      ref.invalidate(walletStreamProvider);
+      ref.invalidate(walletTransactionsProvider);
+      ref.invalidate(isFirstTimeBuyerProvider);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
-
-    ref.invalidate(walletStreamProvider);
-    ref.invalidate(walletTransactionsProvider);
-    ref.invalidate(isFirstTimeBuyerProvider);
   }
 
   @override

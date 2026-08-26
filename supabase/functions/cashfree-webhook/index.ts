@@ -30,7 +30,12 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', {headers: corsHeaders});
   if (request.method !== 'POST') return error('Method not allowed', 405);
 
-  const secret = Deno.env.get('CASHFREE_SECRET_KEY');
+  const environment = Deno.env.get('CASHFREE_ENVIRONMENT') === 'production'
+    ? 'production'
+    : 'sandbox';
+  const secret = Deno.env.get(
+    environment === 'production' ? 'CASHFREE_SECRET_KEY' : 'CASHFREE_SANDBOX_SECRET_KEY',
+  );
   const timestamp = request.headers.get('x-webhook-timestamp');
   const signature = request.headers.get('x-webhook-signature');
   if (!secret || !timestamp || !signature) return error('Invalid webhook request', 401);

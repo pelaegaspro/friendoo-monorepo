@@ -60,8 +60,9 @@ Deno.serve(async (request) => {
     if (!callId) return error('call_id is required');
 
     // VideoSDK Credentials
-    const apiKey = Deno.env.get('VIDEOSDK_API_KEY') || '6bc4be03-0541-4b82-a287-d14053eadadb';
-    const secretKey = Deno.env.get('VIDEOSDK_SECRET_KEY') || '6bc4be03-0541-4b82-a287-d14053eadadb';
+    const apiKey = Deno.env.get('VIDEOSDK_API_KEY');
+    const secretKey = Deno.env.get('VIDEOSDK_SECRET_KEY');
+    if (!apiKey || !secretKey) return error('VideoSDK is not configured', 503);
 
     const admin = serviceClient();
     const {data: call, error: callError} = await admin
@@ -80,7 +81,7 @@ Deno.serve(async (request) => {
     const token = await generateVideoSdkJwt(
       apiKey,
       secretKey,
-      ['allow_join', 'allow_mod'],
+      ['allow_join'],
       roomId,
       user.id,
     );
@@ -89,7 +90,6 @@ Deno.serve(async (request) => {
       token,
       room_id: roomId,
       participant_id: user.id,
-      api_key: apiKey,
       expires_at: expiresAt,
       provider: 'videosdk',
       rate_inr_per_min: 0.38,

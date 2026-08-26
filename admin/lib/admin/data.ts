@@ -410,10 +410,13 @@ export async function listUsers(): Promise<AdminUserRow[]> {
   }, 20)
 }
 
-export async function addCoinsToUser(userId: string, amountCoins: number) {
+export async function addCoinsToUser(
+  userId: string,
+  amountCoins: number,
+  idempotencyKey = `admin_adjust:${userId}:${crypto.randomUUID()}`,
+) {
   const supabase = getSupabaseAdmin()
   const actorId = getOperationalAdminActorId()
-  const idempotencyKey = `admin_adjust:${userId}:${Date.now()}`
 
   const { data, error } = await supabase.rpc('admin_adjust_wallet', {
     p_actor_id: actorId,
@@ -424,18 +427,13 @@ export async function addCoinsToUser(userId: string, amountCoins: number) {
   })
 
   if (error) {
-    // Direct wallet update fallback
-    await supabase.from('wallets').upsert({
-      user_id: userId,
-      coin_balance: amountCoins,
-      updated_at: new Date().toISOString(),
-    })
+    throw error
   }
 
   invalidateCache('admin:users')
   invalidateCache('admin:transactions')
   invalidateCache('admin:stats')
-  return { ok: true, newBalance: data }
+  return { ok: true, newBalance: data as number }
 }
 
 export async function setUserBanState(userId: string, isBanned: boolean) {

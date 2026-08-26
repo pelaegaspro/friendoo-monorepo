@@ -58,6 +58,7 @@ export default function UsersAdminPage() {
         body: JSON.stringify({
           userId: coinsModalUser.id,
           amountCoins: coinsAmount,
+          idempotencyKey: `admin_adjust:${coinsModalUser.id}:${crypto.randomUUID()}`,
         }),
       })
       toast.success('Coins added successfully')

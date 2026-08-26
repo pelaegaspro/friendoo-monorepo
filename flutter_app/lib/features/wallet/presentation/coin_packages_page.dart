@@ -120,20 +120,18 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
     final walletAsync = ref.watch(walletStreamProvider);
     final packagesAsync = ref.watch(coinPackagesProvider);
     final rawPackages = packagesAsync.asData?.value ?? _defaultPackages;
-    
+
     // Hide ₹15 and ₹25 plans unless isCallRecharge is explicitly true
     final packages = widget.isCallRecharge
         ? [
             ..._callQuickPackages,
-            ...rawPackages.where(
-              (p) => p.amountInr != 15 && p.amountInr != 25,
-            ),
+            ...rawPackages.where((p) => p.amountInr != 15 && p.amountInr != 25),
           ]
         : rawPackages
-            .where((p) => p.amountInr != 15 && p.amountInr != 25)
-            .toList();
+              .where((p) => p.amountInr != 15 && p.amountInr != 25)
+              .toList();
 
-    final balance = walletAsync.asData?.value.coinBalance ?? 0;
+    final balance = walletAsync.asData?.value.coinBalance;
 
     final cashbackBonus = _selectedPackage != null
         ? ((_selectedPackage!.amountInr * 0.37).round())
@@ -356,9 +354,14 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text('🪙 ', style: TextStyle(fontSize: 18)),
+                                const Text(
+                                  '🪙 ',
+                                  style: TextStyle(fontSize: 18),
+                                ),
                                 Text(
-                                  '${(balance * 10).round()} Coins',
+                                  balance == null
+                                      ? 'Balance unavailable'
+                                      : '${(balance * 10).round()} Coins',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
@@ -739,27 +742,27 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
                           color: tx.isFailed
                               ? const Color(0xFFFEE2E2)
                               : tx.isCanceled
-                                  ? const Color(0xFFF1F5F9)
-                                  : isCredit
-                                      ? const Color(0xFFECFDF5)
-                                      : const Color(0xFFFEE2E2),
+                              ? const Color(0xFFF1F5F9)
+                              : isCredit
+                              ? const Color(0xFFECFDF5)
+                              : const Color(0xFFFEE2E2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           tx.isFailed
                               ? Icons.close_rounded
                               : tx.isCanceled
-                                  ? Icons.remove_circle_outline_rounded
-                                  : isCredit
-                                      ? Icons.arrow_downward_rounded
-                                      : Icons.arrow_upward_rounded,
+                              ? Icons.remove_circle_outline_rounded
+                              : isCredit
+                              ? Icons.arrow_downward_rounded
+                              : Icons.arrow_upward_rounded,
                           color: tx.isFailed
                               ? const Color(0xFFEF4444)
                               : tx.isCanceled
-                                  ? const Color(0xFF64748B)
-                                  : isCredit
-                                      ? const Color(0xFF10B981)
-                                      : const Color(0xFFEF4444),
+                              ? const Color(0xFF64748B)
+                              : isCredit
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                           size: 20,
                         ),
                       ),
@@ -801,8 +804,8 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
                               color: tx.isFailed
                                   ? const Color(0xFFEF4444)
                                   : isCredit
-                                      ? const Color(0xFF10B981)
-                                      : const Color(0xFF64748B),
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],

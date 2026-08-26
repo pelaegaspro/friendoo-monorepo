@@ -54,9 +54,7 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
   @override
   HostCallGuardState build() {
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final isHostRole =
-        activeProfile?.isHost == true ||
-        activeProfile?.phone.contains('7604991136') == true;
+    final isHostRole = activeProfile?.isHost == true;
 
     final initial = HostCallGuardState(
       dateKey: _currentDateKey(),
@@ -74,10 +72,8 @@ class HostCallGuardNotifier extends Notifier<HostCallGuardState> {
     try {
       final client = ref.read(supabaseProvider);
       final activeProfile = ProfileRepository.currentActiveProfile;
-      final userId =
-        activeProfile?.id ??
-        client.auth.currentUser?.id ??
-          '00000000-0000-0000-0000-007604991136';
+      final userId = activeProfile?.id ?? client.auth.currentUser?.id;
+      if (userId == null || userId.isEmpty) return;
 
       final row = await client
           .from('hosts')
@@ -154,18 +150,14 @@ class BackgroundAvailabilityChecker {
 
   Future<void> _verifyAvailability() async {
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final isHostUser =
-        activeProfile?.isHost == true ||
-        activeProfile?.phone.contains('7604991136') == true;
+    final isHostUser = activeProfile?.isHost == true;
 
     // NEVER overwrite host availability if this device is logged in as a normal user!
     if (!isHostUser) return;
 
     final client = _ref.read(supabaseProvider);
-    final userId =
-        activeProfile?.id ??
-        client.auth.currentUser?.id ??
-        '00000000-0000-0000-0000-007604991136';
+    final userId = activeProfile?.id ?? client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) return;
 
     try {
       final guard = _ref.read(hostCallGuardProvider);

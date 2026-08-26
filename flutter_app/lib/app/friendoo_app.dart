@@ -95,7 +95,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _otpRequested = false;
-  bool _selectedIsHost = false;
   bool _loading = false;
   String? _error;
   int _resendCountdown = 0;
@@ -156,31 +155,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
         _startResendTimer();
       }
     } on AuthException catch (error) {
-      if (fullPhone.contains('8870947891') ||
-          fullPhone.contains('7604991136')) {
-        if (mounted) {
-          setState(() {
-            _otpRequested = true;
-            _otpController.clear();
-          });
-          _startResendTimer();
-        }
-      } else {
-        setState(() => _error = error.message);
-      }
+      setState(() => _error = error.message);
     } catch (_) {
-      if (fullPhone.contains('8870947891') ||
-          fullPhone.contains('7604991136')) {
-        if (mounted) {
-          setState(() {
-            _otpRequested = true;
-            _otpController.clear();
-          });
-          _startResendTimer();
-        }
-      } else {
-        setState(() => _error = 'Unable to send SMS code. Please try again.');
-      }
+      setState(() => _error = 'Unable to send SMS code. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -204,53 +181,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
     });
 
     final fullPhone = '+91$phoneDigits';
-
-    if (otp == '123456') {
-      final isTesterUser = fullPhone.contains('8870947891');
-      final isKnownHost = fullPhone.contains('7604991136');
-      final isHostRole = _selectedIsHost || isKnownHost;
-      final hostId = '00000000-0000-0000-0000-007604991136';
-
-      final String userId;
-      final String displayName;
-
-      if (isKnownHost) {
-        userId = hostId;
-        displayName = 'Testing Host';
-      } else if (isTesterUser) {
-        userId = '00000000-0000-0000-0000-008870947891';
-        displayName = 'VIP Tester';
-      } else {
-        // Any other random phone number entered
-        userId = Uuid().v4();
-        displayName = '';
-      }
-
-      final testProfile = UserProfile(
-        id: userId,
-        phone: fullPhone,
-        displayName: displayName,
-        preferredLanguages: const ['Tamil', 'Hindi', 'English'],
-        avatarUrl: 'user_01',
-        isHost: isHostRole,
-      );
-      ProfileRepository.currentActiveProfile = testProfile;
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('friendoo_saved_phone', fullPhone);
-        await prefs.setBool('friendoo_saved_is_host', testProfile.isHost);
-        await prefs.setString(
-          'friendoo_saved_display_name',
-          testProfile.displayName,
-        );
-        await prefs.setString('friendoo_saved_user_id', testProfile.id);
-        await prefs.setBool('friendoo_saved_has_entered', true);
-      } catch (_) {}
-      ref.read(isHostModeProvider.notifier).state = testProfile.isHost;
-      ref.read(hasEnteredAppProvider.notifier).state = true;
-      if (mounted) setState(() => _loading = false);
-      return;
-    }
 
     try {
       await _auth.verifySmsOtp(phone: fullPhone, code: otp);
@@ -343,124 +273,6 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   const SizedBox(height: 28),
 
                   if (!_otpRequested) ...[
-                    // Role Selector Toggle
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _selectedIsHost = false),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: !_selectedIsHost
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: !_selectedIsHost
-                                      ? [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.06,
-                                            ),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.person_rounded,
-                                      size: 18,
-                                      color: !_selectedIsHost
-                                          ? const Color(0xFF6366F1)
-                                          : const Color(0xFF94A3B8),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'User Mode',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                        color: !_selectedIsHost
-                                            ? const Color(0xFF0F172A)
-                                            : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _selectedIsHost = true),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _selectedIsHost
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: _selectedIsHost
-                                      ? [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.06,
-                                            ),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.headset_mic_rounded,
-                                      size: 18,
-                                      color: _selectedIsHost
-                                          ? const Color(0xFFFF2A85)
-                                          : const Color(0xFF94A3B8),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Host Mode',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w800,
-                                        color: _selectedIsHost
-                                            ? const Color(0xFFFF2A85)
-                                            : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     // Phone input with locked +91 prefix
                     TextField(
                       controller: _phoneController,
@@ -1708,20 +1520,12 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
             });
           }
 
-          final isKnownTestAccount =
-              profile != null &&
-              (profile.phone.contains('7604991136') ||
-                  profile.phone.contains('8870947891') ||
-                  profile.displayName == 'Testing Host' ||
-                  profile.displayName == 'VIP Tester');
-
           final isFirstTimeSignup =
-              !isKnownTestAccount &&
-              (profile == null ||
-                  profile.displayName.isEmpty ||
-                  profile.displayName == 'User' ||
-                  profile.displayName == 'Friendoo User' ||
-                  profile.avatarSelectedAt == null);
+              profile == null ||
+              profile.displayName.isEmpty ||
+              profile.displayName == 'User' ||
+              profile.displayName == 'Friendoo User' ||
+              profile.avatarSelectedAt == null;
 
           if (isFirstTimeSignup) {
             return NameAndDobSetupPage(
@@ -1776,10 +1580,7 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
 
     final isHostMode = ref.read(isHostModeProvider);
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final isHostUser =
-        isHostMode ||
-        activeProfile?.isHost == true ||
-        activeProfile?.phone.contains('7604991136') == true;
+    final isHostUser = isHostMode || activeProfile?.isHost == true;
 
     // Only phones acting as a host should receive host incoming call dialogs
     if (!isHostUser) return;
@@ -2828,10 +2629,10 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                   ),
                 ),
                 error: (_, __) => const Text(
-                  '50 Coins',
+                  'Balance unavailable',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

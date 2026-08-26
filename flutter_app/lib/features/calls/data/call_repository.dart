@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -25,89 +25,33 @@ class CallRepository {
   final SupabaseClient _client;
 
   Future<CallSession> initiateAudioCall(String hostId) async {
+    if (_client.auth.currentSession == null) {
+      throw Exception(
+        'Please verify your phone number before starting a call.',
+      );
+    }
+
     final uuidRegex = RegExp(
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
     );
-    final validHostId = uuidRegex.hasMatch(hostId)
-        ? hostId
-        : '00000000-0000-0000-0000-007604991136';
-    final callerId =
-        ProfileRepository.currentActiveProfile?.id ??
-        _client.auth.currentUser?.id ??
-        '00000000-0000-0000-0000-008870947891';
-    final validCallerId = uuidRegex.hasMatch(callerId)
-        ? callerId
-        : '00000000-0000-0000-0000-008870947891';
-    final newCallId = const Uuid().v4();
-
-    Object? initiateError;
+    if (!uuidRegex.hasMatch(hostId)) {
+      throw Exception('The selected host has an invalid account identifier.');
+    }
     try {
       final response = await _client.functions.invoke(
         'call-initiate',
-        body: {'host_id': validHostId, 'call_type': 'audio'},
+        body: {'host_id': hostId, 'call_type': 'audio'},
       );
       final data = response.data as Map<String, dynamic>;
       if (data['call'] != null) {
         return CallSession.fromMap(data['call'] as Map<String, dynamic>);
       }
-      initiateError = Exception('Call initiation returned no call.');
-    } catch (error) {
-      initiateError = error;
-    }
-
-    try {
-      // Ensure caller profile exists to satisfy any foreign key constraints
-      try {
-        await _client.from('profiles').upsert({
-          'id': validCallerId,
-          'phone':
-              ProfileRepository.currentActiveProfile?.phone ?? '+918870947891',
-          'display_name':
-              ProfileRepository.currentActiveProfile?.displayName.isNotEmpty ==
-                  true
-              ? ProfileRepository.currentActiveProfile!.displayName
-              : 'VIP Tester',
-          'avatar_path': 'user_01',
-        }, onConflict: 'id');
-      } catch (_) {}
-
-      // Ensure host exists to satisfy any foreign key constraints
-      try {
-        await _client.from('profiles').upsert({
-          'id': validHostId,
-          'phone': '+917604991136',
-          'display_name': 'Testing Host',
-          'avatar_path': 'host_01',
-        }, onConflict: 'id');
-        await _client.from('hosts').upsert({
-          'id': validHostId,
-          'is_available': true,
-          'rate_per_audio_minute': 5,
-          'gender': 'female',
-          'is_star': true,
-        }, onConflict: 'id');
-      } catch (_) {}
-
-      final inserted = await _client
-          .from('calls')
-          .insert({
-            'id': newCallId,
-            'caller_id': validCallerId,
-            'host_id': validHostId,
-            'call_type': 'audio',
-            'status': 'ringing',
-            'rate_per_minute': 5,
-            'rtc_channel': 'friendoo_$newCallId',
-            'created_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .select()
-          .single();
-      return CallSession.fromMap(inserted);
+      throw Exception('Call initiation returned no call.');
     } catch (error) {
       throw Exception(
         'Unable to create the call on the server. '
         'Please check that the host is online and try again. '
-        'Details: ${error.toString()}; initial request: $initiateError',
+        'Details: ${error.toString()}',
       );
     }
   }
@@ -121,23 +65,9 @@ class CallRepository {
       final data = response.data as Map<String, dynamic>;
       return CallSession.fromMap(data['call'] as Map<String, dynamic>);
     } catch (error) {
-      try {
-        final updated = await _client
-            .from('calls')
-            .update({
-              'status': 'accepted',
-              'started_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', callId)
-            .select()
-            .single();
-        return CallSession.fromMap(updated);
-      } catch (updateError) {
-        throw Exception(
-          'Unable to accept the call on the server: '
-          '${updateError.toString()} (initial request: $error)',
-        );
-      }
+      throw Exception(
+        'Unable to accept the call on the server: ${error.toString()}',
+      );
     }
   }
 
@@ -147,16 +77,11 @@ class CallRepository {
         'call-end',
         body: {'call_id': callId, 'reason': reason},
       );
-    } catch (_) {
-      try {
-        await _client
-            .from('calls')
-            .update({
-              'status': 'ended',
-              'ended_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', callId);
-      } catch (_) {}
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('call-end error: $error');
+      }
+      rethrow;
     }
   }
 
@@ -180,12 +105,9 @@ class CallRepository {
       return AgoraJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (_) {
-      return AgoraJoinCredentials(
-        channel: 'friendoo_$callId',
-        token: 'test_agora_token_$callId',
-        uid: 1001,
-        appId: 'test_app_id',
+    } catch (error) {
+      throw Exception(
+        'Failed to generate Agora RTC join token: ${error.toString()}',
       );
     }
   }
@@ -199,49 +121,33 @@ class CallRepository {
       return VideoSdkJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (_) {
-      return VideoSdkJoinCredentials(
-        roomId: 'friendoo_$callId',
-        participantId: 'user_$callId',
-        apiKey: 'test_key',
-        token: 'test_videosdk_token_$callId',
-      );
+    } catch (error) {
+      throw Exception('Failed to generate VideoSDK token: ${error.toString()}');
     }
   }
 
   Stream<List<CallSession>> watchIncomingCalls() {
     final controller = StreamController<List<CallSession>>.broadcast();
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
+
+    if (userId == null) {
+      return Stream.value(const <CallSession>[]);
+    }
+
     Timer? pollTimer;
 
     Future<void> pollOnce() async {
-      final activeProfile = ProfileRepository.currentActiveProfile;
-      final userId =
-          activeProfile?.id ??
-          _client.auth.currentUser?.id ??
-          '00000000-0000-0000-0000-007604991136';
-
       try {
         final rows = await _client
             .from('calls')
             .select()
+            .eq('host_id', userId)
             .or('status.eq.ringing,status.eq.connecting,status.eq.initiated')
             .order('created_at', ascending: false)
             .limit(10);
 
         final matches = (rows as List<dynamic>)
-            .where((r) {
-              final hId = r['host_id']?.toString() ?? '';
-              final isTargetHost =
-                  hId == userId ||
-                  hId == '00000000-0000-0000-0000-007604991136' ||
-                  hId.contains('7604991136') ||
-                  (activeProfile?.isHost == true);
-              final status = r['status']?.toString() ?? '';
-              return isTargetHost &&
-                  (status == 'ringing' ||
-                      status == 'connecting' ||
-                      status == 'initiated');
-            })
             .map((r) => CallSession.fromMap(r as Map<String, dynamic>))
             .toList();
 
@@ -253,39 +159,30 @@ class CallRepository {
 
     StreamSubscription? sub;
     try {
-      sub = _client.from('calls').stream(primaryKey: ['id']).listen((rows) {
-        final activeProfile = ProfileRepository.currentActiveProfile;
-        final userId =
-            activeProfile?.id ??
-            _client.auth.currentUser?.id ??
-            '00000000-0000-0000-0000-007604991136';
-
-        final matches = rows
-            .where((r) {
-              final hId = r['host_id']?.toString() ?? '';
-              final isTargetHost =
-                  hId == userId ||
-                  hId == '00000000-0000-0000-0000-007604991136' ||
-                  hId.contains('7604991136') ||
-                  (activeProfile?.isHost == true);
-              final status = r['status']?.toString() ?? '';
-              return isTargetHost &&
-                  (status == 'ringing' ||
+      sub = _client
+          .from('calls')
+          .stream(primaryKey: ['id'])
+          .eq('host_id', userId)
+          .listen((rows) {
+            final matches = rows
+                .where((r) {
+                  final status = r['status']?.toString() ?? '';
+                  return status == 'ringing' ||
                       status == 'connecting' ||
-                      status == 'initiated');
-            })
-            .map((r) => CallSession.fromMap(r))
-            .toList();
+                      status == 'initiated';
+                })
+                .map((r) => CallSession.fromMap(r))
+                .toList();
 
-        if (!controller.isClosed) {
-          controller.add(matches);
-        }
-      }, onError: (_) {});
+            if (!controller.isClosed) {
+              controller.add(matches);
+            }
+          }, onError: (_) {});
     } catch (_) {}
 
     pollOnce();
     pollTimer = Timer.periodic(
-      const Duration(milliseconds: 1500),
+      const Duration(milliseconds: 2500),
       (_) => pollOnce(),
     );
 

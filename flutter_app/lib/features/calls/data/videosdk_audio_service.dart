@@ -44,8 +44,10 @@ class VideoSdkAudioService implements RtcAudioService {
       _isSpeaker = true;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('VideoSDK Audio join warning: $e');
+        debugPrint('VideoSDK Audio join failed: $e');
       }
+      await dispose();
+      rethrow;
     }
   }
 

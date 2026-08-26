@@ -54,77 +54,28 @@ class HostRepository {
       final rows = await _client
           .from('hosts')
           .select(
-            'id, bio, rate_per_audio_minute, is_available, is_star, gender, languages',
+            'id, bio, rate_per_audio_minute, is_available, gender, languages, profiles:profiles(display_name, avatar_path)',
           )
           .eq('is_available', true);
 
       final hostRows = rows as List<dynamic>;
       for (final r in hostRows) {
         final map = Map<String, dynamic>.from(r as Map<String, dynamic>);
-        final id = map['id']?.toString() ?? '';
-
-        String displayName = 'Host';
-        String? avatarPath;
-        try {
-          final pRow = await _client
-              .from('profiles')
-              .select('display_name, avatar_path')
-              .eq('id', id)
-              .maybeSingle();
-          if (pRow != null) {
-            displayName = pRow['display_name']?.toString() ?? 'Host';
-            avatarPath = pRow['avatar_path']?.toString();
-          }
-        } catch (_) {}
-        map['display_name'] = displayName;
-        map['avatar_path'] = avatarPath;
+        final profiles = map['profiles'];
+        if (profiles is Map<String, dynamic>) {
+          map['display_name'] = profiles['display_name'] ?? 'Host';
+          map['avatar_path'] = profiles['avatar_path'];
+        } else if (profiles is List &&
+            profiles.isNotEmpty &&
+            profiles.first is Map) {
+          final first = profiles.first as Map;
+          map['display_name'] = first['display_name'] ?? 'Host';
+          map['avatar_path'] = first['avatar_path'];
+        }
         hosts.add(HostProfile.fromMap(map));
       }
-    } catch (_) {}
-
-    // Check if test host 7604 is explicitly offline in database
-    bool is7604ExplicitlyOffline = false;
-    try {
-      final hostRow = await _client
-          .from('hosts')
-          .select('is_available')
-          .eq('id', '00000000-0000-0000-0000-007604991136')
-          .maybeSingle();
-      if (hostRow != null && hostRow['is_available'] == false) {
-        is7604ExplicitlyOffline = true;
-      }
-    } catch (_) {}
-
-    final has7604Host = hosts.any(
-      (h) =>
-          h.id == '00000000-0000-0000-0000-007604991136' ||
-          h.displayName.toLowerCase().contains('testing host') ||
-          h.displayName.contains('7604991136'),
-    );
-
-    if (!is7604ExplicitlyOffline && !has7604Host) {
-      hosts.add(
-        const HostProfile(
-          id: '00000000-0000-0000-0000-007604991136',
-          displayName: 'Testing Host',
-          bio: 'Verified Friendoo Host · Live & Ready for Audio Calls',
-          ratePerAudioMinute: 5,
-          isAvailable: true,
-          isStar: true,
-          languages: ['Tamil', 'Hindi', 'English'],
-          gender: 'female',
-          rating: 5.0,
-          totalCalls: 120,
-          age: 24,
-          city: 'Chennai, Tamil Nadu',
-        ),
-      );
-    } else if (is7604ExplicitlyOffline) {
-      hosts.removeWhere(
-        (h) =>
-            h.id == '00000000-0000-0000-0000-007604991136' ||
-            h.displayName.toLowerCase().contains('testing host'),
-      );
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(error, stackTrace);
     }
 
     return applyStarHostQuota(hosts);
@@ -276,10 +227,8 @@ class HostRepository {
 
   Future<void> setHostAvailability(bool isAvailable) async {
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final userId =
-        activeProfile?.id ??
-        _client.auth.currentUser?.id ??
-        '00000000-0000-0000-0000-007604991136';
+    final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) return;
 
     final nowIso = DateTime.now().toUtc().toIso8601String();
 
@@ -288,10 +237,6 @@ class HostRepository {
         'id': userId,
         'is_available': isAvailable,
         'rate_per_audio_minute': 5,
-        'gender': 'female',
-        'is_star': true,
-        'languages': ['Tamil', 'Hindi', 'English'],
-        'last_seen_at': nowIso,
         'updated_at': nowIso,
       }, onConflict: 'id');
     } catch (_) {}

@@ -48,82 +48,56 @@ class ProfileRepository {
           .maybeSingle();
 
       final phone = user.phone ?? '';
-      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-      final isTesterUserPhone = phone
-          .replaceAll(' ', '')
-          .contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
           user.userMetadata?['full_name'] as String?;
 
       if (row == null) {
-        final prof =
-            currentActiveProfile ??
-            UserProfile(
-              id: user.id,
-              phone: phone,
-              displayName: metaName?.trim().isNotEmpty == true
-                  ? metaName!.trim()
-                  : (isKnownHostPhone
-                        ? 'Testing Host'
-                        : (isTesterUserPhone ? 'VIP Tester' : 'User')),
-              preferredLanguages: _fallbackLanguages,
-              avatarUrl: 'user_01',
-              isHost: isKnownHostPhone && !isTesterUserPhone,
-            );
+        final prof = UserProfile(
+          id: user.id,
+          phone: phone,
+          displayName: metaName?.trim().isNotEmpty == true
+              ? metaName!.trim()
+              : 'User',
+          preferredLanguages: _fallbackLanguages,
+          avatarUrl: 'user_01',
+          isHost: false,
+        );
         currentActiveProfile = prof;
         return prof;
       }
 
       final prof = UserProfile.fromMap(row);
       final finalPhone = prof.phone.isNotEmpty ? prof.phone : phone;
-      final finalIsHost =
-          !isTesterUserPhone &&
-          (prof.isHost ||
-              finalPhone.replaceAll(' ', '').contains('7604991136'));
-      final finalDisplayName =
-          (prof.displayName.isNotEmpty &&
-              prof.displayName != 'User' &&
-              !prof.displayName.contains('7604991136'))
-          ? prof.displayName
-          : (isKnownHostPhone ? 'Testing Host' : prof.displayName);
-      final finalProf = prof.copyWith(
-        phone: finalPhone,
-        isHost: finalIsHost,
-        displayName: finalDisplayName,
-      );
+      final finalProf = prof.copyWith(phone: finalPhone);
       currentActiveProfile = finalProf;
       return finalProf;
     } catch (_) {
       final phone = user.phone ?? '';
-      final isKnownHostPhone = phone.replaceAll(' ', '').contains('7604991136');
-      final isTesterUserPhone = phone
-          .replaceAll(' ', '')
-          .contains('8870947891');
       final metaName =
           user.userMetadata?['display_name'] as String? ??
           user.userMetadata?['name'] as String? ??
           user.userMetadata?['full_name'] as String?;
 
-      return currentActiveProfile ??
-          UserProfile(
-            id: user.id,
-            phone: phone,
-            displayName: metaName?.trim().isNotEmpty == true
-                ? metaName!.trim()
-                : (isKnownHostPhone
-                      ? 'Testing Host'
-                      : (isTesterUserPhone ? 'VIP Tester' : 'User')),
-            preferredLanguages: _fallbackLanguages,
-            avatarUrl: 'user_01',
-            isHost: isKnownHostPhone && !isTesterUserPhone,
-          );
+      return UserProfile(
+        id: user.id,
+        phone: phone,
+        displayName: metaName?.trim().isNotEmpty == true
+            ? metaName!.trim()
+            : 'User',
+        preferredLanguages: _fallbackLanguages,
+        avatarUrl: 'user_01',
+        isHost: false,
+      );
     }
   }
 
   Stream<UserProfile?> watchCurrentUserProfile() async* {
-    final initial = currentActiveProfile ?? await fetchCurrentUserProfile();
+    // Always resolve the profile for the current auth session. Reusing the
+    // static cache here can render the previous phone's role/profile while
+    // Supabase is restoring or switching sessions.
+    final initial = await fetchCurrentUserProfile();
     if (initial != null) {
       yield initial;
     }
@@ -155,6 +129,37 @@ class ProfileRepository {
           .update({'display_name': trimmed})
           .eq('id', user.id);
     } catch (_) {}
+  }
+
+  Future<void> updateEditableProfile({
+    required String displayName,
+    required String about,
+    required int age,
+  }) async {
+    final trimmedName = displayName.trim();
+    final trimmedAbout = about.trim();
+    if (trimmedName.isEmpty || trimmedName.length > 50) {
+      throw ArgumentError('Name must contain between 1 and 50 characters.');
+    }
+    if (trimmedAbout.length > 150) {
+      throw ArgumentError('Bio must contain at most 150 characters.');
+    }
+    if (age < 18 || age > 100) {
+      throw ArgumentError('Age must be between 18 and 100.');
+    }
+
+    await updateDisplayName(trimmedName);
+    final user = _client.auth.currentUser;
+    if (user != null) {
+      await _client
+          .from('profiles')
+          .update({'display_name': trimmedName, 'about': trimmedAbout})
+          .eq('id', user.id);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('friendoo_profile_about', trimmedAbout);
+    await prefs.setInt('friendoo_profile_age', age);
   }
 
   Future<void> updatePreferredLanguages(List<String> languages) async {
@@ -250,15 +255,14 @@ class ProfileRepository {
     final trimmedName = displayName.trim().isNotEmpty
         ? displayName.trim()
         : 'User';
-    final effectivePhone =
-        user?.phone ?? currentActiveProfile?.phone ?? '+919876543210';
+    final effectivePhone = user?.phone ?? currentActiveProfile?.phone;
+    if (user == null || effectivePhone == null || effectivePhone.isEmpty) {
+      throw StateError(
+        'A verified Supabase user is required to save a profile.',
+      );
+    }
     final isHostRole = avatarConfig.role == 'host';
-    final effectiveId =
-        user?.id ??
-        currentActiveProfile?.id ??
-        (isHostRole
-            ? '00000000-0000-0000-0000-007604991136'
-            : '00000000-0000-0000-0000-008870947891');
+    final effectiveId = user.id;
 
     currentActiveProfile = UserProfile(
       id: effectiveId,

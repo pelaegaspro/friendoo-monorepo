@@ -1,6 +1,30 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {corsHeaders, authenticatedUser, error, json, serviceClient} from '../_shared/http.ts';
 
+type PaymentOrder = {
+  id: string;
+  amount_inr: number;
+  coins: number;
+};
+
+function cashfreeConfig() {
+  const environment = Deno.env.get('CASHFREE_ENVIRONMENT') === 'production'
+    ? 'production'
+    : 'sandbox';
+  return {
+    environment,
+    baseUrl: environment === 'production'
+      ? 'https://api.cashfree.com/pg'
+      : 'https://sandbox.cashfree.com/pg',
+    appId: Deno.env.get(
+      environment === 'production' ? 'CASHFREE_APP_ID' : 'CASHFREE_SANDBOX_APP_ID',
+    ),
+    secret: Deno.env.get(
+      environment === 'production' ? 'CASHFREE_SECRET_KEY' : 'CASHFREE_SANDBOX_SECRET_KEY',
+    ),
+  };
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', {headers: corsHeaders});
   if (request.method !== 'POST') return error('Method not allowed', 405);
@@ -13,60 +37,69 @@ Deno.serve(async (request) => {
     const packageId = typeof body.package_id === 'string' ? body.package_id : '';
     if (!packageId) return error('package_id is required');
 
+    const config = cashfreeConfig();
+    if (!config.appId || !config.secret) return error('Cashfree is not configured', 503);
+
     const admin = serviceClient();
-
-    // 1. Fetch authoritative package price from database
-    const {data: pkg, error: pkgError} = await admin
-      .from('coin_packages')
-      .select('id, coins, amount_inr, is_active')
-      .eq('id', packageId)
-      .eq('is_active', true)
-      .single();
-
-    if (pkgError || !pkg) {
-      return error('Invalid or inactive coin package', 404);
-    }
-
-    // 2. Check first-time buyer bonus server-side (do NOT trust client)
-    const {data: previousOrders} = await admin
-      .from('payment_orders')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('status', 'success')
-      .limit(1);
-
-    const isFirstTime = !previousOrders || previousOrders.length === 0;
-    const finalCoins = isFirstTime ? Math.round(pkg.coins * 1.5) : pkg.coins;
-
     const providerOrderId = `cf_order_${crypto.randomUUID().replaceAll('-', '')}`;
 
-    // 3. Create server-authoritative payment order record
-    const {data: order, error: orderError} = await admin
-      .from('payment_orders')
-      .insert({
-        user_id: user.id,
-        package_id: pkg.id,
-        amount_inr: pkg.amount_inr,
-        coins: finalCoins,
-        provider: 'cashfree',
-        provider_order_id: providerOrderId,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
+    // Record the pending purchase first. The database fetches the active package
+    // and sets the only price/coin quantity that can later be credited.
+    const {data: rawOrder, error: orderError} = await admin.rpc(
+      'create_friendoo_pending_payment',
+      {
+        p_user_id: user.id,
+        p_package_id: packageId,
+        p_provider_order_id: providerOrderId,
+      },
+    );
+    const order = rawOrder as PaymentOrder | null;
     if (orderError || !order) {
       console.error('Failed to create payment order', orderError);
       return error('Unable to initiate payment order', 500);
     }
 
+    const providerResponse = await fetch(`${config.baseUrl}/orders`, {
+      method: 'POST',
+      headers: {
+        'x-api-version': '2023-08-01',
+        'x-client-id': config.appId,
+        'x-client-secret': config.secret,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        order_id: providerOrderId,
+        order_amount: order.amount_inr,
+        order_currency: 'INR',
+        customer_details: {
+          customer_id: user.id,
+          customer_email: user.email ?? 'noreply@friendoo.in',
+          customer_phone: user.phone ?? '9999999999',
+        },
+        order_meta: {
+          return_url: 'https://friendoo.in/payment/callback?order_id={order_id}',
+          notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`,
+        },
+      }),
+    });
+    const providerOrder = await providerResponse.json();
+    if (!providerResponse.ok || !providerOrder.payment_session_id) {
+      console.error('Cashfree order creation failed', providerOrder);
+      await admin
+        .from('payment_orders')
+        .update({status: 'failed'})
+        .eq('id', order.id)
+        .eq('status', 'pending');
+      return error('Unable to create Cashfree payment order', 502);
+    }
+
     return json({
       order_id: order.id,
       provider_order_id: providerOrderId,
-      amount_inr: pkg.amount_inr,
-      coins: finalCoins,
-      is_first_time_buyer: isFirstTime,
-      environment: Deno.env.get('CASHFREE_ENVIRONMENT') ?? 'sandbox',
+      amount_inr: order.amount_inr,
+      coins: order.coins,
+      environment: config.environment,
+      payment_session_id: providerOrder.payment_session_id,
     });
   } catch (caught) {
     console.error('payment-create failed', caught);

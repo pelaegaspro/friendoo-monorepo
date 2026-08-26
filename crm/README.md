@@ -1,11 +1,11 @@
 # Friendoo CRM
 
-Dedicated customer intelligence and operations console for Friendoo, built as a separate Next.js 14 app and connected to the same Firebase project as the main product.
+Dedicated customer intelligence and operations console for Friendoo, built as a separate Next.js 14 app and connected to Friendoo's operational Supabase project.
 
 ## Stack
 
 - Next.js 14 App Router + TypeScript
-- Firebase Admin SDK (Firestore/Auth/FCM)
+- Supabase server client with service-role access for protected operational actions
 - Recharts (dashboard analytics)
 - Tailwind CSS + local UI primitives
 - Zustand (page state)
@@ -30,15 +30,15 @@ Copy `.env.local.example` to `.env.local` and fill values:
 
 ```bash
 ADMIN_PASSWORD=friendoo_crm_2025
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=friendoo-v1
+SUPABASE_URL=https://<operational-project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<server-only-key>
 NEXT_PUBLIC_APP_URL=https://crm.friendoo.in
 CRM_SESSION_SECRET=<long-random-secret>
 ```
 
 Notes:
-- `FIREBASE_SERVICE_ACCOUNT_JSON` must be a single-line JSON string.
-- `private_key` inside JSON must preserve `\n` escaped newlines.
+- `SUPABASE_SERVICE_ROLE_KEY` must remain server-side and must never be exposed
+  to browser code.
 
 ## Local Development
 
@@ -69,9 +69,10 @@ The project was validated with a successful production build.
 - Revenue: `revenue/stats`
 - Config docs: `config/[docId]`
 
-## Firestore Indexes
+## Database
 
-See [INDEXES.md](/D:/Friendoo/crm/INDEXES.md) and create all listed composite indexes in Firebase.
+CRM reads and writes the operational Supabase PostgreSQL database through the
+server-only Supabase client and protected admin RPCs.
 
 ## Deploy to Vercel
 
@@ -90,8 +91,6 @@ vercel --prod
 ```
 4. Set environment variables in Vercel Project Settings:
 - `ADMIN_PASSWORD`
-- `FIREBASE_SERVICE_ACCOUNT_JSON`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 - `NEXT_PUBLIC_APP_URL=https://crm.friendoo.in`
 - `CRM_SESSION_SECRET`
 
@@ -108,7 +107,6 @@ Vercel auto-provisions SSL after DNS propagation.
 
 ## Important Operational Rules
 
-- Keep all Firestore coin balance mutations in transactions (`runTransaction`) only.
-- Keep FCM sends batched with `sendEachForMulticast` and `<= 500` tokens per batch.
-- Keep service-account reads server-side only; do not expose admin credentials to client code.
-- Main app minimum-call-coins checks still belong in both client and Cloud Functions server flow.
+- Keep all coin balance mutations in server-side Supabase RPCs/transactions only.
+- Keep service-role reads server-side only; do not expose admin credentials to client code.
+- Main app minimum-call-coins checks belong in Supabase RPC/Edge Function server flow.

@@ -828,7 +828,11 @@ class FriendooDashboardView extends ConsumerWidget {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          '${walletAsync.asData?.value.coinBalance ?? 0}',
+                          walletAsync.when(
+                            data: (wallet) => '${wallet.coinBalance}',
+                            loading: () => '…',
+                            error: (_, __) => '—',
+                          ),
                           style: const TextStyle(
                             color: Color(0xFFB45309),
                             fontSize: 13.5,
@@ -2760,6 +2764,7 @@ class FriendooProfileView extends ConsumerWidget {
     final languages =
         profile?.preferredLanguages ??
         const <String>['Hindi', 'Tamil', 'English'];
+    final publicId = _friendooPublicId(profile);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
@@ -2850,8 +2855,8 @@ class FriendooProfileView extends ConsumerWidget {
                                 color: const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'ID: FRND-9482',
+                              child: Text(
+                                'ID: $publicId',
                                 style: TextStyle(
                                   color: Color(0xFF6B7280),
                                   fontSize: 10,
@@ -3072,6 +3077,15 @@ class FriendooProfileView extends ConsumerWidget {
       ],
     );
   }
+}
+
+String _friendooPublicId(UserProfile? profile) {
+  final digits = (profile?.phone ?? '').replaceAll(RegExp(r'\D'), '');
+  if (digits.length >= 4) return 'FRND-${digits.substring(digits.length - 4)}';
+  final id = profile?.id ?? '';
+  final compactId = id.replaceAll('-', '');
+  final suffix = compactId.length > 4 ? compactId.substring(0, 4) : compactId;
+  return 'FRND-${suffix.toUpperCase()}';
 }
 
 /// Reusable full-row clickable navigation card for Profile screens
@@ -3549,10 +3563,7 @@ class _3DWalletIllustration extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFFC084FC),
-                  width: 1.2,
-                ),
+                border: Border.all(color: const Color(0xFFC084FC), width: 1.2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.3),
@@ -3625,10 +3636,7 @@ class _3DCoinStackIllustration extends StatelessWidget {
     return Container(
       width: 58,
       height: 58,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -3741,7 +3749,7 @@ class _UserBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wallet = walletAsync.asData?.value;
-    final int coins = wallet?.coinBalance ?? 0;
+    final coins = wallet?.coinBalance;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -3809,7 +3817,9 @@ class _UserBalanceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '₹${(coins * 0.14).toStringAsFixed(0)}',
+                    coins == null
+                        ? 'Unavailable'
+                        : '₹${(coins * 0.14).toStringAsFixed(0)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 40,
@@ -3820,7 +3830,9 @@ class _UserBalanceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$coins Coins Available',
+                    coins == null
+                        ? 'Balance unavailable'
+                        : '$coins Coins Available',
                     style: const TextStyle(
                       color: Color(0xFFC7D2FE),
                       fontSize: 14,
@@ -3851,11 +3863,7 @@ class _UserBalanceCard extends StatelessWidget {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.add_rounded,
-                  size: 20,
-                  color: Color(0xFF4F46E5),
-                ),
+                Icon(Icons.add_rounded, size: 20, color: Color(0xFF4F46E5)),
                 SizedBox(width: 6),
                 Text(
                   'Add Coins',
@@ -3898,18 +3906,8 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
               amountInr: 149,
               bonus: '+250 Bonus Coins\n(50% OFF)',
             ),
-            CoinPackage(
-              id: 'pkg_900',
-              coins: 900,
-              amountInr: 900,
-              bonus: '',
-            ),
-            CoinPackage(
-              id: 'pkg_300',
-              coins: 300,
-              amountInr: 300,
-              bonus: '',
-            ),
+            CoinPackage(id: 'pkg_900', coins: 900, amountInr: 900, bonus: ''),
+            CoinPackage(id: 'pkg_300', coins: 300, amountInr: 300, bonus: ''),
           ];
 
     return Column(
@@ -4080,10 +4078,7 @@ class _ExactPopularPackCard extends StatelessWidget {
             Positioned(
               top: 0,
               right: 0,
-              child: _CornerRibbonTag(
-                label: ribbonLabel,
-                color: ribbonColor,
-              ),
+              child: _CornerRibbonTag(label: ribbonLabel, color: ribbonColor),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
@@ -4454,12 +4449,12 @@ class _UserTransactionRow extends StatelessWidget {
     final themeColor = isFailed
         ? const Color(0xFFEF4444)
         : isCanceled
-            ? const Color(0xFF6B7280)
-            : isWithdrawal
-                ? const Color(0xFFF59E0B)
-                : isCredit
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFE11D48);
+        ? const Color(0xFF6B7280)
+        : isWithdrawal
+        ? const Color(0xFFF59E0B)
+        : isCredit
+        ? const Color(0xFF10B981)
+        : const Color(0xFFE11D48);
 
     final amount = transaction.displayAmountInr;
 
@@ -4544,7 +4539,9 @@ class _UserTransactionRow extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      _extractInitials(transaction.otherPartyName ?? 'Ananya S'),
+                      _extractInitials(
+                        transaction.otherPartyName ?? 'Ananya S',
+                      ),
                       style: const TextStyle(
                         color: FriendooUiColors.pink,
                         fontWeight: FontWeight.w900,
@@ -4594,7 +4591,10 @@ class _UserTransactionRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
                       color: themeColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(5),
@@ -4640,32 +4640,32 @@ void showTransactionDetailsSheet(
       final themeColor = isFailed
           ? const Color(0xFFEF4444)
           : isCanceled
-              ? const Color(0xFF6B7280)
-              : isWithdrawal
-                  ? const Color(0xFFF59E0B)
-                  : isCredit
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFFF2A85);
+          ? const Color(0xFF6B7280)
+          : isWithdrawal
+          ? const Color(0xFFF59E0B)
+          : isCredit
+          ? const Color(0xFF10B981)
+          : const Color(0xFFFF2A85);
 
       final iconData = isFailed
           ? Icons.error_outline_rounded
           : isCanceled
-              ? Icons.remove_circle_outline_rounded
-              : isWithdrawal
-                  ? Icons.account_balance_rounded
-                  : isCredit
-                      ? Icons.check_circle_rounded
-                      : Icons.phone_in_talk_rounded;
+          ? Icons.remove_circle_outline_rounded
+          : isWithdrawal
+          ? Icons.account_balance_rounded
+          : isCredit
+          ? Icons.check_circle_rounded
+          : Icons.phone_in_talk_rounded;
 
       final statusHeader = isFailed
           ? 'Payment Failed'
           : isCanceled
-              ? 'Transaction Canceled & Refunded'
-              : isWithdrawal
-                  ? 'Host Payout Withdrawal'
-                  : isCredit
-                      ? 'Coins Added to Vault'
-                      : 'Voice Lounge Call Spend';
+          ? 'Transaction Canceled & Refunded'
+          : isWithdrawal
+          ? 'Host Payout Withdrawal'
+          : isCredit
+          ? 'Coins Added to Vault'
+          : 'Voice Lounge Call Spend';
 
       return SafeArea(
         child: Padding(
@@ -5055,8 +5055,7 @@ void _showTransactionCustomerCareSheet(
                   final msg = Uri.encodeComponent(
                     'Hi Friendoo Support, I need help with transaction: ${transaction.transactionCode} (Amount: ₹${transaction.displayAmountInr}, Status: ${transaction.statusLabel})',
                   );
-                  final uri =
-                      Uri.parse('https://wa.me/919999999999?text=$msg');
+                  final uri = Uri.parse('https://wa.me/919999999999?text=$msg');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
@@ -5192,11 +5191,7 @@ class _SupportOptionTile extends StatelessWidget {
 }
 
 class _ReceiptRow extends StatelessWidget {
-  const _ReceiptRow({
-    required this.label,
-    this.value,
-    this.valueWidget,
-  });
+  const _ReceiptRow({required this.label, this.value, this.valueWidget});
 
   final String label;
   final String? value;
@@ -7751,8 +7746,12 @@ class _TransactionTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Icon(
-                  isCredit ? Icons.south_west_rounded : Icons.north_east_rounded,
-                  color: isCredit ? const Color(0xFF10B981) : FriendooUiColors.pink,
+                  isCredit
+                      ? Icons.south_west_rounded
+                      : Icons.north_east_rounded,
+                  color: isCredit
+                      ? const Color(0xFF10B981)
+                      : FriendooUiColors.pink,
                   size: 18,
                 ),
               ),
@@ -7787,7 +7786,9 @@ class _TransactionTile extends StatelessWidget {
               Text(
                 '${isCredit || transaction.isCanceled ? '+' : ''}${transaction.coinAmount} 🪙',
                 style: TextStyle(
-                  color: isCredit ? const Color(0xFF10B981) : FriendooUiColors.pink,
+                  color: isCredit
+                      ? const Color(0xFF10B981)
+                      : FriendooUiColors.pink,
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
                 ),
@@ -7850,10 +7851,7 @@ class _CoinPackCard extends StatelessWidget {
                         : FriendooUiColors.softGold,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    '🪙',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  child: const Text('🪙', style: TextStyle(fontSize: 18)),
                 ),
                 if (featured)
                   Container(

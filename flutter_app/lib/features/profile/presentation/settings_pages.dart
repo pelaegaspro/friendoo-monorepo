@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/friendoo_ui.dart';
 import '../../../core/services/permission_service.dart';
@@ -233,6 +235,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   late TextEditingController _ageController;
   late TextEditingController _bioController;
   String _selectedAvatarId = 'user_01';
+  int _selectedAge = 26;
   bool _isSaving = false;
 
   @override
@@ -240,9 +243,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     super.initState();
     _nameController = TextEditingController(text: '');
     _ageController = TextEditingController(text: '26');
-    _bioController = TextEditingController(
-      text: 'Voice caller on Friendoo. Enjoying casual chats and good discussions.',
-    );
+    _bioController = TextEditingController();
     _loadAvatarSelection();
   }
 
@@ -250,13 +251,23 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     final profile = await ref
         .read(profileRepositoryProvider)
         .fetchCurrentUserProfile();
-    if (!mounted || profile == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
 
-    final savedId = profile.avatarUrl;
-    if (!DesiAvatarPack.isValidPresetForRole(savedId ?? '', 'user')) return;
+    final savedId = profile?.avatarUrl;
+    final savedBio =
+        prefs.getString('friendoo_profile_about') ??
+        'Voice caller on Friendoo. Enjoying casual chats and good discussions.';
 
     setState(() {
-      _selectedAvatarId = savedId!;
+      if (profile != null) {
+        _nameController.text = profile.displayName;
+        if (DesiAvatarPack.isValidPresetForRole(savedId ?? '', 'user')) {
+          _selectedAvatarId = savedId!;
+        }
+      }
+      _selectedAge = prefs.getInt('friendoo_profile_age') ?? 26;
+      _bioController.text = savedBio;
     });
   }
 
@@ -269,38 +280,334 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   }
 
   Future<void> _saveChanges() async {
-    setState(() => _isSaving = true);
-    final repository = ref.read(profileRepositoryProvider);
+    final name = _nameController.text.trim();
+    final bio = _bioController.text.trim();
+    if (name.isEmpty || name.length > 50) {
+      _showMessage('Enter a name between 1 and 50 characters.');
+      return;
+    }
+    if (bio.length > 150) {
+      _showMessage('Your bio must be 150 characters or less.');
+      return;
+    }
 
+    setState(() => _isSaving = true);
     try {
-      try {
-        await repository.updateDisplayName(_nameController.text.trim());
-      } catch (_) {}
-      await Future.delayed(const Duration(milliseconds: 300));
+      await ref
+          .read(profileRepositoryProvider)
+          .updateEditableProfile(
+            displayName: name,
+            about: bio,
+            age: _selectedAge,
+          );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to save your profile. Please try again.'),
-        ),
-      );
+      _showMessage('Unable to save your profile. Please try again.');
       return;
     }
 
     if (!mounted) return;
     setState(() => _isSaving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Color(0xFF10B981),
-        content: Text('Profile details updated successfully!'),
-      ),
-    );
+    _showMessage('Profile details updated successfully!', success: true);
     Navigator.of(context).pop();
   }
 
+  void _showMessage(String message, {bool success = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: success ? const Color(0xFF10B981) : null,
+        content: Text(message),
+      ),
+    );
+  }
+
+  void _showAvatarLockedMessage() {
+    _showMessage(
+      "Your avatar was selected during account creation and can't be changed.",
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => _buildRedesignedPage(context);
+
+  Widget _buildRedesignedPage(BuildContext context) {
+    final nameCount = _nameController.text.length;
+    final bioCount = _bioController.text.length;
+    final canSave = _nameController.text.trim().isNotEmpty && nameCount <= 50;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: IconButton(
+            tooltip: 'Back',
+            icon: const Icon(Icons.arrow_back_rounded),
+            color: FriendooUiColors.ink,
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFFF7F7FB),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: const BorderSide(color: Color(0xFFE7E7F0)),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(
+            color: FriendooUiColors.ink,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    children: [
+                      Center(
+                        child: GestureDetector(
+                          onTap: _showAvatarLockedMessage,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: const Color(0xFFE8E3FF),
+                                    width: 2,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x180E1020),
+                                      blurRadius: 18,
+                                      offset: Offset(0, 7),
+                                    ),
+                                  ],
+                                ),
+                                child: FriendooAvatar(
+                                  config: FriendooAvatarConfig(
+                                    gender: 'male',
+                                    role: 'user',
+                                    presetId: _selectedAvatarId,
+                                  ),
+                                  age: _selectedAge,
+                                  size: 154,
+                                ),
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: 8,
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: FriendooUiColors.violet,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.lock_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'Your Avatar',
+                          style: TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Center(
+                        child: Text(
+                          'Avatar is fixed after account creation',
+                          style: TextStyle(
+                            color: Color(0xFF8A8FA3),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 36),
+                      const _EditProfileSectionHeading(),
+                      const SizedBox(height: 18),
+                      _EditProfileField(
+                        icon: Icons.person_outline_rounded,
+                        label: 'Full Name',
+                        counter: '$nameCount/50',
+                        child: TextField(
+                          controller: _nameController,
+                          maxLength: 50,
+                          onChanged: (_) => setState(() {}),
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'Enter your name',
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            counterText: '',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _EditProfileField(
+                        icon: Icons.cake_outlined,
+                        iconColor: FriendooUiColors.pink,
+                        label: 'Age',
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _selectedAge,
+                            isExpanded: true,
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                            style: const TextStyle(
+                              color: FriendooUiColors.ink,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            items: [
+                              for (var age = 18; age <= 100; age++)
+                                DropdownMenuItem(
+                                  value: age,
+                                  child: Text('$age'),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedAge = value);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _EditProfileField(
+                        icon: Icons.notes_rounded,
+                        label: 'About / Bio',
+                        counter: '$bioCount/150',
+                        alignTop: true,
+                        child: TextField(
+                          controller: _bioController,
+                          maxLength: 150,
+                          minLines: 3,
+                          maxLines: 5,
+                          onChanged: (_) => setState(() {}),
+                          style: const TextStyle(
+                            color: FriendooUiColors.ink,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            height: 1.35,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'Tell hosts a little about yourself...',
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            counterText: '',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const _EditProfileInfoCard(
+                        icon: Icons.verified_user_rounded,
+                        title: 'Verified Member Identity',
+                        message: 'Your phone number is authenticated.\nVoice calls stay 100% private.',
+                        background: Color(0xFFF0FFF9),
+                        foreground: Color(0xFF0C8B68),
+                      ),
+                      const SizedBox(height: 12),
+                      _EditProfileInfoCard(
+                        icon: Icons.lightbulb_outline_rounded,
+                        title: 'Profile Tips',
+                        message: 'A friendly bio helps hosts start better conversations.',
+                        background: const Color(0xFFFFF5FA),
+                        foreground: FriendooUiColors.pink,
+                        onTap: () => _showMessage(
+                          'Keep your profile friendly and genuine.',
+                        ),
+                        showArrow: true,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                  color: Colors.white,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: FilledButton.icon(
+                      onPressed: _isSaving || !canSave ? null : _saveChanges,
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.save_rounded),
+                      label: Text(_isSaving ? 'Saving…' : 'Save Changes'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: FriendooUiColors.pink,
+                        disabledBackgroundColor: const Color(0xFFE5B6CB),
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegacyPage(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Edit Profile',
       subtitle: 'Personalize your male user profile',
@@ -605,6 +912,198 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   }
 }
 
+class _EditProfileSectionHeading extends StatelessWidget {
+  const _EditProfileSectionHeading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: FriendooUiColors.violet.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: const Icon(
+            Icons.person_outline_rounded,
+            color: FriendooUiColors.violet,
+            size: 25,
+          ),
+        ),
+        const SizedBox(width: 14),
+        const Text(
+          'BASIC INFORMATION',
+          style: TextStyle(
+            color: FriendooUiColors.ink,
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditProfileField extends StatelessWidget {
+  const _EditProfileField({
+    required this.icon,
+    required this.label,
+    required this.child,
+    this.counter,
+    this.iconColor = FriendooUiColors.violet,
+    this.alignTop = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget child;
+  final String? counter;
+  final Color iconColor;
+  final bool alignTop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE7E7F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0E1020),
+            blurRadius: 12,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: alignTop
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: alignTop ? 3 : 0),
+            child: Icon(icon, color: iconColor, size: 25),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: FriendooUiColors.ink,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                child,
+              ],
+            ),
+          ),
+          if (counter != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              counter!,
+              style: const TextStyle(
+                color: Color(0xFF8790A6),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EditProfileInfoCard extends StatelessWidget {
+  const _EditProfileInfoCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.background,
+    required this.foreground,
+    this.onTap,
+    this.showArrow = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final Color background;
+  final Color foreground;
+  final VoidCallback? onTap;
+  final bool showArrow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: foreground.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.75),
+                ),
+                child: Icon(icon, color: foreground, size: 27),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      message,
+                      style: TextStyle(
+                        color: foreground.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        height: 1.45,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (showArrow)
+                Icon(Icons.chevron_right_rounded, color: foreground, size: 27),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// B. Languages Page
 class UserLanguagesPage extends ConsumerStatefulWidget {
   const UserLanguagesPage({super.key, this.isHost = false});
@@ -850,6 +1349,32 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
   bool _readReceipts = true;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedPrivacyPreferences();
+  }
+
+  Future<void> _loadSavedPrivacyPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _hideOnlineStatus = prefs.getBool('privacy_hide_online_status') ?? false;
+          _hideFromSearch = prefs.getBool('privacy_hide_from_search') ?? false;
+          _readReceipts = prefs.getBool('privacy_read_receipts') ?? true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setPrivacyPref(String key, bool val) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, val);
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Privacy & Safety',
@@ -910,7 +1435,10 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
               subtitle:
                   'Do not broadcast when you are browsing the Discover lounge',
               value: _hideOnlineStatus,
-              onChanged: (v) => setState(() => _hideOnlineStatus = v),
+              onChanged: (v) {
+                setState(() => _hideOnlineStatus = v);
+                _setPrivacyPref('privacy_hide_online_status', v);
+              },
             ),
             const Divider(height: 1),
             SettingsSwitchTile(
@@ -918,7 +1446,10 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
               title: 'Hide Profile from Public Search',
               subtitle: 'Only hosts you call can view your member nickname',
               value: _hideFromSearch,
-              onChanged: (v) => setState(() => _hideFromSearch = v),
+              onChanged: (v) {
+                setState(() => _hideFromSearch = v);
+                _setPrivacyPref('privacy_hide_from_search', v);
+              },
             ),
             const Divider(height: 1),
             SettingsSwitchTile(
@@ -926,7 +1457,10 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
               title: 'Read Receipts & Session Confirmations',
               subtitle: 'Share call duration summaries after each conversation',
               value: _readReceipts,
-              onChanged: (v) => setState(() => _readReceipts = v),
+              onChanged: (v) {
+                setState(() => _readReceipts = v);
+                _setPrivacyPref('privacy_read_receipts', v);
+              },
             ),
           ],
         ),
@@ -1243,17 +1777,25 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
               ),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Color(0xFFDC2626),
-                    content: Text('Account deletion requested. Logging out...'),
+                    content: Text('Account data deleted. Logging out...'),
                   ),
                 );
-                // Perform sign out and flush session cache
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.clear();
+                } catch (_) {}
+                try {
+                  await Supabase.instance.client.auth.signOut();
+                } catch (_) {}
                 ProfileRepository.clearSession();
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
               },
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),

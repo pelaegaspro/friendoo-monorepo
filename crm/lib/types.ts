@@ -59,7 +59,6 @@ export interface UserRecord {
   lastActive?: unknown;
   totalCoinsPurchased?: number;
   totalCoinsSpent?: number;
-  fcmTokens?: string[];
 }
 
 export interface CallRecord {

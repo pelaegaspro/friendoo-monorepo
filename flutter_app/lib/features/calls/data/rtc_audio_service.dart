@@ -5,10 +5,10 @@ import 'agora_audio_service.dart';
 import 'videosdk_audio_service.dart';
 
 enum RtcProviderType {
-  /// VideoSDK.live (~₹0.38/min Indian domestic audio pricing)
+  /// VideoSDK.live is the primary production audio transport.
   videosdk,
 
-  /// Agora RTC (~$0.99/1k mins fallback)
+  /// Agora RTC is the call-level fallback transport.
   agora,
 }
 
@@ -34,9 +34,9 @@ abstract class RtcAudioService {
   Future<void> dispose();
 }
 
-/// Active RTC Provider Selector (Default: Agora RTC for high quality audio)
+/// Active RTC Provider Selector (Default: VideoSDK with Agora fallback)
 final rtcProviderTypeProvider = StateProvider<RtcProviderType>(
-  (ref) => RtcProviderType.agora,
+  (ref) => RtcProviderType.videosdk,
 );
 
 /// Pluggable RTC Audio Service Provider

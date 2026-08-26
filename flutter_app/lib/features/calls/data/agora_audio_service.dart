@@ -47,8 +47,10 @@ class AgoraAudioService implements RtcAudioService {
       );
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Agora audio join warning (fallback): $e');
+        debugPrint('Agora audio join failed: $e');
       }
+      await dispose();
+      rethrow;
     }
   }
 

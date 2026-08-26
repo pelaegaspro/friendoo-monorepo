@@ -1,6 +1,8 @@
-# Firestore Composite Indexes for Friendoo
+# Supabase Query Indexes for Friendoo
 
-Create these composite indexes in Firebase Console (Firestore -> Indexes -> Composite) or keep them in `D:\Friendoo\firestore.indexes.json`.
+Operational indexes are defined and reviewed in the Supabase PostgreSQL
+migrations under `supabase/migrations/`. This file is retained as a placeholder
+for future Postgres index notes.
 
 1. Collection: `users`
 - `isHost` ASC + `isOnline` ASC + `lastActive` DESC

@@ -57,12 +57,7 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> _setPresence(String state) async {
     final activeProfile = ProfileRepository.currentActiveProfile;
-    final userId =
-        activeProfile?.id ??
-        _client.auth.currentUser?.id ??
-        (activeProfile?.phone.contains('7604991136') == true
-            ? '00000000-0000-0000-0000-007604991136'
-            : null);
+    final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
     if (userId == null) return;
 
     final isOnline = state == 'online';
@@ -76,10 +71,8 @@ class PresenceService with WidgetsBindingObserver {
       }, onConflict: 'user_id');
     } catch (_) {}
 
-    // If this device belongs to a host, update hosts presence and last_seen_at immediately
-    final isHost =
-        activeProfile?.isHost == true ||
-        activeProfile?.phone.contains('7604991136') == true;
+    // If this device belongs to a host, update host availability separately.
+    final isHost = activeProfile?.isHost == true;
 
     if (isHost) {
       try {
@@ -87,10 +80,6 @@ class PresenceService with WidgetsBindingObserver {
           'id': userId,
           'is_available': isOnline,
           'rate_per_audio_minute': 5,
-          'gender': 'female',
-          'is_star': true,
-          'languages': ['Tamil', 'Hindi', 'English'],
-          'last_seen_at': nowIso,
           'updated_at': nowIso,
         }, onConflict: 'id');
       } catch (_) {}

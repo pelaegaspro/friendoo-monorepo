@@ -58,6 +58,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> initiateAudioCall(String hostId, {BuildContext? context}) async {
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.videosdk;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // 1. Minimum 15 coins check
@@ -86,7 +87,11 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     });
   }
 
-  Future<void> acceptIncomingCall(String callId, {BuildContext? context}) async {
+  Future<void> acceptIncomingCall(
+    String callId, {
+    BuildContext? context,
+  }) async {
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.videosdk;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(permissionServiceProvider).requestBluetoothAudio();
@@ -94,7 +99,9 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
           .read(permissionServiceProvider)
           .requestMicrophone(context: context);
       if (!micGranted) {
-        throw Exception('Microphone permission is required to attend voice calls.');
+        throw Exception(
+          'Microphone permission is required to attend voice calls.',
+        );
       }
 
       final call = await ref.read(callRepositoryProvider).acceptCall(callId);
@@ -135,80 +142,87 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     await endActiveCall(reason: 'user_reported');
   }
 
-  /// Ends the currently active call locally.
+  /// Ends the current call only after the server accepts the state transition.
+  /// A failed request deliberately leaves the stream, RTC session, and UI state
+  /// intact so the user can retry instead of silently abandoning a live call.
   Future<void> endActiveCall({String reason = 'normal_hangup'}) async {
     final current = state.asData?.value;
     if (current == null) return;
 
+    await ref.read(callRepositoryProvider).endCall(current.id, reason: reason);
+
     final durationSec = _callStartTime != null
         ? DateTime.now().difference(_callStartTime!).inSeconds
         : 0;
-
-    // 5-Second Grace Period & Per-Minute Ceiling Billing Rule:
-    // <= 5s: 0 coins charged (Free grace period)
-    // 6s - 60s: 1 min (5 coins)
-    // 61s - 120s (1.01m): 2 min (10 coins)
     final bool wasGracePeriod = durationSec <= 5;
     final int billedMinutes = wasGracePeriod
         ? 0
         : (durationSec / 60).ceil().clamp(1, 999);
     final int totalCoins = billedMinutes * current.ratePerMinute;
 
-    ref.read(lastEndedCallSummaryProvider.notifier).state = LastEndedCallSummary(
+    ref
+        .read(lastEndedCallSummaryProvider.notifier)
+        .state = LastEndedCallSummary(
       callId: current.id,
-      hostName: 'Host #${current.hostId.length >= 4 ? current.hostId.substring(0, 4) : current.hostId}',
+      hostName:
+          'Host #${current.hostId.length >= 4 ? current.hostId.substring(0, 4) : current.hostId}',
       durationSeconds: durationSec,
       coinsDeducted: totalCoins,
       billedMinutes: billedMinutes,
       wasGracePeriod: wasGracePeriod,
     );
 
-    try {
-      await ref.read(callRepositoryProvider).endCall(current.id, reason: reason);
-    } finally {
-      await _stopWatchingAndLeave();
-      state = const AsyncData(null);
-    }
+    await _stopWatchingAndLeave();
+    state = const AsyncData(null);
   }
 
   void _watch(String callId) {
     _subscription?.cancel();
-    _subscription = ref.read(callRepositoryProvider).watchCall(callId).listen(
-      (call) {
-        state = AsyncData(call);
+    _subscription = ref
+        .read(callRepositoryProvider)
+        .watchCall(callId)
+        .listen(
+          (call) {
+            state = AsyncData(call);
 
-        if (call.status == CallStatus.accepted ||
-            call.status == CallStatus.active) {
-          _callStartTime ??= DateTime.now();
-          unawaited(_joinAudio(call));
-          _startHeartbeat(call.id);
-        }
+            if (call.status == CallStatus.accepted ||
+                call.status == CallStatus.active) {
+              _callStartTime ??= DateTime.now();
+              unawaited(_joinAudio(call));
+              _startHeartbeat(call.id);
+            }
 
-        if (_isTerminal(call.status)) {
-          // If remote party ended the call, record the summary receipt
-          if (ref.read(lastEndedCallSummaryProvider) == null && _callStartTime != null) {
-            final durationSec = DateTime.now().difference(_callStartTime!).inSeconds;
-            final wasGracePeriod = durationSec <= 5;
-            final billedMinutes = wasGracePeriod
-                ? 0
-                : (durationSec / 60).ceil().clamp(1, 999);
-            ref.read(lastEndedCallSummaryProvider.notifier).state = LastEndedCallSummary(
-              callId: call.id,
-              hostName: 'Host #${call.hostId.length >= 4 ? call.hostId.substring(0, 4) : call.hostId}',
-              durationSeconds: durationSec,
-              coinsDeducted: billedMinutes * call.ratePerMinute,
-              billedMinutes: billedMinutes,
-              wasGracePeriod: wasGracePeriod,
-            );
-          }
-          unawaited(_stopWatchingAndLeave());
-          state = const AsyncData(null);
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        // Retain call state; avoid throwing transient stream disconnects to UI
-      },
-    );
+            if (_isTerminal(call.status)) {
+              // If remote party ended the call, record the summary receipt
+              if (ref.read(lastEndedCallSummaryProvider) == null &&
+                  _callStartTime != null) {
+                final durationSec = DateTime.now()
+                    .difference(_callStartTime!)
+                    .inSeconds;
+                final wasGracePeriod = durationSec <= 5;
+                final billedMinutes = wasGracePeriod
+                    ? 0
+                    : (durationSec / 60).ceil().clamp(1, 999);
+                ref
+                    .read(lastEndedCallSummaryProvider.notifier)
+                    .state = LastEndedCallSummary(
+                  callId: call.id,
+                  hostName:
+                      'Host #${call.hostId.length >= 4 ? call.hostId.substring(0, 4) : call.hostId}',
+                  durationSeconds: durationSec,
+                  coinsDeducted: billedMinutes * call.ratePerMinute,
+                  billedMinutes: billedMinutes,
+                  wasGracePeriod: wasGracePeriod,
+                );
+              }
+              unawaited(_stopWatchingAndLeave());
+              state = const AsyncData(null);
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            // Retain call state; avoid throwing transient stream disconnects to UI
+          },
+        );
   }
 
   void _startHeartbeat(String callId) {
@@ -219,25 +233,50 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> _joinAudio(CallSession call) async {
-    if (call.callType != CallType.audio || _joinedCallId == call.id || _isJoiningAudio) return;
+    if (call.callType != CallType.audio ||
+        _joinedCallId == call.id ||
+        _isJoiningAudio)
+      return;
     _isJoiningAudio = true;
-    final providerType = ref.read(rtcProviderTypeProvider);
     try {
+      final providerType = ref.read(rtcProviderTypeProvider);
       if (providerType == RtcProviderType.videosdk) {
-        final vsdkCreds = await ref
+        final credentials = await ref
             .read(callRepositoryProvider)
             .getVideoSdkCredentials(call.id);
-        await ref.read(rtcAudioServiceProvider).join(
-              appIdOrToken: vsdkCreds.apiKey,
-              token: vsdkCreds.token,
-              channelOrRoomId: vsdkCreds.roomId,
-              uid: vsdkCreds.participantId,
-            );
+        try {
+          await ref
+              .read(rtcAudioServiceProvider)
+              .join(
+                appIdOrToken: credentials.apiKey,
+                token: credentials.token,
+                channelOrRoomId: credentials.roomId,
+                uid: credentials.participantId,
+              );
+        } catch (_) {
+          // VideoSDK is primary, but a failed token/join must not strand the
+          // call. Recreate the service with Agora credentials for this call.
+          ref.read(rtcProviderTypeProvider.notifier).state =
+              RtcProviderType.agora;
+          final agora = await ref
+              .read(callRepositoryProvider)
+              .getAgoraCredentials(call.id);
+          await ref
+              .read(rtcAudioServiceProvider)
+              .join(
+                appIdOrToken: agora.appId,
+                token: agora.token,
+                channelOrRoomId: agora.channel,
+                uid: agora.uid.toString(),
+              );
+        }
       } else {
         final credentials = await ref
             .read(callRepositoryProvider)
             .getAgoraCredentials(call.id);
-        await ref.read(rtcAudioServiceProvider).join(
+        await ref
+            .read(rtcAudioServiceProvider)
+            .join(
               appIdOrToken: credentials.appId,
               token: credentials.token,
               channelOrRoomId: credentials.channel,

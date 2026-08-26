@@ -21,7 +21,6 @@ export interface AppUser {
   createdAt?: DateType
   lastActive?: DateType
   coins?: number
-  fcmToken?: string
 }
 
 export interface Host {
