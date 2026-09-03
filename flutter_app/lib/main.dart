@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'app/friendoo_app.dart';
 import 'core/config/app_environment.dart';
 
@@ -24,8 +26,11 @@ Future<void> main() async {
   bool hasSavedSession = false;
 
   try {
+    final prefs = await SharedPreferences.getInstance();
+    final savedHasEntered =
+        prefs.getBool('friendoo_saved_has_entered') ?? false;
     final authUser = Supabase.instance.client.auth.currentUser;
-    hasSavedSession = authUser != null;
+    hasSavedSession = authUser != null || savedHasEntered;
   } catch (_) {}
 
   if (!kIsWeb) {

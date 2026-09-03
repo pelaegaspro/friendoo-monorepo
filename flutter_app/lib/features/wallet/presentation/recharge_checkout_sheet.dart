@@ -50,6 +50,12 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
             isFirstTimeBuyer: isFirstTimeBuyer,
           );
       if (!mounted) return;
+      final orderError = order?['error'] as String?;
+      if (orderError != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(orderError)));
+        return;
+      }
       final sessionId = order?['payment_session_id'] as String?;
       final providerOrderId = order?['provider_order_id'] as String?;
       if (sessionId == null ||
@@ -68,7 +74,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
           builder: (_) => CashfreeCheckoutPage(
             paymentSessionId: sessionId,
             providerOrderId: providerOrderId,
-            sandbox: order!['environment'] != 'production',
+            sandbox: order?['environment'] != 'production',
             verifyPayment: (orderId) => ref
                 .read(walletRepositoryProvider)
                 .confirmCashfreePayment(providerOrderId: orderId),
@@ -428,7 +434,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '100% Secure 256-Bit Encrypted Checkout via PayU Payment Gateway',
+                    '100% Secure 256-Bit Encrypted Payments',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.green[800],

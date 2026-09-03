@@ -128,8 +128,15 @@ class WalletRepository {
   }
 
   Stream<WalletSnapshot> watchCurrentWallet() async* {
-    final initial = await fetchCurrentWallet();
-    yield initial;
+    WalletSnapshot? latest;
+    try {
+      latest = await fetchCurrentWallet();
+      yield latest;
+    } catch (_) {
+      if (_client.auth.currentUser == null) {
+        throw const WalletUnavailableException('No authenticated user session');
+      }
+    }
 
     final user = _client.auth.currentUser;
     final userId = user?.id;
@@ -137,18 +144,57 @@ class WalletRepository {
       throw const WalletUnavailableException('No authenticated user session');
     }
 
-    final realtimeStream = _client
-        .from('wallets')
-        // wallets.user_id is the table primary key; there is no id column.
-        .stream(primaryKey: ['user_id'])
-        .eq('user_id', userId)
-        .map((rows) {
-          if (rows.isEmpty) {
-            throw const WalletUnavailableException('Wallet record was removed');
-          }
-          return WalletSnapshot.fromMap(rows.first);
-        });
-    yield* realtimeStream;
+    final controller = StreamController<WalletSnapshot>();
+
+    // Listen to local in-app wallet mutation triggers (call completion, recharge success)
+    final localSub = _walletChangeNotifier.stream.listen((snapshot) {
+      latest = snapshot;
+      if (!controller.isClosed) controller.add(snapshot);
+    });
+
+    // Realtime Supabase stream: must NEVER throw or destroy current balance on empty/error
+    StreamSubscription? realtimeSub;
+    try {
+      realtimeSub = _client
+          .from('wallets')
+          // wallets.user_id is the table primary key; there is no id column.
+          .stream(primaryKey: ['user_id'])
+          .eq('user_id', userId)
+          .listen(
+            (rows) {
+              if (rows.isNotEmpty) {
+                try {
+                  final snap = WalletSnapshot.fromMap(rows.first);
+                  latest = snap;
+                  if (!controller.isClosed) controller.add(snap);
+                } catch (_) {}
+              }
+            },
+            onError: (_) {
+              // Realtime CDC errors must not destroy the active wallet balance
+            },
+          );
+    } catch (_) {}
+
+    // Periodic poll every 15 seconds to pick up backend/webhook balance changes
+    final timer = Timer.periodic(const Duration(seconds: 15), (_) async {
+      try {
+        final fresh = await fetchCurrentWallet();
+        if (latest == null || fresh.coinBalance != latest!.coinBalance) {
+          latest = fresh;
+          if (!controller.isClosed) controller.add(fresh);
+        }
+      } catch (_) {}
+    });
+
+    controller.onCancel = () {
+      localSub.cancel();
+      realtimeSub?.cancel();
+      timer.cancel();
+      controller.close();
+    };
+
+    yield* controller.stream;
   }
 
   Future<List<CoinPackage>> fetchCoinPackages() async {
@@ -169,41 +215,15 @@ class WalletRepository {
     } catch (_) {}
 
     return const [
-      // 1. Starter Pack
-      CoinPackage(
-        id: 'pkg_starter_49',
-        coins: 50,
-        amountInr: 49,
-        bonus: 'Starter',
-      ),
-      // 2. Popular Pack (+10 Bonus)
-      CoinPackage(
-        id: 'pkg_popular_99',
-        coins: 100,
-        amountInr: 99,
-        bonus: '+10 Bonus',
-      ),
-      // 3. Value Pack (+40 Bonus)
-      CoinPackage(
-        id: 'pkg_value_249',
-        coins: 250,
-        amountInr: 249,
-        bonus: '+40 Bonus',
-      ),
-      // 4. Pro Pack (+100 Bonus)
-      CoinPackage(
-        id: 'pkg_pro_499',
-        coins: 500,
-        amountInr: 499,
-        bonus: '+100 Bonus',
-      ),
-      // 5. Max Pack (+250 Bonus)
-      CoinPackage(
-        id: 'pkg_max_999',
-        coins: 1000,
-        amountInr: 999,
-        bonus: '+250 Bonus',
-      ),
+      CoinPackage(id: 'base_15', coins: 15, amountInr: 15),
+      CoinPackage(id: 'base_25', coins: 25, amountInr: 25),
+      CoinPackage(id: 'base_50', coins: 50, amountInr: 50),
+      CoinPackage(id: 'base_100', coins: 100, amountInr: 100),
+      CoinPackage(id: 'offer_140', coins: 140, amountInr: 140),
+      CoinPackage(id: 'offer_200', coins: 200, amountInr: 200),
+      CoinPackage(id: 'offer_300', coins: 300, amountInr: 300),
+      CoinPackage(id: 'offer_500', coins: 500, amountInr: 500),
+      CoinPackage(id: 'offer_900', coins: 900, amountInr: 900),
     ];
   }
 
@@ -282,7 +302,9 @@ class WalletRepository {
     bool isFirstTimeBuyer = false,
   }) async {
     final user = _client.auth.currentUser;
-    if (user == null) return null;
+    if (user == null) {
+      return {'error': 'Please login to recharge your wallet.'};
+    }
 
     try {
       // Initiate server-authoritative payment order
@@ -294,9 +316,31 @@ class WalletRepository {
       if (response.status == 200 && response.data is Map) {
         return Map<String, dynamic>.from(response.data as Map);
       }
-      return null;
-    } catch (_) {
-      return null;
+      final data = response.data;
+      final errorMessage = data is Map && data['error'] is String
+          ? data['error'] as String
+          : 'Unable to initiate payment order (HTTP ${response.status}).';
+      return {'error': errorMessage};
+    } on FunctionsHttpException catch (e) {
+      final details = e.details;
+      String? message;
+      if (details is Map && details['error'] is String) {
+        message = details['error'] as String;
+      }
+      if (message != null && message.toLowerCase().contains('cashfree')) {
+        return {
+          'error': 'Payment gateway is not configured or sandbox/production credentials need activation in Supabase secrets.',
+        };
+      }
+      return {
+        'error':
+            message ??
+            'Payment service temporarily unavailable (${e.status}). Please try again shortly.',
+      };
+    } catch (e) {
+      return {
+        'error': 'Unable to connect to payment service. Please check your internet connection.',
+      };
     }
   }
 

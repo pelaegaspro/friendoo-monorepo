@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/models/friendoo_models.dart';
+import '../core/widgets/friendoo_loading_screen.dart';
 import '../core/supabase/supabase_provider.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/calls/application/call_controller.dart';
@@ -33,6 +34,7 @@ import 'friendoo_ui.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/ads/presentation/live_ad_banner_widget.dart';
 import '../features/auth/presentation/onboarding_avatar_setup_page.dart';
+import '../features/notifications/data/notification_repository.dart';
 
 final debugMockSessionProvider = StateProvider<bool>((ref) => false);
 final isHostModeProvider = StateProvider<bool>((ref) => false);
@@ -64,18 +66,18 @@ class AuthGate extends ConsumerWidget {
     final hasEntered = ref.watch(hasEnteredAppProvider);
     final debugMockSession = ref.watch(debugMockSessionProvider);
 
-    // If user has not entered (or explicitly logged out), show PhoneAuthPage
-    if (!hasEntered && !debugMockSession) {
-      return const PhoneAuthPage();
-    }
-
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = snapshot.data?.session ?? client.auth.currentSession;
-        if (session != null ||
+        final hasActiveSession =
+            session != null ||
+            client.auth.currentUser != null ||
             ProfileRepository.currentActiveProfile != null ||
-            hasEntered) {
+            hasEntered ||
+            debugMockSession;
+
+        if (hasActiveSession) {
           return const AuthenticatedSession();
         }
         return const PhoneAuthPage();
@@ -189,6 +191,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
         await prefs.setString('friendoo_saved_phone', fullPhone);
         await prefs.setBool('friendoo_saved_has_entered', true);
       } catch (_) {}
+      ProfileRepository.clearSession();
+      ref.invalidate(currentUserProfileStreamProvider);
+      ref.read(isHostModeProvider.notifier).state = false;
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
       setState(() => _error = error.message);
@@ -562,7 +567,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
     } catch (_) {}
-    ProfileRepository.currentActiveProfile = null;
+    ProfileRepository.clearSession();
+    ref.invalidate(currentUserProfileStreamProvider);
+    ref.read(isHostModeProvider.notifier).state = false;
     ref.read(hasEnteredAppProvider.notifier).state = false;
     ref.read(debugMockSessionProvider.notifier).state = false;
     try {
@@ -600,7 +607,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     if (activeCall != null) {
       return LiveCallOverlay(
         call: activeCall,
-        hostName: isHost ? 'Caller' : 'Testing Host',
+        hostName: isHost ? 'Caller' : 'Host',
       );
     }
 
@@ -1513,6 +1520,10 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
     return IncomingCallListener(
       child: profileAsync.when(
         data: (profile) {
+          if (profile == null) {
+            return const FriendooLoadingScreen(message: 'Loading profile...');
+          }
+
           final isHost = resolveIsHostNavigation(profile);
           if (ref.read(isHostModeProvider) != isHost) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1520,17 +1531,23 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
             });
           }
 
-          final isFirstTimeSignup =
-              profile == null ||
-              profile.displayName.isEmpty ||
-              profile.displayName == 'User' ||
-              profile.displayName == 'Friendoo User' ||
-              profile.avatarSelectedAt == null;
+          final hasNamedProfile =
+              profile.displayName.trim().isNotEmpty &&
+              profile.displayName.trim().toLowerCase() != 'user' &&
+              profile.displayName.trim().toLowerCase() != 'friendoo user';
+
+          final hasAvatar =
+              (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) ||
+              profile.avatarSelectedAt != null;
+
+          // Hosts are established accounts and go directly to discover.
+          // Users who have already configured their profile go directly to discover.
+          final isFirstTimeSignup = !isHost && (!hasNamedProfile || !hasAvatar);
 
           if (isFirstTimeSignup) {
             return NameAndDobSetupPage(
               isHostInitial: isHost,
-              initialPhone: profile?.phone ?? '',
+              initialPhone: profile.phone,
             );
           }
 
@@ -3187,13 +3204,22 @@ class _ProfileTab extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  // Female Desi Avatar
-                  DesiFemaleAvatar(
-                    seed: hostName,
-                    age: 24,
-                    isStar: true,
-                    size: 74,
-                  ),
+                  // Female Avatar
+                  profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty
+                      ? FriendooAvatar(
+                          config: FriendooAvatarConfig(
+                            gender: 'female',
+                            role: 'host',
+                            presetId: profile.avatarUrl!,
+                          ),
+                          size: 74,
+                        )
+                      : DesiFemaleAvatar(
+                          seed: hostName,
+                          age: 22,
+                          isStar: true,
+                          size: 74,
+                        ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -3223,17 +3249,21 @@ class _ProfileTab extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 3),
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            const Text(
-                              '24 yrs',
-                              style: TextStyle(
+                            Text(
+                              profile?.phone.isNotEmpty == true
+                                  ? profile!.phone
+                                  : 'Verified Host',
+                              style: const TextStyle(
                                 color: Color(0xFF4B5563),
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -3248,16 +3278,21 @@ class _ProfileTab extends ConsumerWidget {
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                '⭐ Star Host',
-                                style: TextStyle(
+                              child: Text(
+                                hostStatsAsync.when(
+                                  data: (s) => s.rating >= 4.8
+                                      ? '⭐ Star Host'
+                                      : '⭐ Active Host',
+                                  loading: () => '⭐ Host',
+                                  error: (_, __) => '⭐ Host',
+                                ),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 5,
@@ -3267,9 +3302,9 @@ class _ProfileTab extends ConsumerWidget {
                                 color: const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'HOST-8391',
-                                style: TextStyle(
+                              child: Text(
+                                'HOST-${profile != null && profile.id.length >= 6 ? profile.id.substring(0, 6).toUpperCase() : '0000'}',
+                                style: const TextStyle(
                                   color: Color(0xFF6B7280),
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
@@ -3350,18 +3385,31 @@ class _ProfileTab extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      '⭐ 4.9',
-                      style: TextStyle(
+                    Text(
+                      hostStatsAsync.when(
+                        data: (s) => s.rating > 0
+                            ? '⭐ ${s.rating.toStringAsFixed(1)}'
+                            : '⭐ 5.0',
+                        loading: () => '⭐ 5.0',
+                        error: (_, __) => '⭐ 5.0',
+                      ),
+                      style: const TextStyle(
                         color: FriendooUiColors.ink,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 1),
-                    const Text(
-                      '142 reviews',
-                      style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
+                    Text(
+                      hostStatsAsync.when(
+                        data: (s) => '${s.totalCallsCount} calls',
+                        loading: () => '0 calls',
+                        error: (_, __) => '0 calls',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFF9CA3AF),
+                        fontSize: 10,
+                      ),
                     ),
                   ],
                 ),
@@ -3382,9 +3430,9 @@ class _ProfileTab extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       hostStatsAsync.when(
-                        data: (s) => '${s.totalCallsCount}+',
-                        loading: () => '150+',
-                        error: (_, __) => '150+',
+                        data: (s) => '${s.totalCallsCount}',
+                        loading: () => '0',
+                        error: (_, __) => '0',
                       ),
                       style: const TextStyle(
                         color: Color(0xFF10B981),
@@ -3406,7 +3454,7 @@ class _ProfileTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      'Views',
+                      'Earnings',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 11,
@@ -3414,9 +3462,13 @@ class _ProfileTab extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      '1.4k',
-                      style: TextStyle(
+                    Text(
+                      hostStatsAsync.when(
+                        data: (s) => '₹${s.totalEarningsInr}',
+                        loading: () => '₹0',
+                        error: (_, __) => '₹0',
+                      ),
+                      style: const TextStyle(
                         color: FriendooUiColors.blue,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -3424,7 +3476,7 @@ class _ProfileTab extends ConsumerWidget {
                     ),
                     const SizedBox(height: 1),
                     const Text(
-                      'This month',
+                      'Total Earned',
                       style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
                     ),
                   ],
@@ -3999,37 +4051,42 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     ),
                   ),
 
-                  // Daily Skip Quota Status (Retaining Host Call Guard logic)
+                  // Live Host Availability Status Card
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: guard.mustAutoAttend
-                          ? const Color(0xFFFEF3C7)
-                          : Colors.black.withOpacity(0.03),
+                      color: isOnline
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isOnline
+                            ? const Color(0xFF10B981).withOpacity(0.3)
+                            : const Color(0xFFE5E7EB),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
-                          guard.mustAutoAttend
-                              ? Icons.bolt_rounded
-                              : Icons.shield_rounded,
-                          color: guard.mustAutoAttend
-                              ? const Color(0xFFB45309)
-                              : FriendooUiColors.violet,
+                          isOnline
+                              ? Icons.check_circle_rounded
+                              : Icons.bedtime_outlined,
+                          color: isOnline
+                              ? const Color(0xFF059669)
+                              : const Color(0xFF6B7280),
                           size: 18,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            guard.mustAutoAttend
-                                ? 'Auto-attend active (0 skips left today)'
-                                : '${guard.remainingSkips} skips remaining today',
+                            isOnline
+                                ? 'Active & receiving incoming caller connections'
+                                : 'Offline • Tap Go Live when you are ready to earn',
                             style: TextStyle(
-                              color: guard.mustAutoAttend
-                                  ? const Color(0xFF92400E)
-                                  : const Color(0xFF374151),
+                              color: isOnline
+                                  ? const Color(0xFF065F46)
+                                  : const Color(0xFF4B5563),
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
@@ -4074,23 +4131,23 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
               ],
             ),
             const SizedBox(height: 12),
-            const Row(
+            Row(
               children: [
                 Expanded(
                   child: _HostStatCard(
                     label: 'Avg Call Duration',
-                    value: '8m 24s',
+                    value: stats.avgDurationFormatted,
                     unit: 'Per session',
                     icon: Icons.timer_outlined,
                     tint: FriendooUiColors.softViolet,
                     iconColor: FriendooUiColors.violet,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _HostStatCard(
                     label: 'Rating',
-                    value: '⭐ 4.9',
+                    value: '⭐ ${stats.rating.toStringAsFixed(1)}',
                     unit: 'Caller score',
                     icon: Icons.star_rounded,
                     tint: FriendooUiColors.softPink,
@@ -4114,49 +4171,9 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
             const SizedBox(height: 24),
 
             // ==========================================
-            // 6. HOST DISCOVERY / RECENT ACTIVITY
+            // 6. HOST DISCOVERY / RECENT ACTIVITY (LIVE)
             // ==========================================
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                color: FriendooUiColors.ink,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const _HostActivityTile(
-              title: 'User requested a voice call',
-              timeAgo: '2 min ago',
-              icon: Icons.phone_callback_rounded,
-              tint: FriendooUiColors.softBlue,
-              iconColor: FriendooUiColors.blue,
-            ),
-            const SizedBox(height: 10),
-            const _HostActivityTile(
-              title: 'User completed a 12-minute call',
-              timeAgo: '8 min ago',
-              icon: Icons.check_circle_rounded,
-              tint: Color(0xFFECFDF5),
-              iconColor: Color(0xFF10B981),
-            ),
-            const SizedBox(height: 10),
-            const _HostActivityTile(
-              title: 'New profile view from Discover',
-              timeAgo: '15 min ago',
-              icon: Icons.visibility_rounded,
-              tint: FriendooUiColors.softViolet,
-              iconColor: FriendooUiColors.violet,
-            ),
-            const SizedBox(height: 10),
-            const _HostActivityTile(
-              title: 'Caller from Bangalore added you to favorites',
-              timeAgo: '35 min ago',
-              icon: Icons.favorite_rounded,
-              tint: FriendooUiColors.softPink,
-              iconColor: FriendooUiColors.pink,
-            ),
+            const _HostRecentActivitySection(),
             const SizedBox(height: 24),
 
             // ==========================================
@@ -4191,15 +4208,24 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
               padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
-                  // Host's Desi Avatar (NO age badge on avatar)
-                  DesiFemaleAvatar(
-                    seed: hostName,
-                    age: 24,
-                    isStar: true,
-                    size: 68,
-                    showPresence: true,
-                    isOnline: isOnline,
-                  ),
+                  // Host's Avatar
+                  userProfile?.avatarUrl != null && userProfile!.avatarUrl!.isNotEmpty
+                      ? FriendooAvatar(
+                          config: FriendooAvatarConfig(
+                            gender: 'female',
+                            role: 'host',
+                            presetId: userProfile.avatarUrl!,
+                          ),
+                          size: 68,
+                        )
+                      : DesiFemaleAvatar(
+                          seed: hostName,
+                          age: 22,
+                          isStar: stats.rating >= 4.8,
+                          size: 68,
+                          showPresence: true,
+                          isOnline: isOnline,
+                        ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -4229,17 +4255,21 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                           ],
                         ),
                         const SizedBox(height: 3),
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            const Text(
-                              '24 yrs',
-                              style: TextStyle(
+                            Text(
+                              userProfile?.phone.isNotEmpty == true
+                                  ? userProfile!.phone
+                                  : 'Verified Host',
+                              style: const TextStyle(
                                 color: Color(0xFF4B5563),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -4254,9 +4284,11 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                '⭐ Star Host',
-                                style: TextStyle(
+                              child: Text(
+                                stats.rating >= 4.8
+                                    ? '⭐ Star Host'
+                                    : '⭐ Active Host',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w900,
@@ -4563,9 +4595,11 @@ class _HostActivityTile extends StatelessWidget {
     required this.icon,
     required this.tint,
     required this.iconColor,
+    this.subtitle,
   });
 
   final String title;
+  final String? subtitle;
   final String timeAgo;
   final IconData icon;
   final Color tint;
@@ -4592,13 +4626,32 @@ class _HostActivityTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: FriendooUiColors.ink,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: FriendooUiColors.ink,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -4612,6 +4665,163 @@ class _HostActivityTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HostRecentActivitySection extends ConsumerWidget {
+  const _HostRecentActivitySection();
+
+  static String _timeAgo(DateTime? date) {
+    if (date == null) return 'Recent';
+    final diff = DateTime.now().toUtc().difference(date.toUtc());
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${date.day}/${date.month}';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifsAsync = ref.watch(notificationsStreamProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recent Activity',
+          style: TextStyle(
+            color: FriendooUiColors.ink,
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(height: 12),
+        notifsAsync.when(
+          loading: () => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Loading recent activity...',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          error: (_, __) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.history_rounded, color: Color(0xFF9CA3AF), size: 20),
+                SizedBox(width: 12),
+                Text(
+                  'No recent activity yet',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 18,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.history_toggle_off_rounded,
+                        color: Color(0xFF6B7280),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'No Recent Activity',
+                            style: TextStyle(
+                              color: FriendooUiColors.ink,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Completed calls, caller requests, and earnings will appear here.',
+                            style: TextStyle(
+                              color: Color(0xFF6B7280),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final displayItems = items.take(4).toList();
+            return Column(
+              children: [
+                for (int i = 0; i < displayItems.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  _HostActivityTile(
+                    title: displayItems[i].title,
+                    subtitle: displayItems[i].body,
+                    timeAgo: _timeAgo(displayItems[i].createdAt),
+                    icon: displayItems[i].icon,
+                    tint: displayItems[i].accentColor.withValues(alpha: 0.12),
+                    iconColor: displayItems[i].accentColor,
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }

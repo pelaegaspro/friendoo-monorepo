@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/friendoo_app.dart';
+import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../discover/presentation/desi_avatar.dart';
@@ -53,8 +55,18 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
   @override
   void initState() {
     super.initState();
-    _isHost = widget.isHostInitial;
-    _nameController.text = '';
+    final active = ProfileRepository.currentActiveProfile;
+    _isHost = active?.isHost ?? widget.isHostInitial;
+    final initialName =
+        (active != null &&
+            active.displayName.isNotEmpty &&
+            active.displayName != 'User' &&
+            active.displayName != 'Friendoo User' &&
+            active.displayName != 'Friendoo user')
+        ? active.displayName
+        : '';
+    _nameController.text = initialName;
+    _selectedDob = DateTime(2002, 5, 15);
     _recalculateAge();
   }
 
@@ -144,6 +156,19 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
       return;
     }
 
+    final verifiedProfile = ProfileRepository.currentActiveProfile;
+    if (verifiedProfile != null && verifiedProfile.isHost != _isHost) {
+      setState(() => _isHost = verifiedProfile.isHost);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Your profile type is verified by Friendoo and cannot be changed here.',
+          ),
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => StandaloneAvatarSelectionPage(
@@ -157,21 +182,12 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
     );
   }
 
-  Future<void> _handleExitOrBack() async {
+  void _handleExitOrBack() {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
-      return;
+    } else {
+      SystemNavigator.pop();
     }
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-    } catch (_) {}
-    ref.read(hasEnteredAppProvider.notifier).state = false;
-    ref.read(debugMockSessionProvider.notifier).state = false;
-    ProfileRepository.currentActiveProfile = null;
-    try {
-      await AuthRepository(ref.read(supabaseProvider)).signOut();
-    } catch (_) {}
   }
 
   @override
@@ -182,9 +198,9 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
 
     return PopScope(
       canPop: Navigator.of(context).canPop(),
-      onPopInvokedWithResult: (didPop, result) async {
+      onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
-          await _handleExitOrBack();
+          _handleExitOrBack();
         }
       },
       child: Scaffold(
@@ -199,9 +215,9 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
             ),
             onPressed: _handleExitOrBack,
           ),
-          title: const Text(
-            'Profile Details',
-            style: TextStyle(
+          title: Text(
+            _isHost ? 'Host Profile Setup' : 'User Profile Setup',
+            style: const TextStyle(
               color: Color(0xFF111827),
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -214,9 +230,9 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Enter your details',
-                  style: TextStyle(
+                Text(
+                  _isHost ? 'Host Details' : 'Enter your details',
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF111827),
@@ -224,9 +240,11 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Please enter your name and date of birth to continue.',
-                  style: TextStyle(
+                Text(
+                  _isHost
+                      ? 'Complete your verified host profile to receive calls and earn.'
+                      : 'Please enter your name and date of birth to continue.',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF6B7280),
                     fontWeight: FontWeight.w500,
@@ -450,12 +468,26 @@ class _StandaloneAvatarSelectionPageState
             avatarConfig: avatarConfig,
             displayName: widget.displayName,
           );
-    } catch (_) {
-      // Handled gracefully in ProfileRepository
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+      }
+      return;
     }
 
     if (!mounted) return;
-    ref.read(isHostModeProvider.notifier).state = widget.isHost;
+    final savedProfile = ProfileRepository.currentActiveProfile;
+    final resolvedIsHost = savedProfile?.isHost ?? widget.isHost;
+    ref.read(isHostModeProvider.notifier).state = resolvedIsHost;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('friendoo_saved_is_host', resolvedIsHost);
+    } catch (_) {}
+    ref.invalidate(currentUserProfileStreamProvider);
+
     if (isDebugMock) {
       ref.read(debugMockSessionProvider.notifier).state = true;
     }
@@ -483,9 +515,9 @@ class _StandaloneAvatarSelectionPageState
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Choose Your Avatar',
-          style: TextStyle(
+        title: Text(
+          widget.isHost ? 'Choose Host Avatar' : 'Choose Your Avatar',
+          style: const TextStyle(
             color: Color(0xFF111827),
             fontSize: 18,
             fontWeight: FontWeight.w900,

@@ -76,12 +76,10 @@ class PresenceService with WidgetsBindingObserver {
 
     if (isHost) {
       try {
-        await _client.from('hosts').upsert({
-          'id': userId,
-          'is_available': isOnline,
-          'rate_per_audio_minute': 5,
-          'updated_at': nowIso,
-        }, onConflict: 'id');
+        await _client.rpc(
+          'set_own_host_availability',
+          params: {'p_is_available': isOnline},
+        );
       } catch (_) {}
     }
   }

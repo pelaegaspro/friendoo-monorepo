@@ -163,7 +163,6 @@ class _IncomingHostCallDialogState
                 ),
               ),
             ] else ...[
-              // NORMAL SKIP QUOTA BADGE
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -177,15 +176,15 @@ class _IncomingHostCallDialogState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.swipe_right_alt_rounded,
+                      Icons.phone_callback_rounded,
                       size: 16,
-                      color: colors.onSurfaceVariant,
+                      color: colors.primary,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Daily Skips: ${guard.skippedToday} / 5 used (${guard.remainingSkips} left)',
+                      'Direct Caller Connection',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: colors.onSurfaceVariant,
                       ),
                     ),

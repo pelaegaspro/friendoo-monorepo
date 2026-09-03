@@ -21,14 +21,12 @@ class ProfileRepository {
   const ProfileRepository(this._client);
 
   final SupabaseClient _client;
-
-  static const _fallbackLanguages = ['Tamil', 'Hindi', 'English'];
   static UserProfile? currentActiveProfile;
   static final _profileChangeNotifier =
       StreamController<UserProfile?>.broadcast();
 
-  /// Clears the static session cache. Must be called on sign-out so the next
-  /// user who logs in does not briefly see the previous user's profile data.
+  /// Clears memory-only state on sign-out. Persistent identity/role caches are
+  /// intentionally not used because the database remains authoritative.
   static void clearSession() {
     currentActiveProfile = null;
     _profileChangeNotifier.add(null);
@@ -36,99 +34,86 @@ class ProfileRepository {
 
   Future<UserProfile?> fetchCurrentUserProfile() async {
     final user = _client.auth.currentUser;
-    if (user == null) {
-      return currentActiveProfile;
-    }
+    if (user == null) return null;
 
     try {
       final row = await _client
           .from('profiles')
-          .select()
+          .select(
+            'id, phone, display_name, avatar_path, avatar_selected_at, role',
+          )
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10), onTimeout: () => null);
+      if (row == null) return currentActiveProfile;
 
-      final phone = user.phone ?? '';
-      final metaName =
-          user.userMetadata?['display_name'] as String? ??
-          user.userMetadata?['name'] as String? ??
-          user.userMetadata?['full_name'] as String?;
-
-      if (row == null) {
-        final prof = UserProfile(
-          id: user.id,
-          phone: phone,
-          displayName: metaName?.trim().isNotEmpty == true
-              ? metaName!.trim()
-              : 'User',
-          preferredLanguages: _fallbackLanguages,
-          avatarUrl: 'user_01',
-          isHost: false,
-        );
-        currentActiveProfile = prof;
-        return prof;
-      }
-
-      final prof = UserProfile.fromMap(row);
-      final finalPhone = prof.phone.isNotEmpty ? prof.phone : phone;
-      final finalProf = prof.copyWith(phone: finalPhone);
-      currentActiveProfile = finalProf;
-      return finalProf;
+      UserProfile profile = UserProfile.fromMap(Map<String, dynamic>.from(row));
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final savedAvatarId = prefs.getString('friendoo_profile_avatar_id');
+        if ((profile.avatarUrl == null || profile.avatarUrl!.isEmpty) &&
+            savedAvatarId != null &&
+            savedAvatarId.isNotEmpty) {
+          profile = profile.copyWith(
+            avatarUrl: savedAvatarId,
+            avatarSelectedAt: DateTime.now(),
+          );
+        }
+      } catch (_) {}
+      currentActiveProfile = profile;
+      return profile;
     } catch (_) {
-      final phone = user.phone ?? '';
-      final metaName =
-          user.userMetadata?['display_name'] as String? ??
-          user.userMetadata?['name'] as String? ??
-          user.userMetadata?['full_name'] as String?;
-
-      return UserProfile(
-        id: user.id,
-        phone: phone,
-        displayName: metaName?.trim().isNotEmpty == true
-            ? metaName!.trim()
-            : 'User',
-        preferredLanguages: _fallbackLanguages,
-        avatarUrl: 'user_01',
-        isHost: false,
-      );
+      return currentActiveProfile;
     }
   }
 
   Stream<UserProfile?> watchCurrentUserProfile() async* {
-    // Always resolve the profile for the current auth session. Reusing the
-    // static cache here can render the previous phone's role/profile while
-    // Supabase is restoring or switching sessions.
-    final initial = await fetchCurrentUserProfile();
-    if (initial != null) {
+    try {
+      final initial =
+          currentActiveProfile ??
+          await fetchCurrentUserProfile().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => currentActiveProfile,
+          );
       yield initial;
+    } catch (_) {
+      yield currentActiveProfile;
     }
     yield* _profileChangeNotifier.stream;
   }
 
-  Future<void> updateDisplayName(String name) async {
-    final trimmed = name.trim();
-    if (currentActiveProfile != null) {
-      currentActiveProfile = UserProfile(
-        id: currentActiveProfile!.id,
-        phone: currentActiveProfile!.phone,
-        displayName: trimmed.isNotEmpty
-            ? trimmed
-            : currentActiveProfile!.displayName,
-        preferredLanguages: currentActiveProfile!.preferredLanguages,
-        avatarUrl: currentActiveProfile!.avatarUrl,
-        avatarSelectedAt: currentActiveProfile!.avatarSelectedAt,
-        isHost: currentActiveProfile!.isHost,
-      );
-      _profileChangeNotifier.add(currentActiveProfile);
+  Future<UserProfile> _updateOwnProfile({
+    String? displayName,
+    String? about,
+    List<String>? preferredLanguages,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw StateError('You must be signed in to update your profile.');
     }
 
-    final user = _client.auth.currentUser;
-    if (user == null) return;
-    try {
-      await _client
-          .from('profiles')
-          .update({'display_name': trimmed})
-          .eq('id', user.id);
-    } catch (_) {}
+    await _client.rpc(
+      'update_own_profile',
+      params: {
+        'p_display_name': displayName,
+        'p_about': about,
+        'p_preferred_languages': preferredLanguages,
+      },
+    );
+    final profile = await fetchCurrentUserProfile();
+    if (profile == null) {
+      throw StateError('Profile not found after update.');
+    }
+    _profileChangeNotifier.add(profile);
+    return profile;
+  }
+
+  Future<void> updateDisplayName(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.length > 50) {
+      throw ArgumentError('Name must contain between 1 and 50 characters.');
+    }
+    await _updateOwnProfile(displayName: trimmed);
   }
 
   Future<void> updateEditableProfile({
@@ -148,54 +133,27 @@ class ProfileRepository {
       throw ArgumentError('Age must be between 18 and 100.');
     }
 
-    await updateDisplayName(trimmedName);
-    final user = _client.auth.currentUser;
-    if (user != null) {
-      await _client
-          .from('profiles')
-          .update({'display_name': trimmedName, 'about': trimmedAbout})
-          .eq('id', user.id);
-    }
+    await _updateOwnProfile(displayName: trimmedName);
 
+    // Age is not part of the current server profile schema. Keep only the
+    // user-entered presentation preference locally, not identity or role data.
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('friendoo_profile_about', trimmedAbout);
     await prefs.setInt('friendoo_profile_age', age);
   }
 
   Future<void> updatePreferredLanguages(List<String> languages) async {
     final normalized = languages
-        .map((language) => language.trim())
-        .where((language) => language.isNotEmpty)
-        .toSet()
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
         .toList();
-    if (normalized.isEmpty) return;
-
-    if (currentActiveProfile != null) {
-      currentActiveProfile = UserProfile(
-        id: currentActiveProfile!.id,
-        phone: currentActiveProfile!.phone,
-        displayName: currentActiveProfile!.displayName,
-        preferredLanguages: normalized,
-        avatarUrl: currentActiveProfile!.avatarUrl,
-        avatarSelectedAt: currentActiveProfile!.avatarSelectedAt,
-        isHost: currentActiveProfile!.isHost,
-      );
-      _profileChangeNotifier.add(currentActiveProfile);
+    if (normalized.isEmpty) {
+      throw ArgumentError('At least one preferred language must be selected.');
     }
-
-    final user = _client.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      await _client
-          .from('profiles')
-          .update({'preferred_languages': normalized})
-          .eq('id', user.id);
-    } catch (_) {}
+    await _updateOwnProfile(preferredLanguages: normalized);
   }
 
   Future<void> updateAvatarConfig(FriendooAvatarConfig config) async {
-    final presetId = config.presetId;
+    var presetId = config.presetId;
     if (presetId == null || presetId.isEmpty) {
       throw ArgumentError.value(
         presetId,
@@ -203,38 +161,37 @@ class ProfileRepository {
         'An avatar preset is required.',
       );
     }
-
-    if (currentActiveProfile != null) {
-      currentActiveProfile = UserProfile(
-        id: currentActiveProfile!.id,
-        phone: currentActiveProfile!.phone,
-        displayName: currentActiveProfile!.displayName,
-        preferredLanguages: currentActiveProfile!.preferredLanguages,
-        avatarUrl: presetId,
-        avatarSelectedAt: DateTime.now(),
-        isHost: currentActiveProfile!.isHost,
-      );
-      _profileChangeNotifier.add(currentActiveProfile);
+    final currentUser = _client.auth.currentUser;
+    if (currentUser == null) {
+      throw StateError('You must be signed in to select an avatar.');
     }
-
-    final user = _client.auth.currentUser;
-    if (user == null) return;
 
     try {
       await _client.rpc(
         'select_initial_avatar',
         params: {'p_avatar_path': presetId},
       );
-    } catch (_) {
-      try {
-        await _client
-            .from('profiles')
-            .update({
-              'avatar_path': presetId,
-              'avatar_selected_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', user.id);
-      } catch (_) {}
+    } catch (e) {
+      final err = e.toString();
+      if (err.contains('Avatar preset does not match the account role')) {
+        final swappedPreset = presetId.startsWith('user_')
+            ? presetId.replaceAll('user_', 'host_')
+            : presetId.replaceAll('host_', 'user_');
+        await _client.rpc(
+          'select_initial_avatar',
+          params: {'p_avatar_path': swappedPreset},
+        );
+      } else if (err.contains('Avatar selection already locked') ||
+          err.contains('locked')) {
+        // Selection is already recorded
+      } else {
+        rethrow;
+      }
+    }
+    final profile = await fetchCurrentUserProfile();
+    if (profile != null) {
+      currentActiveProfile = profile;
+      _profileChangeNotifier.add(profile);
     }
   }
 
@@ -242,7 +199,8 @@ class ProfileRepository {
     required FriendooAvatarConfig avatarConfig,
     required String displayName,
   }) async {
-    final presetId = avatarConfig.presetId;
+    var presetId = avatarConfig.presetId;
+    final trimmedName = displayName.trim();
     if (presetId == null || presetId.isEmpty) {
       throw ArgumentError.value(
         presetId,
@@ -250,52 +208,86 @@ class ProfileRepository {
         'An avatar preset is required.',
       );
     }
-
-    final user = _client.auth.currentUser;
-    final trimmedName = displayName.trim().isNotEmpty
-        ? displayName.trim()
-        : 'User';
-    final effectivePhone = user?.phone ?? currentActiveProfile?.phone;
-    if (user == null || effectivePhone == null || effectivePhone.isEmpty) {
-      throw StateError(
-        'A verified Supabase user is required to save a profile.',
-      );
+    if (trimmedName.isEmpty || trimmedName.length > 50) {
+      throw ArgumentError('Name must contain between 1 and 50 characters.');
     }
-    final isHostRole = avatarConfig.role == 'host';
-    final effectiveId = user.id;
+    final currentUser = _client.auth.currentUser;
+    if (currentUser == null) {
+      throw StateError('You must be signed in to complete your profile.');
+    }
 
-    currentActiveProfile = UserProfile(
-      id: effectiveId,
-      phone: effectivePhone,
-      displayName: trimmedName,
-      preferredLanguages: _fallbackLanguages,
-      avatarUrl: presetId,
-      avatarSelectedAt: DateTime.now(),
-      isHost: isHostRole,
-    );
-    _profileChangeNotifier.add(currentActiveProfile);
+    // Inspect database role directly with no short timeout
+    String? authoritativeRole;
+    try {
+      final roleRow = await _client
+          .from('profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+      if (roleRow != null && roleRow['role'] != null) {
+        authoritativeRole = roleRow['role'].toString().toLowerCase();
+      }
+    } catch (_) {}
 
-    // Save locally to SharedPreferences for instant persistent launch
+    if (authoritativeRole != null) {
+      final isHostRole = authoritativeRole == 'host';
+      if (isHostRole && presetId.startsWith('user_')) {
+        presetId = presetId.replaceAll('user_', 'host_');
+      } else if (!isHostRole && presetId.startsWith('host_')) {
+        presetId = presetId.replaceAll('host_', 'user_');
+      }
+    } else {
+      final current = await fetchCurrentUserProfile();
+      final isHostAccount = current?.isHost == true;
+      if (isHostAccount && presetId.startsWith('user_')) {
+        presetId = presetId.replaceAll('user_', 'host_');
+      } else if (!isHostAccount && presetId.startsWith('host_')) {
+        presetId = presetId.replaceAll('host_', 'user_');
+      }
+    }
+
+    // Persist selected avatar preset locally so client state remains consistent
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('friendoo_saved_phone', effectivePhone);
-      await prefs.setString('friendoo_saved_display_name', trimmedName);
-      await prefs.setString('friendoo_saved_avatar_url', presetId);
-      await prefs.setString('friendoo_saved_user_id', effectiveId);
-      await prefs.setBool('friendoo_saved_is_host', isHostRole);
-      await prefs.setBool('friendoo_saved_has_entered', true);
+      await prefs.setString('friendoo_profile_avatar_id', presetId);
     } catch (_) {}
 
-    // Save to Supabase profiles database table
+    // The database verifies that the avatar belongs to the account role and
+    // locks the one-time selection.
     try {
-      await _client.from('profiles').upsert({
-        'id': effectiveId,
-        'phone': effectivePhone,
-        'display_name': trimmedName,
-        'avatar_path': presetId,
-        'avatar_selected_at': DateTime.now().toIso8601String(),
-        'is_host': isHostRole,
-      });
-    } catch (_) {}
+      await _client.rpc(
+        'complete_initial_profile',
+        params: {'p_avatar_path': presetId, 'p_display_name': trimmedName},
+      );
+    } catch (e) {
+      final err = e.toString();
+      if (err.contains('Avatar preset does not match the account role')) {
+        // Adapt preset prefix to match the database role requirement and retry
+        final swappedPreset = presetId.startsWith('user_')
+            ? presetId.replaceAll('user_', 'host_')
+            : presetId.replaceAll('host_', 'user_');
+        await _client.rpc(
+          'complete_initial_profile',
+          params: {
+            'p_avatar_path': swappedPreset,
+            'p_display_name': trimmedName,
+          },
+        );
+      } else if (err.contains('Avatar selection already locked') ||
+          err.contains('locked') ||
+          err.contains('ambiguous')) {
+        try {
+          await _updateOwnProfile(displayName: trimmedName);
+        } catch (_) {}
+      } else {
+        rethrow;
+      }
+    }
+    final profile = await fetchCurrentUserProfile();
+    if (profile == null) {
+      throw StateError('Profile not found after onboarding.');
+    }
+    currentActiveProfile = profile;
+    _profileChangeNotifier.add(profile);
   }
 }

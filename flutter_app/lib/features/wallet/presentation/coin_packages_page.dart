@@ -67,24 +67,6 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
       amountInr: 900,
       bonus: '+ Extra 40% Cashback',
     ),
-    CoinPackage(
-      id: 'pkg_1900',
-      coins: 1900,
-      amountInr: 1900,
-      bonus: '+ Extra 45% Cashback',
-    ),
-    CoinPackage(
-      id: 'pkg_9800',
-      coins: 9800,
-      amountInr: 9800,
-      bonus: '+ Extra 50% Cashback',
-    ),
-    CoinPackage(
-      id: 'pkg_15000',
-      coins: 15000,
-      amountInr: 15000,
-      bonus: '+ Extra 55% Cashback',
-    ),
   ];
 
   @override
@@ -131,7 +113,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
               .where((p) => p.amountInr != 15 && p.amountInr != 25)
               .toList();
 
-    final balance = walletAsync.asData?.value.coinBalance;
+    final balance = walletAsync.asData?.value.coinBalance ?? 0;
 
     final cashbackBonus = _selectedPackage != null
         ? ((_selectedPackage!.amountInr * 0.37).round())
@@ -359,9 +341,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 Text(
-                                  balance == null
-                                      ? 'Balance unavailable'
-                                      : '${(balance * 10).round()} Coins',
+                                  '${(balance * 10).round()} Coins',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
@@ -704,7 +684,7 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
           Expanded(
             child: txAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Center(
+              error: (_, _) => const Center(
                 child: Text('Failed to load transaction history'),
               ),
               data: (txList) {
@@ -726,7 +706,7 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
                     vertical: 12,
                   ),
                   itemCount: txList.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (ctx, idx) {
                     final tx = txList[idx];
                     final isCredit = tx.isCredit;

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/notification_model.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../profile/data/profile_repository.dart';
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(ref.watch(supabaseProvider));
@@ -20,6 +21,10 @@ final notificationsStreamProvider = StreamProvider<List<PushNotificationItem>>((
 
 /// Resolves whether the current session is a host session.
 final isHostNotificationsProvider = Provider<bool>((ref) {
+  final profile = ref.watch(currentUserProfileStreamProvider).asData?.value;
+  if (profile != null) return profile.isHost;
+  final activeProfile = ProfileRepository.currentActiveProfile;
+  if (activeProfile != null) return activeProfile.isHost;
   final client = ref.watch(supabaseProvider);
   final meta = client.auth.currentUser?.userMetadata;
   return meta?['is_host'] as bool? ?? false;
@@ -35,98 +40,209 @@ class NotificationRepository {
   NotificationRepository(this._client);
 
   final SupabaseClient _client;
-  static final StreamController<List<PushNotificationItem>> _localBroadcaster =
-      StreamController<List<PushNotificationItem>>.broadcast();
+  static final StreamController<void> _refreshSignal =
+      StreamController<void>.broadcast();
 
-  static const defaultFlashSaleNotification = PushNotificationItem(
-    id: 'flash_sale_midnight_01',
-    title: '⚡ FLASH COIN SALE: 50% OFF!',
-    body: 'Grab 500 Coins + 250 Bonus for ₹149 (Save ₹150)! Offer expires in 15 mins.',
-    type: 'flash_sale',
-    targetAudience: 'users',
-    actionType: 'recharge',
-    promoCoins: 500,
-    promoPriceInr: 149,
-    originalPriceInr: 299,
-    discountBadge: '⚡ 50% OFF FLASH',
-    bonusLabel: '+250 Bonus Coins',
-    expiresInMinutes: 15,
-    isRead: false,
-  );
-
-  static const defaultWelcomeNotification = PushNotificationItem(
-    id: 'welcome_01',
-    title: 'Welcome to Friendoo Voice Lounge! 🎉',
-    body: 'Enjoy high-quality, 100% anonymous calling with verified female hosts.',
-    type: 'general',
-    targetAudience: 'all',
-    actionType: 'open_lounge',
-    isRead: false,
-  );
-
-  static const defaultHostSurgeNotification = PushNotificationItem(
-    id: 'host_surge_01',
-    title: '🔥 Peak Hour Host Surge (8PM - 11PM)',
-    body: 'Earn 2X bonus earnings on every completed voice call tonight!',
-    type: 'host_surge',
-    targetAudience: 'hosts',
-    actionType: 'none',
-    isRead: false,
-  );
+  void notifyRefresh() {
+    _refreshSignal.add(null);
+  }
 
   Stream<List<PushNotificationItem>> watchNotifications({
-    bool isHost = false,
+    bool? isHost,
   }) async* {
-    final list = isHost
-        ? [defaultHostSurgeNotification, defaultWelcomeNotification]
-        : [defaultFlashSaleNotification, defaultWelcomeNotification];
-    yield list;
+    yield await fetchNotifications(isHost: isHost);
+
+    yield* _refreshSignal.stream.asyncMap((_) async {
+      return await fetchNotifications(isHost: isHost);
+    });
   }
 
-  /// Triggers a local simulated flash coin sale notification into the stream
-  void triggerLocalFlashSale({
-    int coins = 500,
-    int priceInr = 149,
-    int originalPriceInr = 299,
-    String badge = '⚡ FLASH DROP 50% OFF',
-  }) {
-    final notif = PushNotificationItem(
-      id: 'flash_sale_${DateTime.now().millisecondsSinceEpoch}',
-      title: '⚡ FLASH COIN DROP: $badge',
-      body:
-          'Get $coins Coins + 250 Bonus for only ₹$priceInr! Tap to claim now.',
-      type: 'flash_sale',
-      targetAudience: 'users',
-      actionType: 'recharge',
-      promoCoins: coins,
-      promoPriceInr: priceInr,
-      originalPriceInr: originalPriceInr,
-      discountBadge: badge,
-      bonusLabel: '+250 Bonus Coins',
-      expiresInMinutes: 10,
-      createdAt: DateTime.now(),
-    );
+  Future<List<PushNotificationItem>> fetchNotifications({
+    bool? isHost,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return const [];
 
-    _localBroadcaster.add([notif]);
-  }
+    // Strictly resolve host status. Hosts should NEVER receive buyer coin purchase promos.
+    bool hostResolved = isHost ?? (ProfileRepository.currentActiveProfile?.isHost ?? false);
+    if (!hostResolved) {
+      try {
+        final hostRow = await _client
+            .from('hosts')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 3));
+        if (hostRow != null) {
+          hostResolved = true;
+        }
+      } catch (_) {}
+    }
 
-  Future<List<PushNotificationItem>> fetchNotifications() async {
+    final List<PushNotificationItem> results = [];
+
+    // 1. Fetch live calls from the database
     try {
-      final data = await _client
+      final callField = hostResolved ? 'host_id' : 'caller_id';
+      final callRows = await _client
+          .from('calls')
+          .select(
+            'id, caller_id, host_id, status, duration_seconds, coins_charged, host_earnings_inr, created_at',
+          )
+          .eq(callField, user.id)
+          .order('created_at', ascending: false)
+          .limit(20)
+          .timeout(const Duration(seconds: 5), onTimeout: () => []);
+
+      for (final row in (callRows as List)) {
+        final map = Map<String, dynamic>.from(row as Map);
+        final status = map['status']?.toString() ?? '';
+        final createdAt = DateTime.tryParse(
+          map['created_at']?.toString() ?? '',
+        );
+        final durationSec = (map['duration_seconds'] as num?)?.toInt() ?? 0;
+        final durationStr = durationSec > 0
+            ? '${(durationSec ~/ 60)}m ${(durationSec % 60)}s'
+            : '0s';
+
+        if (status == 'completed') {
+          results.add(
+            PushNotificationItem(
+              id: 'call_${map['id']}',
+              title: hostResolved ? '📞 Call Completed' : '📞 Voice Call Completed',
+              body: hostResolved
+                  ? 'Call duration: $durationStr • Earned ₹${map['host_earnings_inr'] ?? 0}'
+                  : 'Call duration: $durationStr • Charged ${map['coins_charged'] ?? 0} coins',
+              type: 'call',
+              actionType: hostResolved ? 'open_lounge' : 'recharge',
+              createdAt: createdAt,
+            ),
+          );
+        } else if (status == 'missed' ||
+            status == 'rejected' ||
+            status == 'cancelled') {
+          results.add(
+            PushNotificationItem(
+              id: 'call_${map['id']}',
+              title: '📵 Missed Call',
+              body: hostResolved
+                  ? 'You missed an incoming caller request.'
+                  : 'Your call request was not connected.',
+              type: 'call',
+              actionType: 'none',
+              createdAt: createdAt,
+            ),
+          );
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fetch live wallet transactions from the database
+    try {
+      final txRows = await _client
+          .from('wallet_transactions')
+          .select('id, amount, transaction_type, description, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false)
+          .limit(20)
+          .timeout(const Duration(seconds: 5), onTimeout: () => []);
+
+      for (final row in (txRows as List)) {
+        final map = Map<String, dynamic>.from(row as Map);
+        final amount = (map['amount'] as num?)?.toInt() ?? 0;
+        final createdAt = DateTime.tryParse(
+          map['created_at']?.toString() ?? '',
+        );
+        final desc = map['description']?.toString() ?? '';
+
+        results.add(
+          PushNotificationItem(
+            id: 'tx_${map['id']}',
+            title: hostResolved
+                ? (amount >= 0 ? '💰 Earnings Credited' : '💸 Payout Processed')
+                : (amount >= 0 ? '💰 Coins Credited' : '🪙 Coins Debited'),
+            body: desc.isNotEmpty
+                ? desc
+                : (hostResolved
+                    ? (amount >= 0
+                        ? '+$amount INR added to host earnings'
+                        : '$amount INR withdrawn')
+                    : (amount >= 0
+                        ? '+$amount coins added to your wallet'
+                        : '$amount coins used')),
+            type: hostResolved ? 'host_surge' : 'recharge',
+            actionType: hostResolved ? 'host_payout' : 'recharge',
+            createdAt: createdAt,
+          ),
+        );
+      }
+    } catch (_) {}
+
+    // 3. Fetch live notifications table if present
+    try {
+      final notifRows = await _client
           .from('notifications')
           .select()
           .order('created_at', ascending: false)
-          .limit(30);
+          .limit(10)
+          .timeout(const Duration(seconds: 5), onTimeout: () => []);
 
-      return (data as List)
-          .map(
-            (row) => PushNotificationItem.fromMap(
-              Map<String, dynamic>.from(row as Map),
-            ),
-          )
-          .toList();
-    } catch (_) {
-      return [defaultFlashSaleNotification, defaultWelcomeNotification];
+      for (final row in (notifRows as List)) {
+        final map = Map<String, dynamic>.from(row as Map);
+        results.add(PushNotificationItem.fromMap(map));
+      }
+    } catch (_) {}
+
+    // 4. Fetch live coin package promotional offers for callers ONLY (NEVER FOR HOSTS)
+    if (!hostResolved) {
+      try {
+        final pkgRows = await _client
+            .from('coin_packages')
+            .select(
+              'id, coins, amount_inr, promotion_label, first_purchase_bonus_coins',
+            )
+            .eq('is_active', true)
+            .not('promotion_label', 'is', null)
+            .order('display_rank', ascending: true)
+            .limit(2)
+            .timeout(const Duration(seconds: 5), onTimeout: () => []);
+
+        for (final row in (pkgRows as List)) {
+          final map = Map<String, dynamic>.from(row as Map);
+          final promoLabel = map['promotion_label']?.toString() ?? '';
+          final bonusCoins =
+              (map['first_purchase_bonus_coins'] as num?)?.toInt() ?? 0;
+          final coins = (map['coins'] as num?)?.toInt() ?? 0;
+          final inr = (map['amount_inr'] as num?)?.toInt() ?? 0;
+
+          if (promoLabel.isNotEmpty) {
+            results.add(
+              PushNotificationItem(
+                id: 'pkg_promo_${map['id']}',
+                title: '🎁 $promoLabel',
+                body:
+                    'Get $coins Coins + $bonusCoins Bonus for only ₹$inr. Active in store.',
+                type: 'offer',
+                actionType: 'recharge',
+                promoCoins: coins,
+                promoPriceInr: inr,
+                discountBadge: 'BONUS OFFER',
+                bonusLabel: '+$bonusCoins Bonus Coins',
+                createdAt: DateTime.now(),
+              ),
+            );
+          }
+        }
+      } catch (_) {}
     }
+
+    // Sort chronologically descending (newest first)
+    results.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+
+    return results;
   }
 }

@@ -19,6 +19,7 @@ import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import '../features/wallet/presentation/select_payment_method_page.dart';
 import '../features/ads/presentation/cloud_banner_ad_widget.dart';
 import '../features/ads/presentation/live_ad_banner_widget.dart';
+import '../features/notifications/presentation/notifications_sheet.dart';
 
 abstract final class FriendooUiColors {
   static const canvas = Color(0xFFF7F7FB);
@@ -655,88 +656,7 @@ class _FriendooPromoCarouselState extends State<FriendooPromoCarousel> {
 }
 
 void showFriendooNotificationsSheet(BuildContext context) {
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-    ),
-    builder: (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: FriendooUiColors.softViolet,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.notifications_rounded,
-                    color: FriendooUiColors.violet,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Notifications & Offers',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w900),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.celebration_rounded,
-                color: FriendooUiColors.pink,
-              ),
-              title: Text(
-                'Welcome to Friendoo Voice Lounge!',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text(
-                'Enjoy 20% off bonus coins on your first voice call recharge.',
-              ),
-            ),
-            const ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.verified_user_rounded,
-                color: Color(0xFF10B981),
-              ),
-              title: Text(
-                '100% Female Verified Hosts',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text(
-                'All hosts undergo verified identity vetting before taking calls.',
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(sheetContext).pop(),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text('Close'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  showLiveNotificationsSheet(context);
 }
 
 class FriendooDashboardView extends ConsumerWidget {
@@ -831,7 +751,9 @@ class FriendooDashboardView extends ConsumerWidget {
                           walletAsync.when(
                             data: (wallet) => '${wallet.coinBalance}',
                             loading: () => '…',
-                            error: (_, __) => '—',
+                            error: (_, __) => walletAsync.hasValue
+                                ? '${walletAsync.value!.coinBalance}'
+                                : '0',
                           ),
                           style: const TextStyle(
                             color: Color(0xFFB45309),
@@ -2796,14 +2718,12 @@ class FriendooProfileView extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  // Male Avatar using saved preset
+                  // Avatar using user's saved preset
                   FriendooAvatar(
-                    config: FriendooAvatarConfig(
-                      gender: 'male',
+                    config: FriendooAvatarConfig.fromRawString(
+                      profile?.avatarUrl ?? 'user_01',
                       role: 'user',
-                      presetId: profile?.avatarUrl ?? 'user_01',
                     ),
-                    age: 26,
                     size: 74,
                   ),
                   const SizedBox(width: 16),
@@ -2835,17 +2755,21 @@ class FriendooProfileView extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 3),
-                        Row(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            const Text(
-                              '26 yrs',
-                              style: TextStyle(
+                            Text(
+                              profile?.phone.isNotEmpty == true
+                                  ? profile!.phone
+                                  : 'Active Member',
+                              style: const TextStyle(
                                 color: Color(0xFF4B5563),
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -2857,7 +2781,7 @@ class FriendooProfileView extends ConsumerWidget {
                               ),
                               child: Text(
                                 'ID: $publicId',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Color(0xFF6B7280),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -3285,10 +3209,10 @@ class _FriendooHostEarningsViewState
         hostStatsAsync.when(
           loading: () => const _LoadingSurface(),
           error: (_, _) => _HostWithdrawalCard(
-            availableToWithdrawInr: 5240,
+            availableToWithdrawInr: 0,
             onWithdraw: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const HostWithdrawalPage(availableAmount: 5240),
+                builder: (_) => const HostWithdrawalPage(availableAmount: 0),
               ),
             ),
           ),
@@ -3750,6 +3674,7 @@ class _UserBalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final wallet = walletAsync.asData?.value;
     final coins = wallet?.coinBalance;
+    final isLoading = walletAsync.isLoading;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -3813,33 +3738,43 @@ class _UserBalanceCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    coins == null
-                        ? 'Unavailable'
-                        : '₹${(coins * 0.14).toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.8,
-                      height: 1.1,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isLoading
+                          ? '—'
+                          : coins == null
+                          ? 'Unavailable'
+                          : '$coins Coins',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                        height: 1.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    coins == null
-                        ? 'Balance unavailable'
-                        : '$coins Coins Available',
-                    style: const TextStyle(
-                      color: Color(0xFFC7D2FE),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 4),
+                    Text(
+                      isLoading
+                          ? 'Loading balance'
+                          : coins == null
+                          ? 'Balance unavailable'
+                          : '≈ ${(coins / 5).floor()} mins talk time',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFC7D2FE),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const _3DWalletIllustration(),
             ],

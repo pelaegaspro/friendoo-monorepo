@@ -70,6 +70,9 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       }
 
       await ref.read(permissionServiceProvider).requestBluetoothAudio();
+      if (context != null && !context.mounted) {
+        throw Exception('Call screen is no longer available.');
+      }
       final micGranted = await ref
           .read(permissionServiceProvider)
           .requestMicrophone(context: context);
@@ -95,6 +98,9 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(permissionServiceProvider).requestBluetoothAudio();
+      if (context != null && !context.mounted) {
+        throw Exception('Call screen is no longer available.');
+      }
       final micGranted = await ref
           .read(permissionServiceProvider)
           .requestMicrophone(context: context);
@@ -173,6 +179,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     );
 
     await _stopWatchingAndLeave();
+    ref.invalidate(walletStreamProvider);
     state = const AsyncData(null);
   }
 
@@ -235,8 +242,9 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   Future<void> _joinAudio(CallSession call) async {
     if (call.callType != CallType.audio ||
         _joinedCallId == call.id ||
-        _isJoiningAudio)
+        _isJoiningAudio) {
       return;
+    }
     _isJoiningAudio = true;
     try {
       final providerType = ref.read(rtcProviderTypeProvider);

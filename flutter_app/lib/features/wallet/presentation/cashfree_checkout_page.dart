@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cferrorresponse/cferrorresponse.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpayment/cfwebcheckoutpayment.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpaymentgateway/cfpaymentgatewayservice.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfsession/cfsession.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfexceptions.dart';
 
 typedef CashfreePaymentVerifier = Future<bool> Function(String providerOrderId);
 
@@ -22,39 +27,69 @@ class CashfreeCheckoutPage extends StatefulWidget {
 }
 
 class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage> {
-  late final WebViewController _controller;
+  final CFPaymentGatewayService _paymentGatewayService =
+      CFPaymentGatewayService();
+
   bool _isVerifying = false;
   String? _verificationError;
 
   @override
   void initState() {
     super.initState();
-    final checkoutUrl = widget.sandbox
-        ? 'https://sandbox.cashfree.com/pg/view/sessions/checkout'
-        : 'https://api.cashfree.com/pg/view/sessions/checkout';
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (request) {
-            if (request.url.startsWith(
-              'https://friendoo.in/payment/callback',
-            )) {
-              _verifyPayment();
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadHtmlString('''
-        <html><body onload="document.forms[0].submit()">
-          <form method="post" action="$checkoutUrl">
-            <input type="hidden" name="payment_session_id" value="${widget.paymentSessionId}">
-            <input type="hidden" name="platform" value="flutter">
-          </form>
-        </body></html>
-      ''');
+    _paymentGatewayService.setCallback(
+      _onCashfreeVerificationRequested,
+      _onCashfreeError,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openCheckout());
+  }
+
+  void _openCheckout() {
+    try {
+      final session = CFSessionBuilder()
+          .setEnvironment(
+            widget.sandbox ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION,
+          )
+          .setOrderId(widget.providerOrderId)
+          .setPaymentSessionId(widget.paymentSessionId)
+          .build();
+      final checkout = CFWebCheckoutPaymentBuilder()
+          .setSession(session)
+          .build();
+      _paymentGatewayService.doPayment(checkout);
+    } on CFException catch (error) {
+      _showCheckoutError(error.message);
+    } catch (_) {
+      _showCheckoutError('Unable to open secure payment. Please try again.');
+    }
+  }
+
+  void _onCashfreeVerificationRequested(String orderId) {
+    if (orderId != widget.providerOrderId) {
+      _showCheckoutError('The payment response did not match this order.');
+      return;
+    }
+    _verifyPayment();
+  }
+
+  void _onCashfreeError(CFErrorResponse errorResponse, String orderId) {
+    if (orderId != widget.providerOrderId) {
+      _showCheckoutError('The payment response did not match this order.');
+      return;
+    }
+    final message = errorResponse.getMessage()?.trim() ?? '';
+    _showCheckoutError(
+      message.isEmpty
+          ? 'Payment could not be completed. Please try again.'
+          : message,
+    );
+  }
+
+  void _showCheckoutError(String message) {
+    if (!mounted) return;
+    setState(() {
+      _isVerifying = false;
+      _verificationError = message;
+    });
   }
 
   Future<void> _verifyPayment() async {
@@ -88,7 +123,23 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage> {
     appBar: AppBar(title: const Text('Secure payment')),
     body: Stack(
       children: [
-        WebViewWidget(controller: _controller),
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text(
+                  'Opening Cashfree secure checkout…',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        ),
         if (_isVerifying)
           const ColoredBox(
             color: Color(0x99000000),

@@ -98,9 +98,7 @@ class HostProfile {
   final bool isFavorite;
   final bool isSurgeActive;
 
-  bool get isFemale =>
-      gender.trim().toLowerCase() == 'female';
-  bool get isOnline => status == HostStatus.online && isAvailable;
+  bool get isFemale => gender.trim().toLowerCase() != 'male';
   bool get isBusy => status == HostStatus.busy;
   bool get isOffline => status == HostStatus.offline || !isAvailable;
 
@@ -215,9 +213,8 @@ class HostProfile {
       isStar: false,
       status: resolvedStatus,
       languages: langs,
-      gender: map['gender']?.toString().trim().toLowerCase() ?? 'unknown',
+      gender: map['gender']?.toString().trim().toLowerCase() ?? 'female',
       rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
-      totalCalls: totalCallsVal,
       age: (map['age'] as num?)?.toInt(),
       city: map['city'] as String?,
       avatarUrl: map['avatar_path'] as String? ?? map['avatar_url'] as String?,
@@ -724,6 +721,8 @@ class HostDashboardStats {
     this.nextPayoutDay = 'Friday',
     this.silenceWarningsCount = 0,
     this.maxSilenceWarnings = 3,
+    this.avgDurationFormatted = '0m 00s',
+    this.rating = 5.0,
   });
 
   final int todayEarningsInr;
@@ -742,6 +741,8 @@ class HostDashboardStats {
   final String nextPayoutDay;
   final int silenceWarningsCount;
   final int maxSilenceWarnings;
+  final String avgDurationFormatted;
+  final double rating;
 
   bool get isHostSuspended => silenceWarningsCount >= maxSilenceWarnings;
 }

@@ -172,13 +172,13 @@ class BackgroundAvailabilityChecker {
       if (hostRow != null) {
         final dbAvailable = (hostRow['is_available'] as bool?) ?? false;
 
-        // Synchronize local guard with DB if mismatch
+        // Synchronize local guard with database state through the constrained
+        // server RPC; the client never writes host identity or pricing fields.
         if (dbAvailable != guard.isOnline) {
-          await client.from('hosts').upsert({
-            'id': userId,
-            'is_available': guard.isOnline,
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          }, onConflict: 'id');
+          await client.rpc(
+            'set_own_host_availability',
+            params: {'p_is_available': guard.isOnline},
+          );
         }
       }
     } catch (_) {

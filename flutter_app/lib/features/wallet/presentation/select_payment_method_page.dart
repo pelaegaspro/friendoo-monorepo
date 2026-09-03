@@ -189,7 +189,13 @@ class _SelectPaymentMethodPageState
   Future<void> _openCashfreeOrder(Map<String, dynamic>? order) async {
     final sessionId = order?['payment_session_id'] as String?;
     final providerOrderId = order?['provider_order_id'] as String?;
+    final orderError = order?['error'] as String?;
     if (!mounted) return;
+    if (orderError != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(orderError)));
+      return;
+    }
     if (sessionId == null ||
         sessionId.isEmpty ||
         providerOrderId == null ||

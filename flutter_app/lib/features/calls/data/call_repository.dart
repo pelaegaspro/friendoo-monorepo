@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -35,8 +34,9 @@ class CallRepository {
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
     );
     if (!uuidRegex.hasMatch(hostId)) {
-      throw Exception('The selected host has an invalid account identifier.');
+      throw Exception('The selected host is invalid.');
     }
+
     try {
       final response = await _client.functions.invoke(
         'call-initiate',
@@ -47,41 +47,53 @@ class CallRepository {
         return CallSession.fromMap(data['call'] as Map<String, dynamic>);
       }
       throw Exception('Call initiation returned no call.');
-    } catch (error) {
+    } catch (e) {
+      if (e is FunctionException) {
+        final details = e.details;
+        if (details is Map && details['error'] != null) {
+          throw Exception('${details['error']}');
+        }
+      }
       throw Exception(
         'Unable to create the call on the server. '
-        'Please check that the host is online and try again. '
-        'Details: ${error.toString()}',
+        'Please check that the host is online and try again.',
       );
     }
   }
 
   Future<CallSession> acceptCall(String callId) async {
+    if (_client.auth.currentSession == null) {
+      throw Exception('Please sign in before accepting a call.');
+    }
+
     try {
       final response = await _client.functions.invoke(
         'call-accept',
         body: {'call_id': callId},
       );
       final data = response.data as Map<String, dynamic>;
-      return CallSession.fromMap(data['call'] as Map<String, dynamic>);
-    } catch (error) {
-      throw Exception(
-        'Unable to accept the call on the server: ${error.toString()}',
-      );
+      final call = data['call'];
+      if (call is! Map<String, dynamic>) {
+        throw const FormatException('Call acceptance returned no call.');
+      }
+      return CallSession.fromMap(call);
+    } catch (_) {
+      throw Exception('Unable to accept the call on the server.');
     }
   }
 
   Future<void> endCall(String callId, {String reason = 'user_hangup'}) async {
+    if (_client.auth.currentSession == null) {
+      throw Exception('Please sign in before ending a call.');
+    }
+
     try {
       await _client.functions.invoke(
         'call-end',
         body: {'call_id': callId, 'reason': reason},
       );
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('call-end error: $error');
-      }
-      rethrow;
+    } catch (_) {
+      throw Exception('Unable to end the call on the server.');
     }
   }
 
@@ -105,10 +117,8 @@ class CallRepository {
       return AgoraJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (error) {
-      throw Exception(
-        'Failed to generate Agora RTC join token: ${error.toString()}',
-      );
+    } catch (_) {
+      throw Exception('Unable to obtain secure audio credentials.');
     }
   }
 
@@ -121,8 +131,8 @@ class CallRepository {
       return VideoSdkJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (error) {
-      throw Exception('Failed to generate VideoSDK token: ${error.toString()}');
+    } catch (_) {
+      throw Exception('Unable to obtain secure audio credentials.');
     }
   }
 
@@ -138,6 +148,13 @@ class CallRepository {
     Timer? pollTimer;
 
     Future<void> pollOnce() async {
+      final activeProfile = ProfileRepository.currentActiveProfile;
+      final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
+      if (userId == null) {
+        if (!controller.isClosed) controller.add(const <CallSession>[]);
+        return;
+      }
+
       try {
         final rows = await _client
             .from('calls')
@@ -148,6 +165,16 @@ class CallRepository {
             .limit(10);
 
         final matches = (rows as List<dynamic>)
+            .where((r) {
+              final hId = r['host_id']?.toString() ?? '';
+              final isTargetHost = hId == userId;
+
+              final status = r['status']?.toString() ?? '';
+              return isTargetHost &&
+                  (status == 'ringing' ||
+                      status == 'connecting' ||
+                      status == 'initiated');
+            })
             .map((r) => CallSession.fromMap(r as Map<String, dynamic>))
             .toList();
 
@@ -159,25 +186,30 @@ class CallRepository {
 
     StreamSubscription? sub;
     try {
-      sub = _client
-          .from('calls')
-          .stream(primaryKey: ['id'])
-          .eq('host_id', userId)
-          .listen((rows) {
-            final matches = rows
-                .where((r) {
-                  final status = r['status']?.toString() ?? '';
-                  return status == 'ringing' ||
-                      status == 'connecting' ||
-                      status == 'initiated';
-                })
-                .map((r) => CallSession.fromMap(r))
-                .toList();
+      sub = _client.from('calls').stream(primaryKey: ['id']).listen((rows) {
+        final activeProfile = ProfileRepository.currentActiveProfile;
+        final currentUserId = activeProfile?.id ?? _client.auth.currentUser?.id;
+        if (currentUserId == null) {
+          if (!controller.isClosed) controller.add(const <CallSession>[]);
+          return;
+        }
+        final matches = rows
+            .where((row) {
+              final hostId = row['host_id']?.toString() ?? '';
+              final status = row['status']?.toString() ?? '';
+              final isTargetHost = hostId == currentUserId;
 
-            if (!controller.isClosed) {
-              controller.add(matches);
-            }
-          }, onError: (_) {});
+              return isTargetHost &&
+                  (status == 'ringing' ||
+                      status == 'connecting' ||
+                      status == 'initiated');
+            })
+            .map((row) => CallSession.fromMap(row))
+            .toList();
+        if (!controller.isClosed) {
+          controller.add(matches);
+        }
+      }, onError: (_) {});
     } catch (_) {}
 
     pollOnce();

@@ -235,14 +235,14 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   late TextEditingController _ageController;
   late TextEditingController _bioController;
   String _selectedAvatarId = 'user_01';
-  int _selectedAge = 26;
+  int _selectedAge = 24;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: '');
-    _ageController = TextEditingController(text: '26');
+    _ageController = TextEditingController(text: '24');
     _bioController = TextEditingController();
     _loadAvatarSelection();
   }
@@ -255,9 +255,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     if (!mounted) return;
 
     final savedId = profile?.avatarUrl;
-    final savedBio =
-        prefs.getString('friendoo_profile_about') ??
-        'Voice caller on Friendoo. Enjoying casual chats and good discussions.';
+    final savedBio = prefs.getString('friendoo_profile_about') ?? '';
 
     setState(() {
       if (profile != null) {
@@ -266,7 +264,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
           _selectedAvatarId = savedId!;
         }
       }
-      _selectedAge = prefs.getInt('friendoo_profile_age') ?? 26;
+      _selectedAge = prefs.getInt('friendoo_profile_age') ?? 24;
       _bioController.text = savedBio;
     });
   }
@@ -403,10 +401,9 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                                   ],
                                 ),
                                 child: FriendooAvatar(
-                                  config: FriendooAvatarConfig(
-                                    gender: 'male',
+                                  config: FriendooAvatarConfig.fromRawString(
+                                    _selectedAvatarId,
                                     role: 'user',
-                                    presetId: _selectedAvatarId,
                                   ),
                                   age: _selectedAge,
                                   size: 154,
@@ -607,6 +604,8 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     );
   }
 
+  // Retained for reference while the redesigned profile page is active.
+  // ignore: unused_element
   Widget _buildLegacyPage(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Edit Profile',
@@ -1134,7 +1133,13 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
   @override
   void initState() {
     super.initState();
-    _selected = {'Hindi', 'Tamil', 'English'};
+    final profileLangs =
+        ProfileRepository.currentActiveProfile?.preferredLanguages;
+    if (profileLangs != null && profileLangs.isNotEmpty) {
+      _selected = profileLangs.toSet();
+    } else {
+      _selected = {'Tamil', 'English'};
+    }
   }
 
   Future<void> _saveLanguages() async {
@@ -1359,7 +1364,8 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
       final prefs = await SharedPreferences.getInstance();
       if (mounted) {
         setState(() {
-          _hideOnlineStatus = prefs.getBool('privacy_hide_online_status') ?? false;
+          _hideOnlineStatus =
+              prefs.getBool('privacy_hide_online_status') ?? false;
           _hideFromSearch = prefs.getBool('privacy_hide_from_search') ?? false;
           _readReceipts = prefs.getBool('privacy_read_receipts') ?? true;
         });
@@ -1821,10 +1827,7 @@ class UserBlockedUsersPage extends StatefulWidget {
 }
 
 class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
-  final List<Map<String, String>> _blockedList = [
-    {'name': 'Rhea K', 'city': 'Mumbai', 'date': '12 May 2026'},
-    {'name': 'Sneha M', 'city': 'Pune', 'date': '28 Apr 2026'},
-  ];
+  final List<Map<String, String>> _blockedList = [];
 
   void _unblock(int index) {
     showDialog<void>(
@@ -2013,53 +2016,6 @@ class _UserNotificationSettingsPageState
               subtitle: 'Get real-time alerts when 50% OFF flash bonus coin drops go live',
               value: _promotionalOffers,
               onChanged: (v) => setState(() => _promotionalOffers = v),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFB703), Color(0xFFFF2A85)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.notifications_active_rounded,
-                  size: 18,
-                  color: Colors.white,
-                ),
-              ),
-              title: const Text(
-                'Preview Flash Coin Sale Drop ⚡',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-              ),
-              subtitle: const Text(
-                'Simulate a live Flash Coin Sale push banner with 1-tap checkout',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  InAppNotificationOverlay.show(
-                    context,
-                    NotificationRepository.defaultFlashSaleNotification,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFB703),
-                  foregroundColor: const Color(0xFF0E1020),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-                child: const Text(
-                  'Trigger ⚡',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-                ),
-              ),
             ),
           ],
         ),
@@ -3312,13 +3268,11 @@ class HostPayoutBankDetailsPage extends StatefulWidget {
 }
 
 class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
-  final _upiController = TextEditingController(text: 'priya.sharma@okaxis');
-  final _accountHolderController = TextEditingController(text: 'Priya Sharma');
-  final _bankNameController = TextEditingController(text: 'HDFC Bank');
-  final _accountNumberController = TextEditingController(
-    text: '•••• •••• 4829',
-  );
-  final _ifscController = TextEditingController(text: 'HDFC0001234');
+  final _upiController = TextEditingController();
+  final _accountHolderController = TextEditingController();
+  final _bankNameController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _ifscController = TextEditingController();
   bool _isEditing = false;
 
   @override
@@ -3882,11 +3836,14 @@ class _HostCallEarningsPreferencesPageState
 }
 
 /// F. Performance Insights Page (Host)
-class HostPerformanceInsightsPage extends StatelessWidget {
+class HostPerformanceInsightsPage extends ConsumerWidget {
   const HostPerformanceInsightsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(hostDashboardStatsProvider);
+    final stats = statsAsync.asData?.value;
+
     return SettingsPageScaffold(
       title: 'Performance Insights',
       subtitle: 'Analytics, caller ratings & duration trends',
@@ -3897,8 +3854,12 @@ class HostPerformanceInsightsPage extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: 'Overall Rating',
-                value: '⭐ 4.9',
-                sub: '142 reviews',
+                value: stats != null && stats.rating > 0
+                    ? '⭐ ${stats.rating.toStringAsFixed(1)}'
+                    : '⭐ 5.0',
+                sub: stats != null
+                    ? '${stats.totalCallsCount} calls'
+                    : '0 reviews',
                 tint: const Color(0xFFFEF3C7),
                 textColor: const Color(0xFFB45309),
               ),
@@ -3907,8 +3868,8 @@ class HostPerformanceInsightsPage extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: 'Total Calls',
-                value: '150+',
-                sub: 'Sessions done',
+                value: stats != null ? '${stats.totalCallsCount}' : '0',
+                sub: 'Sessions completed',
                 tint: const Color(0xFFEDE9FE),
                 textColor: const Color(0xFF6D28D9),
               ),
@@ -3920,9 +3881,9 @@ class HostPerformanceInsightsPage extends StatelessWidget {
           children: [
             Expanded(
               child: _MetricTile(
-                label: 'Profile Views',
-                value: '1,420',
-                sub: 'This month',
+                label: 'Total Earnings',
+                value: stats != null ? '₹${stats.totalEarningsInr}' : '₹0',
+                sub: 'All time earned',
                 tint: const Color(0xFFE0F2FE),
                 textColor: const Color(0xFF0369A1),
               ),
@@ -3931,8 +3892,8 @@ class HostPerformanceInsightsPage extends StatelessWidget {
             Expanded(
               child: _MetricTile(
                 label: 'Avg Duration',
-                value: '11m 45s',
-                sub: 'Per caller',
+                value: stats?.avgDurationFormatted ?? '0m 00s',
+                sub: 'Per caller session',
                 tint: const Color(0xFFECFDF5),
                 textColor: const Color(0xFF047857),
               ),
@@ -4130,7 +4091,7 @@ class _FeedbackBadge extends StatelessWidget {
 
 /// F. Dedicated Full-Screen Host Withdrawal Page
 class HostWithdrawalPage extends ConsumerStatefulWidget {
-  const HostWithdrawalPage({super.key, this.availableAmount = 5240});
+  const HostWithdrawalPage({super.key, this.availableAmount = 0});
 
   final int availableAmount;
 
@@ -4140,7 +4101,7 @@ class HostWithdrawalPage extends ConsumerStatefulWidget {
 
 class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
   final _amountController = TextEditingController();
-  final _upiController = TextEditingController(text: 'priya.sharma@okaxis');
+  final _upiController = TextEditingController();
   int _selectedMethodIndex = 0; // 0: UPI, 1: Bank Account
   bool _isSubmitting = false;
   late final String _idempotencyKey;
@@ -4209,9 +4170,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
       final payoutDetails = _selectedMethodIndex == 0
           ? {'upi_id': _upiController.text.trim()}
           : {
-              'bank_name': 'HDFC Bank',
-              'account_number_masked': '•••• •••• 4829',
-              'ifsc_code': 'HDFC0001234',
+              'method': 'bank_transfer',
             };
 
       final result = await ref
@@ -4471,7 +4430,9 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                     ),
                     subtitle: Text(
-                      _upiController.text,
+                      _upiController.text.isNotEmpty
+                          ? _upiController.text
+                          : 'Enter your UPI VPA',
                       style: const TextStyle(
                         fontSize: 12,
                         color: FriendooUiColors.muted,
@@ -4497,7 +4458,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                     ),
                     subtitle: const Text(
-                      'HDFC Bank •••• 4829',
+                      'Direct Transfer to Linked Bank Account',
                       style: TextStyle(
                         fontSize: 12,
                         color: FriendooUiColors.muted,

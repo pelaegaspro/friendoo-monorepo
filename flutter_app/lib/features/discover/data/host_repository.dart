@@ -54,9 +54,13 @@ class HostRepository {
       final rows = await _client
           .from('hosts')
           .select(
-            'id, bio, rate_per_audio_minute, is_available, gender, languages, profiles:profiles(display_name, avatar_path)',
+            'id, bio, rate_per_audio_minute, is_available, profiles:profiles(display_name, avatar_path)',
           )
-          .eq('is_available', true);
+          .eq('is_available', true)
+          .timeout(
+            const Duration(seconds: 4),
+            onTimeout: () => <Map<String, dynamic>>[],
+          );
 
       final hostRows = rows as List<dynamic>;
       for (final r in hostRows) {
@@ -95,10 +99,14 @@ class HostRepository {
         .toList();
     if (normalized.isEmpty) return;
 
-    await _client
-        .from('hosts')
-        .update({'languages': normalized})
-        .eq('id', userId);
+    if (activeProfile?.isHost != true) {
+      throw StateError('Only approved hosts can update host languages.');
+    }
+
+    await _client.rpc(
+      'update_own_host_languages',
+      params: {'p_languages': normalized},
+    );
   }
 
   Future<HostDashboardStats> fetchHostDashboardStats() async {
@@ -116,12 +124,13 @@ class HostRepository {
     try {
       final hostRow = await _client
           .from('hosts')
-          .select('rate_per_audio_minute, is_available')
+          .select('rate_per_audio_minute, is_available, rating')
           .eq('id', userId)
           .maybeSingle();
 
       final isOnline = (hostRow?['is_available'] as bool?) ?? false;
       final rate = (hostRow?['rate_per_audio_minute'] as num?)?.toInt() ?? 5;
+      final hostRating = (hostRow?['rating'] as num?)?.toDouble() ?? 5.0;
 
       final now = DateTime.now().toUtc();
       final startOfDay = DateTime.utc(now.year, now.month, now.day);
@@ -130,7 +139,9 @@ class HostRepository {
 
       final calls = await _client
           .from('calls')
-          .select('total_coins_deducted, created_at, status')
+          .select(
+            'total_coins_deducted, created_at, status, started_at, ended_at',
+          )
           .eq('host_id', userId)
           .eq('status', 'ended');
 
@@ -139,6 +150,7 @@ class HostRepository {
       var weekCoins = 0;
       var monthCoins = 0;
       var totalCoins = 0;
+      var totalDurationSeconds = 0;
       final totalCallsList = (calls as List<dynamic>);
       final totalCallsCount = totalCallsList.length;
 
@@ -147,6 +159,16 @@ class HostRepository {
         final createdAt =
             DateTime.tryParse(c['created_at']?.toString() ?? '') ?? now;
         totalCoins += coins;
+
+        final startedAt = DateTime.tryParse(c['started_at']?.toString() ?? '');
+        final endedAt = DateTime.tryParse(c['ended_at']?.toString() ?? '');
+        if (startedAt != null &&
+            endedAt != null &&
+            endedAt.isAfter(startedAt)) {
+          totalDurationSeconds += endedAt.difference(startedAt).inSeconds;
+        } else if (coins > 0 && rate > 0) {
+          totalDurationSeconds += ((coins / rate) * 60).round();
+        }
 
         if (createdAt.isAfter(startOfDay)) {
           todayCoins += coins;
@@ -165,6 +187,14 @@ class HostRepository {
       final thisWeekEarningsInr = (weekCoins * 0.6).round();
       final thisMonthEarningsInr = (monthCoins * 0.6).round();
 
+      String avgDurationFormatted = '0m 00s';
+      if (totalCallsCount > 0 && totalDurationSeconds > 0) {
+        final avgSecs = (totalDurationSeconds / totalCallsCount).round();
+        final mins = avgSecs ~/ 60;
+        final secs = avgSecs % 60;
+        avgDurationFormatted = '${mins}m ${secs.toString().padLeft(2, '0')}s';
+      }
+
       return HostDashboardStats(
         todayEarningsInr: todayEarningsInr,
         todayCallsCount: todayCount,
@@ -178,6 +208,8 @@ class HostRepository {
         voiceCallsEarningsInr: totalEarningsInr,
         bonusesEarningsInr: 0,
         referralsEarningsInr: 0,
+        avgDurationFormatted: avgDurationFormatted,
+        rating: hostRating,
       );
     } catch (_) {
       return const HostDashboardStats(
@@ -230,15 +262,11 @@ class HostRepository {
     final userId = activeProfile?.id ?? _client.auth.currentUser?.id;
     if (userId == null || userId.isEmpty) return;
 
-    final nowIso = DateTime.now().toUtc().toIso8601String();
-
     try {
-      await _client.from('hosts').upsert({
-        'id': userId,
-        'is_available': isAvailable,
-        'rate_per_audio_minute': 5,
-        'updated_at': nowIso,
-      }, onConflict: 'id');
+      await _client.rpc(
+        'set_own_host_availability',
+        params: {'p_is_available': isAvailable},
+      );
     } catch (_) {}
   }
 }
