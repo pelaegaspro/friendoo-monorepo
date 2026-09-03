@@ -3,7 +3,7 @@ import { requireAdminApi } from '@/lib/admin/guard'
 import { setUserBanState } from '@/lib/admin/data'
 
 export async function POST(request: Request) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

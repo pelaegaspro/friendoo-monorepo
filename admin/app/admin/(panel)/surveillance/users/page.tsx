@@ -4,7 +4,26 @@ import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import { format } from "date-fns";
 import { Eye, User, Clock, Smartphone } from "lucide-react";
 
-async function getBehaviorLogs() {
+interface BehaviorLog {
+  id: string
+  userId: string | null
+  sessionId: string | null
+  eventType: string
+  metadata: { targetId: string | null; screen: string | null; button: string | null }
+  deviceInfo: { model: string | null }
+  timestamp: Date | null
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+async function getBehaviorLogs(): Promise<BehaviorLog[]> {
+
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -15,46 +34,27 @@ async function getBehaviorLogs() {
 
     if (error) throw error;
 
-    return (data ?? []).map((doc) => ({
-      id: doc.id,
-      userId: doc.actor_id || doc.resource_id,
-      sessionId: doc.request_id || doc.id,
-      eventType: doc.action || 'system_event',
-      metadata: { targetId: doc.resource_id, screen: doc.resource_type },
-      deviceInfo: { model: 'Mobile App / WebRTC' },
-      timestamp: doc.created_at ? new Date(doc.created_at) : new Date(),
-    }));
-  } catch (error) {
-    console.warn('getBehaviorLogs fallback:', error);
-    return [
-      {
-        id: 'log-1',
-        userId: 'u_101_848281',
-        sessionId: 'sess_99a8b7',
-        eventType: 'call_initiated',
-        metadata: { screen: 'CallScreen', targetId: 'host_ananya_01' },
-        deviceInfo: { model: 'iPhone 15 Pro' },
-        timestamp: new Date(),
-      },
-      {
-        id: 'log-2',
-        userId: 'u_102_449102',
-        sessionId: 'sess_33b4c5',
-        eventType: 'wallet_topup_completed',
-        metadata: { screen: 'CoinStore', targetId: 'pack_1000' },
-        deviceInfo: { model: 'Samsung Galaxy S24' },
-        timestamp: new Date(Date.now() - 180000),
-      },
-      {
-        id: 'log-3',
-        userId: 'u_103_558190',
-        sessionId: 'sess_11c2d3',
-        eventType: 'host_profile_viewed',
-        metadata: { screen: 'HostDetailSheet', targetId: 'host_pooja_02' },
-        deviceInfo: { model: 'OnePlus 12' },
-        timestamp: new Date(Date.now() - 360000),
-      },
-    ];
+        return (data ?? []).map((doc): BehaviorLog => {
+      const metadata = asRecord(doc.metadata)
+      return {
+        id: asString(doc.id) ?? '',
+        userId: asString(doc.actor_id) ?? asString(doc.resource_id),
+        sessionId: asString(doc.request_id) ?? asString(doc.id),
+        eventType: asString(doc.action) ?? 'system_event',
+        metadata: {
+          targetId: asString(doc.resource_id),
+          screen: asString(doc.resource_type),
+          button: asString(metadata.button),
+        },
+        deviceInfo: { model: null },
+        timestamp: typeof doc.created_at === 'string' ? new Date(doc.created_at) : null,
+      }
+    }).filter((log) => log.id.length > 0);
+
+    } catch (error) {
+    console.warn('Unable to load behavior logs:', error);
+    return [];
+
   }
 }
 
@@ -84,7 +84,7 @@ export default async function UserSurveillancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242424]">
-              {logs.map((log: any) => (
+              {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -93,9 +93,9 @@ export default async function UserSurveillancePage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-white group-hover:text-purple-400 transition-colors">
-                          {log.userId?.slice(0, 8)}...
+                          {log.userId ? `${log.userId.slice(0, 8)}...` : 'Unknown user'}
                         </p>
-                        <p className="text-[10px] text-zinc-600 font-mono">SID: {log.sessionId?.slice(0, 8)}</p>
+                        <p className="text-[10px] text-zinc-600 font-mono">SID: {log.sessionId?.slice(0, 8) ?? 'N/A'}</p>
                       </div>
                     </div>
                   </td>
@@ -124,7 +124,7 @@ export default async function UserSurveillancePage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-zinc-500">
                       <Smartphone size={12} />
-                      <span className="text-[10px]">{log.deviceInfo?.model || 'Unknown Device'}</span>
+                      <span className="text-[10px]">{log.deviceInfo.model ?? 'Not recorded'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">

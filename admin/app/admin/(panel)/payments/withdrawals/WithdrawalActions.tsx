@@ -4,8 +4,9 @@ import { useState } from "react";
 import { approveWithdrawal, rejectWithdrawal } from "@/lib/actions/payoutActions";
 import { toast } from "react-hot-toast";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import type { WithdrawalRecord } from "@/lib/admin/types";
 
-export function WithdrawalActions({ withdrawal }: { withdrawal: any }) {
+export function WithdrawalActions({ withdrawal }: { withdrawal: WithdrawalRecord }) {
   const [loading, setLoading] = useState(false);
 
   if (withdrawal.status !== "pending") return null;
@@ -21,7 +22,7 @@ export function WithdrawalActions({ withdrawal }: { withdrawal: any }) {
       } else {
         toast.error(res.error || "Failed to process payout");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -40,7 +41,7 @@ export function WithdrawalActions({ withdrawal }: { withdrawal: any }) {
       } else {
         toast.error(res.error || "Failed to reject request");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);

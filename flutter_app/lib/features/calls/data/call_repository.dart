@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -117,8 +118,11 @@ class CallRepository {
       return AgoraJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (_) {
-      throw Exception('Unable to obtain secure audio credentials.');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('getAgoraCredentials invocation failed: $e\n$st');
+      }
+      throw Exception('Unable to obtain secure audio credentials: $e');
     }
   }
 
@@ -131,8 +135,11 @@ class CallRepository {
       return VideoSdkJoinCredentials.fromMap(
         response.data as Map<String, dynamic>,
       );
-    } catch (_) {
-      throw Exception('Unable to obtain secure audio credentials.');
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('getVideoSdkCredentials invocation failed: $e\n$st');
+      }
+      throw Exception('Unable to obtain secure audio credentials: $e');
     }
   }
 
@@ -275,24 +282,82 @@ class CallRepository {
     if (userId == null) return const <CallHistoryItem>[];
 
     try {
-      final rows = await _client
-          .from('calls')
-          .select(
-            'id, caller_id, host_id, call_type, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at, host:hosts(display_name:profiles!id(display_name)), caller:profiles!caller_id(display_name)',
-          )
-          .or('caller_id.eq.$userId,host_id.eq.$userId')
-          .order('created_at', ascending: false)
-          .limit(50);
+      dynamic rows;
+      try {
+        rows = await _client
+            .from('calls')
+            .select(
+              'id, caller_id, host_id, call_type, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at, host:hosts(profiles(display_name, avatar_path)), caller:profiles!caller_id(display_name, avatar_path)',
+            )
+            .or('caller_id.eq.$userId,host_id.eq.$userId')
+            .order('created_at', ascending: false)
+            .limit(50);
+      } catch (e1) {
+        if (kDebugMode) {
+          debugPrint('fetchCallHistory primary query notice: $e1. Using robust fallback.');
+        }
+        rows = await _client
+            .from('calls')
+            .select(
+              'id, caller_id, host_id, call_type, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at, caller:profiles!caller_id(display_name, avatar_path)',
+            )
+            .or('caller_id.eq.$userId,host_id.eq.$userId')
+            .order('created_at', ascending: false)
+            .limit(50);
+      }
 
-      return (rows as List<dynamic>)
-          .map(
-            (row) => CallHistoryItem.fromMap(
-              row as Map<String, dynamic>,
+      final list = rows as List<dynamic>;
+
+      // If user is caller, ensure host names are resolved even if nested join is null
+      final missingHostIds = <String>{};
+      for (final r in list) {
+        if (r is Map<String, dynamic>) {
+          final cId = r['caller_id']?.toString();
+          final hId = r['host_id']?.toString();
+          if (cId == userId && hId != null && hId.isNotEmpty) {
+            final hostData = r['host'];
+            if (hostData == null ||
+                (hostData is Map &&
+                    hostData['profiles'] == null &&
+                    hostData['display_name'] == null)) {
+              missingHostIds.add(hId);
+            }
+          }
+        }
+      }
+
+      final Map<String, Map<String, dynamic>> hostProfilesMap = {};
+      if (missingHostIds.isNotEmpty) {
+        try {
+          final hostProfileRows = await _client
+              .from('profiles')
+              .select('id, display_name, avatar_path')
+              .filter('id', 'in', missingHostIds.toList());
+          for (final hp in hostProfileRows as List<dynamic>) {
+            if (hp is Map<String, dynamic>) {
+              hostProfilesMap[hp['id'].toString()] = hp;
+            }
+          }
+        } catch (_) {}
+      }
+
+      return list
+          .map((row) {
+            final rowMap = Map<String, dynamic>.from(row as Map<String, dynamic>);
+            final hId = rowMap['host_id']?.toString();
+            if (hId != null && hostProfilesMap.containsKey(hId)) {
+              rowMap['host_profile_fallback'] = hostProfilesMap[hId];
+            }
+            return CallHistoryItem.fromMap(
+              rowMap,
               currentUserId: userId,
-            ),
-          )
+            );
+          })
           .toList();
-    } catch (_) {
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('fetchCallHistory unexpected error: $e\n$st');
+      }
       return const <CallHistoryItem>[];
     }
   }

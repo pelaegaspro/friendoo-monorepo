@@ -4,9 +4,10 @@ import { deleteHost, updateHost } from '@/lib/admin/data'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { hostId: string } }
+  { params }: { params: Promise<{ hostId: string }> }
 ) {
-  const unauthorized = requireAdminApi()
+  const { hostId } = await params;
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -19,7 +20,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Missing action' }, { status: 400 })
     }
 
-    await updateHost(params.hostId, {
+    await updateHost(hostId, {
       action: body.action,
       updates: body.updates as never,
     })
@@ -32,13 +33,14 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { hostId: string } }
+  { params }: { params: Promise<{ hostId: string }> }
 ) {
-  const unauthorized = requireAdminApi()
+  const { hostId } = await params;
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
-    await deleteHost(params.hostId)
+    await deleteHost(hostId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 400 })

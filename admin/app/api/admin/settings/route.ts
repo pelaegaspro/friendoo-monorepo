@@ -3,7 +3,7 @@ import { requireAdminApi } from '@/lib/admin/guard'
 import { getAppSettings, saveAppSettings } from '@/lib/admin/data'
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

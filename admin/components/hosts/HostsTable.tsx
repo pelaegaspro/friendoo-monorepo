@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Host } from '@/types'
 import Badge from '@/components/ui/Badge'
@@ -127,10 +128,13 @@ export default function HostsTable({ hosts, onAction, initialFilter }: HostsTabl
                   {/* Avatar + Name */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 64) : host.photoURL || getAvatarUrl(host.uid, 64)}
                         alt={host.name}
-                        className="w-8 h-8 rounded-full object-cover"
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="h-8 w-8 rounded-full object-cover"
                       />
                       <span className="text-white font-medium">{host.name}</span>
                     </div>

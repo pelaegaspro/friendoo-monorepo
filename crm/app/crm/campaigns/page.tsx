@@ -33,7 +33,7 @@ export default function CampaignsPage() {
   }, []);
 
   useEffect(() => {
-    loadCampaigns();
+    void Promise.resolve().then(loadCampaigns);
   }, [loadCampaigns]);
 
   return (

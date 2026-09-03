@@ -33,7 +33,7 @@ export default function FunnelPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   const enriched = useMemo(() => {

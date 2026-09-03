@@ -46,7 +46,7 @@ export default function FraudPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   const runAction = async (alertId: string, action: string) => {

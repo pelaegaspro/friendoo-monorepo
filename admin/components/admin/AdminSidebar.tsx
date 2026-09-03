@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Users, UserRound, Coins,
   ReceiptText, Phone, Settings, Menu, Bell,
   ShieldAlert, CreditCard, Eye, AlertCircle,
-  Search, LogOut, Activity, Sparkles
+    Search, LogOut, Sparkles
+
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminFetch } from '@/lib/admin/client'

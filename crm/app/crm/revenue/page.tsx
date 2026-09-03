@@ -120,7 +120,7 @@ export default function RevenuePage() {
   }, []);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   if (loading || !data) {

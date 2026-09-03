@@ -3,7 +3,7 @@ import { requireAdminApi } from '@/lib/admin/guard'
 import { listHostApplications } from '@/lib/admin/data'
 
 export async function GET(request: Request) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

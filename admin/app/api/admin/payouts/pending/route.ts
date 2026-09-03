@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseServer'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

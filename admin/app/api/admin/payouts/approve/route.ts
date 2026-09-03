@@ -5,7 +5,7 @@ import { approveWithdrawal } from '@/lib/actions/payoutActions'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

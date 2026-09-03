@@ -3,16 +3,16 @@
 let client: SupabaseClient | null = null;
 
 /**
- * High-performance Server-only Supabase client with connection timeout and fallback.
+ * Server-only privileged Supabase client. Elevated operations fail closed when the service-role key is absent.
  */
 export function getSupabaseAdmin(): SupabaseClient {
   if (client) return client;
 
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !key || !url.startsWith("http")) {
-    throw new Error('Supabase server configuration is required');
+  if (!url || !key || !url.startsWith("https://")) {
+    throw new Error('Privileged Supabase server configuration is required');
   }
 
   const timeoutFetch: typeof fetch = (input, init) => {
@@ -39,7 +39,11 @@ export function getSupabaseAdmin(): SupabaseClient {
 }
 
 export function getOperationalAdminActorId(): string {
-  return process.env.OPERATIONAL_ADMIN_PROFILE_ID || 'admin-root-operational';
+  const actorId = process.env.OPERATIONAL_ADMIN_PROFILE_ID;
+  if (!actorId) {
+    throw new Error('OPERATIONAL_ADMIN_PROFILE_ID is required for privileged operations');
+  }
+  return actorId;
 }
 
 export async function assertOperationalAdmin(actorId: string): Promise<void> {
@@ -54,7 +58,7 @@ export async function assertOperationalAdmin(actorId: string): Promise<void> {
       .maybeSingle();
 
     if (error) throw error;
-    if (data && (data.is_banned || data.role !== 'admin')) {
+    if (!data || data.is_banned || data.role !== 'admin') {
       throw new Error('ADMIN_ACCESS_REQUIRED');
     }
   } catch (error) {

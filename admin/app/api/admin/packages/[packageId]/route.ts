@@ -4,13 +4,14 @@ import { deletePackage } from '@/lib/admin/data'
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { packageId: string } }
+  { params }: { params: Promise<{ packageId: string }> }
 ) {
-  const unauthorized = requireAdminApi()
+  const { packageId } = await params;
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
-    await deletePackage(params.packageId)
+    await deletePackage(packageId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 400 })

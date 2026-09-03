@@ -36,7 +36,11 @@ assets/.env.local
 flutter_app/assets/.env
 flutter_app/assets/.env.local
 
-# Binaries
+# Binaries & Caches
 *.apk
 *.aab
 *.zip
+.gradle/
+**/Friendoo/.gradle/
+*.tsbuildinfo
+*.build-output.txt

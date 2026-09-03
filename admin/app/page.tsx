@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
-  PhoneCall, 
+   
   ShieldCheck, 
   Languages, 
   Sparkles, 
@@ -67,7 +67,7 @@ export default function LandingPage() {
           <div className="space-y-8 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              India's Premier 1-on-1 Voice & Video Social App
+              India&apos;s Premier 1-on-1 Voice & Video Social App
             </div>
 
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.15]">
@@ -291,7 +291,7 @@ export default function LandingPage() {
               />
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed max-w-sm">
-              Friendoo is India's leading voice and video communication platform, providing safe, anonymous, and culturally resonant 1-on-1 audio conversations.
+              Friendoo is India&apos;s leading voice and video communication platform, providing safe, anonymous, and culturally resonant 1-on-1 audio conversations.
             </p>
             <div className="text-xs text-zinc-600">
               Registered MSME Service Enterprise | DPDPA 2023 Compliant

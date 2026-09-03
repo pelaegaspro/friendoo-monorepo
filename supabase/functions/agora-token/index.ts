@@ -53,16 +53,17 @@ Deno.serve(async (request) => {
 
     const uid = user.id.replaceAll('-', '').slice(0, 8);
     const numericUid = Number.parseInt(uid, 16) >>> 0;
+    const tokenDurationSeconds = 3600;
     const now = Math.floor(Date.now() / 1000);
-    const expiresAt = now + 60 * 60;
+    const expiresAt = now + tokenDurationSeconds;
     const token = RtcTokenBuilder.buildTokenWithUid(
       appId,
       appCertificate,
       call.rtc_channel,
       numericUid,
       RtcRole.PUBLISHER,
-      expiresAt,
-      expiresAt,
+      tokenDurationSeconds,
+      tokenDurationSeconds,
     );
 
     return json({

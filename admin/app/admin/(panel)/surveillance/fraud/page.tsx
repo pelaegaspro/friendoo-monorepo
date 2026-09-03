@@ -4,7 +4,22 @@ import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import { format } from "date-fns";
 import { AlertCircle, ShieldAlert, Fingerprint, MapPin, Repeat, Ban } from "lucide-react";
 
-async function getFraudAlerts() {
+type FraudSeverity = 'low' | 'medium' | 'high' | 'urgent'
+
+interface FraudAlert {
+  id: string
+  type: string
+  title: string
+  severity: FraudSeverity
+  description: string
+  primaryUserId: string | null
+  ipAddress: string | null
+  deviceFingerprint: string | null
+  timestamp: Date | null
+}
+
+async function getFraudAlerts(): Promise<FraudAlert[]> {
+
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -15,43 +30,26 @@ async function getFraudAlerts() {
 
     if (error) throw error;
 
-    return (data ?? []).map((doc) => ({
-      id: doc.id,
-      type: doc.alert_type,
-      title: doc.alert_type?.replace(/_/g, ' '),
-      severity: doc.severity,
-      description: doc.resolution_note || 'Multi-account or transaction anomaly detected',
-      primaryUserId: doc.user_id,
-      ipAddress: '103.21.144.12',
-      deviceFingerprint: doc.id,
-      timestamp: doc.created_at ? new Date(doc.created_at) : new Date(),
-    }));
-  } catch (error) {
-    console.warn('getFraudAlerts fallback:', error);
-    return [
-      {
-        id: 'fa-1',
-        type: 'multi_account',
-        title: 'Multi Account Duplicate Device',
-        severity: 'high',
-        description: 'Device fingerprint shared across 3 distinct host applicant profiles within 10 minutes.',
-        primaryUserId: 'u_101_848281',
-        ipAddress: '103.45.12.89 (Airtel Broadband, Delhi)',
-        deviceFingerprint: 'fp_99a8b7c6d5e4',
-        timestamp: new Date(),
-      },
-      {
-        id: 'fa-2',
-        type: 'ip_share',
-        title: 'Rapid Location Jumping',
-        severity: 'medium',
-        description: 'Session IP changed from Mumbai to Singapore during active high-value coin transaction.',
-        primaryUserId: 'u_102_449102',
-        ipAddress: '118.189.201.44 (Singtel, SG)',
-        deviceFingerprint: 'fp_33b4c5d6e7f8',
-        timestamp: new Date(Date.now() - 3600000),
-      },
-    ];
+        return (data ?? []).map((doc): FraudAlert => ({
+      id: typeof doc.id === 'string' ? doc.id : '',
+      type: typeof doc.alert_type === 'string' ? doc.alert_type : 'unknown',
+      title: typeof doc.alert_type === 'string' ? doc.alert_type.replace(/_/g, ' ') : 'Unknown alert',
+      severity: doc.severity === 'low' || doc.severity === 'medium' || doc.severity === 'high' || doc.severity === 'urgent'
+        ? doc.severity
+        : 'low',
+      description: typeof doc.resolution_note === 'string' && doc.resolution_note
+        ? doc.resolution_note
+        : 'Multi-account or transaction anomaly detected',
+      primaryUserId: typeof doc.user_id === 'string' ? doc.user_id : null,
+      ipAddress: null,
+      deviceFingerprint: null,
+      timestamp: typeof doc.created_at === 'string' ? new Date(doc.created_at) : null,
+    })).filter((alert) => alert.id.length > 0);
+
+    } catch (error) {
+    console.warn('Unable to load fraud alerts:', error);
+    return [];
+
   }
 }
 
@@ -78,7 +76,8 @@ export default async function FraudSurveillancePage() {
             <p className="text-sm">The system is running clean.</p>
           </div>
         ) : (
-          alerts.map((alert: any) => (
+                    alerts.map((alert) => (
+
             <div key={alert.id} className="bg-[#181818] border border-red-900/30 rounded-2xl p-6 shadow-xl flex items-start gap-6 group relative">
               <div className={`p-4 rounded-xl ${
                 alert.severity === 'high' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
@@ -105,7 +104,7 @@ export default async function FraudSurveillancePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Primary UID</p>
-                        <p className="text-xs font-mono text-zinc-300">{alert.primaryUserId?.slice(0, 12)}</p>
+                        <p className="text-xs font-mono text-zinc-300">{alert.primaryUserId?.slice(0, 12) ?? 'Not recorded'}</p>
                     </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Conflict IP</p>
@@ -113,7 +112,7 @@ export default async function FraudSurveillancePage() {
                     </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Fingerprint</p>
-                        <p className="text-xs font-mono text-zinc-300 truncate">{alert.deviceFingerprint?.slice(0, 8)}...</p>
+                        <p className="text-xs font-mono text-zinc-300 truncate">{alert.deviceFingerprint ? `${alert.deviceFingerprint.slice(0, 8)}...` : 'Not recorded'}</p>
                     </div>
                     <div className="bg-black/20 p-3 rounded-lg border border-white/5">
                         <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Timestamp</p>

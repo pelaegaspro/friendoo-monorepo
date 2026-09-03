@@ -8,7 +8,7 @@ import { CRM_SESSION_COOKIE, createCrmSessionValue } from '@/lib/admin/crm-sessi
  * Protected by admin session — only logged-in admins can set this.
  */
 export async function POST() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   const response = NextResponse.json({ ok: true })

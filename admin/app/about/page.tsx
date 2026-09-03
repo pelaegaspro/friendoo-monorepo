@@ -1,5 +1,5 @@
 ﻿import Link from 'next/link';
-import { ArrowLeft, Sparkles, ShieldCheck, Users, Globe2, Heart } from 'lucide-react';
+import { ArrowLeft, Sparkles, ShieldCheck, Globe2, Heart } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -36,7 +36,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-lg font-bold text-white">Cultural Diversity</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Celebrating India's linguistic richness with support for Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, and Punjabi.
+                Celebrating India&apos;s linguistic richness with support for Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Bengali, and Punjabi.
               </p>
             </div>
 

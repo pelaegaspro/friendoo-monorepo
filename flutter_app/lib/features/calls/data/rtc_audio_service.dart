@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -12,10 +14,22 @@ enum RtcProviderType {
   agora,
 }
 
-/// Abstract contract for pluggable RTC Audio Providers
+/// Normalized RTC Connection States across all audio providers
+enum RtcConnectionState {
+  connecting,
+  connected,
+  reconnecting,
+  disconnected,
+  failed,
+}
+
+/// Abstract contract for pluggable RTC Audio Providers with carrier handover resilience
 abstract class RtcAudioService {
   bool get isMuted;
   bool get isSpeaker;
+  RtcConnectionState get connectionState;
+  Stream<RtcConnectionState> get connectionStateStream;
+  void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested);
 
   Future<void> join({
     required String appIdOrToken,
@@ -34,19 +48,34 @@ abstract class RtcAudioService {
   Future<void> dispose();
 }
 
-/// Active RTC Provider Selector (Default: VideoSDK with Agora fallback)
+/// Active RTC Provider Selector (Default: Agora RTC with production tokens)
 final rtcProviderTypeProvider = StateProvider<RtcProviderType>(
-  (ref) => RtcProviderType.videosdk,
+  (ref) => RtcProviderType.agora,
 );
+
+final agoraAudioServiceProvider = Provider<AgoraAudioService>((ref) {
+  final service = AgoraAudioService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final videoSdkAudioServiceProvider = Provider<VideoSdkAudioService>((ref) {
+  final service = VideoSdkAudioService();
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 /// Pluggable RTC Audio Service Provider
 final rtcAudioServiceProvider = Provider<RtcAudioService>((ref) {
   final providerType = ref.watch(rtcProviderTypeProvider);
-  final RtcAudioService service = switch (providerType) {
-    RtcProviderType.videosdk => VideoSdkAudioService(),
-    RtcProviderType.agora => AgoraAudioService(),
+  return switch (providerType) {
+    RtcProviderType.agora => ref.watch(agoraAudioServiceProvider),
+    RtcProviderType.videosdk => ref.watch(videoSdkAudioServiceProvider),
   };
+});
 
-  ref.onDispose(service.dispose);
-  return service;
+/// Real-time stream of current RTC transport connection state
+final rtcConnectionStateProvider = StreamProvider<RtcConnectionState>((ref) {
+  final service = ref.watch(rtcAudioServiceProvider);
+  return service.connectionStateStream;
 });

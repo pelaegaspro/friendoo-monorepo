@@ -21,7 +21,7 @@ function getLast14Days() {
 }
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   const data = await getCachedOrFetch('admin:dashboard:charts', async () => {

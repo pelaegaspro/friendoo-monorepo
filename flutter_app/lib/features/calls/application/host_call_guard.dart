@@ -177,7 +177,7 @@ class BackgroundAvailabilityChecker {
         if (dbAvailable != guard.isOnline) {
           await client.rpc(
             'set_own_host_availability',
-            params: {'p_is_available': guard.isOnline},
+            params: {'p_is_available': guard.isOnline, 'p_host_id': userId},
           );
         }
       }

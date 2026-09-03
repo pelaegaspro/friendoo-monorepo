@@ -3,7 +3,7 @@ import { requireAdminApi } from '@/lib/admin/guard'
 import { listBannerAds } from '@/lib/admin/data'
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

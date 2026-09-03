@@ -163,7 +163,7 @@ export default function CrmDashboardPage() {
   };
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
     const timer = setInterval(load, 15000);
     return () => clearInterval(timer);
   }, [load]);

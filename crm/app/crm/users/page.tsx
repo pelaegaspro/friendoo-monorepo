@@ -81,7 +81,7 @@ export default function UsersPage() {
   }, [activeCustom, selectedSegment]);
 
   useEffect(() => {
-    loadUsers();
+    void Promise.resolve().then(loadUsers);
   }, [loadUsers]);
 
   const tabs = useMemo(

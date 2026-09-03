@@ -3,6 +3,10 @@ import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { Activity, PhoneCall, Radio, Server, Zap } from "lucide-react";
 import { KPICard } from "@/components/crm/KPICard";
 
+export const dynamic = "force-dynamic";
+
+
+
 interface CallLog {
   id: string;
   callerUid: string;
@@ -28,7 +32,7 @@ async function getCallLogs(): Promise<CallLog[]> {
       callerUid: row.caller_id,
       callId: row.id,
       channelName: row.rtc_channel || "rtc_default",
-      latencyMs: 140 + Math.floor(Math.random() * 60),
+      
       createdAt: row.created_at ? new Date(row.created_at) : null,
     }));
   } catch (error) {
@@ -39,16 +43,15 @@ async function getCallLogs(): Promise<CallLog[]> {
 
 export default async function CallLogsPage() {
   const logs = await getCallLogs();
-  const avgLatency = logs.length
-    ? Math.round(
-        logs.reduce((acc, curr) => acc + (curr.latencyMs || 180), 0) / logs.length
-      )
-    : 165;
-  const nominalRatio = logs.length
-    ? Math.round(
-        (logs.filter((l) => (l.latencyMs || 180) < 300).length / logs.length) * 100
-      )
-    : 100;
+  const measuredLatencies = logs
+    .map((log) => log.latencyMs)
+    .filter((latency): latency is number => typeof latency === "number");
+  const avgLatency = measuredLatencies.length
+    ? Math.round(measuredLatencies.reduce((total, latency) => total + latency, 0) / measuredLatencies.length)
+    : null;
+  const nominalRatio = measuredLatencies.length
+    ? Math.round((measuredLatencies.filter((latency) => latency < 300).length / measuredLatencies.length) * 100)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -74,19 +77,23 @@ export default async function CallLogsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Signaling Latency"
-          value={`${avgLatency}ms`}
+                    value={avgLatency === null ? "—" : `${avgLatency}ms`}
+
           icon={Activity}
           variant="spotlight"
           badge="APAC Gateway"
-          footer="Average token handshake"
+                    footer="Available when signaling telemetry is recorded"
+
         />
         <KPICard
           title="Handshake Success"
-          value={`${nominalRatio}%`}
+                    value={nominalRatio === null ? "—" : `${nominalRatio}%`}
+
           icon={Zap}
           variant="emerald"
           badge="Nominal"
-          footer="Under 300ms SLA target"
+                    footer="Requires measured signaling latency"
+
         />
         <KPICard
           title="Recent Dispatches"
@@ -146,7 +153,8 @@ export default async function CallLogsPage() {
                     <TableCell className="font-mono text-muted-foreground truncate max-w-[140px]">{log.callerUid}</TableCell>
                     <TableCell className="font-mono text-cyan-300">{log.channelName}</TableCell>
                     <TableCell>
-                      {log.latencyMs ? (
+                                            {typeof log.latencyMs === "number" ? (
+
                         <span
                           className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold ${
                             log.latencyMs < 300
@@ -157,7 +165,8 @@ export default async function CallLogsPage() {
                           {log.latencyMs}ms
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">165ms</span>
+                                                <span className="text-muted-foreground">Not instrumented</span>
+
                       )}
                     </TableCell>
                     <TableCell className="text-right font-mono text-muted-foreground">

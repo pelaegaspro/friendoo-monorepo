@@ -55,7 +55,7 @@ export default function CallsAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const filteredCalls = useMemo(

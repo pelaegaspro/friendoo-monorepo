@@ -47,6 +47,54 @@ function toIsoString(val: unknown): string | null {
   return null
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+const bannerCampaignTypes = ['user_offer', 'host_incentive', 'flash_package', 'sponsor_ad'] as const
+const bannerTargetAudiences = ['all', 'users', 'hosts', 'new_users', 'priority_users'] as const
+const bannerActionTypes = ['recharge', 'link', 'none'] as const
+const bannerPlacements = ['user_top_banner', 'host_top_banner', 'account_settings', 'pop_up_modal', 'all'] as const
+
+function allowedValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' ? allowed.find(option => option === value) ?? fallback : fallback
+}
+
+function normalizeBannerAd(value: unknown): BannerAdRecord {
+  const ad = asRecord(value)
+  const gradientColors = Array.isArray(ad.gradient_colors)
+    ? ad.gradient_colors.filter((color): color is string => typeof color === 'string')
+    : []
+
+  return {
+    id: asString(ad.id),
+    title: asString(ad.title),
+    campaignType: allowedValue(ad.campaign_type, bannerCampaignTypes, 'user_offer'),
+    targetAudience: allowedValue(ad.target_audience, bannerTargetAudiences, 'all'),
+    badgeText: asString(ad.badge_text, 'SPECIAL OFFER'),
+    headline: asString(ad.headline),
+    subtitle: asString(ad.subtitle),
+    imageUrl: ad.image_url ? asString(ad.image_url) : null,
+    gradientColors: gradientColors.length ? gradientColors : ['#4F46E5', '#7C3AED', '#DB2777'],
+    actionType: allowedValue(ad.action_type, bannerActionTypes, 'recharge'),
+    actionUrl: ad.action_url ? asString(ad.action_url) : null,
+    placement: allowedValue(ad.placement, bannerPlacements, 'user_top_banner'),
+    promoCoins: ad.promo_coins !== null && ad.promo_coins !== undefined ? asNumber(ad.promo_coins) : null,
+    promoPriceInr: ad.promo_price_inr !== null && ad.promo_price_inr !== undefined ? asNumber(ad.promo_price_inr) : null,
+    originalPriceInr: ad.original_price_inr !== null && ad.original_price_inr !== undefined ? asNumber(ad.original_price_inr) : null,
+    promoBonusLabel: ad.promo_bonus_label ? asString(ad.promo_bonus_label) : null,
+    showAsPopup: asBoolean(ad.show_as_popup, false),
+    isActive: asBoolean(ad.is_active, true),
+    priority: asNumber(ad.priority, 0),
+    clickCount: asNumber(ad.click_count, 0),
+    impressionCount: asNumber(ad.impression_count, 0),
+    createdAt: toIsoString(ad.created_at),
+    updatedAt: toIsoString(ad.updated_at),
+  }
+}
+
+
+
 function sortByNewest<T extends { createdAt?: string | null }>(items: T[]): T[] {
   return items.sort((a, b) => {
     const at = a.createdAt ? new Date(a.createdAt).getTime() : 0
@@ -732,31 +780,8 @@ export async function listBannerAds(): Promise<BannerAdRecord[]> {
       if (error) throw error
       if (!data) return []
 
-      return data.map((ad: any) => ({
-        id: asString(ad.id),
-        title: asString(ad.title),
-        campaignType: (ad.campaign_type || 'user_offer') as any,
-        targetAudience: (ad.target_audience || 'all') as any,
-        badgeText: asString(ad.badge_text, 'SPECIAL OFFER'),
-        headline: asString(ad.headline),
-        subtitle: asString(ad.subtitle),
-        imageUrl: ad.image_url ? asString(ad.image_url) : null,
-        gradientColors: Array.isArray(ad.gradient_colors) ? ad.gradient_colors : ['#4F46E5', '#7C3AED', '#DB2777'],
-        actionType: (ad.action_type || 'recharge') as 'recharge' | 'link' | 'none',
-        actionUrl: ad.action_url ? asString(ad.action_url) : null,
-        placement: (ad.placement || 'user_top_banner') as any,
-        promoCoins: ad.promo_coins !== null && ad.promo_coins !== undefined ? asNumber(ad.promo_coins) : null,
-        promoPriceInr: ad.promo_price_inr !== null && ad.promo_price_inr !== undefined ? asNumber(ad.promo_price_inr) : null,
-        originalPriceInr: ad.original_price_inr !== null && ad.original_price_inr !== undefined ? asNumber(ad.original_price_inr) : null,
-        promoBonusLabel: ad.promo_bonus_label ? asString(ad.promo_bonus_label) : null,
-        showAsPopup: asBoolean(ad.show_as_popup, false),
-        isActive: asBoolean(ad.is_active, true),
-        priority: asNumber(ad.priority, 0),
-        clickCount: asNumber(ad.click_count, 0),
-        impressionCount: asNumber(ad.impression_count, 0),
-        createdAt: toIsoString(ad.created_at),
-        updatedAt: toIsoString(ad.updated_at),
-      }))
+            return data.map(normalizeBannerAd)
+
     } catch (error) {
       console.warn('listBannerAds fallback:', error)
       return [
@@ -845,7 +870,7 @@ export async function upsertBannerAd(payload: Partial<BannerAdRecord>): Promise<
 
     if (error) throw error
     invalidateCache('admin_banner_ads')
-    return data as any
+    return normalizeBannerAd(data)
   } else {
     const { data, error } = await supabase
       .from('banner_ads')
@@ -855,7 +880,7 @@ export async function upsertBannerAd(payload: Partial<BannerAdRecord>): Promise<
 
     if (error) throw error
     invalidateCache('admin_banner_ads')
-    return data as any
+    return normalizeBannerAd(data)
   }
 }
 

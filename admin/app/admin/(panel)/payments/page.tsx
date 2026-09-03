@@ -1,6 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useMemo } from 'react'
+
 import toast from 'react-hot-toast'
 import { getAvatarUrl } from '@/lib/avatar'
 import { adminFetch } from '@/lib/admin/client'
@@ -11,8 +13,7 @@ import DataState from '@/components/admin/DataState'
 import Badge from '@/components/ui/Badge'
 import { DollarSign, TrendingUp, Users, CreditCard } from 'lucide-react'
 
-// 1 Coin = ₹1 INR | Host salary = ₹3/minute
-const COINS_TO_INR = 1
+
 
 type PayoutModalState = {
   host: PayoutRecord
@@ -66,7 +67,7 @@ export default function PaymentsPage() {
     }
   }
 
-  useEffect(() => { void load() }, [])
+  useEffect(() => { void Promise.resolve().then(() => load()) }, [])
 
   const payouts: PayoutRecord[] = useMemo(() => {
     return pendingPayouts.map(p => {
@@ -167,11 +168,15 @@ export default function PaymentsPage() {
                   <tr key={p.hostId} className="border-b border-[#202020] align-middle hover:bg-white/[0.02]">
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-3">
-                        <img
+                                                <Image
                           src={p.photoURL || getAvatarUrl(p.hostId, 72)}
                           alt={p.hostName}
+                          width={36}
+                          height={36}
+                          unoptimized
                           className="h-9 w-9 rounded-full object-cover"
                         />
+
                         <span className="font-medium text-white">{p.hostName}</span>
                       </div>
                     </td>

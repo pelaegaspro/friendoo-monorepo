@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/data/profile_repository.dart';
+import '../../wallet/data/wallet_repository.dart';
 
 final hostRepositoryProvider = Provider<HostRepository>(
   (ref) => HostRepository(ref.watch(supabaseProvider)),
@@ -15,6 +16,8 @@ final selectedRegionalLanguageProvider = StateProvider<String>(
 ); // Default to Tamil as requested
 
 final hostDashboardStatsProvider = FutureProvider<HostDashboardStats>((ref) {
+  // Watch walletStreamProvider so any incoming wallet credit immediately invalidates and pushes fresh stats
+  ref.watch(walletStreamProvider);
   final repo = ref.watch(hostRepositoryProvider);
   return repo.fetchHostDashboardStats();
 });
@@ -51,18 +54,37 @@ class HostRepository {
   Future<List<HostProfile>> fetchAvailableHosts() async {
     final List<HostProfile> hosts = [];
     try {
-      final rows = await _client
-          .from('hosts')
-          .select(
-            'id, bio, rate_per_audio_minute, is_available, profiles:profiles(display_name, avatar_path)',
-          )
-          .eq('is_available', true)
-          .timeout(
-            const Duration(seconds: 4),
-            onTimeout: () => <Map<String, dynamic>>[],
-          );
+      final results = await Future.wait([
+        _client
+            .from('hosts')
+            .select(
+              'id, bio, rate_per_audio_minute, is_available, profiles:profiles(display_name, avatar_path)',
+            )
+            .eq('is_available', true)
+            .timeout(
+              const Duration(seconds: 4),
+              onTimeout: () => <Map<String, dynamic>>[],
+            ),
+        _client
+            .from('user_presence')
+            .select('user_id, state, last_seen_at')
+            .timeout(
+              const Duration(seconds: 4),
+              onTimeout: () => <Map<String, dynamic>>[],
+            ),
+      ]);
 
-      final hostRows = rows as List<dynamic>;
+      final hostRows = results[0] as List<dynamic>;
+      final presenceRows = results[1] as List<dynamic>;
+
+      final Map<String, Map<String, dynamic>> presenceMap = {};
+      final nowUtc = DateTime.now().toUtc();
+      for (final p in presenceRows) {
+        if (p is Map<String, dynamic> && p['user_id'] is String) {
+          presenceMap[p['user_id'] as String] = p;
+        }
+      }
+
       for (final r in hostRows) {
         final map = Map<String, dynamic>.from(r as Map<String, dynamic>);
         final profiles = map['profiles'];
@@ -76,6 +98,37 @@ class HostRepository {
           map['display_name'] = first['display_name'] ?? 'Host';
           map['avatar_path'] = first['avatar_path'];
         }
+
+        final hostId = map['id'] as String?;
+        final presence = hostId != null ? presenceMap[hostId] : null;
+        final hostConfiguredAvailable = (map['is_available'] as bool?) ?? false;
+
+        bool isCurrentlyOnline = false;
+        bool isCurrentlyBusy = false;
+
+        if (hostConfiguredAvailable && presence != null) {
+          final state = presence['state'] as String?;
+          final lastSeenStr = presence['last_seen_at'] as String?;
+          final lastSeen = lastSeenStr != null
+              ? DateTime.tryParse(lastSeenStr)
+              : null;
+          // Presence heartbeat is written every 6-20 seconds. If older than 45s, host is offline.
+          final isRecent =
+              lastSeen != null &&
+              nowUtc.difference(lastSeen.toUtc()).inSeconds.abs() <= 45;
+
+          if (isRecent) {
+            if (state == 'online') {
+              isCurrentlyOnline = true;
+            } else if (state == 'busy' || state == 'in_call') {
+              isCurrentlyBusy = true;
+            }
+          }
+        }
+
+        map['is_available'] = isCurrentlyOnline;
+        map['is_busy'] = isCurrentlyBusy;
+
         hosts.add(HostProfile.fromMap(map));
       }
     } catch (error, stackTrace) {
@@ -187,6 +240,18 @@ class HostRepository {
       final thisWeekEarningsInr = (weekCoins * 0.6).round();
       final thisMonthEarningsInr = (monthCoins * 0.6).round();
 
+      int liveHostWalletInr = totalEarningsInr;
+      try {
+        final walletRow = await _client
+            .from('wallets')
+            .select('coin_balance')
+            .eq('user_id', userId)
+            .maybeSingle();
+        if (walletRow != null && walletRow['coin_balance'] is num) {
+          liveHostWalletInr = (walletRow['coin_balance'] as num).toInt();
+        }
+      } catch (_) {}
+
       String avgDurationFormatted = '0m 00s';
       if (totalCallsCount > 0 && totalDurationSeconds > 0) {
         final avgSecs = (totalDurationSeconds / totalCallsCount).round();
@@ -195,17 +260,21 @@ class HostRepository {
         avgDurationFormatted = '${mins}m ${secs.toString().padLeft(2, '0')}s';
       }
 
+      final displayEarningsInr = liveHostWalletInr > 0
+          ? liveHostWalletInr
+          : totalEarningsInr;
+
       return HostDashboardStats(
         todayEarningsInr: todayEarningsInr,
         todayCallsCount: todayCount,
         isOnline: isOnline,
         ratePerMinute: rate,
-        totalEarningsInr: totalEarningsInr,
-        availableToWithdrawInr: totalEarningsInr,
+        totalEarningsInr: displayEarningsInr,
+        availableToWithdrawInr: displayEarningsInr,
         thisWeekEarningsInr: thisWeekEarningsInr,
         thisMonthEarningsInr: thisMonthEarningsInr,
         totalCallsCount: totalCallsCount,
-        voiceCallsEarningsInr: totalEarningsInr,
+        voiceCallsEarningsInr: displayEarningsInr,
         bonusesEarningsInr: 0,
         referralsEarningsInr: 0,
         avgDurationFormatted: avgDurationFormatted,
@@ -265,7 +334,7 @@ class HostRepository {
     try {
       await _client.rpc(
         'set_own_host_availability',
-        params: {'p_is_available': isAvailable},
+        params: {'p_is_available': isAvailable, 'p_host_id': userId},
       );
     } catch (_) {}
   }

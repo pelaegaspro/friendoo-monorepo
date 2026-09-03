@@ -4,8 +4,18 @@ import { getSupabaseAdmin, getOperationalAdminActorId } from '@/lib/supabaseServ
 
 export const dynamic = 'force-dynamic'
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback
+}
+
+
+
 export async function POST(req: NextRequest) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -60,7 +70,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -73,15 +83,19 @@ export async function GET() {
 
     if (error) throw error
 
-    const logs = (data ?? []).map((d: any) => ({
-      id: d.id,
-      title: d.title || '',
-      body: d.body || '',
-      target: d.target_audience || 'all',
-      actionType: d.action_type || 'none',
-      sentAt: d.created_at,
-      sentBy: 'admin',
-    }))
+    const rows: unknown[] = Array.isArray(data) ? data : []
+    const logs = rows.map((value) => {
+      const row = asRecord(value)
+      return {
+        id: asString(row.id),
+        title: asString(row.title),
+        body: asString(row.body),
+        target: asString(row.target_audience, 'all'),
+        actionType: asString(row.action_type, 'none'),
+        sentAt: asString(row.created_at),
+        sentBy: 'admin',
+      }
+    })
 
     return NextResponse.json({ logs })
   } catch (error) {

@@ -7,8 +7,22 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-surface-elevated text-foreground border border-border",
+                default: "bg-surface-elevated text-foreground border border-border",
+        neutral: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
         active: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+        approved: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+        suspended: "bg-red-500/20 text-red-300 border border-red-500/30",
+        failed: "bg-red-500/20 text-red-300 border border-red-500/30",
+        captured: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+        cancelled: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
+        open: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+        resolved: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+        investigating: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
+        dismissed: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
+        high: "bg-red-500/20 text-red-300 border border-red-500/30",
+        medium: "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+        low: "bg-blue-500/20 text-blue-300 border border-blue-500/30",
+
         live: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
         online: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
         completed: "bg-purple-500/20 text-purple-300 border border-purple-500/30",
@@ -31,13 +45,14 @@ const badgeVariants = cva(
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
-  label?: React.ReactNode;
-  variant?: any;
+    label?: React.ReactNode;
+
 }
 
 export function Badge({ className, variant = "default", label, children, ...props }: BadgeProps) {
   return (
-    <span className={cn(badgeVariants({ variant: (variant in (badgeVariants as any)) ? variant : (variant as any) }), className)} {...props}>
+        <span className={cn(badgeVariants({ variant }), className)} {...props}>
+
       {label ?? children}
     </span>
   );

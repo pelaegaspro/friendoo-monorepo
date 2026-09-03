@@ -5,7 +5,7 @@ import { getSupabaseAdmin, getOperationalAdminActorId } from '@/lib/supabaseServ
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

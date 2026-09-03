@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CRM_SESSION_COOKIE = "crmSession";
+import { CRM_SESSION_COOKIE, verifySessionValueForEdge } from "./lib/sessionEdge";
 
-export function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith("/crm")) {
     return NextResponse.next();
   }
 
   const session = request.cookies.get(CRM_SESSION_COOKIE)?.value;
-  if (!session) {
+  if (!(await verifySessionValueForEdge(session))) {
     const url = new URL("/login", request.url);
     return NextResponse.redirect(url);
   }

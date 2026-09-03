@@ -3,7 +3,11 @@ import { createHmac } from 'crypto'
 const CRM_SESSION_COOKIE = 'crmSession'
 
 function getCrmSecret(): string {
-  return process.env.CRM_SESSION_SECRET || process.env.ADMIN_PASSWORD || 'friendoo-crm-change-me'
+  const secret = process.env.CRM_SESSION_SECRET?.trim()
+  if (!secret || secret.length < 32) {
+    throw new Error('CRM_SESSION_SECRET is required and must be at least 32 characters')
+  }
+  return secret
 }
 
 function sign(payload: string): string {
@@ -16,8 +20,7 @@ function sign(payload: string): string {
  */
 export function createCrmSessionValue(): string {
   const issuedAt = Date.now().toString()
-  const signature = sign(issuedAt)
-  return `${issuedAt}.${signature}`
+  return `${issuedAt}.${sign(issuedAt)}`
 }
 
 export { CRM_SESSION_COOKIE }

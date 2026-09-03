@@ -1,15 +1,15 @@
-import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export const CRM_SESSION_COOKIE = "crmSession";
 
-// Ephemeral fallback key generated per process startup if no secret is configured in environment
-const EPHEMERAL_KEY = randomBytes(32).toString("hex");
-
 function getSessionSecret(): string {
-  const secret = process.env.CRM_SESSION_SECRET || process.env.ADMIN_PASSWORD;
-  return secret && secret.trim().length > 0 ? secret.trim() : EPHEMERAL_KEY;
+  const secret = process.env.CRM_SESSION_SECRET?.trim();
+  if (!secret || secret.length < 32) {
+    throw new Error("CRM_SESSION_SECRET is required and must be at least 32 characters");
+  }
+  return secret;
 }
 
 function sign(payload: string) {
@@ -23,28 +23,32 @@ export function createSessionValue() {
 }
 
 export function verifySessionValue(value?: string): boolean {
-  if (!value) return false;
+  try {
+    if (!value) return false;
 
-  const parts = value.split(".");
-  if (parts.length !== 2) return false;
+    const parts = value.split(".");
+    if (parts.length !== 2) return false;
 
-  const [issuedAt, signature] = parts;
-  if (!issuedAt || !signature) return false;
+    const [issuedAt, signature] = parts;
+    if (!issuedAt || !signature) return false;
 
-  const issued = Number(issuedAt);
-  if (!Number.isFinite(issued)) return false;
+    const issued = Number(issuedAt);
+    if (!Number.isFinite(issued)) return false;
 
-  // Maximum 12 hours session validity
-  const maxAgeMs = 1000 * 60 * 60 * 12;
-  const now = Date.now();
-  if (now < issued || now - issued > maxAgeMs) return false;
+    // Maximum 12 hours session validity
+    const maxAgeMs = 1000 * 60 * 60 * 12;
+    const now = Date.now();
+    if (now < issued || now - issued > maxAgeMs) return false;
 
-  const expected = sign(issuedAt);
-  const sigBuffer = Buffer.from(signature, "utf8");
-  const expectedBuffer = Buffer.from(expected, "utf8");
-  if (sigBuffer.length !== expectedBuffer.length) return false;
+    const expected = sign(issuedAt);
+    const sigBuffer = Buffer.from(signature, "utf8");
+    const expectedBuffer = Buffer.from(expected, "utf8");
+    if (sigBuffer.length !== expectedBuffer.length) return false;
 
-  return timingSafeEqual(sigBuffer, expectedBuffer);
+    return timingSafeEqual(sigBuffer, expectedBuffer);
+  } catch {
+    return false;
+  }
 }
 
 export function setSessionCookie(response: NextResponse) {
@@ -72,7 +76,8 @@ export function isAuthedRequest(request: NextRequest): boolean {
   return verifySessionValue(session);
 }
 
-export function isAuthedServer(): boolean {
-  const session = cookies().get(CRM_SESSION_COOKIE)?.value;
+export async function isAuthedServer(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const session = cookieStore.get(CRM_SESSION_COOKIE)?.value;
   return verifySessionValue(session);
 }

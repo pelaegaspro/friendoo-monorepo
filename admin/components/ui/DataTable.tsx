@@ -21,6 +21,8 @@ interface DataTableProps<T> {
 export default function DataTable<T>({ data, columns, pageSize = 20 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
 
+  // TanStack Table manages mutable table state internally, so this isolated component opts out of React Compiler memoization.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

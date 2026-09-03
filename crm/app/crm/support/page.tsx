@@ -106,7 +106,7 @@ export default function SupportPage() {
   }, [status]);
 
   useEffect(() => {
-    loadTickets();
+    void Promise.resolve().then(loadTickets);
   }, [loadTickets]);
 
   const displayedTickets = useMemo(() => {

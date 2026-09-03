@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
     }
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void Promise.resolve().then(() => load()) }, [load])
 
   return (
     <div className="space-y-6">

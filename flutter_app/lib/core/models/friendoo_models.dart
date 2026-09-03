@@ -514,18 +514,63 @@ class CallHistoryItem {
     required String currentUserId,
   }) {
     final isCaller = map['caller_id'] == currentUserId;
-    String name = 'User';
+    String name = isCaller ? 'Host' : 'User';
+
     if (isCaller) {
-      if (map['host'] != null) {
-        name = (map['host']['display_name'] as String?)?.isNotEmpty == true
-            ? map['host']['display_name'] as String
-            : 'Host';
+      // 1. Try fallback profile if provided
+      final fallbackProfile = map['host_profile_fallback'];
+      if (fallbackProfile is Map<String, dynamic>) {
+        final fName = fallbackProfile['display_name']?.toString().trim();
+        if (fName != null && fName.isNotEmpty) {
+          name = fName;
+        }
+      }
+
+      // 2. Try map['host']
+      if (name == 'Host') {
+        dynamic hostData = map['host'];
+        if (hostData is List && hostData.isNotEmpty) {
+          hostData = hostData.first;
+        }
+        if (hostData is Map) {
+          // Direct display_name string
+          final dn = hostData['display_name'];
+          if (dn is String && dn.trim().isNotEmpty) {
+            name = dn.trim();
+          } else if (dn is Map) {
+            // Nested display_name map from profiles!id(display_name)
+            final nested = dn['display_name'];
+            if (nested is String && nested.trim().isNotEmpty) {
+              name = nested.trim();
+            }
+          }
+
+          // Nested profiles map
+          final profiles = hostData['profiles'];
+          if (profiles is Map) {
+            final pdn = profiles['display_name'];
+            if (pdn is String && pdn.trim().isNotEmpty) {
+              name = pdn.trim();
+            }
+          } else if (profiles is List && profiles.isNotEmpty && profiles.first is Map) {
+            final first = profiles.first as Map;
+            final pdn = first['display_name'];
+            if (pdn is String && pdn.trim().isNotEmpty) {
+              name = pdn.trim();
+            }
+          }
+        }
       }
     } else {
-      if (map['caller'] != null) {
-        name = (map['caller']['display_name'] as String?)?.isNotEmpty == true
-            ? map['caller']['display_name'] as String
-            : 'User';
+      dynamic callerData = map['caller'];
+      if (callerData is List && callerData.isNotEmpty) {
+        callerData = callerData.first;
+      }
+      if (callerData is Map) {
+        final dn = callerData['display_name'];
+        if (dn is String && dn.trim().isNotEmpty) {
+          name = dn.trim();
+        }
       }
     }
 
@@ -537,7 +582,7 @@ class CallHistoryItem {
     final mins = (durationSecs / 60).ceil().clamp(1, 999);
 
     return CallHistoryItem(
-      id: map['id'] as String,
+      id: map['id']?.toString() ?? '',
       otherPartyName: name,
       callType: map['call_type'] as String? ?? 'audio',
       status: map['status'] as String? ?? 'ended',

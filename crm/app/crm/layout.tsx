@@ -34,8 +34,9 @@ const secondaryNavItems = [
   { href: "/crm/settings", label: "System Config", icon: Settings },
 ];
 
-export default function CrmLayout({ children }: { children: React.ReactNode }) {
-  if (!isAuthedServer()) {
+export default async function CrmLayout({ children }: { children: React.ReactNode }) {
+  if (!(await isAuthedServer())) {
+
     redirect("/login");
   }
 

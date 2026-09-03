@@ -23,8 +23,16 @@ export const corsHeaders = {
 
 export function allowedCorsHeaders(request: Request) {
   const origin = request.headers.get('Origin');
-  if (!origin || !allowedOrigins().has(origin)) return corsHeaders;
-  return {...corsHeaders, 'Access-Control-Allow-Origin': origin};
+  if (!origin) return corsHeaders;
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  if (isLocalhost || allowedOrigins().has(origin)) {
+    return {
+      ...corsHeaders,
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+    };
+  }
+  return corsHeaders;
 }
 
 export function json(data: unknown, status = 200, headers = corsHeaders) {

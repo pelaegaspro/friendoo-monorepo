@@ -15,7 +15,7 @@ function toUiStatus(status: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const unauthorized = requireAdminApi();
+  const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
 
   try {

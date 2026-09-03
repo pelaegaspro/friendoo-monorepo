@@ -106,7 +106,7 @@ Deno.serve(async (request) => {
     const token = await generateVideoSdkJwt(
       apiKey,
       secretKey,
-      ['allow_join'],
+      ['allow_join', 'allow_mod'],
       roomId,
       user.id,
     );

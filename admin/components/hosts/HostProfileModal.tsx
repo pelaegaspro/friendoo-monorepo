@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Host } from '@/types'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
@@ -20,10 +21,13 @@ export default function HostProfileModal({ host, isOpen, onClose }: HostProfileM
       <div className="space-y-5">
         {/* Avatar + Name */}
         <div className="flex items-center gap-4">
-          <img
+          <Image
             src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 128) : host.photoURL || getAvatarUrl(host.uid, 128)}
             alt={host.name}
-            className="w-16 h-16 rounded-full object-cover"
+            width={64}
+            height={64}
+            unoptimized
+            className="h-16 w-16 rounded-full object-cover"
           />
           <div>
             <h3 className="text-white text-lg font-semibold">{host.name}</h3>

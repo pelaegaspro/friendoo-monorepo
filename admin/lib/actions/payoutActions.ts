@@ -1,13 +1,25 @@
 "use server"
 
+import { cookies } from "next/headers";
 import { getSupabaseAdmin, getOperationalAdminActorId } from "@/lib/supabaseServer";
+import { ADMIN_COOKIE_NAME, isValidAdminSession } from "@/lib/admin/session";
 import { revalidatePath } from "next/cache";
+
+async function hasAuthorizedAdminSession(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return isValidAdminSession(cookieStore.get(ADMIN_COOKIE_NAME)?.value);
+}
 
 /**
  * Approves a withdrawal and records the completed payout in Supabase.
  */
 export async function approveWithdrawal(hostId: string, payoutId: string, adminNote: string = "") {
   try {
+    if (!(await hasAuthorizedAdminSession())) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+
     const supabase = getSupabaseAdmin();
     const actorId = getOperationalAdminActorId();
 
@@ -36,14 +48,23 @@ export async function approveWithdrawal(hostId: string, payoutId: string, adminN
 
     revalidatePath("/admin/payments/withdrawals");
     return { success: true };
-  } catch (error: any) {
+    } catch (error) {
     console.error("Payout error:", error);
-    return { success: false, error: error.message || 'Failed to approve payout' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to approve payout',
+    };
+
   }
 }
 
 export async function rejectWithdrawal(hostId: string, payoutId: string, reason: string) {
   try {
+    if (!(await hasAuthorizedAdminSession())) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+
     const supabase = getSupabaseAdmin();
     const actorId = getOperationalAdminActorId();
 
@@ -63,7 +84,11 @@ export async function rejectWithdrawal(hostId: string, payoutId: string, reason:
 
     revalidatePath("/admin/payments/withdrawals");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to reject payout' };
+    } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reject payout',
+    };
+
   }
 }

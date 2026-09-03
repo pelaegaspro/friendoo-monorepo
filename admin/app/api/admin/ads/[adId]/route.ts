@@ -6,7 +6,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ adId: string }> | { adId: string } }
 ) {
-  const unauthorized = requireAdminApi()
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {

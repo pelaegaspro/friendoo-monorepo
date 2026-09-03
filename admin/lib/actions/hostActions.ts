@@ -1,6 +1,8 @@
 "use server"
 
+import { cookies } from 'next/headers'
 import { getSupabaseAdmin } from '@/lib/supabaseServer'
+import { ADMIN_COOKIE_NAME, isValidAdminSession } from '@/lib/admin/session'
 import { z } from 'zod'
 
 const hostSchema = z.object({
@@ -9,19 +11,26 @@ const hostSchema = z.object({
   avatarColor: z.string().min(4, "Color is required"),
   bio: z.string().min(1, "Bio is required"),
   city: z.string().min(1, "City is required"),
-  languages: z.array(z.string()).min(1, "At least one language required"),
-  ageGroup: z.enum(["Teen", "Young Adult", "Adult", "Experienced"]),
-  vibeTags: z.array(z.string()).max(3, "Max 3 vibe tags"),
-  category: z.string().min(1, "Category is required"),
-  upiId: z.string().optional()
+    languages: z.array(z.string()).min(1, "At least one language required"),
+  expertiseTags: z.array(z.string()).min(1, "At least one expertise tag is required"),
+  ratePerMinute: z.number().positive("Rate must be greater than zero"),
+  gender: z.string().min(1, "Gender is required"),
+  age: z.number().int().min(18, "Host must be at least 18 years old")
+
 })
 
 /**
  * Creates a new Female Host with the simplified Age Group and Vibe Tag model.
  */
 export async function createHostAction(data: z.infer<typeof hostSchema>) {
-  try {
+    try {
+    const cookieStore = await cookies()
+    if (!isValidAdminSession(cookieStore.get(ADMIN_COOKIE_NAME)?.value)) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
     const validated = hostSchema.parse(data)
+
     const supabase = getSupabaseAdmin()
     
     let phoneNumber = validated.phone
@@ -46,15 +55,20 @@ export async function createHostAction(data: z.infer<typeof hostSchema>) {
     await supabase.from('hosts').upsert({
       id: uid,
       bio: validated.bio,
-      rate_per_audio_minute: 5,
+            rate_per_audio_minute: validated.ratePerMinute,
+
       rate_per_video_minute: 10,
       is_available: true,
       updated_at: new Date().toISOString(),
     })
 
     return { success: true, uid }
-  } catch (error: any) {
+    } catch (error) {
     console.error("Error creating host:", error)
-    return { success: false, error: error.message || 'Failed to create host' }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create host',
+    }
+
   }
 }

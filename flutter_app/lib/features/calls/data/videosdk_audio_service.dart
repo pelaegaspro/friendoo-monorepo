@@ -12,6 +12,9 @@ class VideoSdkAudioService implements RtcAudioService {
   String? _currentRoomId;
   bool _isConnected = false;
 
+  final StreamController<RtcConnectionState> _connectionStateController =
+      StreamController<RtcConnectionState>.broadcast();
+
   @override
   bool get isMuted => _isMuted;
 
@@ -19,6 +22,19 @@ class VideoSdkAudioService implements RtcAudioService {
   bool get isSpeaker => _isSpeaker;
 
   bool get isConnected => _isConnected;
+
+  @override
+  RtcConnectionState get connectionState =>
+      _isConnected ? RtcConnectionState.connected : RtcConnectionState.disconnected;
+
+  @override
+  Stream<RtcConnectionState> get connectionStateStream =>
+      _connectionStateController.stream;
+
+  @override
+  void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested) {
+    // Fallback stub
+  }
 
   @override
   Future<void> join({
@@ -31,53 +47,32 @@ class VideoSdkAudioService implements RtcAudioService {
     await dispose();
     _currentRoomId = channelOrRoomId;
 
-    try {
-      if (kDebugMode) {
-        debugPrint(
-          'Connecting to VideoSDK Audio Room: $channelOrRoomId for User: $uid with low-latency Indian edge (~₹0.38/min)',
-        );
-      }
-
-      // Configure audio session and connect to VideoSDK Room
-      _isConnected = true;
-      _isMuted = false;
-      _isSpeaker = true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('VideoSDK Audio join failed: $e');
-      }
-      await dispose();
-      rethrow;
+    if (kDebugMode) {
+      debugPrint(
+        'Attempting VideoSDK connection for room $channelOrRoomId (triggering Agora RTC fallback).',
+      );
     }
+    // Automatically routes to Agora RTC fallback transport
+    throw UnsupportedError(
+      'VideoSDK primary transport falling back to Agora RTC.',
+    );
   }
 
   @override
   Future<void> setMuted(bool muted) async {
     _isMuted = muted;
-    if (kDebugMode) {
-      debugPrint('VideoSDK Microphone muted state: $muted');
-    }
   }
 
   @override
   Future<void> setSpeakerphone(bool enabled) async {
     _isSpeaker = enabled;
-    if (kDebugMode) {
-      debugPrint(
-        'VideoSDK Audio Route: ${enabled ? 'Speakerphone' : 'Earpiece'}',
-      );
-    }
   }
 
   @override
   Future<void> leave() async {
-    if (_currentRoomId != null) {
-      if (kDebugMode) {
-        debugPrint('Leaving VideoSDK Audio Room: $_currentRoomId');
-      }
-      _currentRoomId = null;
-      _isConnected = false;
-    }
+    _currentRoomId = null;
+    _isConnected = false;
+    _connectionStateController.add(RtcConnectionState.disconnected);
   }
 
   @override

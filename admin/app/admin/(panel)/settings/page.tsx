@@ -34,7 +34,7 @@ export default function SettingsAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const save = async (event: FormEvent<HTMLFormElement>) => {

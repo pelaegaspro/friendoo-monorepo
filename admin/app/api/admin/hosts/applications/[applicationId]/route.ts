@@ -4,9 +4,10 @@ import { reviewHostApplication } from '@/lib/admin/data'
 
 export async function POST(
   request: Request,
-  { params }: { params: { applicationId: string } }
+  { params }: { params: Promise<{ applicationId: string }> }
 ) {
-  const unauthorized = requireAdminApi()
+  const { applicationId } = await params;
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -15,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Missing action' }, { status: 400 })
     }
 
-    const result = await reviewHostApplication(params.applicationId, {
+    const result = await reviewHostApplication(applicationId, {
       action: body.action,
       notes: body.notes,
     })

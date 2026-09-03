@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/services/permission_service.dart';
+import '../../discover/data/host_repository.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/call_repository.dart';
 import '../data/rtc_audio_service.dart';
@@ -35,6 +37,8 @@ final lastEndedCallSummaryProvider = StateProvider<LastEndedCallSummary?>(
   (ref) => null,
 );
 
+final selectedCallingHostProvider = StateProvider<HostProfile?>((ref) => null);
+
 final activeCallProvider =
     AsyncNotifierProvider<ActiveCallController, CallSession?>(
       ActiveCallController.new,
@@ -58,7 +62,13 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> initiateAudioCall(String hostId, {BuildContext? context}) async {
-    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.videosdk;
+    if (state.isLoading) return;
+    final activeCall = state.asData?.value;
+    if (activeCall != null && !_isTerminal(activeCall.status)) {
+      return;
+    }
+
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.agora;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // 1. Minimum 15 coins check
@@ -94,7 +104,16 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     String callId, {
     BuildContext? context,
   }) async {
-    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.videosdk;
+    if (state.isLoading) return;
+    final activeCall = state.asData?.value;
+    if (activeCall != null &&
+        activeCall.id == callId &&
+        (activeCall.status == CallStatus.accepted ||
+            activeCall.status == CallStatus.active)) {
+      return;
+    }
+
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.agora;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(permissionServiceProvider).requestBluetoothAudio();
@@ -180,6 +199,8 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
 
     await _stopWatchingAndLeave();
     ref.invalidate(walletStreamProvider);
+    ref.invalidate(hostDashboardStatsProvider);
+    ref.invalidate(hostRecentEarningsProvider);
     state = const AsyncData(null);
   }
 
@@ -222,12 +243,15 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
                   wasGracePeriod: wasGracePeriod,
                 );
               }
+              ref.invalidate(walletStreamProvider);
+              ref.invalidate(hostDashboardStatsProvider);
+              ref.invalidate(hostRecentEarningsProvider);
               unawaited(_stopWatchingAndLeave());
               state = const AsyncData(null);
             }
           },
           onError: (Object error, StackTrace stackTrace) {
-            // Retain call state; avoid throwing transient stream disconnects to UI
+            _stopWatchingAndLeave();
           },
         );
   }
@@ -240,59 +264,72 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> _joinAudio(CallSession call) async {
-    if (call.callType != CallType.audio ||
-        _joinedCallId == call.id ||
-        _isJoiningAudio) {
+    if (_joinedCallId == call.id || _joinedCallId != null || _isJoiningAudio) {
       return;
     }
     _isJoiningAudio = true;
     try {
+      final agoraService = ref.read(agoraAudioServiceProvider);
+      agoraService.setTokenRenewalHandler(() async {
+        try {
+          final fresh = await ref
+              .read(callRepositoryProvider)
+              .getAgoraCredentials(call.id);
+          return fresh.token;
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('Failed to fetch renewed Agora token: $e');
+          }
+          return null;
+        }
+      });
+
       final providerType = ref.read(rtcProviderTypeProvider);
       if (providerType == RtcProviderType.videosdk) {
-        final credentials = await ref
-            .read(callRepositoryProvider)
-            .getVideoSdkCredentials(call.id);
         try {
+          final credentials = await ref
+              .read(callRepositoryProvider)
+              .getVideoSdkCredentials(call.id);
           await ref
-              .read(rtcAudioServiceProvider)
+              .read(videoSdkAudioServiceProvider)
               .join(
                 appIdOrToken: credentials.apiKey,
                 token: credentials.token,
                 channelOrRoomId: credentials.roomId,
                 uid: credentials.participantId,
               );
-        } catch (_) {
-          // VideoSDK is primary, but a failed token/join must not strand the
-          // call. Recreate the service with Agora credentials for this call.
-          ref.read(rtcProviderTypeProvider.notifier).state =
-              RtcProviderType.agora;
+        } catch (err) {
+          if (kDebugMode) {
+            debugPrint(
+              'VideoSDK primary failed: $err. Falling back to Agora RTC.',
+            );
+          }
           final agora = await ref
               .read(callRepositoryProvider)
               .getAgoraCredentials(call.id);
-          await ref
-              .read(rtcAudioServiceProvider)
-              .join(
-                appIdOrToken: agora.appId,
-                token: agora.token,
-                channelOrRoomId: agora.channel,
-                uid: agora.uid.toString(),
-              );
+          await agoraService.join(
+            appIdOrToken: agora.appId,
+            token: agora.token,
+            channelOrRoomId: agora.channel,
+            uid: agora.uid.toString(),
+          );
         }
       } else {
         final credentials = await ref
             .read(callRepositoryProvider)
             .getAgoraCredentials(call.id);
-        await ref
-            .read(rtcAudioServiceProvider)
-            .join(
-              appIdOrToken: credentials.appId,
-              token: credentials.token,
-              channelOrRoomId: credentials.channel,
-              uid: credentials.uid.toString(),
-            );
+        await agoraService.join(
+          appIdOrToken: credentials.appId,
+          token: credentials.token,
+          channelOrRoomId: credentials.channel,
+          uid: credentials.uid.toString(),
+        );
       }
       _joinedCallId = call.id;
-    } catch (_) {
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Failed to join audio: $e\n$st');
+      }
       _joinedCallId = null;
       rethrow;
     } finally {
@@ -310,7 +347,8 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     _isJoiningAudio = false;
     ref.read(callMuteStateProvider.notifier).state = false;
     ref.read(callSpeakerStateProvider.notifier).state = true;
-    await ref.read(rtcAudioServiceProvider).dispose();
+    await ref.read(agoraAudioServiceProvider).dispose();
+    await ref.read(videoSdkAudioServiceProvider).dispose();
   }
 
   bool _isTerminal(CallStatus status) =>

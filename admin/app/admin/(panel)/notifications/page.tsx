@@ -5,9 +5,23 @@ import toast from 'react-hot-toast'
 import SectionCard from '@/components/admin/SectionCard'
 import { adminFetch } from '@/lib/admin/client'
 import { formatDateTime } from '@/lib/admin/format'
-import { Bell, Send, Zap, Flame, Gift, Megaphone, Smartphone } from 'lucide-react'
+import { Send, Zap, Flame, Gift, Smartphone } from 'lucide-react'
+
+type NotificationTarget = 'all' | 'users' | 'hosts' | 'user'
+const notificationActions = ['recharge', 'open_lounge', 'link', 'none'] as const
+const notificationAudienceOptions = [
+  { id: 'all', label: 'All Users & Hosts' },
+  { id: 'users', label: 'Callers Only' },
+  { id: 'hosts', label: 'Hosts Only' },
+  { id: 'user', label: 'Specific User ID' },
+] as const
+
+function selectOption<T extends string>(value: string, options: readonly T[], fallback: T): T {
+  return options.find(option => option === value) ?? fallback
+}
 
 type NotifLog = {
+
   id: string
   title: string
   body: string
@@ -20,8 +34,9 @@ type NotifLog = {
 export default function NotificationsPage() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [target, setTarget] = useState<'all' | 'users' | 'hosts' | 'user'>('all')
-  const [actionType, setActionType] = useState<'recharge' | 'open_lounge' | 'link' | 'none'>('none')
+    const [target, setTarget] = useState<NotificationTarget>('all')
+  const [actionType, setActionType] = useState<(typeof notificationActions)[number]>('none')
+
   const [actionUrl, setActionUrl] = useState('')
   const [userId, setUserId] = useState('')
   const [sending, setSending] = useState(false)
@@ -41,7 +56,7 @@ export default function NotificationsPage() {
   }
 
   useEffect(() => {
-    void loadLogs()
+    void Promise.resolve().then(loadLogs);
   }, [])
 
   const handleSend = async () => {
@@ -162,16 +177,12 @@ export default function NotificationsPage() {
           <div>
             <label className="mb-2 block text-xs font-medium text-zinc-400">Send To (Audience)</label>
             <div className="flex gap-2 flex-wrap">
-              {[
-                { id: 'all', label: 'All Users & Hosts' },
-                { id: 'users', label: 'Callers Only' },
-                { id: 'hosts', label: 'Hosts Only' },
-                { id: 'user', label: 'Specific User ID' },
-              ].map((t) => (
+                            {notificationAudienceOptions.map((t) => (
+
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setTarget(t.id as any)}
+                  onClick={() => setTarget(t.id)}
                   className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
                     target === t.id
                       ? 'bg-purple-600 text-white shadow-lg'
@@ -222,7 +233,7 @@ export default function NotificationsPage() {
               <label className="mb-1 block text-xs text-zinc-400">Tap Action</label>
               <select
                 value={actionType}
-                onChange={(e) => setActionType(e.target.value as any)}
+                onChange={(e) => setActionType(selectOption(e.target.value, notificationActions, actionType))}
                 className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="none">Dismiss Only</option>

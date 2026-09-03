@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -35,7 +36,7 @@ export default function UsersAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const filteredUsers = useMemo(() => {
@@ -163,9 +164,12 @@ export default function UsersAdminPage() {
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="border-b border-[#202020]">
                       <td className="px-3 py-4">
-                        <img
+                        <Image
                           src={user.avatarSeed ? getAvatarUrl(user.avatarSeed, 80) : user.photoURL || getAvatarUrl(user.id, 80)}
                           alt={user.displayName}
+                          width={40}
+                          height={40}
+                          unoptimized
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       </td>

@@ -4,11 +4,13 @@ import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest, context: { params: { uid: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ uid: string }> }) {
+
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
   try {
-    const userId = context.params.uid;
+        const { uid: userId } = await context.params;
+
     const supabase = getSupabaseAdmin();
     const [profileResult, walletResult, paymentsResult, transactionsResult, callsResult, reportsResult] = await Promise.all([
       supabase.from('profiles').select('id, phone, display_name, role, is_banned, created_at, updated_at').eq('id', userId).maybeSingle(),

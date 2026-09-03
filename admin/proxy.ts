@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ADMIN_COOKIE_NAME, isValidAdminSession } from './lib/admin/session'
+import { ADMIN_COOKIE_NAME, isValidAdminSessionEdge } from './lib/admin/edge-session'
 
-export function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (!pathname.startsWith('/admin')) {
@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
   }
 
   const sessionValue = request.cookies.get(ADMIN_COOKIE_NAME)?.value
-  const hasSession = isValidAdminSession(sessionValue)
+  const hasSession = await isValidAdminSessionEdge(sessionValue)
   const isAuthPage = pathname === '/admin/login' || pathname === '/admin/portal'
 
   if (!hasSession && !isAuthPage) {

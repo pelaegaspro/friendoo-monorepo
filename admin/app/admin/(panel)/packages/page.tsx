@@ -48,7 +48,7 @@ export default function PackagesAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const openCreate = () => {

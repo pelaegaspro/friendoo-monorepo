@@ -66,7 +66,7 @@ export default function HostsPage() {
   }, []);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   const leaderboard = useMemo(() => hosts.slice(0, 10), [hosts]);

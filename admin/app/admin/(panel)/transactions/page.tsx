@@ -58,7 +58,7 @@ export default function TransactionsAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const filteredTransactions = useMemo(() => {

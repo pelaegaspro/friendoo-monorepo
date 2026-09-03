@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { getAvatarUrl } from '@/lib/avatar'
@@ -245,7 +246,7 @@ export default function HostsAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const filteredHosts = useMemo(() => {
@@ -484,9 +485,12 @@ export default function HostsAdminPage() {
                   {filteredHosts.map((host) => (
                     <tr key={host.id} className="border-b border-[#202020] align-top">
                       <td className="px-3 py-4">
-                        <img
+                        <Image
                           src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 88) : host.photoURL || getAvatarUrl(host.id, 88)}
                           alt={host.displayName}
+                          width={44}
+                          height={44}
+                          unoptimized
                           className="h-11 w-11 rounded-full object-cover"
                         />
                       </td>
@@ -566,9 +570,12 @@ export default function HostsAdminPage() {
                 return (
                   <div key={application.id} className="rounded-2xl border border-[#2d2d2d] bg-[#151515] p-4">
                     <div className="flex items-start gap-4">
-                      <img
+                      <Image
                         src={application.photoURL || getAvatarUrl(application.id, 128)}
                         alt={application.name}
+                        width={64}
+                        height={64}
+                        unoptimized
                         className="h-16 w-16 rounded-2xl object-cover"
                       />
                       <div className="min-w-0 flex-1">

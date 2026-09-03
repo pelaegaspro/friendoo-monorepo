@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createHostAction } from '@/lib/actions/hostActions'
@@ -29,7 +29,7 @@ export default function HostForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ratePerMinute: 5,
@@ -39,7 +39,8 @@ export default function HostForm() {
     }
   })
 
-  const currentAlias = watch("alias")
+  const currentAlias = useWatch({ control, name: 'alias' })
+  const currentAvatarColor = useWatch({ control, name: 'avatarColor' })
 
   const generateAlias = () => {
     const colors = ["Red", "Blue", "Green", "Gold", "Silver", "Black", "White", "Purple", "Cyan", "Magenta"]
@@ -62,7 +63,7 @@ export default function HostForm() {
         expertiseTags: data.expertiseTags.split(',').map(s => s.trim())
       }
       
-      const result = await createHostAction(payload as any)
+      const result = await createHostAction(payload)
       if (result.success) {
         toast.success("Host created successfully!")
         router.push('/admin/hosts')
@@ -71,9 +72,10 @@ export default function HostForm() {
         setError(result.error || 'Unknown error occurred')
         toast.error("Failed to create host")
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit form')
-      toast.error(err.message || 'Failed to submit form')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to submit form'
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -120,7 +122,7 @@ export default function HostForm() {
                     />
                     <div 
                         className="h-12 w-12 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white/20"
-                        style={{ backgroundColor: watch("avatarColor") }}
+                        style={{ backgroundColor: currentAvatarColor }}
                     >
                         {currentAlias?.slice(0, 2).toUpperCase() || "??"}
                     </div>

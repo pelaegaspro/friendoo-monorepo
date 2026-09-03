@@ -1874,10 +1874,12 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
             if (filteredCalls.isEmpty)
               _EmptySurface(
                 icon: Icons.forum_outlined,
-                title: 'No calls match this filter',
-                message: 'Explore available hosts in the Discover tab to connect with someone.',
-                actionLabel: 'Discover Hosts',
-                onAction: widget.onExplore,
+                title: allCalls.isEmpty ? 'No calls yet' : 'No calls match this filter',
+                message: allCalls.isEmpty
+                    ? 'Explore available hosts in the Discover tab to connect with someone.'
+                    : 'Try resetting your filter to see all your past calls.',
+                actionLabel: allCalls.isEmpty ? 'Discover Hosts' : 'Reset Filters',
+                onAction: allCalls.isEmpty ? widget.onExplore : _clearFilters,
               )
             else
               ...filteredCalls.map(

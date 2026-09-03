@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'web_audio_permission.dart';
+
 enum AppPermissionType { microphone, notifications, storage }
 
 class PermissionStatusReport {
@@ -50,7 +52,9 @@ class AppPermissionService {
 
   /// Requests microphone permission for voice lounge and calling.
   Future<bool> requestMicrophone({BuildContext? context}) async {
-    if (kIsWeb) return true;
+    if (kIsWeb) {
+      return requestWebMicrophone();
+    }
 
     var status = await Permission.microphone.status;
     if (status.isGranted) return true;

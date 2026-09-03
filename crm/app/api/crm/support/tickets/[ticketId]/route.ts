@@ -8,11 +8,13 @@ function profileNameMap(rows: { id: string; display_name: string }[] | null) {
   return new Map((rows ?? []).map((row) => [row.id, row.display_name]));
 }
 
-export async function GET(request: NextRequest, context: { params: { ticketId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ ticketId: string }> }) {
+
   const unauthorized = requireCrmAuth(request);
   if (unauthorized) return unauthorized;
   try {
-    const ticketId = context.params.ticketId;
+        const { ticketId } = await context.params;
+
     const supabase = getSupabaseAdmin();
     const { data: ticket, error: ticketError } = await supabase
       .from('support_tickets')

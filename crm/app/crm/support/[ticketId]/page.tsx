@@ -58,7 +58,7 @@ export default function TicketDetailPage() {
   }, [params.ticketId]);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
   }, [load]);
 
   const saveMeta = async () => {

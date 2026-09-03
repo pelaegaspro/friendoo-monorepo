@@ -15,7 +15,7 @@ type ProviderResultBody = {
 };
 
 export async function POST(request: NextRequest) {
-  const unauthorized = requireAdminApi();
+  const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
 
   try {

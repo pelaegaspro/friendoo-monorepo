@@ -6,9 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { reportId: string } }
+  { params }: { params: Promise<{ reportId: string }> }
 ) {
-  const unauthorized = requireAdminApi()
+  const { reportId } = await params;
+  const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
 
   try {
@@ -18,9 +19,9 @@ export async function POST(
 
     if (action === 'ban' && reportedId) {
       await supabase.from('profiles').update({ is_banned: true, updated_at: now }).eq('id', reportedId)
-      await supabase.from('reports').update({ status: 'resolved' }).eq('id', params.reportId)
+      await supabase.from('reports').update({ status: 'resolved' }).eq('id', reportId)
     } else {
-      await supabase.from('reports').update({ status: 'resolved' }).eq('id', params.reportId)
+      await supabase.from('reports').update({ status: 'resolved' }).eq('id', reportId)
     }
 
     return NextResponse.json({ success: true })

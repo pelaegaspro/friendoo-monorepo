@@ -2,14 +2,68 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import SectionCard from '@/components/admin/SectionCard'
+
 import LoadingBlock from '@/components/admin/LoadingBlock'
-import { Shield, AlertTriangle, Search, ChevronRight, Paperclip } from 'lucide-react'
+import { Search, Paperclip } from 'lucide-react'
+
+type ReportStatus = 'pending' | 'under_review' | 'resolved' | 'rejected'
+type ReportFilter = 'all' | ReportStatus
+
+interface AdminReport {
+  id: string
+  reportedAlias?: string
+  reportedId?: string
+  reason?: string
+  status: ReportStatus
+  createdAt?: string | null
+  evidenceUrl?: string | null
+  amountLost: number
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function asNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function asReportStatus(value: unknown): ReportStatus {
+  return value === 'pending' || value === 'under_review' || value === 'resolved' || value === 'rejected'
+    ? value
+    : 'pending'
+}
+
+function normalizeReports(payload: unknown): AdminReport[] {
+  const root = asRecord(payload)
+  const values = Array.isArray(root.reports) ? root.reports : []
+  return values.map((value) => {
+    const report = asRecord(value)
+    return {
+      id: asString(report.id) ?? '',
+      reportedAlias: asString(report.reportedAlias),
+      reportedId: asString(report.reportedId),
+      reason: asString(report.reason),
+      status: asReportStatus(report.status),
+      createdAt: asString(report.createdAt) ?? null,
+      evidenceUrl: asString(report.evidenceUrl) ?? null,
+      amountLost: asNumber(report.amountLost),
+    }
+  }).filter((report) => report.id.length > 0)
+}
+
+
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState<any[]>([])
+    const [reports, setReports] = useState<AdminReport[]>([])
+
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'under_review' | 'resolved' | 'rejected'>('all')
+    const [filter, setFilter] = useState<ReportFilter>('all')
+
   const [search, setSearch] = useState("")
   const router = useRouter()
 
@@ -23,8 +77,9 @@ export default function ReportsPage() {
         const suffix = filter === 'all' ? '' : `?status=${encodeURIComponent(filter)}`;
         const response = await fetch(`/api/admin/reports${suffix}`, { cache: 'no-store', signal: controller.signal });
         if (!response.ok) throw new Error('Could not load reports.');
-        const payload = await response.json();
-        if (active) setReports(Array.isArray(payload.reports) ? payload.reports : []);
+                const payload: unknown = await response.json();
+        if (active) setReports(normalizeReports(payload));
+
       } catch (error) {
         if (active && !(error instanceof DOMException && error.name === 'AbortError')) setReports([]);
       } finally {
@@ -77,16 +132,18 @@ export default function ReportsPage() {
 
       {/* Filter Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {[
+                {([
           { key: "all", label: "All Reports", count: reports.length },
+
           { key: "pending", label: "⏳ Pending", count: counts.pending || 0 },
           { key: "under_review", label: "🔍 Reviewing", count: counts.under_review || 0 },
           { key: "resolved", label: "✅ Resolved", count: counts.resolved || 0 },
           { key: "rejected", label: "❌ Closed", count: counts.rejected || 0 }
-        ].map(tab => (
+                ] as const).map(tab => (
+
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key as any)}
+            onClick={() => setFilter(tab.key)}
             className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition ${
               filter === tab.key 
                 ? 'bg-purple-600 text-white' 
@@ -200,7 +257,8 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function calculatePriority(report: any) {
+function calculatePriority(report: AdminReport) {
+
     if (report.amountLost > 1000 || report.reason === "Threats of Violence") return "critical"
     if (report.evidenceUrl) return "high"
     if (report.status === "pending") return "medium"

@@ -71,14 +71,13 @@ class PresenceService with WidgetsBindingObserver {
       }, onConflict: 'user_id');
     } catch (_) {}
 
-    // If this device belongs to a host, update host availability separately.
+    // When app goes into background/closed, mark host as offline via secure RPC
     final isHost = activeProfile?.isHost == true;
-
-    if (isHost) {
+    if (isHost && !isOnline) {
       try {
         await _client.rpc(
           'set_own_host_availability',
-          params: {'p_is_available': isOnline},
+          params: {'p_is_available': false, 'p_host_id': userId},
         );
       } catch (_) {}
     }

@@ -19,14 +19,14 @@ import {
   Trash2,
   Edit3,
   Power,
-  Flame,
-  ShoppingBag,
+    Flame,
   Zap,
-  Users,
   Target,
+
 } from 'lucide-react'
 
 type AdForm = {
+
   id?: string
   title: string
   campaignType: 'user_offer' | 'host_incentive' | 'flash_package' | 'sponsor_ad'
@@ -48,7 +48,17 @@ type AdForm = {
   priority: number
 }
 
+const campaignTypes: readonly AdForm['campaignType'][] = ['user_offer', 'host_incentive', 'flash_package', 'sponsor_ad']
+const targetAudiences: readonly AdForm['targetAudience'][] = ['all', 'users', 'hosts', 'new_users', 'priority_users']
+const placements: readonly AdForm['placement'][] = ['user_top_banner', 'host_top_banner', 'account_settings', 'pop_up_modal', 'all']
+const actionTypes: readonly AdForm['actionType'][] = ['recharge', 'link', 'none']
+
+function selectOption<T extends string>(value: string, options: readonly T[], fallback: T): T {
+  return options.find(option => option === value) ?? fallback
+}
+
 const gradientPresets = [
+
   { name: 'Indigo Dream (Default)', colors: ['#4F46E5', '#7C3AED', '#DB2777'] },
   { name: 'Host Flame Surge', colors: ['#D97706', '#F59E0B', '#EF4444'] },
   { name: 'Flash Deal Emerald', colors: ['#059669', '#10B981', '#06B6D4'] },
@@ -97,7 +107,7 @@ export default function CloudAdsAdminPage() {
   }
 
   useEffect(() => {
-    void load()
+    void Promise.resolve().then(load);
   }, [])
 
   const openCreate = () => {
@@ -461,7 +471,7 @@ export default function CloudAdsAdminPage() {
               <label className="mb-1 block text-xs font-medium text-zinc-300">Campaign Type</label>
               <select
                 value={form.campaignType}
-                onChange={(e) => setForm({ ...form, campaignType: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, campaignType: selectOption(e.target.value, campaignTypes, form.campaignType) })}
                 className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="flash_package">⚡ Flash Package Deal</option>
@@ -475,7 +485,7 @@ export default function CloudAdsAdminPage() {
               <label className="mb-1 block text-xs font-medium text-zinc-300">Target Audience</label>
               <select
                 value={form.targetAudience}
-                onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, targetAudience: selectOption(e.target.value, targetAudiences, form.targetAudience) })}
                 className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="all">🌍 All Users & Hosts</option>
@@ -492,7 +502,7 @@ export default function CloudAdsAdminPage() {
               <label className="mb-1 block text-xs font-medium text-zinc-300">Screen Placement</label>
               <select
                 value={form.placement}
-                onChange={(e) => setForm({ ...form, placement: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, placement: selectOption(e.target.value, placements, form.placement) })}
                 className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="user_top_banner">🔝 Top Banner (User Discover)</option>
@@ -619,7 +629,7 @@ export default function CloudAdsAdminPage() {
               <label className="mb-1 block text-xs font-medium text-zinc-300">Tap Action</label>
               <select
                 value={form.actionType}
-                onChange={(e) => setForm({ ...form, actionType: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, actionType: selectOption(e.target.value, actionTypes, form.actionType) })}
                 className="w-full rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
               >
                 <option value="recharge">Open Coin Recharge Sheet</option>

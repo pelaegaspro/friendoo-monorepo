@@ -559,6 +559,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   void _startAudioCall(HostProfile host) {
+    ref.read(selectedCallingHostProvider.notifier).state = host;
     ref.read(activeCallProvider.notifier).initiateAudioCall(host.id);
   }
 
@@ -597,17 +598,27 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       next,
     ) {
       if (next != null && mounted) {
-        CallSummaryDialog.show(context, next);
+        ref.invalidate(hostDashboardStatsProvider);
+        ref.invalidate(walletStreamProvider);
+        ref.invalidate(hostRecentEarningsProvider);
+        final currentIsHost = ref.read(isHostModeProvider);
+        CallSummaryDialog.show(context, next, isHost: currentIsHost);
       }
     });
 
     final activeCall = ref.watch(activeCallProvider).asData?.value;
     final isHost = ref.watch(isHostModeProvider);
+    final hasOngoingCall = activeCall != null &&
+        (activeCall.status == CallStatus.accepted ||
+            activeCall.status == CallStatus.active ||
+            activeCall.status == CallStatus.ringing);
 
-    if (activeCall != null) {
+    if (hasOngoingCall) {
+      final selectedHost = ref.watch(selectedCallingHostProvider);
       return LiveCallOverlay(
         call: activeCall,
-        hostName: isHost ? 'Caller' : 'Host',
+        hostName: isHost ? 'Caller' : (selectedHost?.displayName ?? 'Sara'),
+        isHost: isHost,
       );
     }
 
@@ -1163,7 +1174,11 @@ class _HostListCard extends StatelessWidget {
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
+                          color: host.isAvailable
+                              ? (host.isBusy
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFF10B981))
+                              : const Color(0xFF9CA3AF),
                           shape: BoxShape.circle,
                           border: Border.all(color: colors.surface, width: 2),
                         ),
@@ -1287,8 +1302,15 @@ class _HostListCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton.filled(
-                tooltip: 'Start audio call',
-                onPressed: onStartCall,
+                tooltip: host.isAvailable
+                    ? (host.isBusy ? 'Host is busy' : 'Start audio call')
+                    : 'Host is offline',
+                style: IconButton.styleFrom(
+                  backgroundColor: host.isAvailable
+                      ? (host.isBusy ? const Color(0xFFF59E0B) : colors.primary)
+                      : const Color(0xFF9CA3AF),
+                ),
+                onPressed: (host.isAvailable && !host.isBusy) ? onStartCall : null,
                 icon: const Icon(Icons.call_rounded),
               ),
             ],
@@ -1593,7 +1615,12 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
   void _handleIncomingCalls(List<CallSession> calls) {
     if (!mounted || calls.isEmpty || _presentedCallId != null) return;
     final activeCall = ref.read(activeCallProvider).asData?.value;
-    if (activeCall != null) return;
+    if (activeCall != null &&
+        (activeCall.status == CallStatus.accepted ||
+            activeCall.status == CallStatus.active ||
+            activeCall.status == CallStatus.ringing)) {
+      return;
+    }
 
     final isHostMode = ref.read(isHostModeProvider);
     final activeProfile = ProfileRepository.currentActiveProfile;
