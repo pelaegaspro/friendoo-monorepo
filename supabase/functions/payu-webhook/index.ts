@@ -1,33 +1,56 @@
 ﻿import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import { corsHeaders, error, json, serviceClient } from '../_shared/http.ts';
+import {corsHeaders, error, json, readBodyLimited, serviceClient} from '../_shared/http.ts';
 
-const PAYU_KEY = Deno.env.get('PAYU_MERCHANT_KEY') ?? '7eMBxs';
-const PAYU_SALT = Deno.env.get('PAYU_MERCHANT_SALT') ?? 'b5WvAHEHIKX35H1Kppq745Bbmo01dHRa';
+const PAYU_WEBHOOK_MAX_BYTES = 32 * 1024;
 
 async function sha512Hex(message: string): Promise<string> {
-  const msgUint8 = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-512', msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  const bytes = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-512', bytes);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const leftBytes = new TextEncoder().encode(left);
+  const rightBytes = new TextEncoder().encode(right);
+  let difference = leftBytes.length ^ rightBytes.length;
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  for (let index = 0; index < length; index++) {
+    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  }
+  return difference === 0;
+}
+
+function parsePayuPayload(raw: string, contentType: string): Record<string, string> {
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    return Object.fromEntries(new URLSearchParams(raw));
+  }
+  if (contentType.includes('application/json')) {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return Object.fromEntries(
+        Object.entries(parsed).map(([key, value]) => [key, String(value)]),
+      );
+    }
+  }
+  throw new Error('INVALID_PAYU_WEBHOOK_PAYLOAD');
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (request.method === 'OPTIONS') return new Response('ok', {headers: corsHeaders});
   if (request.method !== 'POST') return error('Method not allowed', 405);
 
   try {
-    let payload: Record<string, string> = {};
-    const contentType = request.headers.get('content-type') || '';
-
-    if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      formData.forEach((value, key) => {
-        payload[key] = String(value);
-      });
-    } else {
-      payload = await request.json().catch(() => ({}));
+    const payuKey = Deno.env.get('PAYU_MERCHANT_KEY');
+    const payuSalt = Deno.env.get('PAYU_MERCHANT_SALT');
+    if (!payuKey || !payuSalt) {
+      return error('Payment provider is unavailable', 503);
     }
 
+    const contentType = request.headers.get('content-type') ?? '';
+    const raw = await readBodyLimited(request, PAYU_WEBHOOK_MAX_BYTES);
+    const payload = parsePayuPayload(raw, contentType);
     const {
       status,
       txnid,
@@ -47,45 +70,44 @@ Deno.serve(async (request) => {
       additionalCharges,
     } = payload;
 
-    if (!txnid || !status || !hash) {
-      return error('Incomplete PayU webhook payload', 400);
+    if (!txnid || !status || !hash || key !== payuKey) {
+      return error('Invalid PayU webhook payload', 400);
     }
 
-    // Verify reverse hash
-    const hashSeq = `${status}||||||${udf5 || ''}|${udf4 || ''}|${udf3 || ''}|${udf2 || ''}|${udf1 || ''}|${email || ''}|${firstname || ''}|${productinfo || ''}|${amount || ''}|${txnid}|${key || PAYU_KEY}`;
-    
-    let expectedHash: string;
-    if (additionalCharges) {
-      expectedHash = await sha512Hex(`${additionalCharges}|${PAYU_SALT}|${hashSeq}`);
-    } else {
-      expectedHash = await sha512Hex(`${PAYU_SALT}|${hashSeq}`);
-    }
+    const hashSequence = `${status}||||||${udf5 ?? ''}|${udf4 ?? ''}|${udf3 ?? ''}|${udf2 ?? ''}|${udf1 ?? ''}|${email ?? ''}|${firstname ?? ''}|${productinfo ?? ''}|${amount ?? ''}|${txnid}|${payuKey}`;
+    const expectedHash = additionalCharges
+      ? await sha512Hex(`${additionalCharges}|${payuSalt}|${hashSequence}`)
+      : await sha512Hex(`${payuSalt}|${hashSequence}`);
 
-    if (expectedHash.toLowerCase() !== hash.toLowerCase()) {
-      console.error('PayU Hash Mismatch! Expected:', expectedHash, 'Received:', hash);
+    if (!constantTimeEqual(expectedHash.toLowerCase(), hash.toLowerCase())) {
+      console.error('PayU signature verification failed');
       return error('Signature verification failed', 401);
     }
 
     const admin = serviceClient();
-
     if (status.toLowerCase() === 'success') {
-      const { data, error: rpcError } = await admin.rpc('credit_friendoo_payment', {
+      const {data, error: rpcError} = await admin.rpc('credit_friendoo_payment', {
         p_provider_order_id: txnid,
         p_payment_id: mihpayid || txnid,
         p_payment_method: mode || 'UPI',
       });
       if (rpcError) throw rpcError;
-      return json({ status: 'credited', order: data });
-    } else {
-      const { error: rpcError } = await admin.rpc('set_friendoo_payment_status', {
-        p_provider_order_id: txnid,
-        p_status: 'failed',
-      });
-      if (rpcError) throw rpcError;
-      return json({ status: 'failed', txnid });
+      return json({status: 'credited', order: data});
     }
+
+    const {error: rpcError} = await admin.rpc('set_friendoo_payment_status', {
+      p_provider_order_id: txnid,
+      p_status: 'failed',
+    });
+    if (rpcError) throw rpcError;
+    return json({status: 'failed', txnid});
   } catch (caught) {
     console.error('PayU webhook execution failed', caught);
-    return error('Webhook processing failed', 500);
+    const status = caught instanceof Error && caught.message === 'REQUEST_BODY_TOO_LARGE'
+      ? 413
+      : caught instanceof Error && caught.message === 'INVALID_PAYU_WEBHOOK_PAYLOAD'
+      ? 400
+      : 500;
+    return error(status === 413 ? 'Request body is too large' : 'Webhook processing failed', status);
   }
 });

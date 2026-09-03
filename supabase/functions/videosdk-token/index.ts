@@ -1,16 +1,29 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import {corsHeaders, authenticatedUser, error, json, serviceClient} from '../_shared/http.ts';
+import {
+  allowedCorsHeaders,
+  authenticatedUser,
+  error,
+  json,
+  readJsonBody,
+  serviceClient,
+} from '../_shared/http.ts';
 
-// Helper function to generate VideoSDK JWT using Web Crypto API
-async function generateVideoSdkJwt(apiKey: string, secretKey: string, permissions: string[], roomId?: string, participantId?: string): Promise<string> {
+// Generates a VideoSDK JWT with the minimum permission needed to join a room.
+async function generateVideoSdkJwt(
+  apiKey: string,
+  secretKey: string,
+  permissions: string[],
+  roomId?: string,
+  participantId?: string,
+): Promise<string> {
   const header = {alg: 'HS256', typ: 'JWT'};
   const now = Math.floor(Date.now() / 1000);
   const payload: Record<string, unknown> = {
     apikey: apiKey,
-    permissions: permissions,
+    permissions,
     version: 2,
     iat: now,
-    exp: now + 86400, // 24 hours
+    exp: now + 86400,
   };
 
   if (roomId) payload.roomId = roomId;
@@ -20,8 +33,8 @@ async function generateVideoSdkJwt(apiKey: string, secretKey: string, permission
   const base64UrlEncode = (data: Uint8Array | string): string => {
     const bytes = typeof data === 'string' ? encoder.encode(data) : data;
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    for (let index = 0; index < bytes.length; index++) {
+      binary += String.fromCharCode(bytes[index]);
     }
     return btoa(binary)
       .replace(/=/g, '')
@@ -47,37 +60,49 @@ async function generateVideoSdkJwt(apiKey: string, secretKey: string, permission
   return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 }
 
+type VideoSdkTokenRequest = {
+  call_id?: unknown;
+};
+
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', {headers: corsHeaders});
-  if (request.method !== 'POST') return error('Method not allowed', 405);
+  const responseHeaders = allowedCorsHeaders(request);
+  if (request.method === 'OPTIONS') {
+    return new Response('ok', {headers: responseHeaders});
+  }
+  if (request.method !== 'POST') {
+    return error('Method not allowed', 405, responseHeaders);
+  }
 
   try {
     const user = await authenticatedUser(request);
-    if (!user) return error('Unauthorized', 401);
+    if (!user) return error('Unauthorized', 401, responseHeaders);
 
-    const body = await request.json();
+    const body = await readJsonBody<VideoSdkTokenRequest>(request);
     const callId = typeof body.call_id === 'string' ? body.call_id : '';
-    if (!callId) return error('call_id is required');
+    if (!callId) return error('call_id is required', 400, responseHeaders);
 
-    // VideoSDK Credentials
     const apiKey = Deno.env.get('VIDEOSDK_API_KEY');
     const secretKey = Deno.env.get('VIDEOSDK_SECRET_KEY');
-    if (!apiKey || !secretKey) return error('VideoSDK is not configured', 503);
+    if (!apiKey || !secretKey) {
+      return error('VideoSDK is not configured', 503, responseHeaders);
+    }
 
     const admin = serviceClient();
     const {data: call, error: callError} = await admin
-        .from('calls')
-        .select('id, caller_id, host_id, rtc_channel, status')
-        .eq('id', callId)
-        .single();
-    if (callError || !call) return error('Call not found', 404);
-    if (user.id !== call.caller_id && user.id !== call.host_id) return error('Forbidden', 403);
-    if (['ended', 'missed', 'rejected'].includes(call.status)) return error('Call is closed', 409);
+      .from('calls')
+      .select('id, caller_id, host_id, rtc_channel, status')
+      .eq('id', callId)
+      .single();
+    if (callError || !call) return error('Call not found', 404, responseHeaders);
+    if (user.id !== call.caller_id && user.id !== call.host_id) {
+      return error('Forbidden', 403, responseHeaders);
+    }
+    if (['ended', 'missed', 'rejected'].includes(call.status)) {
+      return error('Call is closed', 409, responseHeaders);
+    }
 
     const roomId = `friendoo_${call.rtc_channel}`;
     const expiresAt = Math.floor(Date.now() / 1000) + 86400;
-
-    // Generate valid signed VideoSDK JWT token
     const token = await generateVideoSdkJwt(
       apiKey,
       secretKey,
@@ -93,9 +118,14 @@ Deno.serve(async (request) => {
       expires_at: expiresAt,
       provider: 'videosdk',
       rate_inr_per_min: 0.38,
-    });
+    }, 200, responseHeaders);
   } catch (caught) {
     console.error('videosdk-token failed', caught);
-    return error('Unable to issue VideoSDK token', 500);
+    const status = caught instanceof Error && caught.message === 'REQUEST_BODY_TOO_LARGE'
+      ? 413
+      : caught instanceof Error && caught.message === 'INVALID_JSON_BODY'
+      ? 400
+      : 500;
+    return error(status === 413 ? 'Request body is too large' : 'Unable to issue VideoSDK token', status, responseHeaders);
   }
 });
