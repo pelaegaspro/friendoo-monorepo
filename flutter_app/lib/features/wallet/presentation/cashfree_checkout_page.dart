@@ -162,16 +162,43 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Payment confirmation pending',
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                    Text(
+                      _verificationError!.toLowerCase().contains('pending') ||
+                              _verificationError!.toLowerCase().contains('confirmed')
+                          ? 'Payment confirmation pending'
+                          : 'Payment issue detected',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 6),
-                    Text(_verificationError!),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _verifyPayment,
-                      child: const Text('Check payment status'),
+                    Text(
+                      _verificationError!,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        color: Color(0xFF475569),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton(
+                          onPressed: _verifyPayment,
+                          child: const Text('Check Status'),
+                        ),
+                        FilledButton.tonal(
+                          onPressed: _openCheckout,
+                          child: const Text('Try Again'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Go Back'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

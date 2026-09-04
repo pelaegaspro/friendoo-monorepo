@@ -206,10 +206,19 @@ class WalletRepository {
           .lt('amount_inr', 1000)
           .order('amount_inr');
 
-      final packages = (rows as List<dynamic>)
+      final raw = (rows as List<dynamic>)
           .map((row) => CoinPackage.fromMap(row as Map<String, dynamic>))
-          .where((p) => p.amountInr < 1000)
-          .toList();
+          .where((p) => p.amountInr < 1000);
+
+      // Deduplicate packages by amountInr, prioritizing canonical pkg_* ids
+      final uniqueMap = <int, CoinPackage>{};
+      for (final p in raw) {
+        if (!uniqueMap.containsKey(p.amountInr) || p.id.startsWith('pkg_')) {
+          uniqueMap[p.amountInr] = p;
+        }
+      }
+      final packages = uniqueMap.values.toList()
+        ..sort((a, b) => a.amountInr.compareTo(b.amountInr));
 
       if (packages.isNotEmpty) return packages;
     } catch (_) {}

@@ -53,4 +53,30 @@ void main() {
     expect(source, contains("id: 'offer_500'"));
     expect(source, isNot(contains("id: 'pkg_starter_49'")));
   });
+
+  test('active coin packages migration syncs catalog and alias-resilient pending payment RPC', () {
+    final migration = File(
+      '../supabase/migrations/20260904_000033_sync_active_coin_packages.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains("'pkg_15'"));
+    expect(migration, contains("'pkg_140'"));
+    expect(migration, contains("'pkg_900'"));
+    expect(migration, contains("'base_15'"));
+    expect(migration, contains("'offer_140'"));
+    expect(migration, contains('create or replace function public.create_friendoo_pending_payment'));
+    expect(migration, contains("replace(p_package_id, 'pkg_', 'offer_')"));
+    expect(migration, contains("grant execute on function public.create_friendoo_pending_payment"));
+  });
+
+  test('Cashfree checkout provides user recovery actions for error or cancellation', () {
+    final source = File(
+      'lib/features/wallet/presentation/cashfree_checkout_page.dart',
+    ).readAsStringSync();
+
+    expect(source, contains("'Try Again'"));
+    expect(source, contains("'Go Back'"));
+    expect(source, contains("'Check Status'"));
+  });
 }
+
