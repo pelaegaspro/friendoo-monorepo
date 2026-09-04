@@ -596,6 +596,7 @@ export async function listCalls(): Promise<CallRow[]> {
           id,
           caller_id,
           host_id,
+          call_type,
           status,
           rate_per_minute,
           total_coins_deducted,
@@ -603,28 +604,66 @@ export async function listCalls(): Promise<CallRow[]> {
           created_at,
           accepted_at,
           started_at,
-          ended_at
+          ended_at,
+          end_reason
         `)
         .order('created_at', { ascending: false })
         .limit(200)
 
       if (error) throw error
 
-      return (data ?? []).map(c => {
+      // Batch-fetch profile names and phones for callers and hosts
+      const participantIds = Array.from(
+        new Set((data ?? []).flatMap((c) => [c.caller_id, c.host_id]).filter(Boolean))
+      )
+      const profileMap = new Map<string, { display_name: string | null; phone: string | null }>()
+      if (participantIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, phone')
+          .in('id', participantIds)
+        ;(profiles ?? []).forEach((p) => {
+          profileMap.set(p.id, { display_name: p.display_name, phone: p.phone })
+        })
+      }
+
+      return (data ?? []).map((c) => {
         let durationSeconds = 0
         if (c.started_at && c.ended_at) {
           durationSeconds = Math.max(0, Math.round((new Date(c.ended_at).getTime() - new Date(c.started_at).getTime()) / 1000))
+        } else if (c.started_at && (c.status === 'active' || c.status === 'accepted')) {
+          durationSeconds = Math.max(0, Math.round((Date.now() - new Date(c.started_at).getTime()) / 1000))
         }
+
+        const callerProfile = c.caller_id ? profileMap.get(c.caller_id) : null
+        const hostProfile = c.host_id ? profileMap.get(c.host_id) : null
+
+        const rawStatus = (c.status ?? 'missed').toLowerCase()
+        const normalizedStatus: CallStatus =
+          rawStatus === 'active' || rawStatus === 'accepted'
+            ? 'active'
+            : rawStatus === 'ended'
+            ? 'ended'
+            : rawStatus === 'ringing'
+            ? 'ringing'
+            : rawStatus === 'rejected'
+            ? 'rejected'
+            : 'missed'
+
         return {
           id: c.id,
           callerId: c.caller_id,
-          callerName: 'Caller ' + c.caller_id.slice(0, 6),
+          callerName: callerProfile?.display_name || (c.caller_id ? 'Caller ' + c.caller_id.slice(0, 6) : 'Unknown Caller'),
+          callerPhone: callerProfile?.phone || undefined,
           hostId: c.host_id,
-          hostName: 'Host ' + c.host_id.slice(0, 6),
-          status: c.status === 'active' || c.status === 'ended' ? c.status : 'missed',
+          hostName: hostProfile?.display_name || (c.host_id ? 'Host ' + c.host_id.slice(0, 6) : 'Unknown Host'),
+          hostPhone: hostProfile?.phone || undefined,
+          status: normalizedStatus,
           coinsSpent: asNumber(c.total_coins_deducted),
           durationSeconds,
           ratePerMinute: asNumber(c.rate_per_minute, 20),
+          callType: asString(c.call_type, 'audio'),
+          endReason: c.end_reason ? asString(c.end_reason) : null,
           createdAt: toIsoString(c.created_at),
           acceptedAt: toIsoString(c.accepted_at),
           endedAt: toIsoString(c.ended_at),
@@ -634,8 +673,9 @@ export async function listCalls(): Promise<CallRow[]> {
     } catch (error) {
       console.warn('listCalls fallback:', error)
       return [
-        { id: 'c1', callerId: 'u_101', callerName: 'Aarav Sharma', hostId: 'h1', hostName: 'Ananya Sharma ⭐', status: 'ended', coinsSpent: 120, durationSeconds: 360, ratePerMinute: 20, createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: new Date().toISOString(), agoraChannel: 'room_c1' },
-        { id: 'c2', callerId: 'u_102', callerName: 'Vikram Mehta', hostId: 'h2', hostName: 'Pooja Reddy 🎧', status: 'active', coinsSpent: 60, durationSeconds: 180, ratePerMinute: 20, createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: null, agoraChannel: 'room_c2' },
+        { id: 'c1', callerId: 'u_101', callerName: 'Aarav Sharma', hostId: 'h1', hostName: 'Ananya Sharma ⭐', status: 'ended', coinsSpent: 120, durationSeconds: 360, ratePerMinute: 20, callType: 'audio', endReason: 'caller_hangup', createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: new Date().toISOString(), agoraChannel: 'room_c1' },
+        { id: 'c2', callerId: 'u_102', callerName: 'Vikram Mehta', hostId: 'h2', hostName: 'Pooja Reddy 🎧', status: 'active', coinsSpent: 60, durationSeconds: 180, ratePerMinute: 20, callType: 'audio', endReason: null, createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: null, agoraChannel: 'room_c2' },
+        { id: 'c3', callerId: 'u_103', callerName: 'Rahul Verma', hostId: 'h3', hostName: 'Kavya Patel 👑', status: 'missed', coinsSpent: 0, durationSeconds: 0, ratePerMinute: 25, callType: 'audio', endReason: 'timeout', createdAt: new Date(Date.now() - 3600000).toISOString(), acceptedAt: null, endedAt: null, agoraChannel: 'room_c3' },
       ]
     }
   }, 15)

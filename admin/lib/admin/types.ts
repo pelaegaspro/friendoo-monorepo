@@ -1,6 +1,6 @@
 export type HostStatus = 'approved' | 'pending' | 'suspended'
 export type TransactionType = 'topup' | 'calldebit' | 'bonus'
-export type CallStatus = 'active' | 'ended' | 'missed'
+export type CallStatus = 'active' | 'ended' | 'missed' | 'rejected' | 'ringing'
 
 export interface AdminStats {
   totalUsers: number
@@ -58,6 +58,7 @@ export interface AdminUserRow {
   coinBalance: number
   status: 'active' | 'banned'
   joinedAt: string | null
+  createdAt: string | null
 }
 
 export interface CoinPackageRecord {
@@ -87,12 +88,16 @@ export interface CallRow {
   id: string
   callerId: string
   callerName: string
+  callerPhone?: string
   hostId: string
   hostName: string
+  hostPhone?: string
   status: CallStatus
   coinsSpent: number
   durationSeconds: number
   ratePerMinute: number
+  callType?: string
+  endReason?: string | null
   createdAt: string | null
   acceptedAt: string | null
   endedAt: string | null

@@ -13,15 +13,20 @@ import { formatDateTime, formatDuration } from '@/lib/admin/format'
 import { Download } from 'lucide-react'
 
 function downloadCsv(rows: CallRow[]) {
-  const header = ['Caller', 'Host', 'Duration', 'Coins Spent', 'Status', 'Date']
+  const header = ['Caller', 'Caller Phone', 'Host', 'Host Phone', 'Type', 'Duration', 'Coins Spent', 'Status', 'End Reason', 'Date', 'Channel']
   const lines = rows.map((row) =>
     [
       row.callerName,
+      row.callerPhone ?? '',
       row.hostName,
+      row.hostPhone ?? '',
+      row.callType ?? 'audio',
       formatDuration(row.durationSeconds),
       row.coinsSpent,
       row.status,
+      row.endReason ?? '',
       row.createdAt ?? '',
+      row.agoraChannel,
     ]
       .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
       .join(',')
@@ -66,8 +71,8 @@ export default function CallsAdminPage() {
   return (
     <div className="space-y-6">
       <SectionCard
-        title="Call History"
-        description="Monitor active, ended, and missed calls across the platform."
+        title="Call History & WebRTC Logs"
+        description="Monitor active, ended, missed, and rejected calls with full participant and billing telemetry."
         actions={
           <button
             type="button"
@@ -81,7 +86,7 @@ export default function CallsAdminPage() {
         }
       >
         <div className="flex flex-wrap gap-2">
-          {(['all', 'active', 'ended', 'missed'] as const).map((status) => (
+          {(['all', 'active', 'ended', 'missed', 'rejected', 'ringing'] as const).map((status) => (
             <button
               key={status}
               type="button"
@@ -92,7 +97,7 @@ export default function CallsAdminPage() {
                   : 'border border-[#343434] bg-[#111111] text-zinc-400'
               }`}
             >
-              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === 'all' ? `All (${calls.length})` : `${status.charAt(0).toUpperCase() + status.slice(1)} (${calls.filter(c => c.status === status).length})`}
             </button>
           ))}
         </div>
@@ -103,7 +108,7 @@ export default function CallsAdminPage() {
       ) : (
         <SectionCard>
           {filteredCalls.length === 0 ? (
-            <DataState title="No calls found" body="Try a different status filter." />
+            <DataState title="No calls found" body="Try a different status filter or check back after users initiate calls." />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
@@ -111,6 +116,7 @@ export default function CallsAdminPage() {
                   <tr className="border-b border-[#2b2b2b] text-zinc-400">
                     <th className="px-3 py-3 font-medium">Caller</th>
                     <th className="px-3 py-3 font-medium">Host</th>
+                    <th className="px-3 py-3 font-medium">Type</th>
                     <th className="px-3 py-3 font-medium">Duration</th>
                     <th className="px-3 py-3 font-medium">Coins Deducted</th>
                     <th className="px-3 py-3 font-medium">Status</th>
@@ -124,12 +130,32 @@ export default function CallsAdminPage() {
                       className="cursor-pointer border-b border-[#202020] transition hover:bg-[#151515]"
                       onClick={() => setSelectedCall(call)}
                     >
-                      <td className="px-3 py-4 font-medium text-white">{call.callerName}</td>
-                      <td className="px-3 py-4 text-zinc-300">{call.hostName}</td>
+                      <td className="px-3 py-4 font-medium text-white">
+                        <div>{call.callerName}</div>
+                        {call.callerPhone ? <div className="text-xs text-zinc-500">{call.callerPhone}</div> : null}
+                      </td>
+                      <td className="px-3 py-4 text-zinc-300">
+                        <div>{call.hostName}</div>
+                        {call.hostPhone ? <div className="text-xs text-zinc-500">{call.hostPhone}</div> : null}
+                      </td>
+                      <td className="px-3 py-4">
+                        <span className="inline-flex items-center rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400 uppercase">
+                          {call.callType || 'audio'}
+                        </span>
+                      </td>
                       <td className="px-3 py-4 text-zinc-300">{formatDuration(call.durationSeconds)}</td>
                       <td className="px-3 py-4 text-zinc-300">{call.coinsSpent.toLocaleString('en-IN')}</td>
                       <td className="px-3 py-4">
-                        <Badge label={call.status} variant={call.status === 'active' ? 'active' : call.status === 'ended' ? 'completed' : 'default'} />
+                        <Badge
+                          label={call.status}
+                          variant={
+                            call.status === 'active' || call.status === 'ringing'
+                              ? 'active'
+                              : call.status === 'ended'
+                              ? 'completed'
+                              : 'danger'
+                          }
+                        />
                       </td>
                       <td className="px-3 py-4 text-zinc-300">{formatDateTime(call.createdAt)}</td>
                     </tr>
@@ -144,8 +170,8 @@ export default function CallsAdminPage() {
       <SideSheet
         open={Boolean(selectedCall)}
         onClose={() => setSelectedCall(null)}
-        title="Call Details"
-        description="Full metadata for the selected call."
+        title="Call Details & Diagnostics"
+        description="Full metadata and session telemetry for the selected call."
         widthClassName="max-w-lg"
       >
         {selectedCall ? (
@@ -153,20 +179,44 @@ export default function CallsAdminPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Caller</p>
-                <p className="mt-2 text-white">{selectedCall.callerName}</p>
+                <p className="mt-2 font-medium text-white">{selectedCall.callerName}</p>
+                {selectedCall.callerPhone ? <p className="text-xs text-zinc-400">{selectedCall.callerPhone}</p> : null}
+                <p className="mt-1 font-mono text-[10px] text-zinc-600 truncate">{selectedCall.callerId}</p>
               </div>
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Host</p>
-                <p className="mt-2 text-white">{selectedCall.hostName}</p>
+                <p className="mt-2 font-medium text-white">{selectedCall.hostName}</p>
+                {selectedCall.hostPhone ? <p className="text-xs text-zinc-400">{selectedCall.hostPhone}</p> : null}
+                <p className="mt-1 font-mono text-[10px] text-zinc-600 truncate">{selectedCall.hostId}</p>
               </div>
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Status</p>
-                <p className="mt-2 text-white">{selectedCall.status}</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">Status & Type</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge
+                    label={selectedCall.status}
+                    variant={
+                      selectedCall.status === 'active' || selectedCall.status === 'ringing'
+                        ? 'active'
+                        : selectedCall.status === 'ended'
+                        ? 'completed'
+                        : 'danger'
+                    }
+                  />
+                  <span className="text-xs text-zinc-400 uppercase font-mono">
+                    {selectedCall.callType || 'audio'}
+                  </span>
+                </div>
               </div>
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">Agora Channel</p>
-                <p className="mt-2 break-all text-white">{selectedCall.agoraChannel || '--'}</p>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">End Reason</p>
+                <p className="mt-2 font-mono text-xs text-white">
+                  {selectedCall.endReason || (selectedCall.status === 'active' ? 'Active Session' : 'Normal Hangup')}
+                </p>
               </div>
+            </div>
+            <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">RTC Signaling Channel</p>
+              <p className="mt-2 break-all font-mono text-xs text-cyan-300">{selectedCall.agoraChannel || '--'}</p>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
@@ -183,13 +233,13 @@ export default function CallsAdminPage() {
               </div>
               <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Rate / minute</p>
-                <p className="mt-2 text-white">{selectedCall.ratePerMinute}</p>
+                <p className="mt-2 text-white">₹{selectedCall.ratePerMinute} / min</p>
               </div>
             </div>
             <div className="rounded-2xl border border-[#2d2d2d] bg-[#141414] p-4">
               <p className="text-xs uppercase tracking-wide text-zinc-500">Duration and spend</p>
               <p className="mt-2 text-white">
-                {formatDuration(selectedCall.durationSeconds)} | {selectedCall.coinsSpent.toLocaleString('en-IN')} coins
+                {formatDuration(selectedCall.durationSeconds)} | {selectedCall.coinsSpent.toLocaleString('en-IN')} coins deducted
               </p>
             </div>
           </div>

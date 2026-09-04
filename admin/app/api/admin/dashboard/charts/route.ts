@@ -30,10 +30,11 @@ export async function GET() {
       const days = getLast14Days()
       const startDate = days[0].ts.toISOString()
 
-      const [usersRes, callsRes, txRes] = await Promise.all([
+      const [usersRes, callsRes, txRes, latestCallsRes] = await Promise.all([
         supabase.from('profiles').select('id, display_name, phone, created_at').gte('created_at', startDate).order('created_at', { ascending: false }),
         supabase.from('calls').select('id, caller_id, host_id, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at').gte('created_at', startDate).order('created_at', { ascending: false }),
         supabase.from('payment_orders').select('amount_inr, created_at').eq('status', 'success').gte('created_at', startDate),
+        supabase.from('calls').select('id, caller_id, host_id, status, rate_per_minute, total_coins_deducted, started_at, ended_at, created_at').order('created_at', { ascending: false }).limit(5),
       ])
 
       const userMap = new Map<string, number>()
@@ -55,8 +56,7 @@ export async function GET() {
       ;(txRes.data ?? []).forEach((tx) => {
         if (!tx.created_at) return
         const label = dateLabel(new Date(tx.created_at))
-        const amount = typeof tx.amount_inr === 'number' ? tx.amount_inr : 0
-        revenueMap.set(label, (revenueMap.get(label) ?? 0) + amount)
+        revenueMap.set(label, (revenueMap.get(label) ?? 0) + (tx.amount_inr ?? 0))
       })
 
       const revenueData = days.map(({ date }) => ({ date, revenue: revenueMap.get(date) ?? 0 }))
@@ -70,10 +70,16 @@ export async function GET() {
         joinedAt: u.created_at || null,
       }))
 
-      const recentCalls = (callsRes.data ?? []).slice(0, 5).map((c) => {
+      const callList = (latestCallsRes.data && latestCallsRes.data.length > 0)
+        ? latestCallsRes.data
+        : (callsRes.data ?? []).slice(0, 5)
+
+      const recentCalls = callList.map((c) => {
         let durationSeconds = 0
         if (c.started_at && c.ended_at) {
           durationSeconds = Math.max(0, Math.round((new Date(c.ended_at).getTime() - new Date(c.started_at).getTime()) / 1000))
+        } else if (c.started_at && (c.status === 'active' || c.status === 'accepted')) {
+          durationSeconds = Math.max(0, Math.round((Date.now() - new Date(c.started_at).getTime()) / 1000))
         }
         return {
           id: c.id,
