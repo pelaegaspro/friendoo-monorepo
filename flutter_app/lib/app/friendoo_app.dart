@@ -196,10 +196,28 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
       ref.read(isHostModeProvider.notifier).state = false;
       ref.read(hasEnteredAppProvider.notifier).state = true;
     } on AuthException catch (error) {
-      setState(() => _error = error.message);
+      final msg = error.message.toLowerCase();
+      if (msg.contains('token') ||
+          msg.contains('expired') ||
+          msg.contains('invalid')) {
+        setState(
+          () => _error =
+              'Incorrect OTP. Please check the code or request a new one.',
+        );
+      } else if (msg.contains('rate') ||
+          msg.contains('limit') ||
+          msg.contains('too many')) {
+        setState(
+          () => _error =
+              'Too many attempts. Please wait a moment or request a new OTP.',
+        );
+      } else {
+        setState(() => _error = error.message);
+      }
     } catch (_) {
       setState(
-        () => _error = 'Invalid verification code. Please check and try again.',
+        () => _error =
+            'Incorrect OTP. Please check the code or request a new one.',
       );
     } finally {
       if (mounted) setState(() => _loading = false);
