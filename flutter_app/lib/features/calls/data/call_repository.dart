@@ -83,7 +83,11 @@ class CallRepository {
     }
   }
 
+  static final Map<String, Future<AgoraJoinCredentials>>
+  _agoraCredentialsCache = {};
+
   Future<void> endCall(String callId, {String reason = 'user_hangup'}) async {
+    _agoraCredentialsCache.remove(callId);
     if (_client.auth.currentSession == null) {
       throw Exception('Please sign in before ending a call.');
     }
@@ -109,21 +113,30 @@ class CallRepository {
     }
   }
 
-  Future<AgoraJoinCredentials> getAgoraCredentials(String callId) async {
-    try {
-      final response = await _client.functions.invoke(
-        'agora-token',
-        body: {'call_id': callId},
-      );
-      return AgoraJoinCredentials.fromMap(
-        response.data as Map<String, dynamic>,
-      );
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('getAgoraCredentials invocation failed: $e\n$st');
+  Future<AgoraJoinCredentials> getAgoraCredentials(String callId) {
+    final cached = _agoraCredentialsCache[callId];
+    if (cached != null) return cached;
+
+    final future = () async {
+      try {
+        final response = await _client.functions.invoke(
+          'agora-token',
+          body: {'call_id': callId},
+        );
+        return AgoraJoinCredentials.fromMap(
+          response.data as Map<String, dynamic>,
+        );
+      } catch (e, st) {
+        _agoraCredentialsCache.remove(callId);
+        if (kDebugMode) {
+          debugPrint('getAgoraCredentials invocation failed: $e\n$st');
+        }
+        throw Exception('Unable to obtain secure audio credentials: $e');
       }
-      throw Exception('Unable to obtain secure audio credentials: $e');
-    }
+    }();
+
+    _agoraCredentialsCache[callId] = future;
+    return future;
   }
 
   Future<VideoSdkJoinCredentials> getVideoSdkCredentials(String callId) async {
@@ -294,7 +307,9 @@ class CallRepository {
             .limit(50);
       } catch (e1) {
         if (kDebugMode) {
-          debugPrint('fetchCallHistory primary query notice: $e1. Using robust fallback.');
+          debugPrint(
+            'fetchCallHistory primary query notice: $e1. Using robust fallback.',
+          );
         }
         rows = await _client
             .from('calls')
@@ -341,19 +356,14 @@ class CallRepository {
         } catch (_) {}
       }
 
-      return list
-          .map((row) {
-            final rowMap = Map<String, dynamic>.from(row as Map<String, dynamic>);
-            final hId = rowMap['host_id']?.toString();
-            if (hId != null && hostProfilesMap.containsKey(hId)) {
-              rowMap['host_profile_fallback'] = hostProfilesMap[hId];
-            }
-            return CallHistoryItem.fromMap(
-              rowMap,
-              currentUserId: userId,
-            );
-          })
-          .toList();
+      return list.map((row) {
+        final rowMap = Map<String, dynamic>.from(row as Map<String, dynamic>);
+        final hId = rowMap['host_id']?.toString();
+        if (hId != null && hostProfilesMap.containsKey(hId)) {
+          rowMap['host_profile_fallback'] = hostProfilesMap[hId];
+        }
+        return CallHistoryItem.fromMap(rowMap, currentUserId: userId);
+      }).toList();
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('fetchCallHistory unexpected error: $e\n$st');

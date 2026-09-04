@@ -65,6 +65,12 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
       if (!isCallActive) return;
 
+      final rtcState = ref.read(rtcConnectionStateProvider).asData?.value;
+      final isAudioConnected = rtcState == RtcConnectionState.connected;
+
+      // Only advance the elapsed conversation timer once audio is actually connected
+      if (!isAudioConnected) return;
+
       setState(() {
         _secondsElapsed++;
       });
@@ -299,13 +305,18 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
         : widget.call.hostId;
 
     final rtcState = ref.watch(rtcConnectionStateProvider).asData?.value;
+    final bool isRtcConnected = rtcState == RtcConnectionState.connected;
     final bool isRtcReconnecting =
         isCallActive && rtcState == RtcConnectionState.reconnecting;
+    final bool isRtcConnecting =
+        isCallActive && !isRtcConnected && !isRtcReconnecting;
 
     // Connection & Timer String
     final String timeOrStatusString;
     if (isRtcReconnecting) {
       timeOrStatusString = 'Reconnecting...';
+    } else if (isRtcConnecting) {
+      timeOrStatusString = 'Connecting voice...';
     } else if (isCallActive) {
       timeOrStatusString = _formatTimer(_secondsElapsed);
     } else if (liveCall.status == CallStatus.ringing) {
@@ -318,6 +329,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     final String speakingStatusText;
     if (isRtcReconnecting) {
       speakingStatusText = 'Reconnecting audio...';
+    } else if (isRtcConnecting) {
+      speakingStatusText = 'Connecting voice channel...';
     } else if (isCallActive) {
       if (isHost) {
         speakingStatusText = 'You are speaking...';
@@ -494,7 +507,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                 // 6. ANIMATED AUDIO WAVEFORM
                 AnimatedAudioWaveform(
-                  isActive: isCallActive,
+                  isActive: isCallActive && isRtcConnected,
                   barCount: 34,
                   primaryColor: const Color(0xFFFF2A85),
                   secondaryColor: const Color(0xFFC084FC),

@@ -218,31 +218,17 @@ class AgoraAudioService implements RtcAudioService {
         RtcEngineContext(
           appId: appIdOrToken,
           channelProfile: ChannelProfileType.channelProfileCommunication,
+          audioScenario: AudioScenarioType.audioScenarioDefault,
         ),
       );
-      try {
-        await engine.setChannelProfile(
-          ChannelProfileType.channelProfileCommunication,
-        );
-      } catch (_) {}
 
       await engine.enableAudio();
-      await engine.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-
-      try {
-        await engine.enableLocalAudio(true);
-      } catch (_) {}
-
-      try {
-        await engine.adjustRecordingSignalVolume(100);
-        await engine.adjustPlaybackSignalVolume(100);
-      } catch (_) {}
 
       if (!kIsWeb) {
         try {
           await engine.setAudioProfile(
             profile: AudioProfileType.audioProfileDefault,
-            scenario: AudioScenarioType.audioScenarioGameStreaming,
+            scenario: AudioScenarioType.audioScenarioDefault,
           );
           await engine.setEnableSpeakerphone(_isSpeaker);
         } catch (_) {}

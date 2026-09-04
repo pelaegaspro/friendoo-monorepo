@@ -18,51 +18,10 @@ class MainActivity : FlutterActivity() {
 
     private companion object {
         const val UPI_CHANNEL = "com.friendoo.friendoo/upi"
-        const val CALL_SERVICE_CHANNEL = "com.friendoo.friendoo/call_service"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CALL_SERVICE_CHANNEL)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "startCallService" -> {
-                        val callId = call.argument<String>("callId") ?: ""
-                        val partnerName = call.argument<String>("partnerName") ?: "Host"
-                        val duration = call.argument<String>("duration") ?: "00:00"
-                        val intent = Intent(this, CallForegroundService::class.java).apply {
-                            action = CallForegroundService.ACTION_START
-                            putExtra(CallForegroundService.EXTRA_CALL_ID, callId)
-                            putExtra(CallForegroundService.EXTRA_PARTNER_NAME, partnerName)
-                            putExtra(CallForegroundService.EXTRA_DURATION_TEXT, duration)
-                        }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            startForegroundService(intent)
-                        } else {
-                            startService(intent)
-                        }
-                        result.success(true)
-                    }
-                    "updateCallDuration" -> {
-                        val duration = call.argument<String>("duration") ?: "00:00"
-                        val intent = Intent(this, CallForegroundService::class.java).apply {
-                            action = CallForegroundService.ACTION_UPDATE_TIMER
-                            putExtra(CallForegroundService.EXTRA_DURATION_TEXT, duration)
-                        }
-                        startService(intent)
-                        result.success(true)
-                    }
-                    "stopCallService" -> {
-                        val intent = Intent(this, CallForegroundService::class.java).apply {
-                            action = CallForegroundService.ACTION_STOP
-                        }
-                        startService(intent)
-                        result.success(true)
-                    }
-                    else -> result.notImplemented()
-                }
-            }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, UPI_CHANNEL)
             .setMethodCallHandler { call, result ->

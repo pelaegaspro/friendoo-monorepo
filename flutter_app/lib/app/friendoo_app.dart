@@ -1642,6 +1642,18 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
   }
 
   Future<void> _showIncomingCall(CallSession call) async {
+    // Pre-warm Agora credentials in background cache while host views incoming call dialog
+    unawaited(
+      ref.read(callRepositoryProvider).getAgoraCredentials(call.id).catchError(
+            (_) => const AgoraJoinCredentials(
+              token: '',
+              appId: '',
+              channel: '',
+              uid: 0,
+            ),
+          ),
+    );
+
     final decision = await IncomingHostCallDialog.show(context, call: call);
 
     try {
