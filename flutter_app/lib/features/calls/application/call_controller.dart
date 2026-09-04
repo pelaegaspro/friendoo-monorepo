@@ -337,10 +337,12 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       final isHost = currentUserId != null && currentUserId == call.hostId;
       // Start Android native foreground service with ongoing call notification & CPU/Wi-Fi locks
       unawaited(
-        ref.read(callForegroundServiceProvider).start(
-          callId: call.id,
-          partnerName: isHost ? 'Direct Caller' : 'Verified Host',
-        ),
+        ref
+            .read(callForegroundServiceProvider)
+            .start(
+              callId: call.id,
+              partnerName: isHost ? 'Direct Caller' : 'Verified Host',
+            ),
       );
     } catch (e, st) {
       if (kDebugMode) {
