@@ -220,6 +220,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
                 call.status == CallStatus.active) {
               _callStartTime ??= DateTime.now();
               unawaited(_joinAudio(call));
+              unawaited(ref.read(agoraAudioServiceProvider).ensurePublishing());
               _startHeartbeat(call.id);
             }
 

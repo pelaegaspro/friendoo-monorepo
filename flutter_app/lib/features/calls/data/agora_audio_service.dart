@@ -153,6 +153,8 @@ class AgoraAudioService implements RtcAudioService {
                 'Agora onUserJoined: remoteUid=$remoteUid in channel=${connection.channelId}',
               );
             }
+            // Proactively assert microphone publishing when remote party joins
+            unawaited(ensurePublishing());
           },
           onUserMuteAudio:
               (RtcConnection connection, int remoteUid, bool muted) {
@@ -218,17 +220,27 @@ class AgoraAudioService implements RtcAudioService {
         RtcEngineContext(
           appId: appIdOrToken,
           channelProfile: ChannelProfileType.channelProfileCommunication,
-          audioScenario: AudioScenarioType.audioScenarioDefault,
+          audioScenario: AudioScenarioType.audioScenarioGameStreaming,
         ),
       );
 
       await engine.enableAudio();
+      await engine.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+
+      try {
+        await engine.enableLocalAudio(true);
+      } catch (_) {}
+
+      try {
+        await engine.adjustRecordingSignalVolume(100);
+        await engine.adjustPlaybackSignalVolume(100);
+      } catch (_) {}
 
       if (!kIsWeb) {
         try {
           await engine.setAudioProfile(
             profile: AudioProfileType.audioProfileDefault,
-            scenario: AudioScenarioType.audioScenarioDefault,
+            scenario: AudioScenarioType.audioScenarioGameStreaming,
           );
           await engine.setEnableSpeakerphone(_isSpeaker);
         } catch (_) {}
@@ -262,11 +274,43 @@ class AgoraAudioService implements RtcAudioService {
     }
   }
 
+  /// Explicitly re-asserts local microphone capture, volume, and media publication options.
+  Future<void> ensurePublishing() async {
+    final engine = _engine;
+    if (engine == null) return;
+    try {
+      await engine.enableAudio();
+      await engine.enableLocalAudio(!_isMuted);
+      await engine.muteLocalAudioStream(_isMuted);
+      await engine.adjustRecordingSignalVolume(100);
+      await engine.adjustPlaybackSignalVolume(100);
+      await engine.updateChannelMediaOptions(
+        const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+          publishMicrophoneTrack: true,
+          autoSubscribeAudio: true,
+          enableAudioRecordingOrPlayout: true,
+        ),
+      );
+      if (kDebugMode) {
+        debugPrint(
+          'Agora: Local audio publishing re-asserted and confirmed active.',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Agora ensurePublishing notice: $e');
+      }
+    }
+  }
+
   @override
   Future<void> setMuted(bool muted) async {
     _isMuted = muted;
     try {
       await _engine?.muteLocalAudioStream(muted);
+      await _engine?.enableLocalAudio(!muted);
     } catch (_) {}
   }
 

@@ -3186,6 +3186,7 @@ class _FriendooHostEarningsViewState
         _HostEarningsOverviewCard(
           selectedFilter: _chartFilter,
           onFilterChanged: (filter) => setState(() => _chartFilter = filter),
+          stats: hostStats,
         ),
         const SizedBox(height: 24),
 
@@ -5388,10 +5389,12 @@ class _HostEarningsOverviewCard extends StatefulWidget {
   const _HostEarningsOverviewCard({
     required this.selectedFilter,
     required this.onFilterChanged,
+    this.stats,
   });
 
   final int selectedFilter;
   final ValueChanged<int> onFilterChanged;
+  final HostDashboardStats? stats;
 
   @override
   State<_HostEarningsOverviewCard> createState() =>
@@ -5399,26 +5402,39 @@ class _HostEarningsOverviewCard extends StatefulWidget {
 }
 
 class _HostEarningsOverviewCardState extends State<_HostEarningsOverviewCard> {
-  int _selectedDayIndex = 0;
+  int _selectedDayIndex = 6; // Default to today on 7D
 
   static const _filters = ['7D', '30D', '90D'];
 
-  final List<List<double>> _chartData = [
-    [0, 0, 0, 0, 0, 0, 0], // 7D
-    [0, 0, 0, 0], // 30D
-    [0, 0, 0], // 90D
-  ];
-
-  final List<List<String>> _chartLabels = [
-    ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    ['W1', 'W2', 'W3', 'W4'],
-    ['Month 1', 'Month 2', 'Month 3'],
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final points = _chartData[widget.selectedFilter];
-    final labels = _chartLabels[widget.selectedFilter];
+    final stats = widget.stats;
+    final now = DateTime.now();
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final labels7d = List.generate(7, (i) {
+      final d = now.subtract(Duration(days: 6 - i));
+      return weekdays[(d.weekday - 1).clamp(0, 6)];
+    });
+
+    final points7d = (stats != null && stats.weeklyTrend.isNotEmpty)
+        ? stats.weeklyTrend
+        : const [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    final points30d = (stats != null && stats.monthlyTrend.isNotEmpty)
+        ? stats.monthlyTrend
+        : const [0.0, 0.0, 0.0, 0.0];
+    final points90d = (stats != null && stats.threeMonthTrend.isNotEmpty)
+        ? stats.threeMonthTrend
+        : const [0.0, 0.0, 0.0];
+
+    final chartData = [points7d, points30d, points90d];
+    final chartLabels = [
+      labels7d,
+      const ['W1', 'W2', 'W3', 'W4'],
+      const ['Month 1', 'Month 2', 'Month 3'],
+    ];
+
+    final points = chartData[widget.selectedFilter];
+    final labels = chartLabels[widget.selectedFilter];
     final safeIndex = _selectedDayIndex.clamp(0, points.length - 1);
 
     return Container(

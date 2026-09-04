@@ -505,7 +505,10 @@ class CallHistoryItem {
   bool get isOtherPartyOnline => otherPartyIsOnline ?? true;
   bool get isOtherPartyStar => otherPartyIsStar ?? false;
   int get displayEarnedInr =>
-      amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
+      amountInr ??
+      (totalCoins > 0
+          ? (totalCoins * 0.6).round()
+          : ((durationMinutes * 5) * 0.6).round());
   int get displayPaidInr =>
       amountInr ?? (totalCoins > 0 ? totalCoins : (durationMinutes * 5));
 
@@ -552,7 +555,9 @@ class CallHistoryItem {
             if (pdn is String && pdn.trim().isNotEmpty) {
               name = pdn.trim();
             }
-          } else if (profiles is List && profiles.isNotEmpty && profiles.first is Map) {
+          } else if (profiles is List &&
+              profiles.isNotEmpty &&
+              profiles.first is Map) {
             final first = profiles.first as Map;
             final pdn = first['display_name'];
             if (pdn is String && pdn.trim().isNotEmpty) {
@@ -768,6 +773,9 @@ class HostDashboardStats {
     this.maxSilenceWarnings = 3,
     this.avgDurationFormatted = '0m 00s',
     this.rating = 5.0,
+    this.weeklyTrend = const [0, 0, 0, 0, 0, 0, 0],
+    this.monthlyTrend = const [0, 0, 0, 0],
+    this.threeMonthTrend = const [0, 0, 0],
   });
 
   final int todayEarningsInr;
@@ -788,6 +796,9 @@ class HostDashboardStats {
   final int maxSilenceWarnings;
   final String avgDurationFormatted;
   final double rating;
+  final List<double> weeklyTrend;
+  final List<double> monthlyTrend;
+  final List<double> threeMonthTrend;
 
   bool get isHostSuspended => silenceWarningsCount >= maxSilenceWarnings;
 }

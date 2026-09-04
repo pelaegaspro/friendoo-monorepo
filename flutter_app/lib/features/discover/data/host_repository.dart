@@ -207,8 +207,13 @@ class HostRepository {
       final totalCallsList = (calls as List<dynamic>);
       final totalCallsCount = totalCallsList.length;
 
+      final List<double> weeklyTrend = List.filled(7, 0.0);
+      final List<double> monthlyTrend = List.filled(4, 0.0);
+      final List<double> threeMonthTrend = List.filled(3, 0.0);
+
       for (final c in totalCallsList) {
         final coins = (c['total_coins_deducted'] as num?)?.toInt() ?? 0;
+        final hostCut = (coins * 0.6).round().toDouble();
         final createdAt =
             DateTime.tryParse(c['created_at']?.toString() ?? '') ?? now;
         totalCoins += coins;
@@ -232,6 +237,27 @@ class HostRepository {
         }
         if (createdAt.isAfter(startOfMonth)) {
           monthCoins += coins;
+        }
+
+        // 7D trend: days ago (0..6, where 6 is today)
+        final daysAgo = now.difference(createdAt).inDays;
+        if (daysAgo >= 0 && daysAgo < 7) {
+          final idx = 6 - daysAgo;
+          weeklyTrend[idx] += hostCut;
+        }
+
+        // 30D trend: 4 weekly buckets (where 3 is current week)
+        final weeksAgo = (daysAgo / 7).floor();
+        if (weeksAgo >= 0 && weeksAgo < 4) {
+          final idx = 3 - weeksAgo;
+          monthlyTrend[idx] += hostCut;
+        }
+
+        // 90D trend: 3 monthly buckets (where 2 is current month)
+        final monthsAgo = (daysAgo / 30).floor();
+        if (monthsAgo >= 0 && monthsAgo < 3) {
+          final idx = 2 - monthsAgo;
+          threeMonthTrend[idx] += hostCut;
         }
       }
 
@@ -260,7 +286,7 @@ class HostRepository {
         avgDurationFormatted = '${mins}m ${secs.toString().padLeft(2, '0')}s';
       }
 
-      final displayEarningsInr = liveHostWalletInr > 0
+      final displayEarningsInr = liveHostWalletInr > totalEarningsInr
           ? liveHostWalletInr
           : totalEarningsInr;
 
@@ -270,7 +296,7 @@ class HostRepository {
         isOnline: isOnline,
         ratePerMinute: rate,
         totalEarningsInr: displayEarningsInr,
-        availableToWithdrawInr: displayEarningsInr,
+        availableToWithdrawInr: liveHostWalletInr,
         thisWeekEarningsInr: thisWeekEarningsInr,
         thisMonthEarningsInr: thisMonthEarningsInr,
         totalCallsCount: totalCallsCount,
@@ -279,6 +305,9 @@ class HostRepository {
         referralsEarningsInr: 0,
         avgDurationFormatted: avgDurationFormatted,
         rating: hostRating,
+        weeklyTrend: weeklyTrend,
+        monthlyTrend: monthlyTrend,
+        threeMonthTrend: threeMonthTrend,
       );
     } catch (_) {
       return const HostDashboardStats(

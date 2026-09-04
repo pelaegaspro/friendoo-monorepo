@@ -2296,9 +2296,13 @@ class _HostCallHistoryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '₹${call.displayEarnedInr}',
-                  style: const TextStyle(
-                    color: Color(0xFF047857),
+                  call.isHost
+                      ? '₹${call.displayEarnedInr}'
+                      : '₹${call.displayPaidInr}',
+                  style: TextStyle(
+                    color: call.isHost
+                        ? const Color(0xFF047857)
+                        : const Color(0xFF1E293B),
                     fontSize: 17,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.3,
@@ -2311,16 +2315,22 @@ class _HostCallHistoryCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
+                    color: call.isHost
+                        ? const Color(0xFFECFDF5)
+                        : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: const Color(0xFF10B981).withOpacity(0.3),
+                      color: call.isHost
+                          ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                          : const Color(0xFF94A3B8).withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Text(
-                    'Earned',
+                  child: Text(
+                    call.isHost ? 'Earned' : 'Spent',
                     style: TextStyle(
-                      color: Color(0xFF047857),
+                      color: call.isHost
+                          ? const Color(0xFF047857)
+                          : const Color(0xFF475569),
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0.2,
