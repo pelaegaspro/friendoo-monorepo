@@ -1,4 +1,5 @@
-/** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV !== 'production';
+
 const securityHeaders = [
   {
     key: 'Content-Security-Policy',
@@ -8,13 +9,13 @@ const securityHeaders = [
       "object-src 'none'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co https://*.cashfree.com",
+      "connect-src 'self' https://*.supabase.co https://*.cashfree.com http://localhost:* ws://localhost:*",
       "media-src 'self' blob: https:",
-      'upgrade-insecure-requests',
+      ...(isDev ? [] : ['upgrade-insecure-requests']),
     ].join('; '),
   },
   { key: 'X-Content-Type-Options', value: 'nosniff' },

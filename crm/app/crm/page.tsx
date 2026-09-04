@@ -48,7 +48,7 @@ interface DashboardResponse {
   };
   revenueTrend: Array<{ day: string; amount: number }>;
   funnel: Array<{ step: string; count: number }>;
-  topHosts: Array<{ hostId: string; name: string; totalCalls: number }>;
+  topHosts: Array<{ hostId?: string; uid?: string; name: string; totalCalls?: number; calls?: number }>;
   callVolumeByHour: Array<{ hour: number; calls: number }>;
   alerts: Array<{
     id: string;
@@ -458,38 +458,42 @@ export default function CrmDashboardPage() {
             </div>
 
             <div className="mt-4 space-y-2.5">
-              {data.topHosts.slice(0, 5).map((host, idx) => (
-                <div
-                  key={host.hostId}
-                  onClick={() => setSelectedHost(host)}
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition-all hover:border-purple-500/40 hover:bg-white/10 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
-                      idx === 0 ? "bg-amber-400 text-black shadow-sm" :
-                      idx === 1 ? "bg-slate-300 text-black shadow-sm" :
-                      idx === 2 ? "bg-amber-700 text-white shadow-sm" :
-                      "bg-white/10 text-muted-foreground"
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <div>
-                      <div className="text-sm font-bold text-foreground">{host.name}</div>
-                      <div className="text-[11px] font-mono text-muted-foreground">ID: {host.hostId.slice(0, 8)}</div>
+              {(data?.topHosts ?? []).slice(0, 5).map((host, idx) => {
+                const hostId = host.hostId || host.uid || `host-${idx + 1}`;
+                const callCount = host.totalCalls ?? host.calls ?? 0;
+                return (
+                  <div
+                    key={hostId}
+                    onClick={() => setSelectedHost({ hostId, name: host.name, totalCalls: callCount })}
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition-all hover:border-purple-500/40 hover:bg-white/10 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
+                        idx === 0 ? "bg-amber-400 text-black shadow-sm" :
+                        idx === 1 ? "bg-slate-300 text-black shadow-sm" :
+                        idx === 2 ? "bg-amber-700 text-white shadow-sm" :
+                        "bg-white/10 text-muted-foreground"
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <div className="text-sm font-bold text-foreground">{host.name}</div>
+                        <div className="text-[11px] font-mono text-muted-foreground">ID: {hostId.slice(0, 8)}</div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-xs font-extrabold text-purple-400">{host.totalCalls} Calls</div>
-                      <div className="text-[10px] text-muted-foreground">4.9 ★ Rating</div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-xs font-extrabold text-purple-400">{callCount} Calls</div>
+                        <div className="text-[10px] text-muted-foreground">4.9 ★ Rating</div>
+                      </div>
+                      <Button size="sm" variant="secondary" className="h-7 text-xs px-2">
+                        View
+                      </Button>
                     </div>
-                    <Button size="sm" variant="secondary" className="h-7 text-xs px-2">
-                      View
-                    </Button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -605,11 +609,11 @@ export default function CrmDashboardPage() {
             <div className="mt-5 space-y-3 rounded-xl border border-white/10 bg-white/5 p-4 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Host Identifier:</span>
-                <span className="font-mono font-medium text-foreground">{selectedHost.hostId}</span>
+                <span className="font-mono font-medium text-foreground">{selectedHost.hostId || '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Calls (This Week):</span>
-                <span className="font-bold text-purple-400">{selectedHost.totalCalls} calls</span>
+                <span className="font-bold text-purple-400">{selectedHost.totalCalls ?? 0} calls</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Connection Quality:</span>

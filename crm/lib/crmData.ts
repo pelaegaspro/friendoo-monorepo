@@ -1,4 +1,4 @@
-﻿import {
+import {
   addDays,
   endOfDay,
   format,
@@ -87,11 +87,11 @@ export function getMockDashboardData() {
       { step: "Repeat Topup (D7)", count: 1180 },
     ],
     topHosts: [
-      { uid: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148 },
-      { uid: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124 },
-      { uid: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109 },
-      { uid: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96 },
-      { uid: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84 },
+      { uid: "h1", hostId: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148, totalCalls: 148 },
+      { uid: "h2", hostId: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124, totalCalls: 124 },
+      { uid: "h3", hostId: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109, totalCalls: 109 },
+      { uid: "h4", hostId: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96, totalCalls: 96 },
+      { uid: "h5", hostId: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84, totalCalls: 84 },
     ],
     callVolumeByHour: hourly,
     alerts: [
@@ -178,11 +178,11 @@ export async function getDashboardData(now = new Date()) {
           { step: "Repeat Topup (D7)", count: Math.round(totalUsers * 0.15) },
         ],
         topHosts: [
-          { uid: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148 },
-          { uid: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124 },
-          { uid: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109 },
-          { uid: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96 },
-          { uid: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84 },
+          { uid: "h1", hostId: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148, totalCalls: 148 },
+          { uid: "h2", hostId: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124, totalCalls: 124 },
+          { uid: "h3", hostId: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109, totalCalls: 109 },
+          { uid: "h4", hostId: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96, totalCalls: 96 },
+          { uid: "h5", hostId: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84, totalCalls: 84 },
         ],
         callVolumeByHour: hourly,
         alerts: (fraudAlertsRes.data ?? []).map(a => ({

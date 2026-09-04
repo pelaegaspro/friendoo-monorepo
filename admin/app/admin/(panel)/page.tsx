@@ -62,8 +62,16 @@ export default function AdminDashboardPage() {
         adminFetch<AdminStats>('/api/admin/stats'),
         adminFetch<ChartData>('/api/admin/dashboard/charts'),
       ])
-      setStats(nextStats)
-      setCharts(nextCharts)
+      setStats(nextStats ? { ...emptyStats, ...nextStats } : emptyStats)
+      setCharts(nextCharts ? {
+        ...emptyCharts,
+        ...nextCharts,
+        revenueData: nextCharts.revenueData || [],
+        callData: nextCharts.callData || [],
+        userData: nextCharts.userData || [],
+        recentUsers: nextCharts.recentUsers || [],
+        recentCalls: nextCharts.recentCalls || [],
+      } : emptyCharts)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load dashboard')
     } finally {
@@ -99,23 +107,23 @@ export default function AdminDashboardPage() {
         <>
           {/* KPI Cards */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <StatCard label="Total Users" value={stats.totalUsers.toLocaleString('en-IN')} />
-            <StatCard label="Total Hosts" value={stats.totalHosts.toLocaleString('en-IN')} />
-            <StatCard label="Active Calls" value={stats.activeCalls.toLocaleString('en-IN')} />
-            <StatCard label="Today's Revenue" value={formatInr(stats.todaysRevenueInr)} />
-            <StatCard label="Coins in Circulation" value={stats.totalCoinsInCirculation.toLocaleString('en-IN')} />
-            <StatCard label="Pending Applications" value={stats.pendingHostApplications.toLocaleString('en-IN')} />
+            <StatCard label="Total Users" value={(stats?.totalUsers ?? 0).toLocaleString('en-IN')} />
+            <StatCard label="Total Hosts" value={(stats?.totalHosts ?? 0).toLocaleString('en-IN')} />
+            <StatCard label="Active Calls" value={(stats?.activeCalls ?? 0).toLocaleString('en-IN')} />
+            <StatCard label="Today's Revenue" value={formatInr(stats?.todaysRevenueInr ?? 0)} />
+            <StatCard label="Coins in Circulation" value={(stats?.totalCoinsInCirculation ?? 0).toLocaleString('en-IN')} />
+            <StatCard label="Pending Applications" value={(stats?.pendingHostApplications ?? 0).toLocaleString('en-IN')} />
           </div>
 
           {/* Charts Row 1 — Revenue + Calls */}
           <div className="grid gap-6 xl:grid-cols-2">
             <SectionCard>
-              {charts.revenueData.length > 0
+              {(charts?.revenueData?.length ?? 0) > 0
                 ? <RevenueChart data={charts.revenueData} />
                 : <DataState title="No revenue data yet" body="Revenue chart will appear once transactions occur." />}
             </SectionCard>
             <SectionCard>
-              {charts.callData.length > 0
+              {(charts?.callData?.length ?? 0) > 0
                 ? <CallVolumeChart data={charts.callData} />
                 : <DataState title="No call data yet" body="Call volume chart will appear once calls happen." />}
             </SectionCard>
@@ -123,7 +131,7 @@ export default function AdminDashboardPage() {
 
           {/* Charts Row 2 — User Growth */}
           <SectionCard>
-            {charts.userData.length > 0
+            {(charts?.userData?.length ?? 0) > 0
               ? <UserGrowthChart data={charts.userData} />
               : <DataState title="No user growth data yet" body="User growth chart will appear once users register." />}
           </SectionCard>
@@ -132,7 +140,7 @@ export default function AdminDashboardPage() {
           <div className="grid gap-6 xl:grid-cols-2">
             {/* Recent Signups */}
             <SectionCard title="Recent Signups" description="Latest 5 new users on the platform">
-              {charts.recentUsers.length === 0 ? (
+              {(charts?.recentUsers?.length ?? 0) === 0 ? (
                 <DataState title="No recent signups" body="New user signups will appear here." />
               ) : (
                 <div className="space-y-3">
@@ -151,7 +159,7 @@ export default function AdminDashboardPage() {
 
             {/* Recent Calls */}
             <SectionCard title="Recent Calls" description="Latest 5 calls on the platform">
-              {charts.recentCalls.length === 0 ? (
+              {(charts?.recentCalls?.length ?? 0) === 0 ? (
                 <DataState title="No recent calls" body="Recent calls will appear here." />
               ) : (
                 <div className="space-y-3">
