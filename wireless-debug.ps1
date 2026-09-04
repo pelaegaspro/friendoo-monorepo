@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Friendoo Wireless Debugging Utility
 .DESCRIPTION
@@ -14,6 +14,7 @@ param(
     [string]$Connect,
     [string]$Pair,
     [string]$Code,
+    [switch]$Qr,
     [switch]$UsbToWifi,
     [switch]$Install,
     [switch]$Status,
@@ -190,7 +191,24 @@ function Do-Connect {
     }
 }
 
+function Do-Qr {
+    Write-Host ""
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "   SCAN THIS QR CODE WITH YOUR PHONE'S CAMERA             " -ForegroundColor White
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "On your Android device:" -ForegroundColor Yellow
+    Write-Host "1. Go to Settings -> Developer Options -> Wireless debugging" -ForegroundColor White
+    Write-Host "2. Tap 'Pair device with QR code'" -ForegroundColor White
+    Write-Host "3. Point your camera at the QR code on this screen!" -ForegroundColor White
+    Write-Host ""
+    & npx -y adb-qr
+}
+
 # CLI Parameter handlers
+if ($Qr) {
+    Do-Qr
+    exit
+}
 if ($Connect) {
     Do-Connect $Connect
     exit
@@ -223,37 +241,42 @@ do {
     Show-Devices
 
     Write-Host "Select an option:" -ForegroundColor Yellow
-    Write-Host " [1] Pair device with pairing code (Android 11+ Wireless Debugging)" -ForegroundColor White
-    Write-Host " [2] Connect to already-paired wireless device" -ForegroundColor White
-    Write-Host " [3] Switch connected USB phone to Wireless (1-Click, no code needed)" -ForegroundColor White
-    Write-Host " [4] Install Friendoo debug APK to connected wireless device(s)" -ForegroundColor White
-    Write-Host " [5] Refresh devices list" -ForegroundColor White
-    Write-Host " [6] Disconnect all wireless devices" -ForegroundColor White
+    Write-Host " [1] Pair device with QR CODE (Scan screen with phone camera)" -ForegroundColor Green
+    Write-Host " [2] Pair device with 6-digit pairing code" -ForegroundColor White
+    Write-Host " [3] Connect to already-paired wireless device" -ForegroundColor White
+    Write-Host " [4] Switch connected USB phone to Wireless (1-Click, no code needed)" -ForegroundColor White
+    Write-Host " [5] Install Friendoo debug APK to connected wireless device(s)" -ForegroundColor White
+    Write-Host " [6] Refresh devices list" -ForegroundColor White
+    Write-Host " [7] Disconnect all wireless devices" -ForegroundColor White
     Write-Host " [0] Exit" -ForegroundColor Gray
     Write-Host ""
-    $choice = Read-Host "Choose [0-6]"
+    $choice = Read-Host "Choose [0-7]"
 
     switch ($choice) {
         "1" {
-            Do-Pair
+            Do-Qr
             Write-Host "`nPress Enter to return to menu..."; [void][Console]::ReadLine()
         }
         "2" {
-            Do-Connect
+            Do-Pair
             Write-Host "`nPress Enter to return to menu..."; [void][Console]::ReadLine()
         }
         "3" {
-            Do-UsbToWifi
+            Do-Connect
             Write-Host "`nPress Enter to return to menu..."; [void][Console]::ReadLine()
         }
         "4" {
-            Do-Install
+            Do-UsbToWifi
             Write-Host "`nPress Enter to return to menu..."; [void][Console]::ReadLine()
         }
         "5" {
-            # Loop will refresh
+            Do-Install
+            Write-Host "`nPress Enter to return to menu..."; [void][Console]::ReadLine()
         }
         "6" {
+            # Loop will refresh
+        }
+        "7" {
             & adb disconnect
             Write-Host "[+] Disconnected all." -ForegroundColor Green
             Start-Sleep -Seconds 1
