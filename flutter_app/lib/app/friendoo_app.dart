@@ -560,7 +560,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   void _startAudioCall(HostProfile host) {
     ref.read(selectedCallingHostProvider.notifier).state = host;
-    ref.read(activeCallProvider.notifier).initiateAudioCall(host.id);
+    ref.read(activeCallProvider.notifier).initiateAudioCall(host.id, context: context);
   }
 
   Future<void> _signOut() async {
@@ -585,6 +585,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         final err = next.error.toString();
         if (err.contains('15 coins') || err.contains('recharge')) {
           CoinPackagesPage.push(context, isCallRecharge: true);
+        } else if (err.contains('Microphone permission')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Microphone permission is required for voice calls. Please allow permission.'),
+              backgroundColor: Color(0xFFDC2626),
+            ),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Could not start call: ${next.error}')),
@@ -1639,7 +1646,9 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
 
     try {
       if (decision == IncomingCallDecision.accept) {
-        await ref.read(activeCallProvider.notifier).acceptIncomingCall(call.id);
+        await ref
+            .read(activeCallProvider.notifier)
+            .acceptIncomingCall(call.id, context: context);
       } else if (decision == IncomingCallDecision.goOffline) {
         await ref.read(hostCallGuardProvider.notifier).setOnlineStatus(false);
         await ref
@@ -4507,7 +4516,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                   ),
                                   onPressed: () => ref
                                       .read(activeCallProvider.notifier)
-                                      .acceptIncomingCall(c.id),
+                                      .acceptIncomingCall(c.id, context: context),
                                   child: const Text('Accept'),
                                 ),
                               ],
