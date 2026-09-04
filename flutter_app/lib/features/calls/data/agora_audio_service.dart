@@ -123,6 +123,8 @@ class AgoraAudioService implements RtcAudioService {
                       'Agora: Network carrier handover detected (Wi-Fi ↔ Cellular). Auto-reconnecting...',
                     );
                   }
+                  unawaited(_engine?.enableAudio());
+                  unawaited(_engine?.muteLocalAudioStream(_isMuted));
                 } else if (reason ==
                     ConnectionChangedReasonType.connectionChangedTokenExpired) {
                   _renewToken();

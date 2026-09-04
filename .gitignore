@@ -44,3 +44,6 @@ flutter_app/assets/.env.local
 **/Friendoo/.gradle/
 *.tsbuildinfo
 *.build-output.txt
+e2e/screenshots/
+e2e/*_report.json
+e2e/*report.json

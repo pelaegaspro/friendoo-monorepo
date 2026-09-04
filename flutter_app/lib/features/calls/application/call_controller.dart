@@ -7,10 +7,12 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../discover/data/host_repository.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/call_repository.dart';
 import '../data/rtc_audio_service.dart';
+import 'call_foreground_service.dart';
 
 final callMuteStateProvider = StateProvider<bool>((ref) => false);
 final callSpeakerStateProvider = StateProvider<bool>((ref) => true);
@@ -326,6 +328,20 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
         );
       }
       _joinedCallId = call.id;
+      String? currentUserId;
+      try {
+        currentUserId = ref.read(supabaseProvider).auth.currentUser?.id;
+      } catch (_) {
+        // Fallback for mock environments
+      }
+      final isHost = currentUserId != null && currentUserId == call.hostId;
+      // Start Android native foreground service with ongoing call notification & CPU/Wi-Fi locks
+      unawaited(
+        ref.read(callForegroundServiceProvider).start(
+          callId: call.id,
+          partnerName: isHost ? 'Direct Caller' : 'Verified Host',
+        ),
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Failed to join audio: $e\n$st');
@@ -338,6 +354,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> _stopWatchingAndLeave() async {
+    unawaited(ref.read(callForegroundServiceProvider).stop());
     await _subscription?.cancel();
     _subscription = null;
     _heartbeatTimer?.cancel();
