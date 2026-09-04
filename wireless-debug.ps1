@@ -21,8 +21,8 @@ param(
     [switch]$DisconnectAll
 )
 
-$ApkPath = Join-Path $PSScriptRoot "flutter_app\build\app\outputs\flutter-apk\app-debug.apk"
-$HistoryFile = Join-Path $PSScriptRoot ".wireless_adb_history.txt"
+$ApkPath = "D:\AllBackup\friendoo\flutter_app\build\app\outputs\flutter-apk\app-debug.apk"
+$HistoryFile = "D:\AllBackup\friendoo\.wireless_adb_history.txt"
 
 function Get-AdbDevices {
     $raw = & adb devices -l
