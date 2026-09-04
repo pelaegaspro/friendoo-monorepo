@@ -8,9 +8,7 @@ import {
 } from "date-fns";
 import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import { getCachedOrFetch, invalidateCache } from "@/lib/cache";
-import {
-  SegmentKey,
-} from "@/lib/types";
+import { SegmentKey } from "@/lib/types";
 import { matchesSegment } from "@/lib/segmentFilters";
 import { percentChange, toNumber } from "@/lib/utils";
 
@@ -51,54 +49,36 @@ function endOfDayIst(date: Date) {
 export function getMockDashboardData() {
   const past14 = Array.from({ length: 14 }, (_, i) => {
     const d = subDays(new Date(), 13 - i);
-    const day = format(d, "MMM dd");
-    const amount = 14000 + Math.floor(Math.sin(i * 0.5) * 4000) + i * 800;
-    return { day, amount };
+    return { day: format(d, "MMM dd"), amount: 0 };
   });
 
-  const hourly = Array.from({ length: 24 }, (_, hour) => {
-    const base = hour >= 18 && hour <= 23 ? 65 : hour >= 12 && hour <= 17 ? 35 : hour >= 6 && hour <= 11 ? 18 : 6;
-    const calls = base + Math.floor(Math.random() * 12);
-    return { hour, calls };
-  });
+  const hourly = Array.from({ length: 24 }, (_, hour) => ({ hour, calls: 0 }));
 
   return {
     kpis: {
-      totalRevenueToday: 28450,
-      revenueVsYesterdayPct: 18.6,
-      activeCalls: 42,
-      coinsInCirculation: 184500,
-      onlineHosts: 28,
-      newUsersToday: 164,
-      newUsersYesterday: 138,
-      openTickets: 3,
-      totalUsers: 3840,
-      totalHosts: 156,
-      todayRevenue: 28450,
-      pendingApplications: 4,
+      totalRevenueToday: 0,
+      revenueVsYesterdayPct: 0,
+      activeCalls: 0,
+      coinsInCirculation: 0,
+      onlineHosts: 0,
+      newUsersToday: 0,
+      newUsersYesterday: 0,
+      openTickets: 0,
+      totalUsers: 0,
+      totalHosts: 0,
+      todayRevenue: 0,
+      pendingApplications: 0,
     },
     topupTrend14Days: past14,
     funnel: [
-      { step: "Total Installs", count: 12400 },
-      { step: "OTP Verified", count: 9800 },
-      { step: "Profile Created", count: 8200 },
-      { step: "1st Coin Topup", count: 2840 },
-      { step: "1st Call Connected", count: 2420 },
-      { step: "Repeat Topup (D7)", count: 1180 },
+      { step: "Total Users", count: 0 },
+      { step: "Phone Verified", count: 0 },
+      { step: "Coin Recharge", count: 0 },
+      { step: "Calls Connected", count: 0 },
     ],
-    topHosts: [
-      { uid: "h1", hostId: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148, totalCalls: 148 },
-      { uid: "h2", hostId: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124, totalCalls: 124 },
-      { uid: "h3", hostId: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109, totalCalls: 109 },
-      { uid: "h4", hostId: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96, totalCalls: 96 },
-      { uid: "h5", hostId: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84, totalCalls: 84 },
-    ],
+    topHosts: [],
     callVolumeByHour: hourly,
-    alerts: [
-      { id: "a1", type: "high_refund_rate", severity: "high" as const, title: "Spike in refund requests (Host: Priya K.)", createdAt: new Date() },
-      { id: "a2", type: "rapid_topup", severity: "medium" as const, title: "High-velocity topups from User #8482", createdAt: new Date(Date.now() - 1800000) },
-      { id: "a3", type: "suspicious_duration", severity: "low" as const, title: "Repeated <10s calls on Host #104", createdAt: new Date(Date.now() - 7200000) },
-    ],
+    alerts: [],
   };
 }
 
@@ -110,6 +90,7 @@ export async function getDashboardData(now = new Date()) {
       const todayEnd = endOfDayIst(now);
       const yesterdayStart = startOfDayIst(subDays(now, 1));
       const yesterdayEnd = endOfDayIst(subDays(now, 1));
+      const fourteenDaysAgo = subDays(now, 13);
 
       const [
         usersCountRes,
@@ -120,7 +101,14 @@ export async function getDashboardData(now = new Date()) {
         walletsRes,
         pendingAppsRes,
         openTicketsRes,
-        fraudAlertsRes
+        fraudAlertsRes,
+        past14PaymentsRes,
+        todayCallsRes,
+        onlineHostsRes,
+        newUsersTodayRes,
+        newUsersYesterdayRes,
+        phoneUsersRes,
+        hostsWithProfilesRes,
       ] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "user"),
         supabase.from("hosts").select("id", { count: "exact", head: true }),
@@ -131,70 +119,108 @@ export async function getDashboardData(now = new Date()) {
         supabase.from("host_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("support_tickets").select("id", { count: "exact", head: true }).in("status", ["open", "in_progress"]),
         supabase.from("fraud_alerts").select("*").eq("status", "open").limit(10),
+        supabase.from("payment_orders").select("amount_inr, created_at").eq("status", "success").gte("created_at", fourteenDaysAgo.toISOString()),
+        supabase.from("calls").select("id, host_id, created_at").gte("created_at", todayStart.toISOString()),
+        supabase.from("hosts").select("id", { count: "exact", head: true }).eq("is_available", true),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", todayStart.toISOString()),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", yesterdayStart.toISOString()).lte("created_at", yesterdayEnd.toISOString()),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).not("phone", "is", null),
+        supabase.from("hosts").select("id, bio, rate_per_audio_minute, is_available, profiles (id, display_name, phone)").limit(10),
       ]);
 
-      const todayRevenue = (todayPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0) || 28450;
-      const yesterdayRevenue = (yesterdayPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0) || 24000;
-      const coinsInCirculation = (walletsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.coin_balance), 0) || 184500;
-      const totalUsers = usersCountRes.count || 3840;
-      const totalHosts = hostsCountRes.count || 156;
-      const activeCalls = activeCallsRes.count || 42;
+      const todayRevenue = (todayPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0);
+      const yesterdayRevenue = (yesterdayPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0);
+      const coinsInCirculation = (walletsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.coin_balance), 0);
+      const totalUsers = usersCountRes.count ?? 0;
+      const totalHosts = hostsCountRes.count ?? 0;
+      const activeCalls = activeCallsRes.count ?? 0;
+      const onlineHosts = onlineHostsRes.count ?? 0;
+      const newUsersToday = newUsersTodayRes.count ?? 0;
+      const newUsersYesterday = newUsersYesterdayRes.count ?? 0;
+      const phoneUsers = phoneUsersRes.count ?? 0;
 
-      const past14 = Array.from({ length: 14 }, (_, i) => {
+      // 14 days real revenue trend
+      const dayMap = new Map<string, number>();
+      (past14PaymentsRes.data ?? []).forEach((row) => {
+        if (!row.created_at) return;
+        const key = format(new Date(row.created_at), "MMM dd");
+        dayMap.set(key, (dayMap.get(key) ?? 0) + toNumber(row.amount_inr));
+      });
+
+      const topupTrend14Days = Array.from({ length: 14 }, (_, i) => {
         const d = subDays(new Date(), 13 - i);
         const day = format(d, "MMM dd");
-        const amount = 14000 + Math.floor(Math.sin(i * 0.5) * 4000) + i * 800;
-        return { day, amount };
+        return { day, amount: dayMap.get(day) ?? 0 };
       });
 
-      const hourly = Array.from({ length: 24 }, (_, hour) => {
-        const base = hour >= 18 && hour <= 23 ? 65 : hour >= 12 && hour <= 17 ? 35 : hour >= 6 && hour <= 11 ? 18 : 6;
-        const calls = base + Math.floor(Math.random() * 12);
-        return { hour, calls };
+      // 24 hours real call volume
+      const hourMap = new Map<number, number>();
+      (todayCallsRes.data ?? []).forEach((c) => {
+        if (!c.created_at) return;
+        const hour = new Date(c.created_at).getHours();
+        hourMap.set(hour, (hourMap.get(hour) ?? 0) + 1);
       });
+
+      const callVolumeByHour = Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        calls: hourMap.get(hour) ?? 0,
+      }));
+
+      // Top hosts with real data
+      const hostCallCounts = new Map<string, number>();
+      (todayCallsRes.data ?? []).forEach((c) => {
+        if (c.host_id) {
+          hostCallCounts.set(c.host_id, (hostCallCounts.get(c.host_id) ?? 0) + 1);
+        }
+      });
+
+      const topHosts = (hostsWithProfilesRes.data ?? []).map((h) => {
+        const p = (Array.isArray(h.profiles) ? h.profiles[0] : h.profiles) as Record<string, unknown> | null ?? {};
+        const calls = hostCallCounts.get(h.id) ?? 0;
+        return {
+          uid: h.id,
+          hostId: h.id,
+          name: String(p.display_name || `Host ${h.id.slice(0, 6)}`),
+          city: "—",
+          calls,
+          totalCalls: calls,
+        };
+      }).sort((a, b) => b.totalCalls - a.totalCalls).slice(0, 5);
 
       return {
         kpis: {
           totalRevenueToday: todayRevenue,
-          revenueVsYesterdayPct: Number(percentChange(todayRevenue, yesterdayRevenue).toFixed(1)),
+          revenueVsYesterdayPct: yesterdayRevenue > 0 ? Number(percentChange(todayRevenue, yesterdayRevenue).toFixed(1)) : 0,
           activeCalls,
           coinsInCirculation,
-          onlineHosts: Math.round(totalHosts * 0.25),
-          newUsersToday: 164,
-          newUsersYesterday: 138,
-          openTickets: openTicketsRes.count || 3,
+          onlineHosts,
+          newUsersToday,
+          newUsersYesterday,
+          openTickets: openTicketsRes.count ?? 0,
           totalUsers,
           totalHosts,
           todayRevenue,
-          pendingApplications: pendingAppsRes.count || 4,
+          pendingApplications: pendingAppsRes.count ?? 0,
         },
-        topupTrend14Days: past14,
+        topupTrend14Days,
         funnel: [
-          { step: "Total Installs", count: totalUsers * 3 },
-          { step: "OTP Verified", count: Math.round(totalUsers * 2.4) },
-          { step: "Profile Created", count: totalUsers },
-          { step: "1st Coin Topup", count: Math.round(totalUsers * 0.35) },
-          { step: "1st Call Connected", count: Math.round(totalUsers * 0.3) },
-          { step: "Repeat Topup (D7)", count: Math.round(totalUsers * 0.15) },
+          { step: "Total Users", count: totalUsers },
+          { step: "Phone Verified", count: phoneUsers },
+          { step: "Active Wallets", count: (walletsRes.data ?? []).filter((w) => toNumber(w.coin_balance) > 0).length },
+          { step: "Calls Today", count: (todayCallsRes.data ?? []).length },
         ],
-        topHosts: [
-          { uid: "h1", hostId: "h1", name: "Ananya Sharma ⭐", city: "Mumbai", calls: 148, totalCalls: 148 },
-          { uid: "h2", hostId: "h2", name: "Pooja Reddy 🎧", city: "Hyderabad", calls: 124, totalCalls: 124 },
-          { uid: "h3", hostId: "h3", name: "Kavya Patel 👑", city: "Ahmedabad", calls: 109, totalCalls: 109 },
-          { uid: "h4", hostId: "h4", name: "Sneha Nair ✦", city: "Bengaluru", calls: 96, totalCalls: 96 },
-          { uid: "h5", hostId: "h5", name: "Riya Sen ✨", city: "Kolkata", calls: 84, totalCalls: 84 },
-        ],
-        callVolumeByHour: hourly,
-        alerts: (fraudAlertsRes.data ?? []).map(a => ({
+        topHosts,
+        callVolumeByHour,
+        alerts: (fraudAlertsRes.data ?? []).map((a) => ({
           id: a.id,
           type: a.alert_type,
           severity: a.severity as "low" | "medium" | "high" | "urgent",
-          title: a.alert_type?.replace(/_/g, ' ') || 'Fraud alert',
+          title: a.alert_type?.replace(/_/g, " ") || "Fraud alert",
           createdAt: a.created_at ? new Date(a.created_at) : new Date(),
         })),
       };
     } catch (error) {
-      console.warn("Supabase fallback for dashboard:", error);
+      console.warn("Supabase dashboard error:", error);
       return getMockDashboardData();
     }
   }, 15);
@@ -204,36 +230,49 @@ export async function getUsersWithStats() {
   return getCachedOrFetch("crm:users:stats", async () => {
     try {
       const supabase = getSupabaseAdmin();
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, phone, role, is_banned, created_at, wallets(coin_balance)")
-        .eq("role", "user")
-        .limit(200);
+      const [profilesRes, paymentsRes, callsRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, display_name, phone, role, is_banned, created_at, wallets(coin_balance)")
+          .eq("role", "user")
+          .limit(200),
+        supabase.from("payment_orders").select("user_id, amount_inr").eq("status", "success"),
+        supabase.from("calls").select("caller_id"),
+      ]);
 
-      if (error) throw error;
+      if (profilesRes.error) throw profilesRes.error;
 
-      return (profiles ?? []).map(p => {
+      const spentByUser = new Map<string, number>();
+      (paymentsRes.data ?? []).forEach((p) => {
+        if (p.user_id) {
+          spentByUser.set(p.user_id, (spentByUser.get(p.user_id) ?? 0) + toNumber(p.amount_inr));
+        }
+      });
+
+      const callsByUser = new Map<string, number>();
+      (callsRes.data ?? []).forEach((c) => {
+        if (c.caller_id) {
+          callsByUser.set(c.caller_id, (callsByUser.get(c.caller_id) ?? 0) + 1);
+        }
+      });
+
+      return (profilesRes.data ?? []).map((p) => {
         const wallet = (Array.isArray(p.wallets) ? p.wallets[0] : p.wallets) as Record<string, unknown> | null ?? {};
         return {
           uid: p.id,
           displayName: p.display_name || "User",
-          phone: p.phone || "+91 98000 00000",
-          coinBalance: toNumber(wallet.coin_balance, 50),
-          totalSpentInr: 1200,
-          totalCalls: 12,
+          phone: p.phone || "—",
+          coinBalance: toNumber(wallet.coin_balance, 0),
+          totalSpentInr: spentByUser.get(p.id) ?? 0,
+          totalCalls: callsByUser.get(p.id) ?? 0,
           lastActive: p.created_at,
           isBanned: p.is_banned,
           isHost: false,
         };
       });
-    } catch {
-      return [
-        { uid: "u_101", displayName: "Aarav Sharma", phone: "+91 98765 43210", coinBalance: 120, totalSpentInr: 1450, totalCalls: 18, lastActive: new Date().toISOString(), isBanned: false, isHost: false },
-        { uid: "u_102", displayName: "Ishaan Mehta", phone: "+91 98123 45678", coinBalance: 8, totalSpentInr: 250, totalCalls: 4, lastActive: new Date(Date.now() - 3600000).toISOString(), isBanned: false, isHost: false },
-        { uid: "u_103", displayName: "Kabir Singhania", phone: "+91 97111 22334", coinBalance: 450, totalSpentInr: 5800, totalCalls: 42, lastActive: new Date().toISOString(), isBanned: false, isHost: false },
-        { uid: "u_104", displayName: "Rhea Kapoor", phone: "+91 98450 99887", coinBalance: 0, totalSpentInr: 0, totalCalls: 0, lastActive: new Date(Date.now() - 86400000).toISOString(), isBanned: false, isHost: false },
-        { uid: "u_105", displayName: "Devansh Chawla", phone: "+91 99200 11445", coinBalance: 35, totalSpentInr: 600, totalCalls: 7, lastActive: new Date().toISOString(), isBanned: false, isHost: false },
-      ];
+    } catch (error) {
+      console.warn("getUsersWithStats error:", error);
+      return [];
     }
   }, 20);
 }
@@ -254,58 +293,151 @@ export async function getSegmentedUsers(segment: SegmentKey, customFilter?: unkn
 }
 
 export function getMockRevenueData() {
-  const daily = Array.from({ length: 30 }, (_, i) => {
-    const d = subDays(new Date(), 29 - i);
-    const day = format(d, "MMM dd");
-    const topupRevenue = 12000 + Math.floor(Math.sin(i * 0.4) * 3500) + i * 500;
-    const commissionRevenue = Math.floor(topupRevenue * 0.3);
-    return { day, topupRevenue, commissionRevenue };
-  });
-
   return {
     kpis: {
-      todayRevenue: 28450,
-      monthRevenue: 482600,
-      mrrTrend: [
-        { month: format(subMonths(new Date(), 2), "MMM yyyy"), value: 390000 },
-        { month: format(subMonths(new Date(), 1), "MMM yyyy"), value: 440000 },
-        { month: format(new Date(), "MMM yyyy"), value: 482600 },
-      ],
-      arpu: 640,
-      platformCommission: 144780,
-      topupConversionRate: 28.4,
+      todayRevenue: 0,
+      monthRevenue: 0,
+      mrrTrend: [],
+      arpu: 0,
+      platformCommission: 0,
+      topupConversionRate: 0,
     },
-    revenueByPackage: [
-      { name: "100 Coins", value: 84200 },
-      { name: "500 Coins", value: 218500 },
-      { name: "1000 Coins", value: 179900 },
-    ],
-    dailyRevenue: daily,
-    revenueByCity: [
-      { city: "Mumbai", value: 128400 },
-      { city: "Delhi NCR", value: 112600 },
-      { city: "Bengaluru", value: 94500 },
-      { city: "Hyderabad", value: 68200 },
-      { city: "Chennai", value: 45100 },
-      { city: "Pune", value: 33800 },
-    ],
-    topSpenders: [
-      { uid: "u_whale_1", name: "Vikram Malhotra", totalSpentInr: 18400, coinsPurchased: 1840, callsMade: 86, lastActive: new Date().toISOString() },
-      { uid: "u_whale_2", name: "Rahul Verma", totalSpentInr: 14200, coinsPurchased: 1420, callsMade: 64, lastActive: new Date().toISOString() },
-      { uid: "u_whale_3", name: "Aditya Roy", totalSpentInr: 11900, coinsPurchased: 1190, callsMade: 52, lastActive: new Date().toISOString() },
-      { uid: "u_whale_4", name: "Karan Johar", totalSpentInr: 9800, coinsPurchased: 980, callsMade: 45, lastActive: new Date().toISOString() },
-      { uid: "u_whale_5", name: "Rohan Gupta", totalSpentInr: 8400, coinsPurchased: 840, callsMade: 38, lastActive: new Date().toISOString() },
-    ],
-    revenueAlerts: [
-      { type: "green" as const, text: "Peak revenue surge: +24% during 20:00 - 23:00 IST." },
-      { type: "amber" as const, text: "UPI gateway latency normal on Cashfree rails (210ms)." },
-    ],
+    revenueByPackage: [],
+    dailyRevenue: Array.from({ length: 30 }, (_, i) => {
+      const d = subDays(new Date(), 29 - i);
+      return { day: format(d, "MMM dd"), topupRevenue: 0, commissionRevenue: 0 };
+    }),
+    revenueByCity: [],
+    topSpenders: [],
+    revenueAlerts: [],
   };
 }
 
 export async function getRevenueStats() {
   return getCachedOrFetch("crm:revenue:stats", async () => {
-    return getMockRevenueData();
+    try {
+      const supabase = getSupabaseAdmin();
+      const now = new Date();
+      const todayStart = startOfDayIst(now);
+      const todayEnd = endOfDayIst(now);
+      const thirtyDaysAgo = subDays(now, 29);
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [
+        todayPaymentsRes,
+        monthPaymentsRes,
+        allPaymentsRes,
+        callsRes,
+        profilesRes,
+      ] = await Promise.all([
+        supabase.from("payment_orders").select("amount_inr").eq("status", "success").gte("created_at", todayStart.toISOString()).lte("created_at", todayEnd.toISOString()),
+        supabase.from("payment_orders").select("amount_inr").eq("status", "success").gte("created_at", thisMonthStart.toISOString()),
+        supabase.from("payment_orders").select("id, user_id, amount_inr, coins, package_id, created_at").eq("status", "success").gte("created_at", thirtyDaysAgo.toISOString()).order("created_at", { ascending: true }),
+        supabase.from("calls").select("caller_id, host_id, total_coins_deducted").limit(1000),
+        supabase.from("profiles").select("id, display_name, phone, city").limit(1000),
+      ]);
+
+      const todayRevenue = (todayPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0);
+      const monthRevenue = (monthPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0);
+
+      // 30 days daily trend
+      const dailyMap = new Map<string, number>();
+      (allPaymentsRes.data ?? []).forEach((p) => {
+        if (!p.created_at) return;
+        const dayKey = format(new Date(p.created_at), "MMM dd");
+        dailyMap.set(dayKey, (dailyMap.get(dayKey) ?? 0) + toNumber(p.amount_inr));
+      });
+
+      const daily = Array.from({ length: 30 }, (_, i) => {
+        const d = subDays(now, 29 - i);
+        const day = format(d, "MMM dd");
+        const topupRevenue = dailyMap.get(day) ?? 0;
+        const commissionRevenue = Math.round(topupRevenue * 0.3);
+        return { day, topupRevenue, commissionRevenue };
+      });
+
+      // Package breakdown
+      const packageMap = new Map<string, number>();
+      (allPaymentsRes.data ?? []).forEach((p) => {
+        const pkgName = p.package_id || `${p.coins || p.amount_inr || "Custom"} Coins`;
+        packageMap.set(pkgName, (packageMap.get(pkgName) ?? 0) + toNumber(p.amount_inr));
+      });
+      const revenueByPackage = Array.from(packageMap.entries()).map(([name, value]) => ({ name, value }));
+
+      // Profile map
+      const profileMap = new Map<string, { name: string; city: string }>();
+      (profilesRes.data ?? []).forEach((p) => {
+        profileMap.set(p.id, { name: p.display_name || "User", city: p.city || "Unknown" });
+      });
+
+      // City breakdown
+      const cityMap = new Map<string, number>();
+      (allPaymentsRes.data ?? []).forEach((p) => {
+        const city = (p.user_id ? profileMap.get(p.user_id)?.city : null) || "Other";
+        cityMap.set(city, (cityMap.get(city) ?? 0) + toNumber(p.amount_inr));
+      });
+      const revenueByCity = Array.from(cityMap.entries()).map(([city, value]) => ({ city, value }));
+
+      // Top Spenders
+      const spenderMap = new Map<string, { totalSpentInr: number; coinsPurchased: number }>();
+      (allPaymentsRes.data ?? []).forEach((p) => {
+        if (!p.user_id) return;
+        const cur = spenderMap.get(p.user_id) ?? { totalSpentInr: 0, coinsPurchased: 0 };
+        cur.totalSpentInr += toNumber(p.amount_inr);
+        cur.coinsPurchased += toNumber(p.coins);
+        spenderMap.set(p.user_id, cur);
+      });
+
+      const callCountByUser = new Map<string, number>();
+      (callsRes.data ?? []).forEach((c) => {
+        if (c.caller_id) {
+          callCountByUser.set(c.caller_id, (callCountByUser.get(c.caller_id) ?? 0) + 1);
+        }
+      });
+
+      const topSpenders = Array.from(spenderMap.entries())
+        .sort((a, b) => b[1].totalSpentInr - a[1].totalSpentInr)
+        .slice(0, 5)
+        .map(([uid, stats]) => {
+          const prof = profileMap.get(uid);
+          return {
+            uid,
+            name: prof?.name || `User ${uid.slice(0, 6)}`,
+            city: prof?.city || "—",
+            totalSpentInr: stats.totalSpentInr,
+            coinsPurchased: stats.coinsPurchased,
+            callsMade: callCountByUser.get(uid) ?? 0,
+          };
+        });
+
+      const totalPayingUsers = spenderMap.size;
+      const totalAllRevenue = (allPaymentsRes.data ?? []).reduce((acc, r) => acc + toNumber(r.amount_inr), 0);
+      const arpu = totalPayingUsers > 0 ? Math.round(totalAllRevenue / totalPayingUsers) : 0;
+      const platformCommission = Math.round(monthRevenue * 0.3);
+
+      return {
+        kpis: {
+          todayRevenue,
+          monthRevenue,
+          mrrTrend: [
+            { month: format(subMonths(now, 2), "MMM yyyy"), value: 0 },
+            { month: format(subMonths(now, 1), "MMM yyyy"), value: 0 },
+            { month: format(now, "MMM yyyy"), value: monthRevenue },
+          ],
+          arpu,
+          platformCommission,
+          topupConversionRate: totalPayingUsers > 0 ? Math.round((totalPayingUsers / Math.max(1, profilesRes.data?.length ?? 1)) * 100) : 0,
+        },
+        revenueByPackage,
+        dailyRevenue: daily,
+        revenueByCity,
+        topSpenders,
+        revenueAlerts: [],
+      };
+    } catch (error) {
+      console.warn("getRevenueStats error:", error);
+      return getMockRevenueData();
+    }
   }, 30);
 }
 

@@ -155,14 +155,14 @@ export async function getAdminStats(): Promise<AdminStats> {
         pendingHostApplications: pendingAppsRes.count ?? 0,
       }
     } catch (error) {
-      console.warn('getAdminStats fallback:', error)
+      console.warn('getAdminStats error:', error)
       return {
-        totalUsers: 3840,
-        totalHosts: 156,
-        activeCalls: 42,
-        todaysRevenueInr: 28450,
-        totalCoinsInCirculation: 184500,
-        pendingHostApplications: 3,
+        totalUsers: 0,
+        totalHosts: 0,
+        activeCalls: 0,
+        todaysRevenueInr: 0,
+        totalCoinsInCirculation: 0,
+        pendingHostApplications: 0,
       }
     }
   }, 15)
@@ -230,12 +230,8 @@ export async function listHosts(): Promise<AdminHost[]> {
 
       return sortByNewest(rows)
     } catch (error) {
-      console.warn('listHosts fallback:', error)
-      return [
-        { id: 'h1', displayName: 'Ananya Sharma ⭐', phoneNumber: '+91 98765 11111', city: 'Mumbai', languages: ['Hindi', 'English'], ratePerMinute: 25, hostStatus: 'approved', isHost: true, avatarSeed: 'h1', photoURL: '', bio: 'Passionate conversationalist', gender: 'Female', age: 23, callsMade: 148, coinsEarned: 22400, createdAt: new Date().toISOString() },
-        { id: 'h2', displayName: 'Pooja Reddy 🎧', phoneNumber: '+91 98765 22222', city: 'Hyderabad', languages: ['Telugu', 'Hindi'], ratePerMinute: 20, hostStatus: 'approved', isHost: true, avatarSeed: 'h2', photoURL: '', bio: 'Friendly listener & guide', gender: 'Female', age: 25, callsMade: 124, coinsEarned: 18600, createdAt: new Date().toISOString() },
-        { id: 'h3', displayName: 'Kavya Patel 👑', phoneNumber: '+91 98765 33333', city: 'Ahmedabad', languages: ['Gujarati', 'Hindi'], ratePerMinute: 30, hostStatus: 'approved', isHost: true, avatarSeed: 'h3', photoURL: '', bio: 'Life & career talks', gender: 'Female', age: 24, callsMade: 109, coinsEarned: 16400, createdAt: new Date().toISOString() },
-      ]
+      console.warn('listHosts error:', error)
+      return []
     }
   }, 20)
 }
@@ -343,11 +339,8 @@ export async function listHostApplications(statusFilter?: string): Promise<HostA
         reviewedAt: toIsoString(row.reviewed_at),
       }))
     } catch (error) {
-      console.warn('listHostApplications fallback:', error)
-      return [
-        { id: 'app-101', name: 'Meera Krishnan', phone: '+91 98840 12345', age: 24, city: 'Chennai', language: 'Tamil, English', about: 'Experienced audio presenter', photoURL: '', status: 'pending', notes: '', submittedAt: new Date().toISOString(), reviewedAt: null },
-        { id: 'app-102', name: 'Tanvi Deshmukh', phone: '+91 98220 54321', age: 23, city: 'Pune', language: 'Marathi, Hindi', about: 'College student & host', photoURL: '', status: 'pending', notes: '', submittedAt: new Date().toISOString(), reviewedAt: null },
-      ]
+      console.warn('listHostApplications error:', error)
+      return []
     }
   }, 15)
 }
@@ -448,12 +441,8 @@ export async function listUsers(): Promise<AdminUserRow[]> {
         }
       })
     } catch (error) {
-      console.warn('listUsers fallback:', error)
-      return [
-        { id: 'u_101', displayName: 'Aarav Sharma', username: 'aarav_99', phoneNumber: '+91 98765 43210', avatarSeed: 'u1', photoURL: '', city: 'Delhi', coinBalance: 450, status: 'active', joinedAt: new Date().toISOString() },
-        { id: 'u_102', displayName: 'Vikram Mehta', username: 'vikram_m', phoneNumber: '+91 98123 45678', avatarSeed: 'u2', photoURL: '', city: 'Bengaluru', coinBalance: 1200, status: 'active', joinedAt: new Date().toISOString() },
-        { id: 'u_103', displayName: 'Rohan Gupta', username: 'rohan_g', phoneNumber: '+91 97654 32109', avatarSeed: 'u3', photoURL: '', city: 'Mumbai', coinBalance: 80, status: 'active', joinedAt: new Date().toISOString() },
-      ]
+      console.warn('listUsers error:', error)
+      return []
     }
   }, 20)
 }
@@ -508,12 +497,8 @@ export async function listPackages(): Promise<CoinPackageRecord[]> {
         createdAt: toIsoString(p.created_at),
       }))
     } catch (error) {
-      console.warn('listPackages fallback:', error)
-      return [
-        { id: 'pack_100', displayName: '100 Coins Starter', coins: 100, bonus: 0, priceInr: 99, active: true, createdAt: new Date().toISOString() },
-        { id: 'pack_500', displayName: '500 Coins Popular', coins: 500, bonus: 50, priceInr: 449, active: true, createdAt: new Date().toISOString() },
-        { id: 'pack_1000', displayName: '1000 Coins Best Value', coins: 1000, bonus: 150, priceInr: 899, active: true, createdAt: new Date().toISOString() },
-      ]
+      console.warn('listPackages error:', error)
+      return []
     }
   }, 60)
 }
@@ -577,11 +562,8 @@ export async function listTransactions(): Promise<TransactionRow[]> {
         }
       })
     } catch (error) {
-      console.warn('listTransactions fallback:', error)
-      return [
-        { id: 'tx-1', userId: 'u_101', userName: 'Aarav Sharma', type: 'topup', amountCoins: 500, amountInr: 449, packageId: 'pack_500', packageName: '500 Coins', status: 'completed', createdAt: new Date().toISOString() },
-        { id: 'tx-2', userId: 'u_102', userName: 'Vikram Mehta', type: 'topup', amountCoins: 1000, amountInr: 899, packageId: 'pack_1000', packageName: '1000 Coins', status: 'completed', createdAt: new Date().toISOString() },
-      ]
+      console.warn('listTransactions error:', error)
+      return []
     }
   }, 20)
 }
@@ -671,12 +653,8 @@ export async function listCalls(): Promise<CallRow[]> {
         }
       })
     } catch (error) {
-      console.warn('listCalls fallback:', error)
-      return [
-        { id: 'c1', callerId: 'u_101', callerName: 'Aarav Sharma', hostId: 'h1', hostName: 'Ananya Sharma ⭐', status: 'ended', coinsSpent: 120, durationSeconds: 360, ratePerMinute: 20, callType: 'audio', endReason: 'caller_hangup', createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: new Date().toISOString(), agoraChannel: 'room_c1' },
-        { id: 'c2', callerId: 'u_102', callerName: 'Vikram Mehta', hostId: 'h2', hostName: 'Pooja Reddy 🎧', status: 'active', coinsSpent: 60, durationSeconds: 180, ratePerMinute: 20, callType: 'audio', endReason: null, createdAt: new Date().toISOString(), acceptedAt: new Date().toISOString(), endedAt: null, agoraChannel: 'room_c2' },
-        { id: 'c3', callerId: 'u_103', callerName: 'Rahul Verma', hostId: 'h3', hostName: 'Kavya Patel 👑', status: 'missed', coinsSpent: 0, durationSeconds: 0, ratePerMinute: 25, callType: 'audio', endReason: 'timeout', createdAt: new Date(Date.now() - 3600000).toISOString(), acceptedAt: null, endedAt: null, agoraChannel: 'room_c3' },
-      ]
+      console.warn('listCalls error:', error)
+      return []
     }
   }, 15)
 }
@@ -771,11 +749,8 @@ export async function listWithdrawals(): Promise<WithdrawalRecord[]> {
         }
       })
     } catch (error) {
-      console.warn('listWithdrawals fallback:', error)
-      return [
-        { id: 'w-1', hostId: 'h1', hostName: 'Ananya Sharma ⭐', amount: 4800, upiId: 'ananya@oksbi', status: 'pending', requestedAt: new Date().toISOString(), processedAt: null, failureReason: '', adminNote: '' },
-        { id: 'w-2', hostId: 'h2', hostName: 'Pooja Reddy 🎧', amount: 3200, upiId: 'pooja@okhdfcbank', status: 'approved', requestedAt: new Date().toISOString(), processedAt: new Date().toISOString(), failureReason: '', adminNote: 'Verified KYC' },
-      ]
+      console.warn('listWithdrawals error:', error)
+      return []
     }
   }, 15)
 }
@@ -823,55 +798,8 @@ export async function listBannerAds(): Promise<BannerAdRecord[]> {
             return data.map(normalizeBannerAd)
 
     } catch (error) {
-      console.warn('listBannerAds fallback:', error)
-      return [
-        {
-          id: 'default_promo_1',
-          title: 'User Top Flash Sale 50 Coins for ₹39',
-          campaignType: 'flash_package',
-          targetAudience: 'users',
-          badgeText: 'FLASH DEAL • ₹39 ONLY',
-          headline: 'Get 50 Coins for Just ₹39! ⚡',
-          subtitle: 'Limited-time introductory talk offer. Save 20% on your first recharge.',
-          gradientColors: ['#4F46E5', '#7C3AED', '#DB2777'],
-          actionType: 'recharge',
-          placement: 'user_top_banner',
-          promoCoins: 50,
-          promoPriceInr: 39,
-          originalPriceInr: 49,
-          promoBonusLabel: '50 Coins for ₹39',
-          showAsPopup: false,
-          isActive: true,
-          priority: 20,
-          clickCount: 142,
-          impressionCount: 1890,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'default_host_surge',
-          title: 'Host Peak Hour Surge Incentive',
-          campaignType: 'host_incentive',
-          targetAudience: 'hosts',
-          badgeText: 'PEAK HOUR SURGE • +₹10/MIN',
-          headline: 'Earn 2X Extra from 8 PM - 11 PM! 🔥',
-          subtitle: 'High caller volume active right now. Stay online to maximize tonight’s payout.',
-          gradientColors: ['#D97706', '#F59E0B', '#EF4444'],
-          actionType: 'none',
-          placement: 'host_top_banner',
-          promoCoins: null,
-          promoPriceInr: null,
-          originalPriceInr: null,
-          promoBonusLabel: null,
-          showAsPopup: false,
-          isActive: true,
-          priority: 30,
-          clickCount: 88,
-          impressionCount: 940,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }
-      ]
+      console.warn('listBannerAds error:', error)
+      return []
     }
   }, 10)
 }

@@ -57,49 +57,22 @@ interface RevenueResponse {
 
 const initialDefaultRevenue: RevenueResponse = {
   kpis: {
-    todayRevenue: 28450,
-    monthRevenue: 482600,
-    mrrTrend: [
-      { month: "Jun 2026", value: 310000 },
-      { month: "Jul 2026", value: 395000 },
-      { month: "Aug 2026", value: 482600 },
-    ],
-    arpu: 320,
-    platformCommission: 144780,
-    topupConversionRate: 34.8,
+    todayRevenue: 0,
+    monthRevenue: 0,
+    mrrTrend: [],
+    arpu: 0,
+    platformCommission: 0,
+    topupConversionRate: 0,
   },
-  revenueByPackage: [
-    { name: "Starter Tier (40 Coins)", value: 48500 },
-    { name: "Lounge Pass (120 Coins)", value: 142000 },
-    { name: "VIP Night Owl (300 Coins)", value: 186000 },
-    { name: "Whale Talk Unlimited (1000 Coins)", value: 106100 },
-  ],
+  revenueByPackage: [],
   dailyRevenue: Array.from({ length: 30 }, (_, i) => {
     const d = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000);
     const day = `${d.toLocaleString("default", { month: "short" })} ${String(d.getDate()).padStart(2, "0")}`;
-    const topupRevenue = 12000 + Math.floor(Math.sin(i * 0.4) * 3500) + i * 500;
-    const commissionRevenue = Math.floor(topupRevenue * 0.3);
-    return { day, topupRevenue, commissionRevenue };
+    return { day, topupRevenue: 0, commissionRevenue: 0 };
   }),
-  revenueByCity: [
-    { city: "Mumbai", value: 128400 },
-    { city: "Delhi NCR", value: 112600 },
-    { city: "Bengaluru", value: 94500 },
-    { city: "Hyderabad", value: 68200 },
-    { city: "Chennai", value: 45100 },
-    { city: "Pune", value: 33800 },
-  ],
-  topSpenders: [
-    { uid: "u_whale_1", name: "Vikram Malhotra", city: "Mumbai", totalSpentInr: 18400, coinsPurchased: 1840, callsMade: 86 },
-    { uid: "u_whale_2", name: "Rahul Verma", city: "Delhi NCR", totalSpentInr: 14200, coinsPurchased: 1420, callsMade: 64 },
-    { uid: "u_whale_3", name: "Aditya Roy", city: "Bengaluru", totalSpentInr: 11900, coinsPurchased: 1190, callsMade: 52 },
-    { uid: "u_whale_4", name: "Karan Johar", city: "Hyderabad", totalSpentInr: 9800, coinsPurchased: 980, callsMade: 45 },
-    { uid: "u_whale_5", name: "Rohan Gupta", city: "Pune", totalSpentInr: 8400, coinsPurchased: 840, callsMade: 38 },
-  ],
-  revenueAlerts: [
-    { type: "green", text: "Peak revenue surge: +24% during 20:00 - 23:00 IST." },
-    { type: "amber", text: "UPI gateway latency normal on Cashfree rails (210ms)." },
-  ],
+  revenueByCity: [],
+  topSpenders: [],
+  revenueAlerts: [],
 };
 
 export default function RevenuePage() {

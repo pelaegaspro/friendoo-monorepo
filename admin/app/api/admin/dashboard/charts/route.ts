@@ -92,20 +92,14 @@ export async function GET() {
 
       return { revenueData, userData, callData, recentUsers, recentCalls }
     } catch (error) {
-      console.warn('dashboard charts fallback:', error)
+      console.warn('dashboard charts error:', error)
       const days = getLast14Days()
       return {
-        revenueData: days.map(({ date }, i) => ({ date, revenue: 14000 + i * 800 })),
-        userData: days.map(({ date }, i) => ({ date, users: 10 + (i % 5) * 4 })),
-        callData: days.map(({ date }, i) => ({ date, calls: 25 + (i % 6) * 7 })),
-        recentUsers: [
-          { id: 'u_101', name: 'Aarav Sharma', phone: '+91 98765 43210', joinedAt: new Date().toISOString() },
-          { id: 'u_102', name: 'Vikram Mehta', phone: '+91 98123 45678', joinedAt: new Date().toISOString() },
-        ],
-        recentCalls: [
-          { id: 'c1', coinsSpent: 120, durationSeconds: 360, status: 'ended', createdAt: new Date().toISOString() },
-          { id: 'c2', coinsSpent: 60, durationSeconds: 180, status: 'active', createdAt: new Date().toISOString() },
-        ],
+        revenueData: days.map(({ date }) => ({ date, revenue: 0 })),
+        userData: days.map(({ date }) => ({ date, users: 0 })),
+        callData: days.map(({ date }) => ({ date, calls: 0 })),
+        recentUsers: [],
+        recentCalls: [],
       }
     }
   }, 30)
