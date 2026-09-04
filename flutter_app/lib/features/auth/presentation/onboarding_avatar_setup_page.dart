@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/friendoo_app.dart';
-import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../../profile/data/profile_repository.dart';
 

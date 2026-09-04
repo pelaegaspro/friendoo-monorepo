@@ -112,7 +112,7 @@ export interface AppSettingsRecord {
   updatedAt: string | null
 }
 
-export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
+export type WithdrawalStatus = 'pending' | 'processing' | 'approved' | 'paid' | 'rejected' | 'completed' | 'failed' | 'cancelled'
 
 export interface WithdrawalRecord {
   id: string
@@ -124,6 +124,8 @@ export interface WithdrawalRecord {
   requestedAt: string | null
   processedAt: string | null
   adminNote: string
+  provider?: string | null
+  providerTransferId?: string | null
   cashfreeReferenceId?: string | null
   failureReason?: string | null
 }

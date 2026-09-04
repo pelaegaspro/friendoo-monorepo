@@ -19,11 +19,11 @@ interface AdminSidebarProps {
 }
 
 const mainNavItems = [
-  { href: '/admin', label: 'Overview Bento', icon: LayoutDashboard, badge: 'Live' },
+  { href: '/admin', label: 'Overview Dashboard', icon: LayoutDashboard, badge: 'Live' },
   { href: '/admin/ads', label: 'Cloud Ad Banners', icon: Sparkles, badge: 'Cloud' },
   { href: '/admin/hosts', label: 'Host Management', icon: Users },
   { href: '/admin/users', label: 'User Directory', icon: UserRound },
-  { href: '/admin/packages', label: 'Coin Packages', icon: Coins, badge: '₹' },
+  { href: '/admin/packages', label: 'Coin Packages', icon: Coins },
   { href: '/admin/transactions', label: 'Transactions', icon: ReceiptText },
   { href: '/admin/calls', label: 'WebRTC Sessions', icon: Phone },
   { href: '/admin/payments', label: 'Payout Approvals', icon: CreditCard },
@@ -54,8 +54,8 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
       <div>
         {/* Logo & Platform Tag */}
         <div className="mb-6 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-2 select-none group">
-            <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto transition-transform group-hover:scale-105">
+          <Link href="/admin" aria-label="Friendoo Admin Operations Home" className="flex items-center gap-2 select-none group">
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto transition-transform group-hover:scale-105">
               <defs>
                 <linearGradient id="logoGradAdmin" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#8b5cf6" />
@@ -66,7 +66,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
               <text x="0" y="22" fill="url(#logoGradAdmin)" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 24, letterSpacing: '-0.05em' }}>friendoo</text>
             </svg>
             <span className="bento-badge text-[10px] text-purple-300 font-mono uppercase">
-              Admin Bento
+              Admin Dashboard
             </span>
           </Link>
         </div>
@@ -75,7 +75,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
           <Search className="h-3.5 w-3.5" />
           <span>Search hosts, users, calls...</span>
-          <kbd className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">⌘K</kbd>
+          <kbd className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-slate-200">⌘K</kbd>
         </div>
 
         {/* Primary Operations */}
@@ -84,10 +84,10 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
             <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Core Operations
             </div>
-            <nav className="space-y-1">
+            <nav aria-label="Core Operations" className="space-y-1">
               {mainNavItems.map((item) => {
                 const Icon = item.icon
-                const active = pathname === item.href
+                const active = item.href === '/admin' ? pathname === '/admin' : pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <Link
                     key={item.href}
@@ -119,7 +119,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
             <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Intelligence & Risk
             </div>
-            <nav className="space-y-1">
+            <nav aria-label="Intelligence & Risk" className="space-y-1">
               {surveillanceItems.map((item) => {
                 const Icon = item.icon
                 const active = pathname === item.href
@@ -175,7 +175,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
       <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-md mt-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+            <div aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-600 bg-gradient-to-tr from-purple-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
               AD
             </div>
             <div>

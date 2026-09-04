@@ -47,18 +47,8 @@ body {
   /* Bento Grid Card */
   .bento-card {
     @apply relative overflow-hidden rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition-all duration-300;
-    background-color: rgba(18, 20, 32, 0.9);
-  }
-
-  .bento-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
-    pointer-events: none;
+    background-color: #121420;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
 
   .bento-card:hover {
@@ -67,21 +57,25 @@ body {
 
   .bento-card-spotlight {
     @apply relative overflow-hidden rounded-2xl border border-purple-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-purple;
-    background: linear-gradient(to bottom, rgba(28, 22, 46, 0.9), rgba(18, 20, 32, 0.9));
+    background-color: #151424;
+    background-image: linear-gradient(to bottom, rgba(28, 22, 46, 0.9), rgba(18, 20, 32, 0.9));
   }
 
   .bento-card-cyan {
     @apply relative overflow-hidden rounded-2xl border border-cyan-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-cyan;
-    background: linear-gradient(to bottom, rgba(14, 33, 43, 0.9), rgba(18, 20, 32, 0.9));
+    background-color: #0d1a24;
+    background-image: linear-gradient(to bottom, rgba(14, 33, 43, 0.9), rgba(18, 20, 32, 0.9));
   }
 
   .bento-card-emerald {
     @apply relative overflow-hidden rounded-2xl border border-emerald-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-emerald;
-    background: linear-gradient(to bottom, rgba(16, 36, 27, 0.9), rgba(18, 20, 32, 0.9));
+    background-color: #0f1c16;
+    background-image: linear-gradient(to bottom, rgba(16, 36, 27, 0.9), rgba(18, 20, 32, 0.9));
   }
 
   .bento-badge {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-md;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-md text-slate-200;
+    background-color: #181a26;
   }
 
   .bento-pill-live {

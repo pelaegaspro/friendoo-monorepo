@@ -252,9 +252,49 @@ export async function uploadHostPhoto(fileNameOrHostId: string, file: Buffer, mi
 
 export async function createHost(payload: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()
-  const id = crypto.randomUUID()
   const displayName = asString(payload.displayName, 'New Host')
   const phone = asString(payload.phoneNumber || payload.phone)
+
+  let id: string
+  if (phone) {
+    let cleanPhone = phone.trim()
+    if (!cleanPhone.startsWith('+')) cleanPhone = '+91' + cleanPhone.replace(/^0+/, '')
+    const { data: existingProfile } = await supabase.from('profiles').select('id').eq('phone', cleanPhone).maybeSingle()
+    if (existingProfile?.id) {
+      id = existingProfile.id
+    } else {
+      const { data: authUser } = await supabase.auth.admin.createUser({
+        phone: cleanPhone,
+        phone_confirm: true,
+        user_metadata: { display_name: displayName, role: 'host' },
+      })
+      if (authUser?.user?.id) {
+        id = authUser.user.id
+      } else {
+        const { data: listData } = await supabase.auth.admin.listUsers()
+        const found = listData?.users?.find(u => u.phone === cleanPhone)
+        if (found?.id) {
+          id = found.id
+        } else {
+          const fallbackEmail = `host_${Date.now()}_${Math.random().toString(36).slice(2, 7)}@friendoo.internal`
+          const { data: fallbackUser } = await supabase.auth.admin.createUser({
+            email: fallbackEmail,
+            email_confirm: true,
+            user_metadata: { display_name: displayName, role: 'host' },
+          })
+          id = fallbackUser?.user?.id || crypto.randomUUID()
+        }
+      }
+    }
+  } else {
+    const fallbackEmail = `host_${Date.now()}_${Math.random().toString(36).slice(2, 7)}@friendoo.internal`
+    const { data: fallbackUser } = await supabase.auth.admin.createUser({
+      email: fallbackEmail,
+      email_confirm: true,
+      user_metadata: { display_name: displayName, role: 'host' },
+    })
+    id = fallbackUser?.user?.id || crypto.randomUUID()
+  }
 
   await supabase.from('profiles').upsert({
     id,
@@ -283,20 +323,32 @@ export async function createHost(payload: Record<string, unknown>) {
 
 export async function updateHost(hostId: string, payload: Record<string, unknown>) {
   const supabase = getSupabaseAdmin()
-  if (payload.displayName || payload.bio || payload.photoURL || payload.phoneNumber) {
+  const updates = (payload.updates && typeof payload.updates === 'object' ? payload.updates : payload) as Record<string, unknown>
+  const action = typeof payload.action === 'string' ? payload.action : undefined
+
+  if (action === 'suspend') {
+    await supabase.from('profiles').update({ is_banned: true, updated_at: new Date().toISOString() }).eq('id', hostId)
+    await supabase.from('hosts').update({ is_available: false, updated_at: new Date().toISOString() }).eq('id', hostId)
+  } else if (action === 'restore') {
+    await supabase.from('profiles').update({ is_banned: false, updated_at: new Date().toISOString() }).eq('id', hostId)
+    await supabase.from('hosts').update({ is_available: true, updated_at: new Date().toISOString() }).eq('id', hostId)
+  }
+
+  if (updates.displayName || updates.bio || updates.photoURL || updates.phoneNumber) {
     await supabase.from('profiles').update({
-      display_name: payload.displayName ? String(payload.displayName) : undefined,
-      phone: payload.phoneNumber ? String(payload.phoneNumber) : undefined,
-      avatar_path: payload.photoURL ? String(payload.photoURL) : undefined,
-      about: payload.bio ? String(payload.bio) : undefined,
+      display_name: updates.displayName ? String(updates.displayName) : undefined,
+      phone: updates.phoneNumber ? String(updates.phoneNumber) : undefined,
+      avatar_path: updates.photoURL ? String(updates.photoURL) : undefined,
+      about: updates.bio ? String(updates.bio) : undefined,
       updated_at: new Date().toISOString(),
     }).eq('id', hostId)
   }
 
-  if (payload.ratePerMinute !== undefined || payload.bio !== undefined) {
+  if (updates.ratePerMinute !== undefined || updates.bio !== undefined || updates.isAvailable !== undefined) {
     await supabase.from('hosts').update({
-      rate_per_audio_minute: payload.ratePerMinute !== undefined ? asNumber(payload.ratePerMinute) : undefined,
-      bio: payload.bio ? String(payload.bio) : undefined,
+      rate_per_audio_minute: updates.ratePerMinute !== undefined ? asNumber(updates.ratePerMinute) : undefined,
+      bio: updates.bio ? String(updates.bio) : undefined,
+      is_available: updates.isAvailable !== undefined ? Boolean(updates.isAvailable) : undefined,
       updated_at: new Date().toISOString(),
     }).eq('id', hostId)
   }
@@ -369,7 +421,39 @@ export async function reviewHostApplication(applicationId: string, input: { acti
     return { status: 'rejected' as const }
   }
 
-  const profileId = application.application_profile_id || crypto.randomUUID()
+  let profileId = application.application_profile_id
+  if (!profileId) {
+    const phone = application.phone
+    if (phone) {
+      const { data: ex } = await supabase.from('profiles').select('id').eq('phone', phone).maybeSingle()
+      if (ex?.id) {
+        profileId = ex.id
+      } else {
+        const { data: authUser } = await supabase.auth.admin.createUser({
+          phone,
+          phone_confirm: true,
+          user_metadata: { display_name: application.display_name, role: 'host' }
+        })
+        if (authUser?.user?.id) {
+          profileId = authUser.user.id
+        } else {
+          const { data: listData } = await supabase.auth.admin.listUsers()
+          const found = listData?.users?.find(u => u.phone === phone)
+          if (found?.id) profileId = found.id
+        }
+      }
+    }
+    if (!profileId) {
+      const fallbackEmail = `host_app_${Date.now()}_${Math.random().toString(36).slice(2, 7)}@friendoo.internal`
+      const { data: authUser } = await supabase.auth.admin.createUser({
+        email: fallbackEmail,
+        email_confirm: true,
+        user_metadata: { display_name: application.display_name, role: 'host' }
+      })
+      profileId = authUser?.user?.id || crypto.randomUUID()
+    }
+  }
+
   await supabase.from('profiles').upsert({
     id: profileId,
     display_name: application.display_name,
@@ -663,21 +747,22 @@ export async function getAppSettings(): Promise<AppSettingsRecord> {
   return getCachedOrFetch('admin:settings', async () => {
     try {
       const supabase = getSupabaseAdmin()
-      const { data, error } = await supabase
-        .from('crm_configuration_documents')
-        .select('payload, updated_at')
-        .eq('id', 'app_settings')
-        .maybeSingle()
+      const [{ data: adminDoc }, { data: remoteDoc }] = await Promise.all([
+        supabase.from('crm_configuration_documents').select('payload, updated_at').eq('id', 'app_settings').maybeSingle(),
+        supabase.from('crm_configuration_documents').select('payload, updated_at').eq('id', 'app_remote_config').maybeSingle(),
+      ])
 
-      if (error) throw error
-      const p = (data?.payload as Record<string, unknown>) ?? {}
+      const p = (adminDoc?.payload as Record<string, unknown>) ?? {}
+      const r = (remoteDoc?.payload as Record<string, unknown>) ?? {}
+
+      const maintenanceMode = p.maintenanceMode !== undefined ? asBoolean(p.maintenanceMode) : asBoolean(r.maintenance_mode, false)
 
       return {
         welcomeBonusCoins: asNumber(p.welcomeBonusCoins, 50),
         minCoinBalanceToStartCall: asNumber(p.minCoinBalanceToStartCall, 20),
         maxCallDurationMinutes: asNumber(p.maxCallDurationMinutes, 60),
-        maintenanceMode: asBoolean(p.maintenanceMode, false),
-        updatedAt: toIsoString(data?.updated_at),
+        maintenanceMode,
+        updatedAt: toIsoString(adminDoc?.updated_at || remoteDoc?.updated_at),
       }
     } catch (error) {
       console.warn('getAppSettings fallback:', error)
@@ -695,12 +780,50 @@ export async function getAppSettings(): Promise<AppSettingsRecord> {
 export async function saveAppSettings(payload: SettingsPayload) {
   const supabase = getSupabaseAdmin()
   const actorId = getOperationalAdminActorId()
+
+  const p = payload as Record<string, unknown>
+  const maintenanceMode = asBoolean(p.maintenanceMode, false)
+  const welcomeBonusCoins = asNumber(p.welcomeBonusCoins, 50)
+  const minCoinBalanceToStartCall = asNumber(p.minCoinBalanceToStartCall, 20)
+  const maxCallDurationMinutes = asNumber(p.maxCallDurationMinutes, 60)
+
+  // 1. Save to app_settings for Admin Panel
   await supabase.from('crm_configuration_documents').upsert({
     id: 'app_settings',
-    payload,
+    payload: {
+      welcomeBonusCoins,
+      minCoinBalanceToStartCall,
+      maxCallDurationMinutes,
+      maintenanceMode,
+    },
     updated_by: actorId,
     updated_at: new Date().toISOString(),
   })
+
+  // 2. Synchronize to app_remote_config for the Flutter app
+  const { data: existingRemote } = await supabase
+    .from('crm_configuration_documents')
+    .select('payload')
+    .eq('id', 'app_remote_config')
+    .maybeSingle()
+
+  const existingPayload = (existingRemote?.payload as Record<string, unknown>) ?? {}
+
+  await supabase.from('crm_configuration_documents').upsert({
+    id: 'app_remote_config',
+    payload: {
+      ...existingPayload,
+      maintenance_mode: maintenanceMode,
+      maintenance_message: maintenanceMode ? 'Platform maintenance in progress. Please check back shortly.' : null,
+      enable_flash_sales: existingPayload.enable_flash_sales ?? true,
+      support_phone: existingPayload.support_phone ?? '+919999999999',
+      min_app_version: existingPayload.min_app_version ?? '1.0.0',
+      dynamic_theme_color_hex: existingPayload.dynamic_theme_color_hex ?? '#8B5CF6',
+    },
+    updated_by: actorId,
+    updated_at: new Date().toISOString(),
+  })
+
   invalidateCache('admin:settings')
 }
 
@@ -719,6 +842,9 @@ export async function listWithdrawals(): Promise<WithdrawalRecord[]> {
           payout_details,
           failure_reason,
           review_note,
+          provider,
+          provider_transfer_id,
+          provider_reference_id,
           created_at,
           reviewed_at,
           hosts (
@@ -746,6 +872,9 @@ export async function listWithdrawals(): Promise<WithdrawalRecord[]> {
           processedAt: toIsoString(p.reviewed_at),
           failureReason: asString(p.failure_reason),
           adminNote: asString(p.review_note),
+          provider: asString(p.provider),
+          providerTransferId: asString(p.provider_transfer_id),
+          cashfreeReferenceId: asString(p.provider_reference_id),
         }
       })
     } catch (error) {
@@ -753,6 +882,44 @@ export async function listWithdrawals(): Promise<WithdrawalRecord[]> {
       return []
     }
   }, 15)
+}
+
+export async function getHost(hostId: string): Promise<HostRecord | null> {
+  try {
+    const supabase = getSupabaseAdmin()
+    const [{ data: h, error: hError }, { data: p, error: pError }] = await Promise.all([
+      supabase.from('hosts').select('*').eq('id', hostId).maybeSingle(),
+      supabase.from('profiles').select('*').eq('id', hostId).maybeSingle(),
+    ])
+
+    if (hError || pError || !h || !p) return null
+
+    const { count } = await supabase.from('calls').select('*', { count: 'exact', head: true }).eq('host_id', hostId)
+
+    return {
+      id: h.id,
+      name: asString(p.display_name, 'Host'),
+      phoneNumber: asString(p.phone),
+      email: null,
+      city: asString(p.city, 'Mumbai'),
+      languages: ['Hindi', 'English'],
+      ratePerMinute: asNumber(h.rate_per_audio_minute, 20),
+      hostStatus: asBoolean(p.is_banned) ? 'suspended' : 'approved',
+      isHost: true,
+      avatarSeed: h.id,
+      photoURL: asString(p.avatar_path),
+      idProofUrl: null,
+      bio: asString(h.bio || p.about),
+      gender: 'female',
+      age: 24,
+      callsMade: count || 0,
+      coinsEarned: 0,
+      createdAt: toIsoString(p.created_at || h.updated_at),
+    }
+  } catch (error) {
+    console.warn('getHost error:', error)
+    return null
+  }
 }
 
 export async function getHostEarnings(hostId: string): Promise<HostEarningsRecord | null> {

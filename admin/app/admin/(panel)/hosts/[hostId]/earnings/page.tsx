@@ -5,10 +5,12 @@ import { IndianRupee, Clock, Wallet, TrendingUp } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default async function HostEarningsPage({ params }: { params: { hostId: string } }) {
-  const earnings = await getHostEarnings(params.hostId);
+export default async function HostEarningsPage({ params }: { params: Promise<{ hostId: string }> | { hostId: string } }) {
+  const resolvedParams = await Promise.resolve(params);
+  const hostId = resolvedParams.hostId;
+  const earnings = await getHostEarnings(hostId);
   const allWithdrawals = await listWithdrawals();
-  const hostWithdrawals = allWithdrawals.filter((w) => w.hostId === params.hostId);
+  const hostWithdrawals = allWithdrawals.filter((w) => w.hostId === hostId);
 
   if (!earnings) {
     return <div className="p-8 text-center text-zinc-500">No earnings record found for this host.</div>;

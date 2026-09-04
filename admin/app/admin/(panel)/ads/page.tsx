@@ -19,10 +19,10 @@ import {
   Trash2,
   Edit3,
   Power,
-    Flame,
+  Flame,
   Zap,
   Target,
-
+  Check,
 } from 'lucide-react'
 
 type AdForm = {
@@ -237,18 +237,18 @@ export default function CloudAdsAdminPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="bento-badge border-purple-500/30 bg-purple-500/10 text-purple-300">
+            <span className="bento-badge border-purple-500/30 bg-purple-500/10 text-purple-400">
               Cloud Marketing & Surge Engine
             </span>
-            <span className="bento-badge border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+            <span className="bento-badge border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
               Live Realtime Sync
             </span>
           </div>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">
-            Promotions, Pop-ups & Host Surge
+            Cloud Ad Banners
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Push top screen banners, user pop-up flash packages (e.g. 50 coins for ₹39), and host peak-hour incentives in real-time.
+            Promotions, pop-ups, and host surge campaigns deployed in real-time.
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export default function CloudAdsAdminPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="bento-card relative overflow-hidden p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Active Campaigns</span>
+            <span className="text-xs font-medium text-zinc-400">Active Campaigns</span>
             <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400">
               <Sparkles className="h-4 w-4" />
             </div>
@@ -278,8 +278,8 @@ export default function CloudAdsAdminPage() {
 
         <div className="bento-card relative overflow-hidden p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Total Views</span>
-            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
+            <span className="text-xs font-medium text-zinc-400">Total Views</span>
+            <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400">
               <Eye className="h-4 w-4" />
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function CloudAdsAdminPage() {
 
         <div className="bento-card relative overflow-hidden p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Total Conversions / Taps</span>
+            <span className="text-xs font-medium text-zinc-400">Total Conversions & Taps</span>
             <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
               <MousePointerClick className="h-4 w-4" />
             </div>
@@ -300,8 +300,8 @@ export default function CloudAdsAdminPage() {
 
         <div className="bento-card relative overflow-hidden p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">Average CTR</span>
-            <div className="rounded-lg bg-yellow-500/10 p-2 text-yellow-400">
+            <span className="text-xs font-medium text-zinc-400">Average CTR</span>
+            <div className="rounded-lg bg-purple-500/10 p-2 text-purple-400">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
@@ -341,13 +341,13 @@ export default function CloudAdsAdminPage() {
                         )}
                       </div>
                       <div className="mt-1.5 flex items-center gap-2 text-xs text-zinc-400 flex-wrap">
-                        <span className="flex items-center gap-1 text-purple-300 font-semibold">
+                        <span className="flex items-center gap-1 text-purple-400 font-semibold">
                           <Target className="h-3 w-3" /> {ad.targetAudience}
                         </span>
                         <span>•</span>
                         <span>Placement: <strong className="text-zinc-200">{ad.placement}</strong></span>
                         <span>•</span>
-                        <span>Priority: <strong className="text-yellow-400">{ad.priority}</strong></span>
+                        <span>Priority: <strong className="text-purple-400">{ad.priority}</strong></span>
                         {ad.promoPriceInr && (
                           <>
                             <span>•</span>
@@ -365,7 +365,7 @@ export default function CloudAdsAdminPage() {
                         className={`rounded-lg p-2 text-xs transition ${
                           ad.isActive
                             ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                            : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
                         }`}
                         title={ad.isActive ? 'Pause Campaign' : 'Activate Campaign'}
                       >
@@ -373,14 +373,14 @@ export default function CloudAdsAdminPage() {
                       </button>
                       <button
                         onClick={() => openEdit(ad)}
-                        className="rounded-lg bg-zinc-800 p-2 text-zinc-300 hover:bg-zinc-700"
+                        className="rounded-lg bg-white/5 p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition"
                         title="Edit Campaign"
                       >
                         <Edit3 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteAd(ad)}
-                        className="rounded-lg bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
+                        className="rounded-lg bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20 transition"
                         title="Delete Campaign"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -435,27 +435,27 @@ export default function CloudAdsAdminPage() {
         title={form.id ? 'Edit Campaign & Deal' : 'Create Live Campaign'}
         description="Configure target audience, screen placement, flash package values, and priority."
       >
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-5 flex items-center gap-2">
           <span className="text-xs font-semibold text-zinc-400">Quick Presets:</span>
           <button
             type="button"
             onClick={applyFlash50For39Template}
-            className="inline-flex items-center gap-1 rounded-lg bg-purple-500/20 px-2.5 py-1 text-[11px] font-bold text-purple-300 hover:bg-purple-500/30"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:bg-white/10 hover:text-white transition"
           >
-            <Zap className="h-3 w-3" /> 50 Coins for ₹39
+            <Zap className="h-3 w-3 text-purple-400" /> 50 Coins for ₹39
           </button>
           <button
             type="button"
             onClick={applyHostSurgeTemplate}
-            className="inline-flex items-center gap-1 rounded-lg bg-amber-500/20 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500/30"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:bg-white/10 hover:text-white transition"
           >
-            <Flame className="h-3 w-3" /> Host Peak Surge
+            <Flame className="h-3 w-3 text-purple-400" /> Host Peak Surge
           </button>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="space-y-5">
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-300">Campaign Title</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-300">Campaign Title</label>
             <input
               type="text"
               required
@@ -603,30 +603,38 @@ export default function CloudAdsAdminPage() {
           <div>
             <label className="mb-1.5 block text-xs font-medium text-zinc-300">Color Gradient Theme</label>
             <div className="grid grid-cols-2 gap-2">
-              {gradientPresets.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => setForm({ ...form, gradientColors: preset.colors })}
-                  className={`flex items-center gap-2 rounded-xl border p-2 text-left transition ${
-                    JSON.stringify(form.gradientColors) === JSON.stringify(preset.colors)
-                      ? 'border-purple-500 bg-purple-500/10'
-                      : 'border-white/5 bg-zinc-900 hover:border-white/20'
-                  }`}
-                >
-                  <div
-                    className="h-5 w-5 rounded-full shadow-sm"
-                    style={{ background: `linear-gradient(135deg, ${preset.colors.join(', ')})` }}
-                  />
-                  <span className="text-[11px] font-semibold text-zinc-200">{preset.name}</span>
-                </button>
-              ))}
+              {gradientPresets.map((preset) => {
+                const isSelected = JSON.stringify(form.gradientColors) === JSON.stringify(preset.colors)
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => setForm({ ...form, gradientColors: preset.colors })}
+                    className={`flex items-center justify-between rounded-xl border p-2.5 text-left transition ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-500/10 text-white shadow-sm'
+                        : 'border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20 shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${preset.colors.join(', ')})` }}
+                      />
+                      <span className="text-xs font-medium truncate">{preset.name}</span>
+                    </div>
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-300">Tap Action</label>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-300">Tap Action</label>
               <select
                 value={form.actionType}
                 onChange={(e) => setForm({ ...form, actionType: selectOption(e.target.value, actionTypes, form.actionType) })}
@@ -639,12 +647,12 @@ export default function CloudAdsAdminPage() {
             </div>
 
             <div className="flex items-center pt-5">
-              <label className="flex items-center gap-2 text-xs text-pink-300 cursor-pointer font-semibold">
+              <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer font-medium">
                 <input
                   type="checkbox"
                   checked={form.showAsPopup}
                   onChange={(e) => setForm({ ...form, showAsPopup: e.target.checked })}
-                  className="rounded border-pink-700 bg-zinc-800 text-pink-600 focus:ring-0"
+                  className="rounded border-zinc-700 bg-zinc-800 text-purple-600 focus:ring-0"
                 />
                 <span>Auto Pop-Up on Screen Enter</span>
               </label>

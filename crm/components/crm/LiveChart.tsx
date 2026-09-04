@@ -35,21 +35,21 @@ export function LiveChart({
       <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-purple-400">
+            <div aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-purple-400">
               <Icon className="h-4 w-4" />
             </div>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-tight text-foreground">{title}</h3>
+              <h2 className="text-sm font-bold tracking-tight text-foreground">{title}</h2>
               {badge && (
-                <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
                   {badge}
                 </span>
               )}
             </div>
             {subtitle && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>

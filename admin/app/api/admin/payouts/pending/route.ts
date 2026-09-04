@@ -19,12 +19,17 @@ export async function GET() {
 
     if (error) throw error
 
-    const pendingPayouts = (data ?? []).map((d) => ({
-      id: d.id,
-      hostId: d.host_id,
-      amount: d.amount_inr,
-      requestedAt: d.created_at,
-    }))
+    const pendingPayouts = (data ?? []).map((d) => {
+      const details = (d.payout_details && typeof d.payout_details === 'object' ? d.payout_details : {}) as Record<string, unknown>
+      return {
+        id: d.id,
+        hostId: d.host_id,
+        amount: d.amount_inr,
+        upiId: typeof details.upi_id === 'string' ? details.upi_id : (typeof details.upiId === 'string' ? details.upiId : 'Encrypted on file'),
+        status: d.status,
+        requestedAt: d.created_at,
+      }
+    })
 
     return NextResponse.json({ pendingPayouts })
   } catch (error) {

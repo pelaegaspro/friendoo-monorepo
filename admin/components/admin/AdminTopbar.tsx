@@ -8,7 +8,8 @@ import { adminFetch } from '@/lib/admin/client'
 import { MobileSidebarButton } from './AdminSidebar'
 
 const titles: Record<string, string> = {
-  '/admin': 'Operations Bento',
+  '/admin': 'Overview Dashboard',
+  '/admin/ads': 'Cloud Ad Banners',
   '/admin/hosts': 'Host Management',
   '/admin/users': 'User Management',
   '/admin/packages': 'Coin Packages & Pricing',
@@ -54,7 +55,7 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
             <Activity className="h-3.5 w-3.5 animate-pulse" />
-            <span>Supabase Edge Mesh Online</span>
+            <span>System Status: Online</span>
           </div>
 
           <div className="hidden md:flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-xs font-medium text-purple-300">

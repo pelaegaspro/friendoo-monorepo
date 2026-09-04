@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_COOKIE_NAME, isValidAdminSessionEdge } from './lib/admin/edge-session'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (!pathname.startsWith('/admin')) {
@@ -17,7 +17,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (hasSession && pathname === '/admin/login') {
-    return NextResponse.redirect(new URL('/admin/portal', request.url))
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   return NextResponse.next()

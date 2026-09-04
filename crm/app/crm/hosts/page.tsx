@@ -135,7 +135,7 @@ export default function HostsPage() {
         />
         <KPICard
           title="Host Earnings Pool"
-          value={`${totalEarnings.toLocaleString()} 🪙`}
+          value={`${totalEarnings.toLocaleString()} Coins`}
           icon={Coins}
           variant="cyan"
           badge="Disbursed"
@@ -152,54 +152,62 @@ export default function HostsPage() {
       </div>
 
       {/* Bento Grid: Charts & Applications */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-6 items-stretch">
         {/* Earnings Leaderboard (4 cols) */}
         <LiveChart
           title="Star Host Earnings Leaderboard"
           subtitle="Top 10 hosts ranked by accumulated coin earnings"
           icon={Crown}
           badge="Top Stars"
-          className="col-span-1 lg:col-span-4"
+          className="col-span-1 lg:col-span-4 h-full"
           variant="spotlight"
         >
-          <div className="h-72 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={leaderboard}>
-                <CartesianGrid stroke="#1f2337" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: "#8b8f9e", fontSize: 11 }} axisLine={{ stroke: "#1f2337" }} />
-                <YAxis tick={{ fill: "#8b8f9e", fontSize: 11 }} axisLine={{ stroke: "#1f2337" }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#121420",
-                    borderColor: "#3b4263",
-                    borderRadius: "0.75rem",
-                  }}
-                  itemStyle={{ color: "#f4f4f7" }}
-                  formatter={(val: unknown) => [`${Number(val || 0).toLocaleString()} Coins`, "Earnings"]}
-                />
-                <Bar dataKey="earningsCoins" fill="#c084fc" radius={[6, 6, 0, 0]} barSize={26} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {leaderboard.length > 0 ? (
+            <div className="h-72 w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={leaderboard}>
+                  <CartesianGrid stroke="#1f2337" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "#8b8f9e", fontSize: 11 }} axisLine={{ stroke: "#1f2337" }} />
+                  <YAxis tick={{ fill: "#8b8f9e", fontSize: 11 }} axisLine={{ stroke: "#1f2337" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#121420",
+                      borderColor: "#3b4263",
+                      borderRadius: "0.75rem",
+                    }}
+                    itemStyle={{ color: "#f4f4f7" }}
+                    formatter={(val: unknown) => [`${Number(val || 0).toLocaleString()} Coins`, "Earnings"]}
+                  />
+                  <Bar dataKey="earningsCoins" fill="#c084fc" radius={[6, 6, 0, 0]} barSize={26} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-72 text-center text-xs text-slate-400">
+              <Crown className="h-8 w-8 text-purple-400/50 mb-2" />
+              <p className="font-medium text-slate-200">No host earnings data available</p>
+              <p className="mt-1 text-slate-400">Top star rankings will appear here once calls generate earnings.</p>
+            </div>
+          )}
         </LiveChart>
 
         {/* Pending Applications Bento (2 cols) */}
-        <div className="bento-card col-span-1 lg:col-span-2 flex flex-col justify-between">
-          <div>
+        <div className="bento-card col-span-1 lg:col-span-2 flex flex-col justify-between h-full">
+          <div className="flex flex-col h-full justify-between">
             <div className="flex items-center justify-between pb-3 border-b border-white/5">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-400">
                   <ShieldCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">KYC Review</h3>
+                  <h2 className="text-sm font-bold text-foreground">KYC Review</h2>
                   <p className="text-xs text-muted-foreground">New applicant intake</p>
                 </div>
               </div>
-              <span className="bento-badge">{pendingApplications.length}</span>
+              <span className="bento-badge">{pendingApplications.length} Pending</span>
             </div>
 
-            <div className="mt-4 space-y-3 max-h-72 overflow-y-auto pr-1">
+            <div className="mt-4 flex-1 flex flex-col justify-center space-y-3 max-h-72 overflow-y-auto pr-1">
               {pendingApplications.length ? (
                 pendingApplications.map((app) => (
                   <div key={app.id} className="rounded-xl border border-white/5 bg-white/5 p-3 space-y-2">
@@ -226,9 +234,10 @@ export default function HostsPage() {
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center h-48 text-center text-xs text-muted-foreground">
-                  <CheckCircle2 className="h-7 w-7 text-emerald-400 mb-2" />
-                  No pending host applications in queue.
+                <div className="flex flex-col items-center justify-center h-72 text-center text-xs text-slate-400">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-400/50 mb-2" />
+                  <p className="font-medium text-slate-200">No pending applications</p>
+                  <p className="mt-1 text-slate-400">New applicant intake will appear here for review.</p>
                 </div>
               )}
             </div>
@@ -244,7 +253,7 @@ export default function HostsPage() {
               <Star className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">Verified Host Performance Matrix</h3>
+              <h2 className="text-sm font-bold text-foreground">Verified Host Performance Matrix</h2>
               <p className="text-xs text-muted-foreground">Click any host record to inspect diagnostic audio telemetry</p>
             </div>
           </div>
@@ -260,42 +269,54 @@ export default function HostsPage() {
             <Table>
               <thead>
                 <TableRow className="border-b border-white/5 hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Rank</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Host Name</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Metro / City</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Calls</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Earnings</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Avg Duration</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Rate</TableHead>
-                  <TableHead className="text-xs font-semibold text-muted-foreground">Live Status</TableHead>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Host Name</TableHead>
+                  <TableHead>Metro / City</TableHead>
+                  <TableHead>Calls</TableHead>
+                  <TableHead>Earnings</TableHead>
+                  <TableHead>Avg Duration</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead>Live Status</TableHead>
                 </TableRow>
               </thead>
               <tbody>
-                {hosts.map((host, index) => (
-                  <TableRow
-                    key={host.uid}
-                    onClick={() => setSelectedHost(host)}
-                    className="border-b border-white/5 transition-colors hover:bg-white/5 cursor-pointer"
-                  >
-                    <TableCell className="font-mono text-xs text-muted-foreground">{index + 1}</TableCell>
-                    <TableCell className="font-bold text-foreground text-xs">{host.name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{host.city || "—"}</TableCell>
-                    <TableCell className="text-xs font-semibold text-purple-400">{host.totalCalls}</TableCell>
-                    <TableCell className="text-xs font-bold text-amber-400">{host.earningsCoins.toLocaleString()} 🪙</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{Math.round(host.avgCallDurationSec / 60)} min</TableCell>
-                    <TableCell className="text-xs text-cyan-400 font-medium">{host.ratePerMinute || 5} coins/min</TableCell>
-                    <TableCell>
-                      {host.isOnline ? (
-                        <span className="bento-pill-live">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                          ONLINE
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-semibold text-muted-foreground">Offline</span>
-                      )}
+                {hosts.length === 0 ? (
+                  <TableRow className="border-b border-white/5 hover:bg-transparent">
+                    <TableCell colSpan={8} className="h-48 text-center text-xs text-slate-400">
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <Star className="h-8 w-8 text-cyan-400/50 mb-2" />
+                        <p className="font-medium text-slate-200">No verified hosts found in roster</p>
+                        <p className="mt-1 text-slate-400">Approved voice talent and performance metrics will populate here.</p>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  hosts.map((host, index) => (
+                    <TableRow
+                      key={host.uid}
+                      onClick={() => setSelectedHost(host)}
+                      className="border-b border-white/5 transition-colors hover:bg-white/5 cursor-pointer"
+                    >
+                      <TableCell className="font-mono text-xs text-muted-foreground">{index + 1}</TableCell>
+                      <TableCell className="font-bold text-foreground text-xs">{host.name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{host.city || "—"}</TableCell>
+                      <TableCell className="text-xs font-semibold text-purple-400">{host.totalCalls}</TableCell>
+                      <TableCell className="text-xs font-bold text-amber-400">{host.earningsCoins.toLocaleString()} Coins</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{Math.round(host.avgCallDurationSec / 60)} min</TableCell>
+                      <TableCell className="text-xs text-cyan-400 font-medium">{host.ratePerMinute || 5} coins/min</TableCell>
+                      <TableCell>
+                        {host.isOnline ? (
+                          <span className="bento-pill-live">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            ONLINE
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-muted-foreground">Offline</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </tbody>
             </Table>
           )}
@@ -310,46 +331,55 @@ export default function HostsPage() {
               <Clock className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">24-Hour Host Availability Heatmap</h3>
+              <h2 className="text-sm font-bold text-foreground">24-Hour Host Availability Heatmap</h2>
               <p className="text-xs text-muted-foreground">Aggregated hourly presence density across the day</p>
             </div>
           </div>
+          <span className="bento-badge">24h Telemetry</span>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <div className="min-w-[860px] space-y-2">
-            <div className="grid grid-cols-[180px_repeat(24,minmax(24px,1fr))] gap-1 text-[10px] text-muted-foreground">
-              <div />
-              {Array.from({ length: 24 }, (_, hour) => (
-                <div key={hour} className="text-center font-mono">
-                  {hour}h
+        {heatmapRows.length > 0 ? (
+          <div className="mt-4 overflow-x-auto">
+            <div className="min-w-[860px] space-y-2">
+              <div className="grid grid-cols-[180px_repeat(24,minmax(24px,1fr))] gap-1 text-[10px] text-muted-foreground">
+                <div />
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <div key={hour} className="text-center font-mono">
+                    {hour}h
+                  </div>
+                ))}
+              </div>
+              {heatmapRows.map((row) => (
+                <div
+                  key={row.host.uid}
+                  className="grid grid-cols-[180px_repeat(24,minmax(24px,1fr))] items-center gap-1"
+                >
+                  <div className="truncate pr-2 text-xs font-semibold text-foreground">{row.host.name}</div>
+                  {row.values.map((value, index) => (
+                    <div
+                      key={`${row.host.uid}-${index}`}
+                      className="h-6 rounded-md transition-all hover:scale-105"
+                      style={{
+                        backgroundColor:
+                          value > 0.9
+                            ? "rgba(16, 185, 129, 0.85)"
+                            : value > 0.5
+                            ? "rgba(16, 185, 129, 0.45)"
+                            : "rgba(31, 35, 55, 0.8)",
+                      }}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
-            {heatmapRows.map((row) => (
-              <div
-                key={row.host.uid}
-                className="grid grid-cols-[180px_repeat(24,minmax(24px,1fr))] items-center gap-1"
-              >
-                <div className="truncate pr-2 text-xs font-semibold text-foreground">{row.host.name}</div>
-                {row.values.map((value, index) => (
-                  <div
-                    key={`${row.host.uid}-${index}`}
-                    className="h-6 rounded-md transition-all hover:scale-105"
-                    style={{
-                      backgroundColor:
-                        value > 0.9
-                          ? "rgba(16, 185, 129, 0.85)"
-                          : value > 0.5
-                          ? "rgba(16, 185, 129, 0.45)"
-                          : "rgba(31, 35, 55, 0.8)",
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center text-xs text-slate-400">
+            <Clock className="h-8 w-8 text-emerald-500/40 mb-2" />
+            <p className="font-medium text-slate-200">No host availability telemetry recorded</p>
+            <p className="mt-1 text-slate-400">Aggregated hourly presence will populate as registered hosts log in.</p>
+          </div>
+        )}
       </div>
 
       {/* Host Detail Modal */}

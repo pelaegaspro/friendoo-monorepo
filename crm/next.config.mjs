@@ -35,6 +35,9 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts'],
   },
+  devIndicators: {
+    position: 'bottom-right',
+  },
 };
 
 export default nextConfig;

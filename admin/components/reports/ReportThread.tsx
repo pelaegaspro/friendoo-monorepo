@@ -61,6 +61,37 @@ export default function ReportThread({ reportId }: { reportId: string }) {
     }
   }
 
+  async function handleBan() {
+    if (!report?.reportedId) {
+      toast.error("No reported user ID found on this report");
+      return;
+    }
+    if (!confirm("Are you sure you want to ban the reported user?")) return;
+    try {
+      await adminFetch(`/api/admin/reports/${reportId}`, {
+        method: "POST",
+        body: JSON.stringify({ action: "ban", reportedId: report.reportedId }),
+      });
+      toast.success("User banned and report resolved");
+      setReport(prev => prev ? { ...prev, status: "resolved" } : null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to ban user");
+    }
+  }
+
+  async function handleDismiss() {
+    try {
+      await adminFetch(`/api/admin/reports/${reportId}`, {
+        method: "POST",
+        body: JSON.stringify({ action: "dismiss", reportedId: report?.reportedId }),
+      });
+      toast.success("Report marked resolved");
+      setReport(prev => prev ? { ...prev, status: "resolved" } : null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to resolve report");
+    }
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] bento-card overflow-hidden">
       {/* Header */}
@@ -69,8 +100,16 @@ export default function ReportThread({ reportId }: { reportId: string }) {
           <h2 className="text-base font-bold capitalize text-foreground">{report?.reason?.replace(/_/g, " ")}</h2>
           <p className="text-xs text-muted-foreground">Report #{reportId.slice(0, 8)}</p>
         </div>
-        <div className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
-          {report?.status || "under review"}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleDismiss}
+            className="px-3 py-1 text-xs rounded-lg border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 transition-colors"
+          >
+            Mark Resolved
+          </button>
+          <div className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            {report?.status || "under review"}
+          </div>
         </div>
       </div>
 
@@ -96,7 +135,7 @@ export default function ReportThread({ reportId }: { reportId: string }) {
         <textarea
           value={replyText}
           onChange={e => setReplyText(e.target.value)}
-          placeholder="Type your response..."
+          placeholder="Type notes or message..."
           className="w-full p-3 rounded-xl border border-border bg-surface text-foreground text-xs focus:ring-1 focus:ring-purple-500 outline-none"
           rows={2}
           onKeyDown={e => {
@@ -109,16 +148,10 @@ export default function ReportThread({ reportId }: { reportId: string }) {
         <div className="flex items-center justify-between mt-3">
           <div className="flex gap-2">
             <button
-              onClick={() => toast.success("Host frozen from further calls")}
-              className="px-3 py-1.5 bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-bold rounded-lg hover:bg-yellow-500/30 transition-colors"
-            >
-              🧊 Freeze Host
-            </button>
-            <button
-              onClick={() => toast.success("Host permanently banned")}
+              onClick={handleBan}
               className="px-3 py-1.5 bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-bold rounded-lg hover:bg-red-500/30 transition-colors"
             >
-              🚫 Ban Host
+              🚫 Ban Reported User
             </button>
           </div>
           <button
@@ -126,7 +159,7 @@ export default function ReportThread({ reportId }: { reportId: string }) {
             disabled={sending || !replyText.trim()}
             className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-colors"
           >
-            {sending ? "Sending..." : "Send Reply ↵"}
+            {sending ? "Saving..." : "Add Note / Reply"}
           </button>
         </div>
       </div>

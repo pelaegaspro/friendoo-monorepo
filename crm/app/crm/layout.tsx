@@ -11,7 +11,6 @@ import {
   Users,
   Wallet,
   PhoneCall,
-  Activity,
   Search,
 } from "lucide-react";
 import { LogoutButton } from "@/components/crm/LogoutButton";
@@ -22,7 +21,7 @@ const mainNavItems = [
   { href: "/crm", label: "Operations Bento", icon: Gauge, badge: "Live" },
   { href: "/crm/users", label: "Users & Segments", icon: Users },
   { href: "/crm/hosts", label: "Host Management", icon: BarChart3 },
-  { href: "/crm/revenue", label: "Revenue & Finance", icon: Wallet, badge: "₹" },
+  { href: "/crm/revenue", label: "Revenue & Finance", icon: Wallet },
   { href: "/crm/call-logs", label: "Call Logs & WebRTC", icon: PhoneCall },
 ];
 
@@ -47,8 +46,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         <div>
           {/* Logo & Platform Tag */}
           <div className="mb-6 flex items-center justify-between">
-            <Link href="/crm" className="flex items-center gap-2 select-none group">
-              <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto transition-transform group-hover:scale-105">
+            <Link href="/crm" aria-label="Friendoo CRM Operations Home" className="flex items-center gap-2 select-none group">
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-auto transition-transform group-hover:scale-105">
                 <defs>
                   <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#8b5cf6" />
@@ -68,7 +67,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
             <Search className="h-3.5 w-3.5" />
             <span>Search users, hosts, calls...</span>
-            <kbd className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">⌘K</kbd>
+            <kbd className="ml-auto rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono text-slate-200">⌘K</kbd>
           </div>
 
           {/* Primary Navigation */}
@@ -77,7 +76,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
               <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Core Operations
               </div>
-              <nav className="space-y-1">
+              <nav aria-label="Core Operations" className="space-y-1">
                 {mainNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -107,7 +106,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
               <div className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Intelligence & Risk
               </div>
-              <nav className="space-y-1">
+              <nav aria-label="Intelligence & Risk" className="space-y-1">
                 {secondaryNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -140,7 +139,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-md">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
+              <div aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-600 bg-gradient-to-tr from-purple-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
                 AD
               </div>
               <div>
@@ -166,9 +165,10 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
               <span>Bento Intelligence Matrix</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                <Activity className="h-3.5 w-3.5 animate-pulse" />
-                <span>WebRTC Mesh Online (0.0% Loss)</span>
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                <span className="font-medium text-foreground/80">WebRTC Mesh Online</span>
+                <span className="text-[10px] text-muted-foreground/70">(0.0% Loss)</span>
               </div>
               <div className="lg:hidden">
                 <LogoutButton />

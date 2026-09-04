@@ -1,14 +1,19 @@
 import ReportThread from "@/components/reports/ReportThread";
 
-export default function ReportDetailsPage({ params }: { params: { id: string } }) {
+export default async function ReportDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string }
+}) {
+  const resolvedParams = await Promise.resolve(params);
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Fraud Investigation</h1>
-        <p className="text-sm text-gray-500">Communicate with the user and take action on this report.</p>
+        <h1 className="text-2xl font-bold text-white">Trust & Safety Investigation</h1>
+        <p className="text-sm text-zinc-400">Review violation details, take enforcement action, or resolve this incident.</p>
       </div>
       
-      <ReportThread reportId={params.id} />
+      <ReportThread reportId={resolvedParams.id} />
     </div>
   );
 }

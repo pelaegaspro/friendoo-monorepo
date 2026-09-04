@@ -43,18 +43,18 @@ export function KPICard({
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-semibold text-slate-300">
               {title}
             </span>
             {badge && (
-              <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-foreground">
+              <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-slate-100">
                 {badge}
               </span>
             )}
           </div>
         </div>
         {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted-foreground transition-colors group-hover:text-foreground">
+          <div aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted-foreground transition-colors group-hover:text-foreground">
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -62,7 +62,8 @@ export function KPICard({
 
       <div className="mt-4">
         <div className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          {value}
+          <span className="sr-only">{title}: </span>
+          <span>{value}</span>
         </div>
         
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -75,16 +76,18 @@ export function KPICard({
                   : "bg-red-500/15 text-red-400"
               )}
             >
-              {isPositive ? (
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              ) : (
-                <ArrowDownRight className="h-3.5 w-3.5" />
-              )}
+              <span aria-hidden="true">
+                {isPositive ? (
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowDownRight className="h-3.5 w-3.5" />
+                )}
+              </span>
               {deltaText || `${Math.abs(deltaValue).toFixed(1)}% vs yesterday`}
             </div>
           ) : null}
           {footer ? (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-slate-400">
               {footer}
             </span>
           ) : null}

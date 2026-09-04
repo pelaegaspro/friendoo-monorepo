@@ -48,6 +48,7 @@ class NotificationRepository {
   }
 
   Stream<List<PushNotificationItem>> watchNotifications({
+    bool isHost = false,
     bool? isHost,
   }) async* {
     yield await fetchNotifications(isHost: isHost);
@@ -58,6 +59,7 @@ class NotificationRepository {
   }
 
   Future<List<PushNotificationItem>> fetchNotifications({
+    bool isHost = false,
     bool? isHost,
   }) async {
     final user = _client.auth.currentUser;
@@ -83,6 +85,7 @@ class NotificationRepository {
 
     // 1. Fetch live calls from the database
     try {
+      final callField = isHost ? 'host_id' : 'caller_id';
       final callField = hostResolved ? 'host_id' : 'caller_id';
       final callRows = await _client
           .from('calls')
@@ -109,11 +112,14 @@ class NotificationRepository {
           results.add(
             PushNotificationItem(
               id: 'call_${map['id']}',
+              title: isHost ? '📞 Call Completed' : '📞 Voice Call Completed',
+              body: isHost
               title: hostResolved ? '📞 Call Completed' : '📞 Voice Call Completed',
               body: hostResolved
                   ? 'Call duration: $durationStr • Earned ₹${map['host_earnings_inr'] ?? 0}'
                   : 'Call duration: $durationStr • Charged ${map['coins_charged'] ?? 0} coins',
               type: 'call',
+              actionType: isHost ? 'open_lounge' : 'recharge',
               actionType: hostResolved ? 'open_lounge' : 'recharge',
               createdAt: createdAt,
             ),
@@ -125,6 +131,7 @@ class NotificationRepository {
             PushNotificationItem(
               id: 'call_${map['id']}',
               title: '📵 Missed Call',
+              body: isHost
               body: hostResolved
                   ? 'You missed an incoming caller request.'
                   : 'Your call request was not connected.',
@@ -158,11 +165,17 @@ class NotificationRepository {
         results.add(
           PushNotificationItem(
             id: 'tx_${map['id']}',
+            title: amount >= 0 ? '💰 Coins Credited' : '🪙 Coins Debited',
             title: hostResolved
                 ? (amount >= 0 ? '💰 Earnings Credited' : '💸 Payout Processed')
                 : (amount >= 0 ? '💰 Coins Credited' : '🪙 Coins Debited'),
             body: desc.isNotEmpty
                 ? desc
+                : (amount >= 0
+                      ? '+$amount coins added to your wallet'
+                      : '$amount coins used'),
+            type: 'recharge',
+            actionType: 'recharge',
                 : (hostResolved
                     ? (amount >= 0
                         ? '+$amount INR added to host earnings'
@@ -193,6 +206,8 @@ class NotificationRepository {
       }
     } catch (_) {}
 
+    // 4. Fetch live coin package promotional offers for users
+    if (!isHost) {
     // 4. Fetch live coin package promotional offers for callers ONLY (NEVER FOR HOSTS)
     if (!hostResolved) {
       try {

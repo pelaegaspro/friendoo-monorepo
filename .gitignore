@@ -47,3 +47,5 @@ flutter_app/assets/.env.local
 e2e/screenshots/
 e2e/*_report.json
 e2e/*report.json
+*.wireless_adb_history.txt
+.wireless_adb_history.txt

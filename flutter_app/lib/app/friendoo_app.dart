@@ -35,6 +35,7 @@ import '../features/discover/presentation/desi_avatar.dart';
 import '../features/ads/presentation/live_ad_banner_widget.dart';
 import '../features/auth/presentation/onboarding_avatar_setup_page.dart';
 import '../features/notifications/data/notification_repository.dart';
+import '../core/config/app_remote_config.dart';
 
 final debugMockSessionProvider = StateProvider<bool>((ref) => false);
 final isHostModeProvider = StateProvider<bool>((ref) => false);
@@ -65,6 +66,15 @@ class AuthGate extends ConsumerWidget {
     final client = ref.watch(supabaseProvider);
     final hasEntered = ref.watch(hasEnteredAppProvider);
     final debugMockSession = ref.watch(debugMockSessionProvider);
+    final remoteConfig = ref.watch(appRemoteConfigProvider).asData?.value;
+
+    if (remoteConfig?.maintenanceMode == true) {
+      return MaintenanceScreen(
+        message: remoteConfig?.maintenanceMessage,
+        supportPhone: remoteConfig?.supportPhone,
+        onRefresh: () => ref.refresh(appRemoteConfigProvider),
+      );
+    }
 
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
@@ -82,6 +92,87 @@ class AuthGate extends ConsumerWidget {
         }
         return const PhoneAuthPage();
       },
+    );
+  }
+}
+
+class MaintenanceScreen extends StatelessWidget {
+  const MaintenanceScreen({
+    super.key,
+    this.message,
+    this.supportPhone,
+    required this.onRefresh,
+  });
+
+  final String? message;
+  final String? supportPhone;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                    border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                  ),
+                  child: const Icon(
+                    Icons.build_rounded,
+                    color: Color(0xFFA78BFA),
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Under Scheduled Maintenance',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message ??
+                      'We are performing scheduled improvements on the Friendoo infrastructure. Voice call sessions will resume shortly.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF94A3B8),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: onRefresh,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Check Status'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -81,24 +81,47 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(50)
 
-    if (error) throw error
+    if (!error && Array.isArray(data)) {
+      const logs = data.map((row) => {
+        const r = asRecord(row)
+        return {
+          id: asString(r.id),
+          title: asString(r.title),
+          body: asString(r.body),
+          target: asString(r.target_audience, 'all'),
+          actionType: asString(r.action_type, 'none'),
+          sentAt: asString(r.created_at),
+          sentBy: 'admin',
+        }
+      })
+      return NextResponse.json({ logs })
+    }
 
-    const rows: unknown[] = Array.isArray(data) ? data : []
-    const logs = rows.map((value) => {
-      const row = asRecord(value)
+    // Fallback to crm_campaigns if notifications table is not yet migrated
+    const { data: crmData } = await supabase
+      .from('crm_campaigns')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    const crmRows = Array.isArray(crmData) ? crmData : []
+    const logs = crmRows.map((row) => {
+      const r = asRecord(row)
+      const filter = asRecord(r.audience_filter)
       return {
-        id: asString(row.id),
-        title: asString(row.title),
-        body: asString(row.body),
-        target: asString(row.target_audience, 'all'),
-        actionType: asString(row.action_type, 'none'),
-        sentAt: asString(row.created_at),
+        id: asString(r.id),
+        title: asString(r.title || r.name),
+        body: asString(r.body),
+        target: asString(filter.target, 'all'),
+        actionType: 'none',
+        sentAt: asString(r.sent_at || r.created_at),
         sentBy: 'admin',
       }
     })
 
     return NextResponse.json({ logs })
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    const msg = error instanceof Error ? error.message : JSON.stringify(error)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

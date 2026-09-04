@@ -12,7 +12,7 @@ export function LogoutButton() {
   };
 
   return (
-    <Button variant="secondary" size="sm" onClick={logout}>
+    <Button variant="secondary" size="sm" onClick={logout} className="w-full justify-center">
       Logout
     </Button>
   );
