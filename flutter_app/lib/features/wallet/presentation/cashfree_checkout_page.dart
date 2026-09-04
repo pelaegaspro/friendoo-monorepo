@@ -164,7 +164,9 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage> {
                   children: [
                     Text(
                       _verificationError!.toLowerCase().contains('pending') ||
-                              _verificationError!.toLowerCase().contains('confirmed')
+                              _verificationError!.toLowerCase().contains(
+                                'confirmed',
+                              )
                           ? 'Payment confirmation pending'
                           : 'Payment issue detected',
                       style: const TextStyle(

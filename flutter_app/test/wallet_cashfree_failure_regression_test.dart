@@ -64,9 +64,19 @@ void main() {
     expect(migration, contains("'pkg_900'"));
     expect(migration, contains("'base_15'"));
     expect(migration, contains("'offer_140'"));
-    expect(migration, contains('create or replace function public.create_friendoo_pending_payment'));
+    expect(
+      migration,
+      contains(
+        'create or replace function public.create_friendoo_pending_payment',
+      ),
+    );
     expect(migration, contains("replace(p_package_id, 'pkg_', 'offer_')"));
-    expect(migration, contains("grant execute on function public.create_friendoo_pending_payment"));
+    expect(
+      migration,
+      contains(
+        "grant execute on function public.create_friendoo_pending_payment",
+      ),
+    );
   });
 
   test('Cashfree checkout provides user recovery actions for error or cancellation', () {
@@ -79,4 +89,3 @@ void main() {
     expect(source, contains("'Check Status'"));
   });
 }
-

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -131,8 +132,10 @@ class HostRepository {
 
         hosts.add(HostProfile.fromMap(map));
       }
-    } catch (error, stackTrace) {
-      Error.throwWithStackTrace(error, stackTrace);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('fetchAvailableHosts notice: $error');
+      }
     }
 
     return applyStarHostQuota(hosts);
