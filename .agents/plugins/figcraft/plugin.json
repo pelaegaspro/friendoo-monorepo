@@ -1,0 +1,11 @@
+{
+  "name": "figcraft",
+  "displayName": "FigCraft Designer",
+  "description": "Design native mobile screens, UI components, and vector layouts with FigCraft, operating via native MCP and exporting directly to Figma (.fig) and high-res PNG.",
+  "version": "1.0.0",
+  "suggestedPrompts": [
+    "Design a mobile app screen in FigCraft",
+    "Export FigCraft canvas to .fig and 2x PNG",
+    "Inspect the active FigCraft design document"
+  ]
+}
