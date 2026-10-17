@@ -178,3 +178,4 @@ def build_suite_p(b: ScreenBuilder, base_row=5):
     b.add_text(s10, "➤", 332, 745, font_size=16, fill=TEXT_WHITE)
 
 print("Suite P module defined.")
+

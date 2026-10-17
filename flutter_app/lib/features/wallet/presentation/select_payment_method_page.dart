@@ -33,7 +33,7 @@ class _SelectPaymentMethodPageState
     extends ConsumerState<SelectPaymentMethodPage> {
   List<UpiInstalledAppInfo> _installedUpiApps = [];
   UpiInstalledAppInfo? _selectedApp;
-  String _selectedMethod = 'google_play';
+  String _selectedMethod = 'upi';
   bool _isLoadingApps = true;
   bool _isProcessing = false;
   bool _isUpiExpanded = false;
@@ -521,122 +521,6 @@ class _SelectPaymentMethodPageState
                         ],
                       ),
                     ),
-                    // Google Play Store Billing Option Card (Play Store Policy Compliant)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _selectedMethod == 'google_play'
-                              ? const Color(0xFF00875A)
-                              : const Color(0xFFE2E8F0),
-                          width: _selectedMethod == 'google_play' ? 2 : 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _selectedMethod == 'google_play'
-                                ? const Color(0xFF00875A).withValues(alpha: 0.12)
-                                : Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            setState(() {
-                              _selectedMethod = 'google_play';
-                              _selectedApp = null;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00875A).withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.shop_two_rounded,
-                                    color: Color(0xFF00875A),
-                                    size: 26,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Text(
-                                            'Google Play',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w800,
-                                              color: Color(0xFF0F172A),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFE8F5E9),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: const Text(
-                                              'RECOMMENDED',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF00875A),
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 3),
-                                      const Text(
-                                        'UPI, Netbanking, Cards & Play Balance',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF64748B),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Radio<String>(
-                                  value: 'google_play',
-                                  groupValue: _selectedMethod,
-                                  activeColor: const Color(0xFF00875A),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedMethod = val;
-                                        _selectedApp = null;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 14),
 
                     Container(
@@ -816,6 +700,20 @@ class _SelectPaymentMethodPageState
                       iconColor: const Color(0xFF2563EB),
                       onTap: () =>
                           _startCashfreeCheckout(paymentMethod: 'card'),
+                    ),
+                    const SizedBox(height: 14),
+
+                    _PaymentOptionTile(
+                      icon: Icons.shop_two_rounded,
+                      title: 'Pay using Google Play Store',
+                      iconColor: const Color(0xFF00875A),
+                      onTap: () {
+                        setState(() {
+                          _selectedMethod = 'google_play';
+                          _selectedApp = null;
+                        });
+                        _executePayment();
+                      },
                     ),
                   ],
                 ),

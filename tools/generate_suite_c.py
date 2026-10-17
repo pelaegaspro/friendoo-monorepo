@@ -255,3 +255,4 @@ def build_suite_c(b: ScreenBuilder, base_row=3):
     b.add_button(s18, "Block or Report Host", 510, variant="secondary")
 
 print("Suite C module defined.")
+

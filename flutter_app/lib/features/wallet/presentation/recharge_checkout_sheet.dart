@@ -28,23 +28,23 @@ class RechargeCheckoutSheet extends ConsumerStatefulWidget {
 }
 
 class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
-  String _selectedMethod = 'GooglePlay';
+  String _selectedMethod = 'Cashfree';
   bool _isProcessing = false;
 
   static const _paymentMethods = [
+    {
+      'id': 'Cashfree',
+      'title': 'Cashfree Secure Checkout',
+      'subtitle': 'Instant UPI, Cards, Net Banking & Wallets',
+      'icon': Icons.lock_rounded,
+      'badge': 'RECOMMENDED',
+    },
     {
       'id': 'GooglePlay',
       'title': 'Google Play Store',
       'subtitle': '1-tap UPI, cards, net banking & balance',
       'icon': Icons.shop_two_rounded,
-      'badge': 'RECOMMENDED',
-    },
-    {
-      'id': 'Cashfree',
-      'title': 'Cashfree Secure Checkout',
-      'subtitle': 'UPI, cards, net banking and wallets',
-      'icon': Icons.lock_rounded,
-      'badge': 'SECURE',
+      'badge': 'OPTIONAL',
     },
   ];
 

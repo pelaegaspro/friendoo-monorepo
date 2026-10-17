@@ -212,3 +212,4 @@ def build_suite_w(b: ScreenBuilder, base_row=2):
     b.add_button(s11, "Back to Wallet", 730, variant="primary")
 
 print("Suite W module defined.")
+

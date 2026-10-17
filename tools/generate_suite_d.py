@@ -173,3 +173,4 @@ def build_suite_d(b: ScreenBuilder, base_row=1):
     b.add_button(s8, "Return to Discovery", 500, variant="primary")
 
 print("Suite D module defined.")
+

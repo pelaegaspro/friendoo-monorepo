@@ -200,18 +200,19 @@ export function WithdrawalActions({ withdrawal }: { withdrawal: WithdrawalRecord
           UPI Pay & Settle
         </button>
 
-        {/* Secondary: Automated Cashfree */}
+        {/* Automated Cashfree Payout */}
         <button
           onClick={handleCashfreePayout}
           disabled={loading}
-          className="flex items-center gap-1 rounded-lg bg-purple-500/10 px-2 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-50"
-          title="Dispatch via Cashfree API (if business account configured)"
+          className="flex items-center gap-1.5 rounded-lg bg-purple-500/20 px-3 py-1.5 text-xs font-bold text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-50"
+          title="Dispatch automated transfer via Cashfree API"
         >
           {loading && actionType === "cashfree" ? (
             <Loader2 size={13} className="animate-spin" />
           ) : (
-            <Zap size={13} />
+            <Zap size={13} className="text-purple-400" />
           )}
+          Cashfree Payout
         </button>
 
         {/* Reject */}

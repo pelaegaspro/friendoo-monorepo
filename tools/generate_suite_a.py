@@ -137,3 +137,4 @@ def build_suite_a(b: ScreenBuilder, base_row=0):
     b.add_button(s9, "Back to Account", 735, variant="secondary")
 
 print("Suite A module defined.")
+
