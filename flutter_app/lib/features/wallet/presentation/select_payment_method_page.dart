@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../data/google_play_iap_service.dart';
 import '../data/upi_payment_service.dart';
 import '../data/wallet_repository.dart';
 import 'cashfree_checkout_page.dart';
@@ -31,7 +32,7 @@ class _SelectPaymentMethodPageState
     extends ConsumerState<SelectPaymentMethodPage> {
   List<UpiInstalledAppInfo> _installedUpiApps = [];
   UpiInstalledAppInfo? _selectedApp;
-  String _selectedMethod = 'upi';
+  String _selectedMethod = 'google_play';
   bool _isLoadingApps = true;
   bool _isProcessing = false;
   bool _isUpiExpanded = false;
@@ -164,6 +165,12 @@ class _SelectPaymentMethodPageState
   }
 
   Future<void> _executePayment() async {
+    if (_selectedMethod == 'google_play') {
+      await ref
+          .read(googlePlayIapServiceProvider.notifier)
+          .buyCoinPackage(widget.package);
+      return;
+    }
     if (_selectedMethod == 'upi' && _selectedApp != null) {
       await _executeUpiPayment(_selectedApp!);
       return;
@@ -228,6 +235,38 @@ class _SelectPaymentMethodPageState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<GooglePlayPurchaseState>(googlePlayIapServiceProvider, (previous, next) {
+      if (next is GooglePlayPurchaseSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              next.alreadyCredited
+                  ? 'Payment verified! Coins are credited in your wallet.'
+                  : '🎉 Congratulations! ${next.coinsCredited} coins credited to your wallet.',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+        ref.read(googlePlayIapServiceProvider.notifier).resetState();
+        Navigator.of(context).pop(true);
+      } else if (next is GooglePlayPurchaseError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            content: Text(next.message),
+          ),
+        );
+        ref.read(googlePlayIapServiceProvider.notifier).resetState();
+      }
+    });
+
+    final iapState = ref.watch(googlePlayIapServiceProvider);
+    final isIapLoading = iapState is GooglePlayPurchaseLoading;
+    final isBusy = _isProcessing || isIapLoading;
+
     final baseAmount = widget.package.amountInr;
     final payableAmount = baseAmount;
     final coins = widget.package.coins;
@@ -370,7 +409,123 @@ class _SelectPaymentMethodPageState
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    // Google Play Store Billing Option Card (Play Store Policy Compliant)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _selectedMethod == 'google_play'
+                              ? const Color(0xFF00875A)
+                              : const Color(0xFFE2E8F0),
+                          width: _selectedMethod == 'google_play' ? 2 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _selectedMethod == 'google_play'
+                                ? const Color(0xFF00875A).withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            setState(() {
+                              _selectedMethod = 'google_play';
+                              _selectedApp = null;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF00875A).withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.shop_two_rounded,
+                                    color: Color(0xFF00875A),
+                                    size: 26,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'Google Play',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE8F5E9),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Text(
+                                              'RECOMMENDED',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w900,
+                                                color: Color(0xFF00875A),
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 3),
+                                      const Text(
+                                        'UPI, Netbanking, Cards & Play Balance',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Radio<String>(
+                                  value: 'google_play',
+                                  groupValue: _selectedMethod,
+                                  activeColor: const Color(0xFF00875A),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _selectedMethod = val;
+                                        _selectedApp = null;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
 
                     Container(
                       padding: const EdgeInsets.all(18),
@@ -589,28 +744,64 @@ class _SelectPaymentMethodPageState
                       height: 52,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
+                          backgroundColor: _selectedMethod == 'google_play'
+                              ? const Color(0xFF00875A)
+                              : const Color(0xFF3B82F6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(26),
                           ),
                           elevation: 2,
                         ),
-                        onPressed: _isProcessing ? null : _executePayment,
-                        child: _isProcessing
-                            ? const SizedBox.square(
-                                dimension: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.white,
-                                ),
+                        onPressed: isBusy ? null : _executePayment,
+                        child: isBusy
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  if (isIapLoading) ...[
+                                    const SizedBox(width: 12),
+                                    Flexible(
+                                      child: Text(
+                                        iapState.message,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               )
-                            : Text(
-                                'Pay ₹$payableAmount',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (_selectedMethod == 'google_play') ...[
+                                    const Icon(
+                                      Icons.shop_two_rounded,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Text(
+                                    _selectedMethod == 'google_play'
+                                        ? 'Pay ₹$payableAmount with Google Play'
+                                        : 'Pay ₹$payableAmount',
+                                    style: const TextStyle(
+                                      fontSize: 16.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                     ),

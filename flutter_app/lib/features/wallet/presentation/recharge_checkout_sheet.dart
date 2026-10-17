@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../data/google_play_iap_service.dart';
 import '../data/wallet_repository.dart';
 
 import 'coin_packages_page.dart';
@@ -26,10 +27,17 @@ class RechargeCheckoutSheet extends ConsumerStatefulWidget {
 }
 
 class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
-  String _selectedMethod = 'Cashfree';
+  String _selectedMethod = 'GooglePlay';
   bool _isProcessing = false;
 
   static const _paymentMethods = [
+    {
+      'id': 'GooglePlay',
+      'title': 'Google Play Store',
+      'subtitle': '1-tap UPI, cards, net banking & balance',
+      'icon': Icons.shop_two_rounded,
+      'badge': 'RECOMMENDED',
+    },
     {
       'id': 'Cashfree',
       'title': 'Cashfree Secure Checkout',
@@ -40,6 +48,15 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
   ];
 
   Future<void> _processPayment(bool isFirstTimeBuyer) async {
+    if (_selectedMethod == 'GooglePlay') {
+      final success = await ref
+          .read(googlePlayIapServiceProvider.notifier)
+          .buyCoinPackage(widget.package);
+      if (mounted && success) {
+        Navigator.of(context).pop(true);
+      }
+      return;
+    }
     setState(() => _isProcessing = true);
     try {
       final order = await ref

@@ -99,6 +99,7 @@ class HostProfile {
   final bool isSurgeActive;
 
   bool get isFemale => gender.trim().toLowerCase() != 'male';
+  bool get isOnline => isAvailable && status == HostStatus.online;
   bool get isBusy => status == HostStatus.busy;
   bool get isOffline => status == HostStatus.offline || !isAvailable;
 
