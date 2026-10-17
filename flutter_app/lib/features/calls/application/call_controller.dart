@@ -291,12 +291,31 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
         final currentUserId =
             ref.read(supabaseProvider).auth.currentUser?.id ?? '';
         final isCaller = call.callerId == currentUserId;
-        await ref.read(webRtcAudioServiceProvider).join(
-          appIdOrToken: '',
-          channelOrRoomId: call.id,
-          uid: currentUserId,
-          extra: {'isCaller': isCaller},
-        );
+        try {
+          await ref.read(webRtcAudioServiceProvider).join(
+            appIdOrToken: '',
+            channelOrRoomId: call.id,
+            uid: currentUserId,
+            extra: {'isCaller': isCaller},
+          );
+        } catch (webrtcErr) {
+          if (kDebugMode) {
+            debugPrint(
+              'WebRTC join failed: $webrtcErr. Falling back to Agora RTC.',
+            );
+          }
+          ref.read(rtcProviderTypeProvider.notifier).state =
+              RtcProviderType.agora;
+          final agora = await ref
+              .read(callRepositoryProvider)
+              .getAgoraCredentials(call.id);
+          await agoraService.join(
+            appIdOrToken: agora.appId,
+            token: agora.token,
+            channelOrRoomId: agora.channel,
+            uid: agora.uid.toString(),
+          );
+        }
       } else if (providerType == RtcProviderType.videosdk) {
         try {
           final credentials = await ref

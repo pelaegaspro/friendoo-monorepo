@@ -11,7 +11,7 @@ import 'rtc_audio_service.dart';
 /// Zero per-minute costs, zero third-party commercial SDK dependencies.
 class WebRtcAudioService implements RtcAudioService {
   WebRtcAudioService({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+    : _supabaseClient = supabaseClient;
 
   final SupabaseClient? _supabaseClient;
   SupabaseClient get _supabase => _supabaseClient ?? Supabase.instance.client;
@@ -33,6 +33,7 @@ class WebRtcAudioService implements RtcAudioService {
   Timer? _peerDiscoveryTimer;
 
   final List<RTCIceCandidate> _queuedRemoteCandidates = [];
+  final List<RTCIceCandidate> _localCandidates = [];
   bool _remoteDescriptionSet = false;
 
   final StreamController<RtcConnectionState> _connectionStateController =
@@ -60,7 +61,9 @@ class WebRtcAudioService implements RtcAudioService {
       _connectionStateController.stream;
 
   @override
-  void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested) {
+  void setTokenRenewalHandler(
+    Future<String?> Function() onTokenRenewalRequested,
+  ) {
     // Pure WebRTC does not require expiring tokens.
   }
 
@@ -68,9 +71,22 @@ class WebRtcAudioService implements RtcAudioService {
     'iceServers': [
       {'urls': 'stun:stun.l.google.com:19302'},
       {'urls': 'stun:stun1.l.google.com:19302'},
-      {'urls': 'stun:stun2.l.google.com:19302'},
-      {'urls': 'stun:stun3.l.google.com:19302'},
-      {'urls': 'stun:stun4.l.google.com:19302'},
+      {'urls': 'stun:openrelay.metered.ca:80'},
+      {
+        'urls': 'turn:openrelay.metered.ca:80',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
+      {
+        'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
+        'username': 'openrelayproject',
+        'credential': 'openrelayproject',
+      },
     ],
     'sdpSemantics': 'unified-plan',
   };
@@ -103,13 +119,16 @@ class WebRtcAudioService implements RtcAudioService {
     _isCaller = extra?['isCaller'] == true;
     _remoteDescriptionSet = false;
     _queuedRemoteCandidates.clear();
+    _localCandidates.clear();
     _isRemoteMuted = false;
 
     _setConnectionState(RtcConnectionState.connecting);
 
     try {
       // 1. Initialize local audio stream
-      _localStream = await navigator.mediaDevices.getUserMedia(_mediaConstraints);
+      _localStream = await navigator.mediaDevices.getUserMedia(
+        _mediaConstraints,
+      );
       _localStream?.getAudioTracks().forEach((track) {
         track.enabled = !_isMuted;
       });
@@ -118,7 +137,7 @@ class WebRtcAudioService implements RtcAudioService {
       _remoteAudioRenderer = RTCVideoRenderer();
       await _remoteAudioRenderer!.initialize();
 
-      // 2. Initialize RTCPeerConnection with Google STUN
+      // 2. Initialize RTCPeerConnection with Google STUN + OpenRelay TURN
       _peerConnection = await createPeerConnection(_iceConfiguration);
 
       _peerConnection?.onConnectionState = (state) {
@@ -165,6 +184,7 @@ class WebRtcAudioService implements RtcAudioService {
 
       _peerConnection?.onIceCandidate = (candidate) {
         if (candidate.candidate == null) return;
+        _localCandidates.add(candidate);
         _sendSignalingMessage('ice_candidate', {
           'candidate': candidate.candidate,
           'sdpMid': candidate.sdpMid,
@@ -190,16 +210,11 @@ class WebRtcAudioService implements RtcAudioService {
         _peerConnection?.addTrack(track, _localStream!);
       });
 
-      // 4. Connect to Supabase Realtime Signaling Channel
+      // 4. Connect to Supabase Realtime Signaling Channel (sends offer once subscribed)
       _setupSignaling(channelOrRoomId);
 
       // Default speakerphone setting
       await setSpeakerphone(_isSpeaker);
-
-      // 5. If caller, create and send initial SDP offer
-      if (_isCaller) {
-        await _createAndSendOffer();
-      }
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('WebRTC join failed: $e\n$st');
@@ -240,6 +255,16 @@ class WebRtcAudioService implements RtcAudioService {
           await _createAndSendOffer();
         } else if (!_remoteDescriptionSet) {
           await _sendSignalingMessage('request_offer', {'sender': _currentUid});
+        } else {
+          final localDesc = await _peerConnection?.getLocalDescription();
+          if (localDesc != null && localDesc.type == 'answer') {
+            await _sendSignalingMessage('answer', {
+              'sdp': localDesc.sdp,
+              'type': localDesc.type,
+              'sender': _currentUid,
+            });
+            await _flushLocalCandidates();
+          }
         }
       },
     );
@@ -288,43 +313,76 @@ class WebRtcAudioService implements RtcAudioService {
           await _createAndSendOffer();
           _offerRetryTimer?.cancel();
           int attempts = 0;
-          _offerRetryTimer =
-              Timer.periodic(const Duration(seconds: 2), (timer) async {
-                if (_remoteDescriptionSet ||
-                    _connectionState == RtcConnectionState.connected ||
-                    attempts++ >= 15) {
-                  timer.cancel();
-                  return;
-                }
-                if (kDebugMode) {
-                  debugPrint('WebRTC retry sending offer (attempt $attempts)...');
-                }
-                await _createAndSendOffer();
-              });
+          _offerRetryTimer = Timer.periodic(const Duration(seconds: 2), (
+            timer,
+          ) async {
+            if (_remoteDescriptionSet ||
+                _connectionState == RtcConnectionState.connected ||
+                attempts++ >= 15) {
+              timer.cancel();
+              return;
+            }
+            if (kDebugMode) {
+              debugPrint('WebRTC retry sending offer (attempt $attempts)...');
+            }
+            await _createAndSendOffer();
+          });
         } else {
           // If non-caller (host/callee), periodically request offer if none received yet
           _peerDiscoveryTimer?.cancel();
           int attempts = 0;
-          _peerDiscoveryTimer =
-              Timer.periodic(const Duration(seconds: 2), (timer) async {
-                if (_remoteDescriptionSet ||
-                    _connectionState == RtcConnectionState.connected ||
-                    attempts++ >= 15) {
-                  timer.cancel();
-                  return;
-                }
-                await _sendSignalingMessage('request_offer', {
-                  'sender': _currentUid,
-                });
-              });
+          _peerDiscoveryTimer = Timer.periodic(const Duration(seconds: 2), (
+            timer,
+          ) async {
+            if (_remoteDescriptionSet ||
+                _connectionState == RtcConnectionState.connected ||
+                attempts++ >= 15) {
+              timer.cancel();
+              return;
+            }
+            await _sendSignalingMessage('request_offer', {
+              'sender': _currentUid,
+            });
+          });
         }
       }
     });
   }
 
+  Future<void> _flushLocalCandidates() async {
+    for (final candidate in _localCandidates) {
+      if (candidate.candidate == null) continue;
+      await _sendSignalingMessage('ice_candidate', {
+        'candidate': candidate.candidate,
+        'sdpMid': candidate.sdpMid,
+        'sdpMLineIndex': candidate.sdpMLineIndex,
+        'sender': _currentUid,
+      });
+    }
+  }
+
   Future<void> _createAndSendOffer() async {
     if (_peerConnection == null) return;
     try {
+      final state = _peerConnection!.signalingState;
+      if (state == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
+        final localDesc = await _peerConnection!.getLocalDescription();
+        if (localDesc != null) {
+          await _sendSignalingMessage('offer', {
+            'sdp': localDesc.sdp,
+            'type': localDesc.type,
+            'sender': _currentUid,
+          });
+          await _flushLocalCandidates();
+          if (kDebugMode) {
+            debugPrint(
+              'WebRTC re-sent existing SDP Offer & ${_localCandidates.length} local candidates',
+            );
+          }
+        }
+        return;
+      }
+
       final offer = await _peerConnection!.createOffer({
         'offerToReceiveAudio': 1,
         'offerToReceiveVideo': 0,
@@ -336,8 +394,9 @@ class WebRtcAudioService implements RtcAudioService {
         'type': offer.type,
         'sender': _currentUid,
       });
+      await _flushLocalCandidates();
       if (kDebugMode) {
-        debugPrint('WebRTC SDP Offer sent');
+        debugPrint('WebRTC SDP Offer created and sent');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -355,7 +414,9 @@ class WebRtcAudioService implements RtcAudioService {
       final type = payload['type'] as String? ?? 'offer';
       if (sdp == null) return;
 
-      await _peerConnection!.setRemoteDescription(RTCSessionDescription(sdp, type));
+      await _peerConnection!.setRemoteDescription(
+        RTCSessionDescription(sdp, type),
+      );
       _remoteDescriptionSet = true;
       await _drainQueuedCandidates();
 
@@ -370,8 +431,10 @@ class WebRtcAudioService implements RtcAudioService {
         'type': answer.type,
         'sender': _currentUid,
       });
+      await _flushLocalCandidates();
+      _setConnectionState(RtcConnectionState.connected);
       if (kDebugMode) {
-        debugPrint('WebRTC SDP Answer sent');
+        debugPrint('WebRTC SDP Answer sent & local candidates flushed');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -389,11 +452,15 @@ class WebRtcAudioService implements RtcAudioService {
       final type = payload['type'] as String? ?? 'answer';
       if (sdp == null) return;
 
-      await _peerConnection!.setRemoteDescription(RTCSessionDescription(sdp, type));
+      await _peerConnection!.setRemoteDescription(
+        RTCSessionDescription(sdp, type),
+      );
       _remoteDescriptionSet = true;
       await _drainQueuedCandidates();
+      await _flushLocalCandidates();
+      _setConnectionState(RtcConnectionState.connected);
       if (kDebugMode) {
-        debugPrint('WebRTC Remote Answer set successfully');
+        debugPrint('WebRTC Remote Answer set successfully & connected');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -428,7 +495,10 @@ class WebRtcAudioService implements RtcAudioService {
     _queuedRemoteCandidates.clear();
   }
 
-  Future<void> _sendSignalingMessage(String event, Map<String, dynamic> payload) async {
+  Future<void> _sendSignalingMessage(
+    String event,
+    Map<String, dynamic> payload,
+  ) async {
     if (_signalingChannel == null) return;
     try {
       await _signalingChannel!.sendBroadcastMessage(
@@ -486,6 +556,7 @@ class WebRtcAudioService implements RtcAudioService {
     }
 
     _queuedRemoteCandidates.clear();
+    _localCandidates.clear();
     _remoteDescriptionSet = false;
     _isRemoteMuted = false;
 
@@ -521,4 +592,3 @@ class WebRtcAudioService implements RtcAudioService {
     await _remoteMuteController.close();
   }
 }
-

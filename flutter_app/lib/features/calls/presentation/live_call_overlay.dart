@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,12 +64,6 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           liveCall.status == CallStatus.active;
 
       if (!isCallActive) return;
-
-      final rtcState = ref.read(rtcConnectionStateProvider).asData?.value;
-      final isAudioConnected = rtcState == RtcConnectionState.connected;
-
-      // Only advance the elapsed conversation timer once audio is actually connected
-      if (!isAudioConnected) return;
 
       setState(() {
         _secondsElapsed++;
@@ -349,12 +344,12 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     // Connection & Timer String
     final String timeOrStatusString;
-    if (isRtcReconnecting) {
+    if (isCallActive) {
+      timeOrStatusString = _formatTimer(_secondsElapsed);
+    } else if (isRtcReconnecting) {
       timeOrStatusString = 'Reconnecting...';
     } else if (isRtcConnecting) {
       timeOrStatusString = 'Connecting voice...';
-    } else if (isCallActive) {
-      timeOrStatusString = _formatTimer(_secondsElapsed);
     } else if (liveCall.status == CallStatus.ringing) {
       timeOrStatusString = isHost ? 'Incoming Call...' : 'Ringing...';
     } else {
@@ -448,15 +443,19 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                         boxShadow: [
                           BoxShadow(
                             color: isHost
-                                ? const Color(0xFF818CF8).withValues(alpha: 0.40)
-                                : const Color(0xFFFF2A85).withValues(alpha: 0.42),
+                                ? const Color(0xFF818CF8)
+                                      .withValues(alpha: 0.40)
+                                : const Color(0xFFFF2A85)
+                                      .withValues(alpha: 0.42),
                             blurRadius: 32,
                             spreadRadius: 4,
                           ),
                           BoxShadow(
                             color: isHost
-                                ? const Color(0xFF6366F1).withValues(alpha: 0.22)
-                                : const Color(0xFFE11D48).withValues(alpha: 0.25),
+                                ? const Color(0xFF6366F1)
+                                      .withValues(alpha: 0.22)
+                                : const Color(0xFFE11D48)
+                                      .withValues(alpha: 0.25),
                             blurRadius: 54,
                             spreadRadius: 8,
                           ),
@@ -503,7 +502,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                                color: const Color(0xFFEF4444)
+                                    .withValues(alpha: 0.5),
                                 blurRadius: 10,
                                 spreadRadius: 1,
                                 offset: const Offset(0, 3),
