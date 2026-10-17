@@ -4103,6 +4103,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
   final _amountController = TextEditingController();
   final _upiController = TextEditingController();
   int _selectedMethodIndex = 0; // 0: UPI, 1: Bank Account
+  int _selectedCycle = 0; // 0: Weekly Payout Cycle, 1: Monthly Full Balance Settlement
   bool _isSubmitting = false;
   late final String _idempotencyKey;
 
@@ -4123,14 +4124,28 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
 
   void _submitWithdrawal() async {
     final amount = int.tryParse(_amountController.text.trim()) ?? 0;
-    if (amount < 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFFDC2626),
-          content: Text('Minimum withdrawal amount is ₹100.'),
-        ),
-      );
-      return;
+    if (_selectedCycle == 1) {
+      if (widget.availableAmount < 100) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFDC2626),
+            content: Text(
+              'Monthly full balance settlement requires at least ₹100 (current balance is ₹${widget.availableAmount}).',
+            ),
+          ),
+        );
+        return;
+      }
+    } else {
+      if (amount < 100) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFFDC2626),
+            content: Text('Minimum withdrawal amount is ₹100.'),
+          ),
+        );
+        return;
+      }
     }
     if (amount > widget.availableAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4167,10 +4182,21 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
       final payoutMethodType = _selectedMethodIndex == 0
           ? 'upi'
           : 'bank_account';
+      final cycleType = _selectedCycle == 0 ? 'weekly' : 'monthly_full_settlement';
       final payoutDetails = _selectedMethodIndex == 0
-          ? {'upi_id': _upiController.text.trim()}
+          ? {
+              'upi_id': _upiController.text.trim(),
+              'payout_cycle': cycleType,
+              'cycle_label': _selectedCycle == 0
+                  ? 'Weekly Payout Cycle'
+                  : 'Monthly Full Balance Settlement',
+            }
           : {
               'method': 'bank_transfer',
+              'payout_cycle': cycleType,
+              'cycle_label': _selectedCycle == 0
+                  ? 'Weekly Payout Cycle'
+                  : 'Monthly Full Balance Settlement',
             };
 
       final result = await ref
@@ -4193,7 +4219,9 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
             content: Text(
               result.isDuplicate
                   ? 'Withdrawal request already recorded.'
-                  : 'Withdrawal request for ₹$amount submitted successfully.',
+                  : (_selectedCycle == 1
+                      ? 'Monthly full balance settlement for ₹$amount submitted successfully.'
+                      : 'Weekly withdrawal request for ₹$amount submitted successfully.'),
             ),
           ),
         );
@@ -4341,21 +4369,29 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
                         ),
-                        onPressed: () =>
-                            setState(() => _amountController.text = '$preset'),
+                        onPressed: () => setState(() {
+                          _selectedCycle = 0;
+                          _amountController.text = '$preset';
+                        }),
                       ),
                     );
                   }),
                   ActionChip(
                     label: const Text('Full Amount'),
-                    labelStyle: const TextStyle(
+                    labelStyle: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
+                      color: _selectedCycle == 1 ? const Color(0xFF047857) : null,
                     ),
-                    onPressed: () => setState(
-                      () =>
-                          _amountController.text = '${widget.availableAmount}',
-                    ),
+                    backgroundColor:
+                        _selectedCycle == 1 ? const Color(0xFFECFDF5) : null,
+                    side: _selectedCycle == 1
+                        ? const BorderSide(color: Color(0xFF10B981))
+                        : null,
+                    onPressed: () => setState(() {
+                      _selectedCycle = 1;
+                      _amountController.text = '${widget.availableAmount}';
+                    }),
                   ),
                 ],
               ),
@@ -4363,41 +4399,241 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
           ],
         ),
 
-        // 3. Payout Frequency & Policy Card
+        // 3. Payout Frequency & Policy Card (Interactive & Selectable)
         SettingsSectionCard(
           title: 'PAYOUT SCHEDULE & LIMITS',
           children: [
-            const ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.calendar_today_rounded,
-                color: FriendooUiColors.violet,
-                size: 20,
-              ),
-              title: Text(
-                'Weekly Payout Cycle',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              subtitle: Text(
-                'Payouts processed weekly (minimum ₹100 withdrawal limit).',
-                style: TextStyle(fontSize: 11.5, color: FriendooUiColors.muted),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => setState(() {
+                  _selectedCycle = 0;
+                  if (_amountController.text.isEmpty ||
+                      _amountController.text == '0' ||
+                      _amountController.text == '${widget.availableAmount}') {
+                    _amountController.text = '100';
+                  }
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _selectedCycle == 0
+                        ? FriendooUiColors.violet.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _selectedCycle == 0
+                          ? FriendooUiColors.violet.withValues(alpha: 0.35)
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _selectedCycle == 0
+                              ? FriendooUiColors.violet.withValues(alpha: 0.15)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today_rounded,
+                          color: FriendooUiColors.violet,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Weekly Payout Cycle',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13.5,
+                                    color: FriendooUiColors.ink,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: FriendooUiColors.violet
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'Min ₹100',
+                                    style: TextStyle(
+                                      color: FriendooUiColors.violet,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            const Text(
+                              'Payouts processed weekly (minimum ₹100 withdrawal limit).',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: FriendooUiColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Radio<int>(
+                        value: 0,
+                        groupValue: _selectedCycle,
+                        activeColor: FriendooUiColors.violet,
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedCycle = val;
+                              if (_amountController.text.isEmpty ||
+                                  _amountController.text == '0' ||
+                                  _amountController.text ==
+                                      '${widget.availableAmount}') {
+                                _amountController.text = '100';
+                              }
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            const Divider(height: 1),
-            const ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.account_balance_wallet_outlined,
-                color: Color(0xFF10B981),
-                size: 20,
-              ),
-              title: Text(
-                'Monthly Full Balance Settlement',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              subtitle: Text(
-                'Option to withdraw entire accumulated monthly earnings once a month.',
-                style: TextStyle(fontSize: 11.5, color: FriendooUiColors.muted),
+            const Divider(height: 12),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () {
+                  setState(() {
+                    _selectedCycle = 1;
+                    _amountController.text = '${widget.availableAmount}';
+                  });
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      duration: const Duration(milliseconds: 1500),
+                      backgroundColor: const Color(0xFF10B981),
+                      content: Text(
+                        'Monthly Full Settlement selected: ₹${widget.availableAmount}',
+                      ),
+                    ),
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _selectedCycle == 1
+                        ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _selectedCycle == 1
+                          ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _selectedCycle == 1
+                              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                              : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Monthly Full Balance Settlement',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13.5,
+                                    color: FriendooUiColors.ink,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'Full ₹${widget.availableAmount}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF047857),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            const Text(
+                              'Option to withdraw entire accumulated monthly earnings once a month.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: FriendooUiColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Radio<int>(
+                        value: 1,
+                        groupValue: _selectedCycle,
+                        activeColor: const Color(0xFF10B981),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedCycle = val;
+                              _amountController.text =
+                                  '${widget.availableAmount}';
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
