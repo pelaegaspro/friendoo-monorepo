@@ -33,6 +33,8 @@ abstract class RtcAudioService {
   bool get isSpeaker;
   RtcConnectionState get connectionState;
   Stream<RtcConnectionState> get connectionStateStream;
+  bool get isRemoteMuted;
+  Stream<bool> get remoteMuteStream;
   void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested);
 
   Future<void> join({
@@ -89,4 +91,10 @@ final rtcAudioServiceProvider = Provider<RtcAudioService>((ref) {
 final rtcConnectionStateProvider = StreamProvider<RtcConnectionState>((ref) {
   final service = ref.watch(rtcAudioServiceProvider);
   return service.connectionStateStream;
+});
+
+/// Real-time stream of whether remote peer is currently muted
+final remoteMuteStateProvider = StreamProvider<bool>((ref) {
+  final service = ref.watch(rtcAudioServiceProvider);
+  return service.remoteMuteStream;
 });

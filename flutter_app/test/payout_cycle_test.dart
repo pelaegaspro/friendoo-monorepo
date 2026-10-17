@@ -58,3 +58,4 @@ void main() {
     expect(getAmountField().controller?.text, '4500');
   });
 }
+

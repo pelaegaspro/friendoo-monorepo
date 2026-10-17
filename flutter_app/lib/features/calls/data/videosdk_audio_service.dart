@@ -32,6 +32,12 @@ class VideoSdkAudioService implements RtcAudioService {
       _connectionStateController.stream;
 
   @override
+  bool get isRemoteMuted => false;
+
+  @override
+  Stream<bool> get remoteMuteStream => const Stream.empty();
+
+  @override
   void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested) {
     // Fallback stub
   }

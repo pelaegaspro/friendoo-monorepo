@@ -19,25 +19,38 @@ class WebRtcAudioService implements RtcAudioService {
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
   RealtimeChannel? _signalingChannel;
+  RTCVideoRenderer? _remoteAudioRenderer;
 
   bool _isMuted = false;
   bool _isSpeaker = true;
+  bool _isRemoteMuted = false;
   RtcConnectionState _connectionState = RtcConnectionState.disconnected;
   String? _currentRoomId;
   String? _currentUid;
   bool _isCaller = false;
+
+  Timer? _offerRetryTimer;
+  Timer? _peerDiscoveryTimer;
 
   final List<RTCIceCandidate> _queuedRemoteCandidates = [];
   bool _remoteDescriptionSet = false;
 
   final StreamController<RtcConnectionState> _connectionStateController =
       StreamController<RtcConnectionState>.broadcast();
+  final StreamController<bool> _remoteMuteController =
+      StreamController<bool>.broadcast();
 
   @override
   bool get isMuted => _isMuted;
 
   @override
   bool get isSpeaker => _isSpeaker;
+
+  @override
+  bool get isRemoteMuted => _isRemoteMuted;
+
+  @override
+  Stream<bool> get remoteMuteStream => _remoteMuteController.stream;
 
   @override
   RtcConnectionState get connectionState => _connectionState;
@@ -90,6 +103,7 @@ class WebRtcAudioService implements RtcAudioService {
     _isCaller = extra?['isCaller'] == true;
     _remoteDescriptionSet = false;
     _queuedRemoteCandidates.clear();
+    _isRemoteMuted = false;
 
     _setConnectionState(RtcConnectionState.connecting);
 
@@ -99,6 +113,10 @@ class WebRtcAudioService implements RtcAudioService {
       _localStream?.getAudioTracks().forEach((track) {
         track.enabled = !_isMuted;
       });
+
+      // Initialize remote audio renderer for browser and native audio playback
+      _remoteAudioRenderer = RTCVideoRenderer();
+      await _remoteAudioRenderer!.initialize();
 
       // 2. Initialize RTCPeerConnection with Google STUN
       _peerConnection = await createPeerConnection(_iceConfiguration);
@@ -127,6 +145,24 @@ class WebRtcAudioService implements RtcAudioService {
         }
       };
 
+      _peerConnection?.onIceConnectionState = (iceState) {
+        if (kDebugMode) {
+          debugPrint('WebRTC onIceConnectionState: $iceState');
+        }
+        switch (iceState) {
+          case RTCIceConnectionState.RTCIceConnectionStateConnected:
+          case RTCIceConnectionState.RTCIceConnectionStateCompleted:
+            _setConnectionState(RtcConnectionState.connected);
+            break;
+          case RTCIceConnectionState.RTCIceConnectionStateDisconnected:
+          case RTCIceConnectionState.RTCIceConnectionStateFailed:
+            _setConnectionState(RtcConnectionState.reconnecting);
+            break;
+          default:
+            break;
+        }
+      };
+
       _peerConnection?.onIceCandidate = (candidate) {
         if (candidate.candidate == null) return;
         _sendSignalingMessage('ice_candidate', {
@@ -141,6 +177,9 @@ class WebRtcAudioService implements RtcAudioService {
         if (event.track.kind == 'audio') {
           if (kDebugMode) {
             debugPrint('WebRTC remote audio track received');
+          }
+          if (_remoteAudioRenderer != null && event.streams.isNotEmpty) {
+            _remoteAudioRenderer!.srcObject = event.streams[0];
           }
           _setConnectionState(RtcConnectionState.connected);
         }
@@ -189,14 +228,95 @@ class WebRtcAudioService implements RtcAudioService {
       callback: (payload) => _handleRemoteCandidate(payload),
     );
 
+    _signalingChannel?.onBroadcast(
+      event: 'peer_ready',
+      callback: (payload) async {
+        final sender = payload['sender'] as String?;
+        if (sender == _currentUid) return;
+        if (kDebugMode) {
+          debugPrint('WebRTC peer_ready received from $sender');
+        }
+        if (_isCaller) {
+          await _createAndSendOffer();
+        } else if (!_remoteDescriptionSet) {
+          await _sendSignalingMessage('request_offer', {'sender': _currentUid});
+        }
+      },
+    );
+
+    _signalingChannel?.onBroadcast(
+      event: 'request_offer',
+      callback: (payload) async {
+        final sender = payload['sender'] as String?;
+        if (sender == _currentUid) return;
+        if (kDebugMode) {
+          debugPrint('WebRTC request_offer received from $sender');
+        }
+        if (_isCaller) {
+          await _createAndSendOffer();
+        }
+      },
+    );
+
+    _signalingChannel?.onBroadcast(
+      event: 'peer_mute',
+      callback: (payload) {
+        final sender = payload['sender'] as String?;
+        if (sender == _currentUid) return;
+        final muted = payload['isMuted'] as bool? ?? false;
+        _isRemoteMuted = muted;
+        _remoteMuteController.add(muted);
+        if (kDebugMode) {
+          debugPrint('WebRTC remote peer ($sender) mute updated: $muted');
+        }
+      },
+    );
+
     _signalingChannel?.subscribe((status, error) async {
       if (status == RealtimeSubscribeStatus.subscribed) {
         if (kDebugMode) {
           debugPrint('Subscribed to WebRTC signaling channel: $channelName');
         }
-        // If caller joined and channel ready, resend offer if answer not yet received
-        if (_isCaller && !_remoteDescriptionSet) {
+        // Announce presence immediately so peer knows channel is live
+        await _sendSignalingMessage('peer_ready', {
+          'sender': _currentUid,
+          'isCaller': _isCaller,
+        });
+
+        // If caller joined, send offer immediately and keep retrying every 2s until remote description is set
+        if (_isCaller) {
           await _createAndSendOffer();
+          _offerRetryTimer?.cancel();
+          int attempts = 0;
+          _offerRetryTimer =
+              Timer.periodic(const Duration(seconds: 2), (timer) async {
+                if (_remoteDescriptionSet ||
+                    _connectionState == RtcConnectionState.connected ||
+                    attempts++ >= 15) {
+                  timer.cancel();
+                  return;
+                }
+                if (kDebugMode) {
+                  debugPrint('WebRTC retry sending offer (attempt $attempts)...');
+                }
+                await _createAndSendOffer();
+              });
+        } else {
+          // If non-caller (host/callee), periodically request offer if none received yet
+          _peerDiscoveryTimer?.cancel();
+          int attempts = 0;
+          _peerDiscoveryTimer =
+              Timer.periodic(const Duration(seconds: 2), (timer) async {
+                if (_remoteDescriptionSet ||
+                    _connectionState == RtcConnectionState.connected ||
+                    attempts++ >= 15) {
+                  timer.cancel();
+                  return;
+                }
+                await _sendSignalingMessage('request_offer', {
+                  'sender': _currentUid,
+                });
+              });
         }
       }
     });
@@ -328,6 +448,10 @@ class WebRtcAudioService implements RtcAudioService {
     _localStream?.getAudioTracks().forEach((track) {
       track.enabled = !muted;
     });
+    await _sendSignalingMessage('peer_mute', {
+      'sender': _currentUid,
+      'isMuted': muted,
+    });
   }
 
   @override
@@ -351,6 +475,11 @@ class WebRtcAudioService implements RtcAudioService {
 
   @override
   Future<void> leave() async {
+    _offerRetryTimer?.cancel();
+    _offerRetryTimer = null;
+    _peerDiscoveryTimer?.cancel();
+    _peerDiscoveryTimer = null;
+
     if (_signalingChannel != null) {
       await _supabase.removeChannel(_signalingChannel!);
       _signalingChannel = null;
@@ -358,6 +487,13 @@ class WebRtcAudioService implements RtcAudioService {
 
     _queuedRemoteCandidates.clear();
     _remoteDescriptionSet = false;
+    _isRemoteMuted = false;
+
+    if (_remoteAudioRenderer != null) {
+      _remoteAudioRenderer!.srcObject = null;
+      await _remoteAudioRenderer!.dispose();
+      _remoteAudioRenderer = null;
+    }
 
     if (_localStream != null) {
       _localStream?.getTracks().forEach((track) {
@@ -382,6 +518,7 @@ class WebRtcAudioService implements RtcAudioService {
   Future<void> dispose() async {
     await leave();
     await _connectionStateController.close();
+    await _remoteMuteController.close();
   }
 }
 

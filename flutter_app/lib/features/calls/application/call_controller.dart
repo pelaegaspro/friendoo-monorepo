@@ -57,9 +57,6 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     ref.onDispose(() {
       _subscription?.cancel();
       _heartbeatTimer?.cancel();
-      ref.read(webRtcAudioServiceProvider).dispose();
-      ref.read(agoraAudioServiceProvider).dispose();
-      ref.read(videoSdkAudioServiceProvider).dispose();
     });
     return null;
   }

@@ -23,12 +23,22 @@ class AgoraAudioService implements RtcAudioService {
   @override
   bool get isSpeaker => _isSpeaker;
 
+  bool _isRemoteMuted = false;
+  final StreamController<bool> _remoteMuteController =
+      StreamController<bool>.broadcast();
+
   @override
   RtcConnectionState get connectionState => _connectionState;
 
   @override
   Stream<RtcConnectionState> get connectionStateStream =>
       _connectionStateController.stream;
+
+  @override
+  bool get isRemoteMuted => _isRemoteMuted;
+
+  @override
+  Stream<bool> get remoteMuteStream => _remoteMuteController.stream;
 
   @override
   void setTokenRenewalHandler(
@@ -163,6 +173,8 @@ class AgoraAudioService implements RtcAudioService {
                     'Agora onUserMuteAudio: remoteUid=$remoteUid, muted=$muted',
                   );
                 }
+                _isRemoteMuted = muted;
+                _remoteMuteController.add(muted);
               },
           onRemoteAudioStateChanged:
               (

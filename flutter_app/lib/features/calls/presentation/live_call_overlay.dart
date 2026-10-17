@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -251,6 +250,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   Widget build(BuildContext context) {
     final isMuted = ref.watch(callMuteStateProvider);
     final isSpeaker = ref.watch(callSpeakerStateProvider);
+    final isRemoteMuted =
+        ref.watch(remoteMuteStateProvider).asData?.value ?? false;
     final wallet = ref.watch(walletStreamProvider).asData?.value;
     final isHost = isHostUser;
 
@@ -304,6 +305,41 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
         ? widget.call.callerId
         : widget.call.hostId;
 
+    // Listen to remote mute state to notify user/host when opposite peer mutes/unmutes
+    ref.listen<AsyncValue<bool>>(remoteMuteStateProvider, (previous, next) {
+      final wasMuted = previous?.asData?.value ?? false;
+      final nowMuted = next.asData?.value ?? false;
+      if (wasMuted != nowMuted && mounted) {
+        final peerName = isHost ? 'User' : displayName;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: nowMuted
+                ? const Color(0xFFEF4444)
+                : const Color(0xFF10B981),
+            duration: const Duration(milliseconds: 2500),
+            content: Row(
+              children: [
+                Icon(
+                  nowMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  nowMuted
+                      ? '$peerName has muted their microphone'
+                      : '$peerName unmuted their microphone',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    });
+
     final rtcState = ref.watch(rtcConnectionStateProvider).asData?.value;
     final bool isRtcConnected = rtcState == RtcConnectionState.connected;
     final bool isRtcReconnecting =
@@ -327,7 +363,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     // Dynamic speaking text matching reference design
     final String speakingStatusText;
-    if (isRtcReconnecting) {
+    if (isRemoteMuted) {
+      speakingStatusText = '$displayName has muted microphone';
+    } else if (isRtcReconnecting) {
       speakingStatusText = 'Reconnecting audio...';
     } else if (isRtcConnecting) {
       speakingStatusText = 'Connecting voice channel...';
@@ -391,62 +429,111 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                 const Spacer(flex: 3),
 
-                // 2. CENTER PROMINENT AVATAR WITH ROLE-AWARE GLOWING RING
-                Container(
-                  width: 154,
-                  height: 154,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isHost
-                          ? const Color(0xFF818CF8).withValues(alpha: 0.85)
-                          : const Color(0xFFFF2A85).withValues(alpha: 0.85),
-                      width: 3.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isHost
-                            ? const Color(0xFF818CF8).withValues(alpha: 0.40)
-                            : const Color(0xFFFF2A85).withValues(alpha: 0.42),
-                        blurRadius: 32,
-                        spreadRadius: 4,
-                      ),
-                      BoxShadow(
-                        color: isHost
-                            ? const Color(0xFF6366F1).withValues(alpha: 0.22)
-                            : const Color(0xFFE11D48).withValues(alpha: 0.25),
-                        blurRadius: 54,
-                        spreadRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child:
-                        _remoteAvatarUrl != null &&
-                            _remoteAvatarUrl!.trim().startsWith('http')
-                        ? Image.network(
-                            _remoteAvatarUrl!,
-                            width: 154,
-                            height: 154,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => FriendooAvatar(
-                              size: 154,
-                              seed: targetSeedId,
-                              gender: isHost
-                                  ? DesiGender.male
-                                  : DesiGender.female,
-                              role: isHost ? 'user' : 'host',
-                            ),
-                          )
-                        : FriendooAvatar(
-                            size: 154,
-                            seed: targetSeedId,
-                            gender: isHost
-                                ? DesiGender.male
-                                : DesiGender.female,
-                            role: isHost ? 'user' : 'host',
+                // 2. CENTER PROMINENT AVATAR WITH ROLE-AWARE GLOWING RING & MUTE BADGE
+                Stack(
+                  alignment: Alignment.bottomCenter,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 154,
+                      height: 154,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isHost
+                              ? const Color(0xFF818CF8).withValues(alpha: 0.85)
+                              : const Color(0xFFFF2A85).withValues(alpha: 0.85),
+                          width: 3.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isHost
+                                ? const Color(0xFF818CF8).withValues(alpha: 0.40)
+                                : const Color(0xFFFF2A85).withValues(alpha: 0.42),
+                            blurRadius: 32,
+                            spreadRadius: 4,
                           ),
-                  ),
+                          BoxShadow(
+                            color: isHost
+                                ? const Color(0xFF6366F1).withValues(alpha: 0.22)
+                                : const Color(0xFFE11D48).withValues(alpha: 0.25),
+                            blurRadius: 54,
+                            spreadRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child:
+                            _remoteAvatarUrl != null &&
+                                _remoteAvatarUrl!.trim().startsWith('http')
+                            ? Image.network(
+                                _remoteAvatarUrl!,
+                                width: 154,
+                                height: 154,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => FriendooAvatar(
+                                  size: 154,
+                                  seed: targetSeedId,
+                                  gender: isHost
+                                      ? DesiGender.male
+                                      : DesiGender.female,
+                                  role: isHost ? 'user' : 'host',
+                                ),
+                              )
+                            : FriendooAvatar(
+                                size: 154,
+                                seed: targetSeedId,
+                                gender: isHost
+                                    ? DesiGender.male
+                                    : DesiGender.female,
+                                role: isHost ? 'user' : 'host',
+                              ),
+                      ),
+                    ),
+                    if (isRemoteMuted)
+                      Positioned(
+                        bottom: -10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.mic_off_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${isHost ? 'User' : 'Host'} Muted',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
 
                 const SizedBox(height: 22),
@@ -507,7 +594,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                 // 6. ANIMATED AUDIO WAVEFORM
                 AnimatedAudioWaveform(
-                  isActive: isCallActive && isRtcConnected,
+                  isActive: isCallActive && isRtcConnected && !isRemoteMuted,
                   barCount: 34,
                   primaryColor: const Color(0xFFFF2A85),
                   secondaryColor: const Color(0xFFC084FC),
@@ -522,28 +609,40 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B1E2E).withValues(alpha: 0.85),
+                    color: isRemoteMuted
+                        ? const Color(0xFFEF4444).withValues(alpha: 0.18)
+                        : const Color(0xFF1B1E2E).withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: isRemoteMuted
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.08),
                       width: 1,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.graphic_eq_rounded,
-                        color: Color(0xFFFF2A85),
+                      Icon(
+                        isRemoteMuted
+                            ? Icons.mic_off_rounded
+                            : Icons.graphic_eq_rounded,
+                        color: isRemoteMuted
+                            ? const Color(0xFFEF4444)
+                            : const Color(0xFFFF2A85),
                         size: 16,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         speakingStatusText,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: isRemoteMuted
+                              ? const Color(0xFFFCA5A5)
+                              : Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: isRemoteMuted
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
                       ),
                     ],
