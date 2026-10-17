@@ -47,6 +47,7 @@ dependencies:
   shared_preferences: ^2.3.2
   webview_flutter: ^4.10.0
   flutter_cashfree_pg_sdk: ^2.4.0+52
+  flutter_webrtc: ^1.6.2+hotfix.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

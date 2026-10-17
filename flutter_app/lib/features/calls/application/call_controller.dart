@@ -57,7 +57,9 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     ref.onDispose(() {
       _subscription?.cancel();
       _heartbeatTimer?.cancel();
-      ref.read(rtcAudioServiceProvider).dispose();
+      ref.read(webRtcAudioServiceProvider).dispose();
+      ref.read(agoraAudioServiceProvider).dispose();
+      ref.read(videoSdkAudioServiceProvider).dispose();
     });
     return null;
   }
@@ -69,7 +71,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       return;
     }
 
-    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.agora;
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.webrtc;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // 1. Minimum 15 coins check
@@ -97,7 +99,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       _callStartTime = null; // Billing timer begins once accepted
       _joinedCallId = null;
       _watch(call.id);
-      // Pre-connect Agora while ringing so media gateway and mic are ready before host answers
+      // Pre-connect WebRTC while ringing so media gateway and mic are ready before host answers
       unawaited(_joinAudio(call));
       return call;
     });
@@ -116,7 +118,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       return;
     }
 
-    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.agora;
+    ref.read(rtcProviderTypeProvider.notifier).state = RtcProviderType.webrtc;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(permissionServiceProvider).requestBluetoothAudio();
@@ -288,7 +290,17 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
       });
 
       final providerType = ref.read(rtcProviderTypeProvider);
-      if (providerType == RtcProviderType.videosdk) {
+      if (providerType == RtcProviderType.webrtc) {
+        final currentUserId =
+            ref.read(supabaseProvider).auth.currentUser?.id ?? '';
+        final isCaller = call.callerId == currentUserId;
+        await ref.read(webRtcAudioServiceProvider).join(
+          appIdOrToken: '',
+          channelOrRoomId: call.id,
+          uid: currentUserId,
+          extra: {'isCaller': isCaller},
+        );
+      } else if (providerType == RtcProviderType.videosdk) {
         try {
           final credentials = await ref
               .read(callRepositoryProvider)
@@ -350,6 +362,7 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
     _isJoiningAudio = false;
     ref.read(callMuteStateProvider.notifier).state = false;
     ref.read(callSpeakerStateProvider.notifier).state = true;
+    await ref.read(webRtcAudioServiceProvider).leave();
     await ref.read(agoraAudioServiceProvider).dispose();
     await ref.read(videoSdkAudioServiceProvider).dispose();
   }

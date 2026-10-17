@@ -5,12 +5,16 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import 'agora_audio_service.dart';
 import 'videosdk_audio_service.dart';
+import 'webrtc_audio_service.dart';
 
 enum RtcProviderType {
-  /// VideoSDK.live is the primary production audio transport.
+  /// 100% Free peer-to-peer WebRTC via Google STUN & Supabase Realtime
+  webrtc,
+
+  /// VideoSDK.live is an alternative audio transport.
   videosdk,
 
-  /// Agora RTC is the call-level fallback transport.
+  /// Agora RTC fallback transport.
   agora,
 }
 
@@ -48,10 +52,16 @@ abstract class RtcAudioService {
   Future<void> dispose();
 }
 
-/// Active RTC Provider Selector (Default: Agora RTC with production tokens)
+/// Active RTC Provider Selector (Default: 100% Free Peer-to-Peer WebRTC)
 final rtcProviderTypeProvider = StateProvider<RtcProviderType>(
-  (ref) => RtcProviderType.agora,
+  (ref) => RtcProviderType.webrtc,
 );
+
+final webRtcAudioServiceProvider = Provider<WebRtcAudioService>((ref) {
+  final service = WebRtcAudioService();
+  ref.onDispose(service.dispose);
+  return service;
+});
 
 final agoraAudioServiceProvider = Provider<AgoraAudioService>((ref) {
   final service = AgoraAudioService();
@@ -69,6 +79,7 @@ final videoSdkAudioServiceProvider = Provider<VideoSdkAudioService>((ref) {
 final rtcAudioServiceProvider = Provider<RtcAudioService>((ref) {
   final providerType = ref.watch(rtcProviderTypeProvider);
   return switch (providerType) {
+    RtcProviderType.webrtc => ref.watch(webRtcAudioServiceProvider),
     RtcProviderType.agora => ref.watch(agoraAudioServiceProvider),
     RtcProviderType.videosdk => ref.watch(videoSdkAudioServiceProvider),
   };
