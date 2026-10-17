@@ -79,3 +79,4 @@ Deno.serve(async (request) => {
     return error(code === 413 ? 'Request body too large' : 'Verification failed', code, responseHeaders);
   }
 });
+

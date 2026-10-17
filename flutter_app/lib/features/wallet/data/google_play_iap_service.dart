@@ -298,3 +298,4 @@ class GooglePlayIapNotifier extends Notifier<GooglePlayPurchaseState> {
     return false;
   }
 }
+

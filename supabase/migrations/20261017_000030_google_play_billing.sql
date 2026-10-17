@@ -166,3 +166,4 @@ $$;
 
 grant execute on function public.credit_google_play_purchase(uuid, text, text, text, integer, integer)
   to authenticated, service_role;
+

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../data/google_play_iap_service.dart';
+import '../data/platform_fee_policy.dart';
 import '../data/wallet_repository.dart';
 
 import 'coin_packages_page.dart';
@@ -113,6 +114,9 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
     final colors = theme.colorScheme;
     final isFirstTimeBuyer =
         ref.watch(isFirstTimeBuyerProvider).asData?.value ?? false;
+    final feeBreakdown =
+        ref.watch(platformFeeBreakdownProvider(widget.package.amountInr));
+    final payableAmount = feeBreakdown.totalPayable;
 
     final firstTimeBonusCoins = isFirstTimeBuyer
         ? (widget.package.coins * 0.5).round()
@@ -316,12 +320,38 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                       ],
                     ),
                   ),
-                  Text(
-                    '₹${widget.package.amountInr}',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colors.primary,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '₹$payableAmount',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colors.primary,
+                        ),
+                      ),
+                      if (feeBreakdown.isFree) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '₹0 Platform Fee',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Incl. ₹${feeBreakdown.feeCharged} Platform Fee',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -484,7 +514,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                       ),
                     )
                   : Text(
-                      'Pay ₹${widget.package.amountInr} & Get $totalCoinsReceiving Coins',
+                      'Pay ₹$payableAmount & Get $totalCoinsReceiving Coins',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,

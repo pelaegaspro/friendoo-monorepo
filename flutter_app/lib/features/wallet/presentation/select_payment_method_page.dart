@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
 import '../data/google_play_iap_service.dart';
+import '../data/platform_fee_policy.dart';
 import '../data/upi_payment_service.dart';
 import '../data/wallet_repository.dart';
 import 'cashfree_checkout_page.dart';
@@ -268,7 +269,8 @@ class _SelectPaymentMethodPageState
     final isBusy = _isProcessing || isIapLoading;
 
     final baseAmount = widget.package.amountInr;
-    final payableAmount = baseAmount;
+    final feeBreakdown = ref.watch(platformFeeBreakdownProvider(baseAmount));
+    final payableAmount = feeBreakdown.totalPayable;
     final coins = widget.package.coins;
 
     return PopScope(
@@ -324,6 +326,42 @@ class _SelectPaymentMethodPageState
                       ),
                       child: Column(
                         children: [
+                          if (feeBreakdown.isFree) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFA7F3D0),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.celebration_rounded,
+                                    color: Color(0xFF059669),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '🎉 Welcome Perk: ₹0 Platform Fee (${feeBreakdown.freeReason})',
+                                      style: const TextStyle(
+                                        color: Color(0xFF065F46),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -342,6 +380,80 @@ class _SelectPaymentMethodPageState
                                   color: Color(0xFF0F172A),
                                   fontWeight: FontWeight.w700,
                                 ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Platform Fee',
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      color: Color(0xFF334155),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  if (feeBreakdown.isFree)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFECFDF5),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: const Color(0xFFA7F3D0),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'LIMITED TIME FREE',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF059669),
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  if (feeBreakdown.isFree) ...[
+                                    Text(
+                                      '₹${feeBreakdown.standardFee}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Color(0xFF94A3B8),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'FREE',
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        color: Color(0xFF10B981),
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ] else
+                                    Text(
+                                      '₹${feeBreakdown.feeCharged}',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF0F172A),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ],
                           ),
