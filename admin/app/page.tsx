@@ -34,9 +34,9 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#safety" className="hover:text-white transition-colors">Safety & Privacy</a>
-            <a href="#hosts" className="hover:text-white transition-colors">Become a Host</a>
+            <Link href="/apply-host" className="hover:text-pink-400 text-pink-300 transition-colors font-semibold">Become a Host</Link>
             <Link href="/about" className="hover:text-white transition-colors">About</Link>
-            <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
+            <Link href="/apply-host" className="hover:text-white transition-colors">Contact</Link>
           </nav>
 
           <div className="flex items-center gap-4">

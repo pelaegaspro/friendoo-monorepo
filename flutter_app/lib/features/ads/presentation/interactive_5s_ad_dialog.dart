@@ -568,11 +568,11 @@ class _Interactive5sAdDialogState extends ConsumerState<Interactive5sAdDialog>
 
                     const SizedBox(height: 10),
 
-                    // Footer guarantee / redirect note
+                    // Clarify when an offer opens an external destination.
                     Text(
                       ad.actionType == 'link' && ad.actionUrl != null
-                          ? 'Redirects to sponsor website / app directly'
-                          : '⚡ Instant activation • 100% verified offer',
+                          ? 'Opens an external website or app'
+                          : 'See offer details before continuing',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 11,

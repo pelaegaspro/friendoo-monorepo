@@ -18,10 +18,7 @@ export default function PortalPage() {
     setLoading('crm')
     try {
       await adminFetch('/api/admin/auth/set-crm-session', { method: 'POST' })
-      const crmUrl = window.location.port === '3001'
-        ? `${window.location.protocol}//${window.location.hostname}:3000/crm`
-        : '/crm'
-      window.location.href = crmUrl
+      router.replace('/admin/users')
     } catch {
       toast.error('Failed to set CRM session')
     } finally {

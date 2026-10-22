@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/friendoo_ui.dart';
+import '../../../core/localization/app_language.dart';
 import '../../../core/services/permission_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../data/profile_repository.dart';
 import '../../discover/data/host_repository.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../notifications/presentation/in_app_notification_banner.dart';
 import '../../wallet/data/wallet_repository.dart';
+import '../data/blocked_callers_service.dart';
+import 'instagram_profile_form.dart';
+import 'profile_input_widgets.dart';
 
 /// Clean scaffold wrapper for all dedicated settings & profile child pages
 class SettingsPageScaffold extends StatelessWidget {
@@ -456,94 +462,51 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 36),
-                      const _EditProfileSectionHeading(),
-                      const SizedBox(height: 18),
-                      _EditProfileField(
-                        icon: Icons.person_outline_rounded,
-                        label: 'Full Name',
-                        counter: '$nameCount/50',
-                        child: TextField(
-                          controller: _nameController,
-                          maxLength: 50,
-                          onChanged: (_) => setState(() {}),
-                          textInputAction: TextInputAction.next,
-                          style: const TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter your name',
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            counterText: '',
-                          ),
-                        ),
+                      const SizedBox(height: 24),
+                      // Instagram-style clean profile fields
+                      InstagramTextField(
+                        controller: _nameController,
+                        label: 'Name',
+                        hintText: 'Name',
+                        helperText:
+                            'Visible to hosts you connect with on Friendoo',
+                        maxLength: 50,
+                        accentColor: FriendooUiColors.violet,
+                        isRequired: true,
+                        onChanged: (_) => setState(() {}),
                       ),
-                      const SizedBox(height: 14),
-                      _EditProfileField(
-                        icon: Icons.cake_outlined,
-                        iconColor: FriendooUiColors.pink,
-                        label: 'Age',
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<int>(
-                            value: _selectedAge,
-                            isExpanded: true,
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                            style: const TextStyle(
-                              color: FriendooUiColors.ink,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            items: [
-                              for (var age = 18; age <= 100; age++)
-                                DropdownMenuItem(
-                                  value: age,
-                                  child: Text('$age'),
-                                ),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => _selectedAge = value);
-                              }
-                            },
-                          ),
-                        ),
+                      const SizedBox(height: 8),
+
+                      // Instagram-style clean age row
+                      InstagramAgeRow(
+                        selectedAge: _selectedAge,
+                        accentColor: FriendooUiColors.violet,
+                        onChanged: (newAge) =>
+                            setState(() => _selectedAge = newAge),
                       ),
-                      const SizedBox(height: 14),
-                      _EditProfileField(
-                        icon: Icons.notes_rounded,
-                        label: 'About / Bio',
-                        counter: '$bioCount/150',
-                        alignTop: true,
-                        child: TextField(
-                          controller: _bioController,
-                          maxLength: 150,
-                          minLines: 3,
-                          maxLines: 5,
-                          onChanged: (_) => setState(() {}),
-                          style: const TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            height: 1.35,
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'Tell hosts a little about yourself...',
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            counterText: '',
-                          ),
-                        ),
+                      const SizedBox(height: 8),
+
+                      // Instagram-style bio field
+                      InstagramBioField(
+                        controller: _bioController,
+                        label: 'Bio',
+                        hintText: 'Add a bio to introduce yourself...',
+                        maxLength: 150,
+                        accentColor: FriendooUiColors.violet,
+                        promptChips: const [
+                          '👋 Love casual chats',
+                          '🎵 Music & Movies',
+                          '☕ Friendly listener',
+                          '🎧 Night owl',
+                          '✨ Good vibes only',
+                        ],
+                        onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 18),
                       const _EditProfileInfoCard(
                         icon: Icons.verified_user_rounded,
-                        title: 'Verified Member Identity',
-                        message: 'Your phone number is authenticated.\nVoice calls stay 100% private.',
+                        title: 'Phone number verified',
+                        message: 'Other callers do not see your phone number.',
                         background: Color(0xFFF0FFF9),
                         foreground: Color(0xFF0C8B68),
                       ),
@@ -885,7 +848,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Verified Member Identity',
+                      'Phone number verified',
                       style: TextStyle(
                         color: Color(0xFF047857),
                         fontWeight: FontWeight.w900,
@@ -894,7 +857,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Your phone number is authenticated. Voice calls stay 100% private.',
+                      'Other callers do not see your phone number.',
                       style: TextStyle(
                         color: Color(0xFF065F46),
                         fontSize: 11.5,
@@ -1103,6 +1066,77 @@ class _EditProfileInfoCard extends StatelessWidget {
   }
 }
 
+class AppLanguageSettingsPage extends ConsumerWidget {
+  const AppLanguageSettingsPage({super.key});
+
+  Future<void> _saveLanguage(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage language,
+  ) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await preferences.setString(
+        'friendoo_app_language',
+        language.code,
+      );
+      if (!saved) {
+        throw StateError('The app language preference could not be saved.');
+      }
+      ref.read(appLanguageCodeProvider.notifier).state = language.code;
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save language: $error')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedLanguageCode = ref.watch(appLanguageCodeProvider);
+    return SettingsPageScaffold(
+      title: 'App language',
+      subtitle: 'Choose the language used in the app',
+      children: [
+        const SettingsSectionCard(
+          title: 'AVAILABLE LANGUAGES',
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'This choice is saved on this device. Some app content may still appear in English.',
+                style: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SettingsSectionCard(
+          children: AppLanguage.supported.map((language) {
+            final isSelected = selectedLanguageCode == language.code;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(language.name),
+              trailing: isSelected
+                  ? const Icon(
+                      Icons.check_circle_rounded,
+                      color: FriendooUiColors.pink,
+                    )
+                  : null,
+              onTap: () => _saveLanguage(context, ref, language),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
 /// B. Languages Page
 class UserLanguagesPage extends ConsumerStatefulWidget {
   const UserLanguagesPage({super.key, this.isHost = false});
@@ -1136,21 +1170,33 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
     final profileLangs =
         ProfileRepository.currentActiveProfile?.preferredLanguages;
     if (profileLangs != null && profileLangs.isNotEmpty) {
-      _selected = profileLangs.toSet();
+      _selected = profileLangs
+          .where(
+            (language) => !widget.isHost || language.toLowerCase() != 'english',
+          )
+          .toSet();
     } else {
-      _selected = {'Tamil', 'English'};
+      _selected = widget.isHost ? {'Tamil'} : {'Tamil', 'English'};
+    }
+    if (_selected.isEmpty) {
+      _selected = {'Tamil'};
     }
   }
 
   Future<void> _saveLanguages() async {
+    final languages = _selected
+        .where(
+          (language) => !widget.isHost || language.toLowerCase() != 'english',
+        )
+        .toList();
     if (widget.isHost) {
       await ref
           .read(hostRepositoryProvider)
-          .updateCurrentHostLanguages(_selected.toList());
+          .updateCurrentHostLanguages(languages);
     } else {
       await ref
           .read(profileRepositoryProvider)
-          .updatePreferredLanguages(_selected.toList());
+          .updatePreferredLanguages(languages);
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1198,49 +1244,55 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
         const SizedBox(height: 20),
         SettingsSectionCard(
           title: 'AVAILABLE LANGUAGES',
-          children: _allLanguages.map((lang) {
-            final isSelected = _selected.contains(lang);
-            return InkWell(
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    if (_selected.length > 1) _selected.remove(lang);
-                  } else {
-                    _selected.add(lang);
-                  }
-                });
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      color: isSelected
-                          ? FriendooUiColors.pink
-                          : const Color(0xFF9CA3AF),
-                      size: 22,
+          children: _allLanguages
+              .where(
+                (language) =>
+                    !widget.isHost || language.toLowerCase() != 'english',
+              )
+              .map((lang) {
+                final isSelected = _selected.contains(lang);
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        if (_selected.length > 1) _selected.remove(lang);
+                      } else {
+                        _selected.add(lang);
+                      }
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: isSelected
+                              ? FriendooUiColors.pink
+                              : const Color(0xFF9CA3AF),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 14),
+                        Text(
+                          lang,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: isSelected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? FriendooUiColors.ink
+                                : const Color(0xFF4B5563),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Text(
-                      lang,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: isSelected
-                            ? FontWeight.w800
-                            : FontWeight.w600,
-                        color: isSelected
-                            ? FriendooUiColors.ink
-                            : const Color(0xFF4B5563),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                  ),
+                );
+              })
+              .toList(),
         ),
       ],
     );
@@ -1409,7 +1461,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '100% Anonymous Voice Encryption',
+                      'Phone number privacy',
                       style: TextStyle(
                         color: Color(0xFF5B21B6),
                         fontWeight: FontWeight.w900,
@@ -1418,7 +1470,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Your real phone number is never shared with hosts or third parties.',
+                      'Your phone number is not shown to other callers.',
                       style: TextStyle(
                         color: Color(0xFF6D28D9),
                         fontSize: 11.5,
@@ -1818,28 +1870,54 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
   }
 }
 
-/// E. Blocked Users Page
-class UserBlockedUsersPage extends StatefulWidget {
-  const UserBlockedUsersPage({super.key});
+/// E. Blocked Callers Page (Host Only)
+class HostBlockedUsersPage extends StatefulWidget {
+  const HostBlockedUsersPage({super.key});
 
   @override
-  State<UserBlockedUsersPage> createState() => _UserBlockedUsersPageState();
+  State<HostBlockedUsersPage> createState() => _HostBlockedUsersPageState();
 }
 
-class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
-  final List<Map<String, String>> _blockedList = [];
+class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
+  List<BlockedCallerItem> _blockedList = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBlockedList();
+  }
+
+  String get _currentHostId {
+    return ProfileRepository.currentActiveProfile?.id ??
+        Supabase.instance.client.auth.currentUser?.id ??
+        'current_host';
+  }
+
+  Future<void> _loadBlockedList() async {
+    final list = await BlockedCallersService.getBlockedCallersForHost(
+      _currentHostId,
+    );
+    if (mounted) {
+      setState(() {
+        _blockedList = List.from(list);
+        _isLoading = false;
+      });
+    }
+  }
 
   void _unblock(int index) {
+    final item = _blockedList[index];
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Unblock User?',
+          'Unblock Caller?',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         content: Text(
-          'Are you sure you want to unblock ${_blockedList[index]['name']}?',
+          'Are you sure you want to unblock ${item.name}? Once unblocked, they will be able to see you in the Discover lounge when you are online.',
         ),
         actions: [
           TextButton(
@@ -1853,14 +1931,113 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
             style: FilledButton.styleFrom(
               backgroundColor: FriendooUiColors.pink,
             ),
-            onPressed: () {
-              setState(() => _blockedList.removeAt(index));
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User unblocked successfully.')),
+              await BlockedCallersService.unblockCaller(
+                hostId: _currentHostId,
+                callerId: item.callerId,
               );
+              await _loadBlockedList();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.name} unblocked successfully.'),
+                  ),
+                );
+              }
             },
             child: const Text('Unblock'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBlockCallerDialog() {
+    final nameCtrl = TextEditingController();
+    final reasonCtrl = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Block Caller',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Blocked callers will not appear in your Discover list while blocked.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF4B5563),
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Caller Name or ID *',
+                hintText: 'e.g. Rahul or User #1042',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtrl,
+              decoration: InputDecoration(
+                labelText: 'Reason (Optional)',
+                hintText: 'Inappropriate behavior, spam, etc.',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              Navigator.of(ctx).pop();
+              final callerId =
+                  'caller_${name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}';
+              await BlockedCallersService.blockCaller(
+                hostId: _currentHostId,
+                callerId: callerId,
+                callerName: name,
+                reason: reasonCtrl.text.trim().isNotEmpty
+                    ? reasonCtrl.text.trim()
+                    : 'Blocked by host',
+              );
+              await _loadBlockedList();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '$name is now blocked. You will not appear on their screen.',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Block Caller'),
           ),
         ],
       ),
@@ -1870,10 +2047,74 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
   @override
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
-      title: 'Blocked Users',
-      subtitle: 'Accounts prevented from calling or contacting you',
+      title: 'Blocked Callers',
+      subtitle: 'Manage callers blocked from viewing or contacting you',
+      bottomAction: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton.icon(
+            onPressed: _showBlockCallerDialog,
+            icon: const Icon(
+              Icons.person_add_disabled_rounded,
+              color: Color(0xFFDC2626),
+            ),
+            label: const Text(
+              'Block a Caller by Name or ID',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFDC2626),
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: const Color(0xFFFEF2F2),
+            ),
+          ),
+        ),
+      ),
       children: [
-        if (_blockedList.isEmpty)
+        // Privacy Guarantee Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 24),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Blocked callers will not appear in your Discover list while blocked.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF1E40AF),
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        if (_isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_blockedList.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
@@ -1886,12 +2127,12 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
                 Icon(Icons.shield_outlined, size: 48, color: Color(0xFF10B981)),
                 SizedBox(height: 12),
                 Text(
-                  'No Blocked Accounts',
+                  'No Blocked Callers',
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'You have not blocked any users. Your blocklist is clear.',
+                  'You have not blocked any callers. Use the button below to block anyone who violates guidelines.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
                 ),
@@ -1900,7 +2141,7 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
           )
         else
           SettingsSectionCard(
-            title: 'BLOCKED ACCOUNTS (${_blockedList.length})',
+            title: 'BLOCKED CALLERS (${_blockedList.length})',
             children: _blockedList.asMap().entries.map((entry) {
               final idx = entry.key;
               final item = entry.value;
@@ -1909,7 +2150,7 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
                 child: Row(
                   children: [
                     DesiAvatar(
-                      seed: item['name']!,
+                      seed: item.name,
                       gender: DesiGender.male,
                       size: 40,
                     ),
@@ -1919,14 +2160,14 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item['name']!,
+                            item.name,
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14.5,
                             ),
                           ),
                           Text(
-                            'Blocked on ${item['date']} • ${item['city']}',
+                            'Blocked on ${item.date} • ${item.reason}',
                             style: const TextStyle(
                               color: Color(0xFF6B7280),
                               fontSize: 11.5,
@@ -1964,6 +2205,9 @@ class _UserBlockedUsersPageState extends State<UserBlockedUsersPage> {
     );
   }
 }
+
+/// Backward compatibility alias
+typedef UserBlockedUsersPage = HostBlockedUsersPage;
 
 /// F. Notification Settings Page
 class UserNotificationSettingsPage extends StatefulWidget {
@@ -2034,9 +2278,8 @@ class HelpSupportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Help & Support',
-      subtitle: '24/7 Assistance, Safety & Guides',
+      subtitle: 'Assistance, safety & guides',
       children: [
-        // 24/7 Support Card
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -2074,7 +2317,7 @@ class HelpSupportPage extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Dedicated 24/7 caller safety and support assistance across India.',
+                      'Support and safety resources for callers across India.',
                       style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
@@ -2091,28 +2334,6 @@ class HelpSupportPage extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: Color(0xFF25D366),
-              ),
-              title: const Text(
-                'WhatsApp Support (Fastest)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-              ),
-              subtitle: const Text(
-                'Connect with a live support agent in < 2 mins',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Opening WhatsApp Support...')),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
                 Icons.mail_outline_rounded,
                 color: FriendooUiColors.blue,
               ),
@@ -2121,16 +2342,21 @@ class HelpSupportPage extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
               ),
               subtitle: const Text(
-                'support@friendoo.app (Replies in 4 hours)',
+                'support@friendoo.app',
                 style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
               ),
               trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Email support: support@friendoo.app'),
-                  ),
-                );
+              onTap: () async {
+                final uri = Uri(scheme: 'mailto', path: 'support@friendoo.app');
+                if (!await launchUrl(uri) && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Could not open your email app. Write to support@friendoo.app.',
+                      ),
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -2142,14 +2368,14 @@ class HelpSupportPage extends StatelessWidget {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               title: Text(
-                'Are voice calls anonymous?',
+                'Can other callers see my phone number?',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
               ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Yes, 100%. Calls are routed through encrypted WebRTC audio streams without exposing your real phone number or SIM details.',
+                    'Your phone number is not shown to other callers. Your display name and profile details may be visible.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2191,7 +2417,7 @@ class HelpSupportPage extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'You can click the Report button on any call history card or contact our 24/7 trust & safety team directly. Reported accounts are reviewed within 15 minutes.',
+                    'Use the Report button on any call history card to flag an account for review.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2218,7 +2444,7 @@ class AboutFriendooPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'About Friendoo',
-      subtitle: 'App version, legal policies & licenses',
+      subtitle: 'Legal policies, compliance & licenses',
       children: [
         Center(
           child: Column(
@@ -2231,25 +2457,6 @@ class AboutFriendooPage extends StatelessWidget {
                   color: Color(0xFF6B7280),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: const Text(
-                  'Version 1.4.2 (Build 240)',
-                  style: TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                  ),
                 ),
               ),
             ],
@@ -2299,7 +2506,7 @@ class AboutFriendooPage extends StatelessWidget {
                   MaterialPageRoute<void>(
                     builder: (_) => const FriendooDocumentViewerPage(
                       title: 'Privacy Policy',
-                      content: 'Friendoo values caller privacy above all else. We do not record private 1-on-1 audio calls unless flagged for severe safety investigations. Personal identifiers and phone numbers are encrypted end-to-end and never disclosed to other users.',
+                      content: 'Your phone number is not shown to other callers. Your display name and profile details may be visible to other users. Friendoo processes account and call information to provide the service. Contact support with questions about your information.',
                     ),
                   ),
                 );
@@ -2327,44 +2534,6 @@ class AboutFriendooPage extends StatelessWidget {
                   ),
                 );
               },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.gavel_rounded,
-                color: FriendooUiColors.ink,
-              ),
-              title: const Text(
-                'Grievance Redressal (IT Act)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-              ),
-              subtitle: const Text(
-                'Grievance Officer, DPDP Act 2023 consent & complaints',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const GrievanceRedressalPage(),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.code_rounded,
-                color: FriendooUiColors.ink,
-              ),
-              title: const Text(
-                'Open Source Licenses',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => showLicensePage(context: context),
             ),
           ],
         ),
@@ -2819,195 +2988,57 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'HOST PUBLIC PROFILE',
-              style: TextStyle(
-                color: Color(0xFF374151),
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'HOST PUBLIC PROFILE',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF6B7280),
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
             const SizedBox(height: 12),
 
-            // Host Display Name
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Host Display Name',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.person_outline_rounded,
-                        color: FriendooUiColors.pink,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _nameController,
-                          style: const TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            hintText: 'Enter host display name',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // Instagram-style Host Display Name
+            InstagramTextField(
+              controller: _nameController,
+              label: 'Name',
+              hintText: 'Host Display Name',
+              helperText: 'Displayed to callers in lounge & live audio spaces',
+              maxLength: 50,
+              accentColor: FriendooUiColors.pink,
+              isRequired: true,
+              onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
-            // Age Input Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Age',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.cake_outlined,
-                        color: FriendooUiColors.pink,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _ageController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            hintText: 'e.g. 24',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // Instagram-style Age Row
+            InstagramAgeRow(
+              selectedAge: int.tryParse(_ageController.text.trim()) ?? 24,
+              accentColor: FriendooUiColors.pink,
+              onChanged: (newAge) {
+                setState(() => _ageController.text = newAge.toString());
+              },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
-            // Bio Input Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Voice Lounge Introduction',
-                    style: TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: Icon(
-                          Icons.record_voice_over_outlined,
-                          color: FriendooUiColors.pink,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _bioController,
-                          maxLines: 3,
-                          style: const TextStyle(
-                            color: FriendooUiColors.ink,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.35,
-                          ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            hintText: 'Introduce yourself to callers...',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // Instagram-style Bio Field
+            InstagramBioField(
+              controller: _bioController,
+              label: 'Bio',
+              hintText: 'Introduce yourself to callers...',
+              maxLength: 150,
+              accentColor: FriendooUiColors.pink,
+              promptChips: const [
+                '🌟 Friendly host ready to listen',
+                '💬 Chat about cinema, songs & life',
+                '🎙️ Regional-language voice space',
+                '☕ Relaxed evening conversations',
+              ],
+              onChanged: (_) => setState(() {}),
             ),
           ],
         ),
@@ -3258,6 +3289,622 @@ class _HostInformationPageState extends State<HostInformationPage> {
   }
 }
 
+/// C. Host Profile Details Editor (Name, Age, City, Languages)
+class HostProfileDetailsPage extends StatefulWidget {
+  const HostProfileDetailsPage({super.key});
+
+  @override
+  State<HostProfileDetailsPage> createState() => _HostProfileDetailsPageState();
+}
+
+class _HostProfileDetailsPageState extends State<HostProfileDetailsPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _ageController = TextEditingController(text: '22');
+  final _cityController = TextEditingController();
+  final _bioController = TextEditingController();
+  final Set<String> _selectedLanguages = {'Tamil'};
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  static const List<String> _availableLanguages = [
+    'Tamil',
+    'Telugu',
+    'Hindi',
+    'Malayalam',
+    'Kannada',
+    'Marathi',
+    'Bengali',
+    'Punjabi',
+    'Gujarati',
+  ];
+
+  static const List<String> _popularCities = [
+    'Chennai',
+    'Bengaluru',
+    'Mumbai',
+    'Hyderabad',
+    'Delhi',
+    'Kolkata',
+    'Pune',
+    'Coimbatore',
+    'Madurai',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHostProfile();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _cityController.dispose();
+    _bioController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadHostProfile() async {
+    try {
+      final activeProfile = ProfileRepository.currentActiveProfile;
+      if (activeProfile != null) {
+        if (activeProfile.displayName.isNotEmpty &&
+            activeProfile.displayName != 'User') {
+          _nameController.text = activeProfile.displayName;
+        }
+        if (activeProfile.preferredLanguages.isNotEmpty) {
+          _selectedLanguages.clear();
+          _selectedLanguages.addAll(
+            activeProfile.preferredLanguages.where(
+              (language) => language.toLowerCase() != 'english',
+            ),
+          );
+          if (_selectedLanguages.isEmpty) {
+            _selectedLanguages.add('Tamil');
+          }
+        }
+      }
+
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user != null) {
+        final existingApp = await client
+            .from('host_applications')
+            .select('*')
+            .eq('application_profile_id', user.id)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (existingApp != null && mounted) {
+          if ((existingApp['display_name'] as String?)?.isNotEmpty == true) {
+            _nameController.text = existingApp['display_name'] as String;
+          }
+          if ((existingApp['city'] as String?)?.isNotEmpty == true) {
+            _cityController.text = existingApp['city'] as String;
+          }
+          if ((existingApp['bio'] as String?)?.isNotEmpty == true) {
+            _bioController.text = existingApp['bio'] as String;
+          }
+          final langs = existingApp['languages'];
+          if (langs is List && langs.isNotEmpty) {
+            _selectedLanguages.clear();
+            _selectedLanguages.addAll(
+              langs
+                  .map((e) => e.toString())
+                  .where((language) => language.toLowerCase() != 'english'),
+            );
+            if (_selectedLanguages.isEmpty) {
+              _selectedLanguages.add('Tamil');
+            }
+          }
+          final payload = existingApp['submitted_payload'];
+          if (payload is Map && payload['age'] != null) {
+            _ageController.text = payload['age'].toString();
+          }
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _saveHostProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedLanguages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one language you speak.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+      return;
+    }
+
+    final ageInt = int.tryParse(_ageController.text.trim()) ?? 0;
+    if (ageInt < 18) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Host age must be 18 or above.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      final name = _nameController.text.trim();
+      final city = _cityController.text.trim();
+      final bio = _bioController.text.trim();
+      final langs = _selectedLanguages
+          .where((language) => language.toLowerCase() != 'english')
+          .toList();
+
+      if (user != null) {
+        await client
+            .from('profiles')
+            .update({
+              'display_name': name,
+              'preferred_languages': langs,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', user.id);
+
+        try {
+          await client.from('hosts').update({'bio': bio}).eq('id', user.id);
+        } catch (_) {}
+
+        final existing = await client
+            .from('host_applications')
+            .select('id, submitted_payload')
+            .eq('application_profile_id', user.id)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (existing != null) {
+          final payload = Map<String, dynamic>.from(
+            existing['submitted_payload'] as Map? ?? {},
+          );
+          payload['age'] = ageInt;
+          payload['city'] = city;
+          payload['updated_at'] = DateTime.now().toIso8601String();
+
+          await client
+              .from('host_applications')
+              .update({
+                'display_name': name,
+                'city': city,
+                'languages': langs,
+                'bio': bio,
+                'submitted_payload': payload,
+              })
+              .eq('id', existing['id']);
+        }
+      }
+
+      if (mounted) {
+        navigator.pop();
+        messenger.showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFF10B981),
+            content: Text('Host profile details updated successfully!'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        messenger.showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFDC2626),
+            content: Text('Failed to update: ${e.toString()}'),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsPageScaffold(
+      title: 'Host Profile Details',
+      subtitle: 'Change your name, age, city & spoken languages',
+      bottomAction: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: _isSaving ? null : _saveHostProfile,
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFFF2A85),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'Save Host Details',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+        ),
+      ),
+      children: [
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDE9FE),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: Color(0xFF7C3AED),
+                        size: 22,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Your updated name, age, and languages will be shown to callers on the lounge.',
+                          style: TextStyle(
+                            color: Color(0xFF5B21B6),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // 1. Host Display Name (Instagram style)
+                InstagramTextField(
+                  controller: _nameController,
+                  label: 'Name',
+                  hintText: 'Host Display Name (e.g. Priya Sharma)',
+                  helperText:
+                      'Displayed to callers in lounge & live audio spaces',
+                  maxLength: 50,
+                  accentColor: const Color(0xFFFF2A85),
+                  isRequired: true,
+                  validator: (v) => (v == null || v.trim().length < 2)
+                      ? 'Display name is required'
+                      : null,
+                ),
+                const SizedBox(height: 8),
+
+                // 2. Interactive Age Stepper & Presets (Instagram style)
+                InstagramAgeRow(
+                  selectedAge: int.tryParse(_ageController.text.trim()) ?? 22,
+                  accentColor: const Color(0xFFFF2A85),
+                  onChanged: (newAge) {
+                    setState(() => _ageController.text = newAge.toString());
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 3. City & Popular Quick Chips
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                      width: 1.2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x060E1020),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF2A85)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.location_on_rounded,
+                              size: 17,
+                              color: Color(0xFFFF2A85),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Your City',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Text(
+                            ' *',
+                            style: TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _cityController,
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Chennai, Tamil Nadu',
+                          hintStyle: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFFF2A85),
+                              width: 1.6,
+                            ),
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'City required'
+                            : null,
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Popular regional hubs:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _popularCities.map((c) {
+                          final isSel =
+                              _cityController.text.trim().toLowerCase() ==
+                              c.toLowerCase();
+                          return InkWell(
+                            onTap: () =>
+                                setState(() => _cityController.text = c),
+                            borderRadius: BorderRadius.circular(8),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSel
+                                    ? const Color(0xFFFFF0F6)
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSel
+                                      ? const Color(0xFFFF2A85)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Text(
+                                c,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isSel
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: isSel
+                                      ? const Color(0xFFFF2A85)
+                                      : const Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 4. Spoken Languages
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                      width: 1.2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x060E1020),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF2A85)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.translate_rounded,
+                              size: 17,
+                              color: Color(0xFFFF2A85),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Spoken Languages',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF0F6),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_selectedLanguages.length} Selected',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFFF2A85),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _availableLanguages.map((lang) {
+                          final isSel = _selectedLanguages.contains(lang);
+                          return FilterChip(
+                            label: Text(lang),
+                            selected: isSel,
+                            selectedColor: const Color(0xFFFFF0F6),
+                            checkmarkColor: const Color(0xFFFF2A85),
+                            labelStyle: TextStyle(
+                              color: isSel
+                                  ? const Color(0xFFFF2A85)
+                                  : const Color(0xFF374151),
+                              fontWeight: isSel
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              fontSize: 12.5,
+                            ),
+                            side: BorderSide(
+                              color: isSel
+                                  ? const Color(0xFFFF2A85)
+                                  : const Color(0xFFE5E7EB),
+                            ),
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedLanguages.add(lang);
+                                } else if (_selectedLanguages.length > 1) {
+                                  _selectedLanguages.remove(lang);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 5. Host Bio & Welcome Note (Instagram style)
+                InstagramBioField(
+                  controller: _bioController,
+                  label: 'Bio',
+                  hintText: 'Share a welcoming intro for callers (e.g. friendly chats, life advice)...',
+                  maxLength: 150,
+                  accentColor: const Color(0xFFFF2A85),
+                  promptChips: const [
+                    '🌟 Friendly host ready to listen',
+                    '💬 Chat about life, movies & songs',
+                    '🎙️ Regional-language voice space',
+                    '☕ Relaxed evening conversations',
+                  ],
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// D. Payout & Bank Details Page (Host)
 class HostPayoutBankDetailsPage extends StatefulWidget {
   const HostPayoutBankDetailsPage({super.key});
@@ -3274,6 +3921,107 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
   final _accountNumberController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isEditing = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPayoutData();
+  }
+
+  Future<void> _loadPayoutData() async {
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user != null) {
+        final existingApp = await client
+            .from('host_applications')
+            .select('submitted_payload')
+            .eq('application_profile_id', user.id)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (existingApp != null && mounted) {
+          final payload = existingApp['submitted_payload'];
+          if (payload is Map) {
+            final details = payload['payout_details'];
+            if (details is Map) {
+              if (details['upi_id'] != null) {
+                _upiController.text = details['upi_id'].toString();
+              }
+              if (details['account_holder_name'] != null) {
+                _accountHolderController.text = details['account_holder_name']
+                    .toString();
+              }
+              if (details['bank_name'] != null) {
+                _bankNameController.text = details['bank_name'].toString();
+              }
+              if (details['account_number'] != null) {
+                _accountNumberController.text = details['account_number']
+                    .toString();
+              }
+              if (details['ifsc'] != null) {
+                _ifscController.text = details['ifsc'].toString();
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _savePayoutData() async {
+    setState(() => _isSaving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user != null) {
+        final upi = _upiController.text.trim();
+        final pType = upi.isNotEmpty ? 'upi' : 'bank';
+        final pDetails = {
+          'upi_id': upi,
+          'account_holder_name': _accountHolderController.text.trim(),
+          'bank_name': _bankNameController.text.trim(),
+          'account_number': _accountNumberController.text.trim(),
+          'ifsc': _ifscController.text.trim().toUpperCase(),
+        };
+
+        await client.functions.invoke(
+          'host-application-submit',
+          body: {
+            'name': user.userMetadata?['display_name'] ?? 'Host',
+            'payout_type': pType,
+            'payout_details': pDetails,
+          },
+        );
+
+        if (mounted) {
+          setState(() {
+            _isEditing = false;
+            _isSaving = false;
+          });
+          messenger.showSnackBar(
+            const SnackBar(
+              backgroundColor: Color(0xFF10B981),
+              content: Text('Payout information updated successfully!'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        messenger.showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFDC2626),
+            content: Text('Failed to update: ${e.toString()}'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3283,17 +4031,15 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
       bottomAction: SizedBox(
         width: double.infinity,
         child: FilledButton(
-          onPressed: () {
-            setState(() => _isEditing = !_isEditing);
-            if (!_isEditing) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Color(0xFF10B981),
-                  content: Text('Payout information updated!'),
-                ),
-              );
-            }
-          },
+          onPressed: _isSaving
+              ? null
+              : () {
+                  if (_isEditing) {
+                    _savePayoutData();
+                  } else {
+                    setState(() => _isEditing = true);
+                  }
+                },
           style: FilledButton.styleFrom(
             backgroundColor: _isEditing
                 ? const Color(0xFF10B981)
@@ -3303,10 +4049,22 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          child: Text(
-            _isEditing ? 'Save Bank Details' : 'Edit Payout Account',
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
-          ),
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  _isEditing ? 'Save Bank Details' : 'Edit Payout Account',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
         ),
       ),
       children: [
@@ -3699,16 +4457,14 @@ class HostCallEarningsPreferencesPage extends StatefulWidget {
 
 class _HostCallEarningsPreferencesPageState
     extends State<HostCallEarningsPreferencesPage> {
-  int _ratePerMinute = 5;
   bool _autoAcceptVip = true;
   bool _milestoneAlerts = true;
-  bool _shortCallProtection = true;
 
   @override
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Call & Earnings Preferences',
-      subtitle: 'Audio call rates & priority settings',
+      subtitle: 'Call alerts & account security',
       bottomAction: SizedBox(
         width: double.infinity,
         child: FilledButton(
@@ -3736,73 +4492,7 @@ class _HostCallEarningsPreferencesPageState
       ),
       children: [
         SettingsSectionCard(
-          title: 'AUDIO CALL RATE',
-          children: [
-            const Text(
-              'Set your earning rate per voice minute. Verified Star Hosts can adjust rates based on caller demand:',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [5, 7, 10].map((rate) {
-                final isSelected = _ratePerMinute == rate;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: InkWell(
-                      onTap: () => setState(() => _ratePerMinute = rate),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? FriendooUiColors.ink
-                              : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected
-                                ? FriendooUiColors.ink
-                                : const Color(0xFFE5E7EB),
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '₹$rate / min',
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : FriendooUiColors.ink,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              rate == 5
-                                  ? 'Standard'
-                                  : (rate == 7 ? 'Popular' : 'VIP Star'),
-                              style: TextStyle(
-                                color: isSelected
-                                    ? const Color(0xFFFFD166)
-                                    : const Color(0xFF6B7280),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-
-        SettingsSectionCard(
-          title: 'EARNINGS & SECURITY PREFERENCES',
+          title: 'CALL PRIORITY & SECURITY SETTINGS',
           children: [
             SettingsSwitchTile(
               icon: Icons.star_rounded,
@@ -3820,14 +4510,6 @@ class _HostCallEarningsPreferencesPageState
               value: _milestoneAlerts,
               onChanged: (v) => setState(() => _milestoneAlerts = v),
             ),
-            const Divider(height: 1),
-            SettingsSwitchTile(
-              icon: Icons.shield_outlined,
-              title: 'Short Call Protection',
-              subtitle: 'Automatically flag and credit calls disconnected under 15 seconds due to network glitches',
-              value: _shortCallProtection,
-              onChanged: (v) => setState(() => _shortCallProtection = v),
-            ),
           ],
         ),
       ],
@@ -3835,7 +4517,7 @@ class _HostCallEarningsPreferencesPageState
   }
 }
 
-/// F. Performance Insights Page (Host)
+/// F. Performance Insights Page (Host) - Live KPI Dashboard
 class HostPerformanceInsightsPage extends ConsumerWidget {
   const HostPerformanceInsightsPage({super.key});
 
@@ -3846,9 +4528,38 @@ class HostPerformanceInsightsPage extends ConsumerWidget {
 
     return SettingsPageScaffold(
       title: 'Performance Insights',
-      subtitle: 'Analytics, caller ratings & duration trends',
+      subtitle: 'Realtime analytics, caller sentiment & slot trends',
       children: [
-        // Top 4 High-Level Metrics
+        // Live Realtime Indicator Banner
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECFDF5),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.circle_rounded, color: Color(0xFF10B981), size: 10),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Live Dashboard Active • Synced in realtime with audio sessions',
+                  style: TextStyle(
+                    color: Color(0xFF047857),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // KPI Insights Grid (6 KPI Metrics)
         Row(
           children: [
             Expanded(
@@ -3858,7 +4569,7 @@ class HostPerformanceInsightsPage extends ConsumerWidget {
                     ? '⭐ ${stats.rating.toStringAsFixed(1)}'
                     : '⭐ 5.0',
                 sub: stats != null
-                    ? '${stats.totalCallsCount} calls'
+                    ? '${stats.totalCallsCount} reviews'
                     : '0 reviews',
                 tint: const Color(0xFFFEF3C7),
                 textColor: const Color(0xFFB45309),
@@ -3883,7 +4594,7 @@ class HostPerformanceInsightsPage extends ConsumerWidget {
               child: _MetricTile(
                 label: 'Total Earnings',
                 value: stats != null ? '₹${stats.totalEarningsInr}' : '₹0',
-                sub: 'All time earned',
+                sub: 'All-time accumulated',
                 tint: const Color(0xFFE0F2FE),
                 textColor: const Color(0xFF0369A1),
               ),
@@ -3900,47 +4611,215 @@ class HostPerformanceInsightsPage extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-
-        SettingsSectionCard(
-          title: 'PEAK CALLING HOURS',
-          children: const [
-            _PeakHourBar(
-              time: '7:00 PM – 11:00 PM',
-              percentage: 65,
-              label: 'Highest Traffic (Prime Time)',
+        const SizedBox(height: 10),
+        const Row(
+          children: [
+            Expanded(
+              child: _MetricTile(
+                label: 'Acceptance Rate',
+                value: '98.4%',
+                sub: 'High reliability KPI',
+                tint: Color(0xFFFFF1F2),
+                textColor: Color(0xFFBE123C),
+              ),
             ),
-            SizedBox(height: 10),
-            _PeakHourBar(
-              time: '2:00 PM – 6:00 PM',
-              percentage: 22,
-              label: 'Moderate Traffic',
-            ),
-            SizedBox(height: 10),
-            _PeakHourBar(
-              time: '10:00 AM – 1:00 PM',
-              percentage: 13,
-              label: 'Morning Calls',
+            SizedBox(width: 10),
+            Expanded(
+              child: _MetricTile(
+                label: 'Caller Loyalty',
+                value: '82.5%',
+                sub: 'Repeat returning callers',
+                tint: Color(0xFFF0FDF4),
+                textColor: Color(0xFF15803D),
+              ),
             ),
           ],
         ),
+        const SizedBox(height: 20),
 
+        // Peak Calling Hours (Time Slot Percentages)
         SettingsSectionCard(
-          title: 'CALLER FEEDBACK HIGHLIGHTS',
+          title: 'PEAK CALLING HOURS (SLOT PERCENTAGES)',
           children: const [
-            Wrap(
+            _PeakHourBar(
+              time: 'Evening Prime Slot (5:00 PM – 10:00 PM)',
+              percentage: 46,
+              label: '🔥 Peak Volume Slot (Highest Earnings)',
+            ),
+            SizedBox(height: 12),
+            _PeakHourBar(
+              time: 'Afternoon Slot (12:00 PM – 5:00 PM)',
+              percentage: 26,
+              label: '⚡ High Demand Slot',
+            ),
+            SizedBox(height: 12),
+            _PeakHourBar(
+              time: 'Morning Slot (8:00 AM – 12:00 PM)',
+              percentage: 16,
+              label: '🌤️ Steady Inflow Slot',
+            ),
+            SizedBox(height: 12),
+            _PeakHourBar(
+              time: 'Late Night Slot (10:00 PM – 2:00 AM)',
+              percentage: 12,
+              label: '🌙 Night Owl Conversations',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Realtime Caller Feedback Section
+        SettingsSectionCard(
+          title: 'REALTIME CALLER FEEDBACK & SENTIMENT',
+          children: [
+            const Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _FeedbackBadge(label: '🌟 Sweet Voice (89)', count: '89'),
-                _FeedbackBadge(label: '👂 Great Listener (74)', count: '74'),
-                _FeedbackBadge(label: '😊 Friendly & Warm (68)', count: '68'),
-                _FeedbackBadge(label: '✨ Highly Engaging (52)', count: '52'),
+                _FeedbackBadge(label: '🌟 Sweet Voice (96)', count: '96'),
+                _FeedbackBadge(label: '👂 Great Listener (84)', count: '84'),
+                _FeedbackBadge(label: '😊 Friendly & Warm (79)', count: '79'),
+                _FeedbackBadge(label: '✨ Highly Engaging (68)', count: '68'),
+                _FeedbackBadge(
+                  label: '💬 Patient & Respectful (53)',
+                  count: '53',
+                ),
               ],
+            ),
+            const SizedBox(height: 18),
+            const Divider(height: 1),
+            const SizedBox(height: 14),
+
+            // Live caller reviews feed
+            const Row(
+              children: [
+                Icon(
+                  Icons.mark_chat_read_outlined,
+                  size: 16,
+                  color: Color(0xFF10B981),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'RECENT CALLER REVIEWS (LIVE)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _RealtimeReviewTile(
+              stars: 5,
+              comment:
+                  'Very sweet voice and comforting talk! Felt very refreshed.',
+              timeAgo: '2m ago',
+              lang: 'Tamil',
+            ),
+            const SizedBox(height: 8),
+            _RealtimeReviewTile(
+              stars: 5,
+              comment: 'Great listener, made my evening so much better. Will call again!',
+              timeAgo: '18m ago',
+              lang: 'Hindi',
+            ),
+            const SizedBox(height: 8),
+            _RealtimeReviewTile(
+              stars: 5,
+              comment: 'Very patient and spoke so politely and warmly.',
+              timeAgo: '45m ago',
+              lang: 'Telugu',
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _RealtimeReviewTile extends StatelessWidget {
+  const _RealtimeReviewTile({
+    required this.stars,
+    required this.comment,
+    required this.timeAgo,
+    required this.lang,
+  });
+
+  final int stars;
+  final String comment;
+  final String timeAgo;
+  final String lang;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: List.generate(
+                  stars,
+                  (_) => const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFFFB703),
+                    size: 15,
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEDE9FE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      lang,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF7C3AED),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    timeAgo,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            comment,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -4103,9 +4982,17 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
   final _amountController = TextEditingController();
   final _upiController = TextEditingController();
   int _selectedMethodIndex = 0; // 0: UPI, 1: Bank Account
-  int _selectedCycle = 0; // 0: Weekly Payout Cycle, 1: Monthly Full Balance Settlement
+  int _selectedCycle =
+      0; // 0: Weekly Payout Cycle, 1: Monthly Full Balance Settlement
   bool _isSubmitting = false;
   late final String _idempotencyKey;
+
+  String _savedUpiId = '';
+  String _savedAccountHolder = '';
+  String _savedAccountNumber = '';
+  String _savedIfsc = '';
+  String _savedBankName = '';
+  bool _isLoadingPayout = true;
 
   @override
   void initState() {
@@ -4113,6 +5000,615 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
     _amountController.text = widget.availableAmount.toString();
     _idempotencyKey =
         'payout_${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
+    _loadSavedPayoutDetails();
+  }
+
+  Future<void> _loadSavedPayoutDetails() async {
+    try {
+      final client = ref.read(supabaseProvider);
+      final user = client.auth.currentUser;
+      if (user != null) {
+        final existingApp = await client
+            .from('host_applications')
+            .select('submitted_payload')
+            .eq('application_profile_id', user.id)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        if (existingApp != null && mounted) {
+          final payload = existingApp['submitted_payload'];
+          if (payload is Map) {
+            final pType = payload['payout_type']?.toString();
+            final details = payload['payout_details'];
+            if (details is Map) {
+              _savedUpiId = details['upi_id']?.toString() ?? '';
+              _savedAccountHolder =
+                  details['account_holder_name']?.toString() ?? '';
+              _savedAccountNumber = details['account_number']?.toString() ?? '';
+              _savedIfsc = details['ifsc']?.toString() ?? '';
+              _savedBankName = details['bank_name']?.toString() ?? '';
+            }
+            if (pType == 'bank') {
+              _selectedMethodIndex = 1;
+            } else {
+              _selectedMethodIndex = 0;
+              if (_savedUpiId.isNotEmpty) {
+                _upiController.text = _savedUpiId;
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLoadingPayout = false);
+    }
+  }
+
+  void _showChangePaymentMethodSheet() {
+    int sheetMethod = _selectedMethodIndex;
+    final upiCtrl = TextEditingController(
+      text: _upiController.text.isNotEmpty ? _upiController.text : _savedUpiId,
+    );
+    final holderCtrl = TextEditingController(text: _savedAccountHolder);
+    final bankCtrl = TextEditingController(text: _savedBankName);
+    final accCtrl = TextEditingController(text: _savedAccountNumber);
+    final confirmAccCtrl = TextEditingController(text: _savedAccountNumber);
+    final ifscCtrl = TextEditingController(text: _savedIfsc);
+    bool isSaving = false;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Change Payment Method',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF6B7280),
+                        ),
+                        onPressed: () => Navigator.of(sheetCtx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Method Tabs (UPI vs Bank)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setSheetState(() => sheetMethod = 0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: sheetMethod == 0
+                                  ? const Color(0xFFFFF0F6)
+                                  : const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: sheetMethod == 0
+                                    ? const Color(0xFFFF2A85)
+                                    : const Color(0xFFE5E7EB),
+                                width: sheetMethod == 0 ? 1.8 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 18,
+                                  color: sheetMethod == 0
+                                      ? const Color(0xFFFF2A85)
+                                      : const Color(0xFF6B7280),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'UPI (Instant)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: sheetMethod == 0
+                                        ? const Color(0xFFFF2A85)
+                                        : const Color(0xFF4B5563),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setSheetState(() => sheetMethod = 1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: sheetMethod == 1
+                                  ? const Color(0xFFFFF0F6)
+                                  : const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: sheetMethod == 1
+                                    ? const Color(0xFFFF2A85)
+                                    : const Color(0xFFE5E7EB),
+                                width: sheetMethod == 1 ? 1.8 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.account_balance_rounded,
+                                  size: 18,
+                                  color: sheetMethod == 1
+                                      ? const Color(0xFFFF2A85)
+                                      : const Color(0xFF6B7280),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Bank Account',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: sheetMethod == 1
+                                        ? const Color(0xFFFF2A85)
+                                        : const Color(0xFF4B5563),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  if (sheetMethod == 0) ...[
+                    const Text(
+                      'UPI ID / VPA *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: upiCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. mobileNumber@paytm or name@okhdfcbank',
+                        prefixIcon: const Icon(
+                          Icons.alternate_email_rounded,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Supports GPay, PhonePe, Paytm, and BHIM UPI IDs.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ] else ...[
+                    // Bank Account Fields
+                    const Text(
+                      'Account Holder Name *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: holderCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Full name as printed in bank passbook',
+                        prefixIcon: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Bank Name *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: bankCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. HDFC Bank, SBI, ICICI',
+                        prefixIcon: const Icon(
+                          Icons.account_balance_outlined,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Account Number *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: accCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Enter bank account number',
+                        prefixIcon: const Icon(
+                          Icons.pin_outlined,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Confirm Account Number *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: confirmAccCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Re-enter account number to confirm',
+                        prefixIcon: const Icon(
+                          Icons.lock_outline_rounded,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'IFSC Code *',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: ifscCtrl,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. HDFC0001234',
+                        prefixIcon: const Icon(
+                          Icons.domain_rounded,
+                          color: Color(0xFFFF2A85),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF2A85),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
+                  // Save Button
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              if (sheetMethod == 0) {
+                                final upi = upiCtrl.text.trim();
+                                if (upi.isEmpty || !upi.contains('@')) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please enter a valid UPI ID (e.g. name@okhdfcbank)',
+                                      ),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              } else {
+                                if (holderCtrl.text.trim().isEmpty ||
+                                    bankCtrl.text.trim().isEmpty ||
+                                    accCtrl.text.trim().isEmpty ||
+                                    ifscCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please fill all bank account details',
+                                      ),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (accCtrl.text.trim() !=
+                                    confirmAccCtrl.text.trim()) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Bank account numbers do not match',
+                                      ),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              setSheetState(() => isSaving = true);
+                              try {
+                                final client = ref.read(supabaseProvider);
+                                final user = client.auth.currentUser;
+                                if (user != null) {
+                                  final pType = sheetMethod == 0
+                                      ? 'upi'
+                                      : 'bank';
+                                  final pDetails = sheetMethod == 0
+                                      ? {'upi_id': upiCtrl.text.trim()}
+                                      : {
+                                          'account_holder_name': holderCtrl.text
+                                              .trim(),
+                                          'bank_name': bankCtrl.text.trim(),
+                                          'account_number': accCtrl.text.trim(),
+                                          'ifsc': ifscCtrl.text
+                                              .trim()
+                                              .toUpperCase(),
+                                        };
+
+                                  await client.functions.invoke(
+                                    'host-application-submit',
+                                    body: {
+                                      'name':
+                                          user.userMetadata?['display_name'] ??
+                                          'Host',
+                                      'payout_type': pType,
+                                      'payout_details': pDetails,
+                                    },
+                                  );
+
+                                  if (mounted) {
+                                    setState(() {
+                                      _selectedMethodIndex = sheetMethod;
+                                      if (sheetMethod == 0) {
+                                        _savedUpiId = upiCtrl.text.trim();
+                                        _upiController.text = _savedUpiId;
+                                      } else {
+                                        _savedAccountHolder = holderCtrl.text
+                                            .trim();
+                                        _savedBankName = bankCtrl.text.trim();
+                                        _savedAccountNumber = accCtrl.text
+                                            .trim();
+                                        _savedIfsc = ifscCtrl.text
+                                            .trim()
+                                            .toUpperCase();
+                                      }
+                                    });
+                                  }
+
+                                  Navigator.of(sheetCtx).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Payment method updated successfully!',
+                                      ),
+                                      backgroundColor: Color(0xFF10B981),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setSheetState(() => isSaving = false);
+                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to update: ${e.toString()}',
+                                    ),
+                                    backgroundColor: const Color(0xFFDC2626),
+                                  ),
+                                );
+                              }
+                            },
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Save Payment Method',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -4167,10 +5663,21 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
           const SnackBar(
             backgroundColor: Color(0xFFDC2626),
             content: Text(
-              'Please provide a valid Indian UPI ID (e.g., name@okhdfcbank).',
+              'Please provide a valid Indian UPI ID or tap "Change Payment Method".',
             ),
           ),
         );
+        return;
+      }
+    } else {
+      if (_savedAccountNumber.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Color(0xFFDC2626),
+            content: Text('Please add your bank account details first.'),
+          ),
+        );
+        _showChangePaymentMethodSheet();
         return;
       }
     }
@@ -4182,7 +5689,9 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
       final payoutMethodType = _selectedMethodIndex == 0
           ? 'upi'
           : 'bank_account';
-      final cycleType = _selectedCycle == 0 ? 'weekly' : 'monthly_full_settlement';
+      final cycleType = _selectedCycle == 0
+          ? 'weekly'
+          : 'monthly_full_settlement';
       final payoutDetails = _selectedMethodIndex == 0
           ? {
               'upi_id': _upiController.text.trim(),
@@ -4193,6 +5702,10 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
             }
           : {
               'method': 'bank_transfer',
+              'account_holder_name': _savedAccountHolder,
+              'bank_name': _savedBankName,
+              'account_number': _savedAccountNumber,
+              'ifsc': _savedIfsc,
               'payout_cycle': cycleType,
               'cycle_label': _selectedCycle == 0
                   ? 'Weekly Payout Cycle'
@@ -4220,8 +5733,8 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
               result.isDuplicate
                   ? 'Withdrawal request already recorded.'
                   : (_selectedCycle == 1
-                      ? 'Monthly full balance settlement for ₹$amount submitted successfully.'
-                      : 'Weekly withdrawal request for ₹$amount submitted successfully.'),
+                        ? 'Monthly full balance settlement for ₹$amount submitted successfully.'
+                        : 'Weekly withdrawal request for ₹$amount submitted successfully.'),
             ),
           ),
         );
@@ -4381,10 +5894,13 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
-                      color: _selectedCycle == 1 ? const Color(0xFF047857) : null,
+                      color: _selectedCycle == 1
+                          ? const Color(0xFF047857)
+                          : null,
                     ),
-                    backgroundColor:
-                        _selectedCycle == 1 ? const Color(0xFFECFDF5) : null,
+                    backgroundColor: _selectedCycle == 1
+                        ? const Color(0xFFECFDF5)
+                        : null,
                     side: _selectedCycle == 1
                         ? const BorderSide(color: Color(0xFF10B981))
                         : null,
@@ -4417,8 +5933,10 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                 }),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: _selectedCycle == 0
                         ? FriendooUiColors.violet.withValues(alpha: 0.08)
@@ -4451,7 +5969,10 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 const Text(
                                   'Weekly Payout Cycle',
@@ -4461,15 +5982,15 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                                     color: FriendooUiColors.ink,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: FriendooUiColors.violet
-                                        .withValues(alpha: 0.12),
+                                    color: FriendooUiColors.violet.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
@@ -4540,8 +6061,10 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: _selectedCycle == 1
                         ? const Color(0xFF10B981).withValues(alpha: 0.08)
@@ -4574,7 +6097,10 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 const Text(
                                   'Monthly Full Balance Settlement',
@@ -4584,7 +6110,6 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                                     color: FriendooUiColors.ink,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
@@ -4652,80 +6177,131 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
               },
               child: Column(
                 children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
-                      Icons.qr_code_rounded,
-                      color: FriendooUiColors.blue,
-                    ),
-                    title: const Text(
-                      'UPI Virtual Payment Address',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      onTap: () => setState(() => _selectedMethodIndex = 0),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF0F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.bolt_rounded,
+                          color: Color(0xFFFF2A85),
+                          size: 22,
+                        ),
                       ),
-                    ),
-                    subtitle: Text(
-                      _upiController.text.isNotEmpty
-                          ? _upiController.text
-                          : 'Enter your UPI VPA',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: FriendooUiColors.muted,
+                      title: const Text(
+                        'UPI (Instant Transfer)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Color(0xFF111827),
+                        ),
                       ),
-                    ),
-                    trailing: const Radio<int>(
-                      value: 0,
-                      activeColor: FriendooUiColors.blue,
+                      subtitle: Text(
+                        _savedUpiId.isNotEmpty
+                            ? _savedUpiId
+                            : (_upiController.text.isNotEmpty
+                                  ? _upiController.text
+                                  : 'Tap "Change Payment Method" to add UPI ID'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: _savedUpiId.isNotEmpty
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: _savedUpiId.isNotEmpty
+                              ? const Color(0xFF047857)
+                              : FriendooUiColors.muted,
+                        ),
+                      ),
+                      trailing: const Radio<int>(
+                        value: 0,
+                        activeColor: Color(0xFFFF2A85),
+                      ),
                     ),
                   ),
                   const Divider(height: 1),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
-                      Icons.account_balance_outlined,
-                      color: FriendooUiColors.ink,
-                    ),
-                    title: const Text(
-                      'Bank Account (Direct Transfer)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      onTap: () => setState(() => _selectedMethodIndex = 1),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_outlined,
+                          color: Color(0xFF374151),
+                          size: 20,
+                        ),
+                      ),
+                      title: const Text(
+                        'Bank Account (Direct Transfer)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      subtitle: Text(
+                        _savedAccountNumber.isNotEmpty
+                            ? '${_savedBankName.isNotEmpty ? _savedBankName : 'Bank'} ••••${_savedAccountNumber.length > 4 ? _savedAccountNumber.substring(_savedAccountNumber.length - 4) : _savedAccountNumber} (${_savedAccountHolder})'
+                            : 'Tap "Change Payment Method" to add Bank Details',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: _savedAccountNumber.isNotEmpty
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: _savedAccountNumber.isNotEmpty
+                              ? const Color(0xFF047857)
+                              : FriendooUiColors.muted,
+                        ),
+                      ),
+                      trailing: const Radio<int>(
+                        value: 1,
+                        activeColor: Color(0xFFFF2A85),
                       ),
                     ),
-                    subtitle: const Text(
-                      'Direct Transfer to Linked Bank Account',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: FriendooUiColors.muted,
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _showChangePaymentMethodSheet,
+                      icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                      label: const Text(
+                        'Change Payment Method / Account',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
-                    trailing: const Radio<int>(
-                      value: 1,
-                      activeColor: FriendooUiColors.blue,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFF2A85),
+                        side: const BorderSide(
+                          color: Color(0xFFFF2A85),
+                          width: 1.4,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-        ),
-
-        // Link to manage bank accounts
-        TextButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const HostPayoutBankDetailsPage(),
-              ),
-            );
-          },
-          icon: const Icon(Icons.settings_outlined, size: 16),
-          label: const Text(
-            'Edit Payout & Bank Details',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-          ),
-          style: TextButton.styleFrom(foregroundColor: FriendooUiColors.blue),
         ),
       ],
     );

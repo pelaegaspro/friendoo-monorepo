@@ -35,6 +35,8 @@ abstract class RtcAudioService {
   Stream<RtcConnectionState> get connectionStateStream;
   bool get isRemoteMuted;
   Stream<bool> get remoteMuteStream;
+  Stream<double> get audioLevelStream => const Stream.empty();
+  Stream<int> get rttMsStream => const Stream.empty();
   void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested);
 
   Future<void> join({
@@ -48,6 +50,8 @@ abstract class RtcAudioService {
   Future<void> setMuted(bool muted);
 
   Future<void> setSpeakerphone(bool enabled);
+
+  Future<void> restartIce() async {}
 
   Future<void> leave();
 
@@ -97,4 +101,16 @@ final rtcConnectionStateProvider = StreamProvider<RtcConnectionState>((ref) {
 final remoteMuteStateProvider = StreamProvider<bool>((ref) {
   final service = ref.watch(rtcAudioServiceProvider);
   return service.remoteMuteStream;
+});
+
+/// Real-time normalized audio level (0.0 to 1.0) for live waveform/speaking indicator
+final rtcAudioLevelProvider = StreamProvider<double>((ref) {
+  final service = ref.watch(rtcAudioServiceProvider);
+  return service.audioLevelStream;
+});
+
+/// Real-time round trip latency in milliseconds (RTT ping)
+final rtcLatencyProvider = StreamProvider<int>((ref) {
+  final service = ref.watch(rtcAudioServiceProvider);
+  return service.rttMsStream;
 });

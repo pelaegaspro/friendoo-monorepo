@@ -274,7 +274,7 @@ class _IncomingHostCallDialogState
 
                 // Subtitle
                 const Text(
-                  'A user is calling you for 1-on-1 audio lounge.',
+                  'Incoming voice call',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF9CA3AF),
@@ -312,7 +312,7 @@ class _IncomingHostCallDialogState
                 ),
                 const SizedBox(height: 16),
 
-                // 5. Trust Badges: Direct Caller Connection | Safe & Private
+                // Call details
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -323,7 +323,7 @@ class _IncomingHostCallDialogState
                     ),
                     const SizedBox(width: 6),
                     const Text(
-                      'Direct Caller Connection',
+                      'Voice call',
                       style: TextStyle(
                         color: Color(0xFFD1D5DB),
                         fontSize: 12,
@@ -343,7 +343,7 @@ class _IncomingHostCallDialogState
                     ),
                     const SizedBox(width: 6),
                     const Text(
-                      'Safe & Private',
+                      'Rate shown before answering',
                       style: TextStyle(
                         color: Color(0xFFD1D5DB),
                         fontSize: 12,

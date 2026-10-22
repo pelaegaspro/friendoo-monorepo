@@ -19,7 +19,8 @@ export default function AdminLoginPage() {
         method: 'POST',
         body: JSON.stringify({ password }),
       })
-      router.replace('/admin')
+      toast.success('Access granted')
+      window.location.href = '/admin'
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login failed')
     } finally {

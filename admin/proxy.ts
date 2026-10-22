@@ -17,7 +17,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (hasSession && pathname === '/admin/login') {
-    return NextResponse.redirect(new URL('/admin/portal', request.url))
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   return NextResponse.next()

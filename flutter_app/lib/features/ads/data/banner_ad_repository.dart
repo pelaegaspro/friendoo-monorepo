@@ -62,34 +62,6 @@ final placementBannerAdsListProvider = Provider.family<List<CloudBannerAd>, Stri
 
   if (placement == 'host_top_banner') {
     return const [
-      CloudBannerAd(
-        id: 'host_admob_banner_1',
-        title: 'Google AdMob Network',
-        headline: 'Google AdMob • Live Sponsor Ad',
-        subtitle: 'High payout audio sponsor campaigns enabled on your lounge.',
-        badgeText: 'GOOGLE ADMOB 📢',
-        campaignType: 'sponsor_ad',
-        placement: 'host_top_banner',
-        actionType: 'link',
-        actionUrl: 'https://admob.google.com',
-        priority: 100,
-        isActive: true,
-        gradientColors: ['#4285F4', '#34A853', '#FBBC05'],
-      ),
-      CloudBannerAd(
-        id: 'host_google_ad_1',
-        title: 'Google Play Partner',
-        headline: 'Google Play • Creator Deal',
-        subtitle: 'Unlock creator tools & earnings boosters on your host account.',
-        badgeText: 'GOOGLE PLAY ⚡',
-        campaignType: 'sponsor_ad',
-        placement: 'host_top_banner',
-        actionType: 'link',
-        actionUrl: 'https://play.google.com',
-        priority: 95,
-        isActive: true,
-        gradientColors: ['#1A73E8', '#12B5CB', '#34A853'],
-      ),
       CloudBannerAd.defaultHostSurgeAd,
     ];
   }
@@ -97,83 +69,23 @@ final placementBannerAdsListProvider = Provider.family<List<CloudBannerAd>, Stri
   if (placement == 'host_bottom_banner') {
     return const [
       CloudBannerAd(
-        id: 'host_google_bottom_ad',
-        title: 'Google Play Partner',
-        headline: 'Google Play Pass • Sponsor Deal',
-        subtitle: 'Explore 1,000+ top creator apps & tools with zero ads today.',
-        badgeText: 'SPONSORED BY GOOGLE 🌟',
-        campaignType: 'sponsor_ad',
+        id: 'host_dashboard_tip',
+        title: 'Host Dashboard',
+        headline: 'Track your calls and earnings',
+        subtitle: 'View your recent activity from the host dashboard.',
+        badgeText: 'HOST TOOLS',
+        campaignType: 'host_incentive',
         placement: 'host_bottom_banner',
-        actionType: 'link',
-        actionUrl: 'https://play.google.com/store/pass',
+        actionType: 'none',
         priority: 100,
         isActive: true,
-        gradientColors: ['#EA4335', '#FBBC05', '#34A853'],
-      ),
-      CloudBannerAd(
-        id: 'host_admob_bottom_ad',
-        title: 'Google AdMob Rewards',
-        headline: 'AdMob Partner • Earn More Coins',
-        subtitle: 'Get rewarded for active caller sessions and high engagement.',
-        badgeText: 'ADMOB PARTNER 🔥',
-        campaignType: 'sponsor_ad',
-        placement: 'host_bottom_banner',
-        actionType: 'link',
-        actionUrl: 'https://admob.google.com',
-        priority: 90,
-        isActive: true,
-        gradientColors: ['#4285F4', '#0F9D58', '#FF7043'],
+        gradientColors: ['#6366F1', '#8B5CF6', '#DB2777'],
       ),
     ];
   }
 
   return const [
-    CloudBannerAd.defaultFlashCashbackAd,
     CloudBannerAd.defaultAd,
-    CloudBannerAd(
-      id: 'default_carousel_2',
-      title: 'Mega Flash Sale ⚡',
-      headline: 'Get +100 Extra Bonus Coins!',
-      subtitle: 'Limited time offer on popular packs. Tap to recharge instantly.',
-      badgeText: '🔥 50% EXTRA',
-      campaignType: 'flash_package',
-      placement: 'all',
-      actionType: 'recharge',
-      priority: 90,
-      isActive: true,
-      gradientColors: ['#8B5CF6', '#EC4899', '#F59E0B'],
-      promoCoins: 200,
-      promoPriceInr: 99,
-      promoBonusLabel: '+100 Bonus Coins',
-    ),
-    CloudBannerAd(
-      id: 'default_google_user_ad',
-      title: 'Google Play Partner',
-      headline: 'Google Play Pass • Special Offer',
-      subtitle: 'Enjoy 1,000+ games & apps completely ad-free. Tap to view.',
-      badgeText: 'GOOGLE AD ⚡',
-      campaignType: 'sponsor_ad',
-      placement: 'all',
-      actionType: 'link',
-      actionUrl: 'https://play.google.com/store/pass',
-      priority: 80,
-      isActive: true,
-      gradientColors: ['#4285F4', '#34A853', '#EA4335'],
-    ),
-    CloudBannerAd(
-      id: 'default_google_admob_ad',
-      title: 'Google AdMob Deals',
-      headline: 'Google AdMob • Verified Offer',
-      subtitle: 'Discover trending entertainment & gaming offers across India.',
-      badgeText: 'GOOGLE SPONSORED 📢',
-      campaignType: 'sponsor_ad',
-      placement: 'all',
-      actionType: 'link',
-      actionUrl: 'https://ads.google.com',
-      priority: 70,
-      isActive: true,
-      gradientColors: ['#1A73E8', '#4285F4', '#34A853'],
-    ),
   ];
 });
 
@@ -248,16 +160,12 @@ class BannerAdRepository {
         return fetched;
       }
       return const [
-        CloudBannerAd.defaultFlashCashbackAd,
         CloudBannerAd.defaultAd,
-        CloudBannerAd.defaultFlashCoinAd,
         CloudBannerAd.defaultHostSurgeAd,
       ];
     } catch (_) {
       return const [
-        CloudBannerAd.defaultFlashCashbackAd,
         CloudBannerAd.defaultAd,
-        CloudBannerAd.defaultFlashCoinAd,
         CloudBannerAd.defaultHostSurgeAd,
       ];
     }

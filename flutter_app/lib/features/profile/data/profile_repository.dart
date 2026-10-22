@@ -34,7 +34,7 @@ class ProfileRepository {
 
   Future<UserProfile?> fetchCurrentUserProfile() async {
     final user = _client.auth.currentUser;
-    if (user == null) return null;
+    if (user == null) return currentActiveProfile;
 
     try {
       final row = await _client
@@ -44,8 +44,31 @@ class ProfileRepository {
           )
           .eq('id', user.id)
           .maybeSingle()
-          .timeout(const Duration(seconds: 10), onTimeout: () => null);
-      if (row == null) return currentActiveProfile;
+          .timeout(const Duration(seconds: 5), onTimeout: () => null);
+
+      if (row == null) {
+        // If profile row doesn't exist yet, attempt to create it or build fallback
+        final phone = user.phone ?? '';
+        try {
+          await _client.from('profiles').insert({
+            'id': user.id,
+            'phone': phone,
+            'display_name': 'User',
+            'role': 'user',
+          }).timeout(const Duration(seconds: 4));
+        } catch (_) {}
+
+        final fallback = currentActiveProfile ??
+            UserProfile(
+              id: user.id,
+              phone: phone,
+              displayName: 'User',
+              preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+              isHost: false,
+            );
+        currentActiveProfile = fallback;
+        return fallback;
+      }
 
       UserProfile profile = UserProfile.fromMap(Map<String, dynamic>.from(row));
       try {
@@ -63,21 +86,61 @@ class ProfileRepository {
       currentActiveProfile = profile;
       return profile;
     } catch (_) {
-      return currentActiveProfile;
+      final phone = user.phone ?? '';
+      final fallback = currentActiveProfile ??
+          UserProfile(
+            id: user.id,
+            phone: phone,
+            displayName: 'User',
+            preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+            isHost: false,
+          );
+      currentActiveProfile = fallback;
+      return fallback;
     }
   }
 
   Stream<UserProfile?> watchCurrentUserProfile() async* {
     try {
-      final initial =
-          currentActiveProfile ??
+      final initial = currentActiveProfile ??
           await fetchCurrentUserProfile().timeout(
-            const Duration(seconds: 10),
+            const Duration(seconds: 4),
             onTimeout: () => currentActiveProfile,
           );
-      yield initial;
+      if (initial != null) {
+        yield initial;
+      } else {
+        final user = _client.auth.currentUser;
+        if (user != null) {
+          final fallback = UserProfile(
+            id: user.id,
+            phone: user.phone ?? '',
+            displayName: 'User',
+            preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+            isHost: false,
+          );
+          currentActiveProfile = fallback;
+          yield fallback;
+        } else {
+          yield null;
+        }
+      }
     } catch (_) {
-      yield currentActiveProfile;
+      final user = _client.auth.currentUser;
+      if (user != null) {
+        final fallback = currentActiveProfile ??
+            UserProfile(
+              id: user.id,
+              phone: user.phone ?? '',
+              displayName: 'User',
+              preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+              isHost: false,
+            );
+        currentActiveProfile = fallback;
+        yield fallback;
+      } else {
+        yield currentActiveProfile;
+      }
     }
     yield* _profileChangeNotifier.stream;
   }

@@ -1,76 +1,74 @@
 'use client'
 
-import { useMemo } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { Activity, LogOut, ShieldCheck } from 'lucide-react'
-import toast from 'react-hot-toast'
-import { adminFetch } from '@/lib/admin/client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, Bell, Calendar, Sparkles } from 'lucide-react'
 import { MobileSidebarButton } from './AdminSidebar'
 
-const titles: Record<string, string> = {
-  '/admin': 'Overview Dashboard',
-  '/admin/ads': 'Cloud Ad Banners',
-  '/admin/hosts': 'Host Management',
-  '/admin/users': 'User Management',
-  '/admin/packages': 'Coin Packages & Pricing',
-  '/admin/transactions': 'Financial Ledger',
-  '/admin/calls': 'Live WebRTC Matrix',
-  '/admin/payments': 'Payouts & Settlement',
-  '/admin/notifications': 'Push Notifications & Alerts',
-  '/admin/reports': 'Safety & Moderation',
-  '/admin/surveillance/users': 'Behavioral Telemetry',
-  '/admin/surveillance/fraud': 'Fraud & Integrity Sentry',
-  '/admin/settings': 'System Configuration',
-}
-
 export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
-  const pathname = usePathname()
   const router = useRouter()
+  const [search, setSearch] = useState('')
 
-  const title = useMemo(() => titles[pathname] ?? 'Admin Matrix', [pathname])
-
-  const logout = async () => {
-    try {
-      await adminFetch('/api/admin/auth/logout', { method: 'POST' })
-      router.replace('/admin/login')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Logout failed')
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (search.trim()) {
+      router.push(`/admin/users?query=${encodeURIComponent(search.trim())}`)
     }
   }
 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/80 px-4 py-3.5 backdrop-blur-xl sm:px-6">
+    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-[#090A0F]/85 px-4 py-3 backdrop-blur-2xl sm:px-8">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 max-w-md">
           <MobileSidebarButton onClick={onOpenSidebar} />
-          <div>
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <span className="font-bold text-foreground">Friendoo Ops Center</span>
-              <span>/</span>
-              <span className="text-purple-400 font-mono">{title}</span>
-            </div>
-          </div>
+
+          <form onSubmit={handleSearch} className="relative w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search anything..."
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.035] py-2 pl-10 pr-4 text-xs text-slate-100 placeholder-slate-500 outline-none transition focus:border-violet-400/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/10"
+            />
+          </form>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-            <Activity className="h-3.5 w-3.5 animate-pulse" />
-            <span>System Status: Online</span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-xs font-medium text-purple-300">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Root Admin</span>
+        <div className="flex items-center gap-3.5">
+          <div className="hidden items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-slate-300 sm:flex">
+            <Calendar size={14} className="text-violet-300" />
+            <span>{currentDate}</span>
           </div>
 
           <button
             type="button"
-            onClick={logout}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300 lg:hidden"
+            onClick={() => router.push('/admin/notifications')}
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08]"
+            aria-label="View notifications"
           >
-            <LogOut className="h-3.5 w-3.5" />
-            Logout
+            <Bell size={16} />
           </button>
+
+          <div className="flex items-center gap-2.5 border-l border-white/[0.08] pl-3">
+            <div className="relative flex h-9 w-9 animate-[pulse_4s_ease-in-out_infinite] items-center justify-center rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-cyan-300 shadow-[0_0_24px_rgba(168,85,247,0.42)]">
+              <span className="absolute inset-[3px] rounded-full bg-[#15101e]" />
+              <Sparkles size={15} className="relative z-10 text-violet-100" />
+            </div>
+            <div className="hidden text-left md:block">
+              <p className="text-xs font-bold leading-none text-white">
+                Admin
+              </p>
+              <p className="mt-1 text-[10px] font-medium text-slate-500">
+                Friendoo
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </header>

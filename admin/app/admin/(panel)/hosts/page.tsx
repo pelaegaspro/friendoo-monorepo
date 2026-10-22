@@ -584,9 +584,26 @@ export default function HostsAdminPage() {
                           <Badge label={application.status} variant={statusVariant} />
                         </div>
                         <p className="mt-1 text-sm text-zinc-400">{application.phone}</p>
-                        <p className="mt-1 text-sm text-zinc-500">
-                          {application.city || '--'} | {application.language || 'Hindi'}
+                        <p className="mt-1 text-sm font-medium text-zinc-300">
+                          {application.age ? `${application.age} yrs` : '18+ yrs'} &bull; {application.city || '--'} &bull; <span className="text-purple-400">{application.language || 'Hindi'}</span>
                         </p>
+                        {application.payoutDetails?.upi_id ? (
+                          <div className="mt-2 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1.5 text-xs text-purple-200">
+                            <span className="font-semibold text-purple-300">💳 UPI:</span> {String(application.payoutDetails.upi_id)}
+                          </div>
+                        ) : application.payoutDetails?.account_number ? (
+                          <div className="mt-2 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1.5 text-xs text-purple-200">
+                            <span className="font-semibold text-purple-300">🏦 Bank A/C:</span> {String(application.payoutDetails.account_number)}
+                            <span className="ml-1 text-zinc-400">(IFSC: {String(application.payoutDetails.ifsc || '--')})</span>
+                            {application.payoutDetails.account_holder_name ? (
+                              <div className="text-[11px] text-zinc-400">Holder: {String(application.payoutDetails.account_holder_name)}</div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-xs text-zinc-400">
+                            💳 Payout: Provided during KYC onboarding
+                          </div>
+                        )}
                         {application.about ? (
                           <p className="mt-2 line-clamp-2 text-xs text-zinc-400 italic">&ldquo;{application.about}&rdquo;</p>
                         ) : null}

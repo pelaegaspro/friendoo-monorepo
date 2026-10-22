@@ -27,12 +27,15 @@ import '../features/discover/data/host_repository.dart';
 import '../features/presence/data/presence_service.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
+import '../features/profile/presentation/host_application_page.dart';
+import '../features/profile/data/blocked_callers_service.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import 'friendoo_ui.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/ads/presentation/live_ad_banner_widget.dart';
+import '../features/auth/presentation/animated_otp_verification_view.dart';
 import '../features/auth/presentation/onboarding_avatar_setup_page.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../core/config/app_remote_config.dart';
@@ -42,15 +45,27 @@ final isHostModeProvider = StateProvider<bool>((ref) => false);
 
 bool resolveIsHostNavigation(UserProfile? profile) => profile?.isHost ?? false;
 
-class FriendooApp extends StatelessWidget {
+class FriendooApp extends ConsumerWidget {
   const FriendooApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Friendoo',
       debugShowCheckedModeBanner: false,
       theme: FriendooTheme.light(),
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: mediaQuery.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.15,
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const AuthGate(),
     );
   }
@@ -83,8 +98,6 @@ class AuthGate extends ConsumerWidget {
         final hasActiveSession =
             session != null ||
             client.auth.currentUser != null ||
-            ProfileRepository.currentActiveProfile != null ||
-            hasEntered ||
             debugMockSession;
 
         if (hasActiveSession) {
@@ -125,7 +138,9 @@ class MaintenanceScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                    border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                    border: Border.all(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                    ),
                   ),
                   child: const Icon(
                     Icons.build_rounded,
@@ -145,8 +160,7 @@ class MaintenanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  message ??
-                      'We are performing scheduled improvements on the Friendoo infrastructure. Voice call sessions will resume shortly.',
+                  message ?? 'We are performing scheduled improvements on the Friendoo infrastructure. Voice call sessions will resume shortly.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 14,
@@ -162,7 +176,10 @@ class MaintenanceScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -189,6 +206,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
   final _otpController = TextEditingController();
   bool _otpRequested = false;
   bool _loading = false;
+  bool _isVerified = false;
   String? _error;
   int _resendCountdown = 0;
   Timer? _countdownTimer;
@@ -277,6 +295,13 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
 
     try {
       await _auth.verifySmsOtp(phone: fullPhone, code: otp);
+      if (mounted) {
+        setState(() {
+          _isVerified = true;
+          _loading = false;
+        });
+        await Future.delayed(const Duration(milliseconds: 700));
+      }
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('friendoo_saved_phone', fullPhone);
@@ -322,6 +347,43 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
         .replaceAll('+91', '')
         .replaceAll(' ', '');
 
+    if (_otpRequested) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF1F5F9),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Center(child: FriendooLogo(fontSize: 34)),
+                  const SizedBox(height: 16),
+                  AnimatedOtpVerificationView(
+                    phoneDigits: phoneDigits,
+                    otpController: _otpController,
+                    onVerify: _verifyOtp,
+                    onChangePhone: () {
+                      setState(() {
+                        _otpRequested = false;
+                        _error = null;
+                        _isVerified = false;
+                      });
+                    },
+                    onResend: _sendOtp,
+                    resendCountdown: _resendCountdown,
+                    isLoading: _loading,
+                    errorMessage: _error,
+                    isVerified: _isVerified,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -348,7 +410,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: const Text(
-                        '✦ 100% PRIVATE VOICE CHAT',
+                        'VOICE CALLS ON YOUR TERMS',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -359,12 +421,10 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    _otpRequested
-                        ? 'Verify Mobile Number'
-                        : 'Welcome to Friendoo',
+                  const Text(
+                    'Welcome to Friendoo',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF0E1020),
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
@@ -372,12 +432,10 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    _otpRequested
-                        ? 'Enter the 6-digit SMS verification code sent to +91 $phoneDigits'
-                        : 'Connect instantly with verified female hosts for friendly audio conversations.',
+                  const Text(
+                    'Browse hosts and choose someone to call.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -386,145 +444,69 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                   ),
                   const SizedBox(height: 28),
 
-                  if (!_otpRequested) ...[
-                    // Phone input with locked +91 prefix
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      enabled: !_loading,
-                      maxLength: 10,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                        color: Color(0xFF0F172A),
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Mobile Phone Number',
-                        hintText: '98765 43210',
-                        counterText: '',
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.only(left: 14, right: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.phone_iphone_rounded,
-                                color: Color(0xFF6366F1),
-                                size: 20,
+                  // Phone input with locked +91 prefix
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    enabled: !_loading,
+                    maxLength: 10,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Color(0xFF0F172A),
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Mobile Phone Number',
+                      hintText: '98765 43210',
+                      counterText: '',
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 14, right: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.phone_iphone_rounded,
+                              color: Color(0xFF6366F1),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 4,
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF2FF),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: const Color(0xFFC7D2FE),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '🇮🇳 +91',
-                                  style: TextStyle(
-                                    color: Color(0xFF1E293B),
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFFC7D2FE),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 1.5,
-                                height: 20,
-                                color: const Color(0xFFCBD5E1),
+                              child: const Text(
+                                '🇮🇳 +91',
+                                style: TextStyle(
+                                  color: Color(0xFF1E293B),
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 1.5,
+                              height: 20,
+                              color: const Color(0xFFCBD5E1),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ] else ...[
-                    // OTP Input
-                    TextField(
-                      controller: _otpController,
-                      keyboardType: TextInputType.number,
-                      autofocus: true,
-                      maxLength: 6,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(6),
-                      ],
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 6.0,
-                        color: Color(0xFF0F172A),
-                      ),
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(
-                        labelText: '6-Digit SMS Verification Code',
-                        hintText: '• • • • • •',
-                        counterText: '',
-                        prefixIcon: Icon(Icons.lock_outline_rounded),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _otpRequested = false;
-                                    _error = null;
-                                  });
-                                },
-                          icon: const Icon(Icons.edit_rounded, size: 15),
-                          label: const Text(
-                            'Change Number',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        if (_resendCountdown > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'Resend in ${_resendCountdown}s',
-                              style: const TextStyle(
-                                color: Color(0xFF94A3B8),
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          )
-                        else
-                          TextButton.icon(
-                            onPressed: _loading ? null : _sendOtp,
-                            icon: const Icon(Icons.refresh_rounded, size: 15),
-                            label: const Text(
-                              'Resend Code',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF6366F1),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
 
                   if (_error != null) ...[
                     const SizedBox(height: 14),
@@ -578,9 +560,7 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: _loading
-                          ? null
-                          : (_otpRequested ? _verifyOtp : _sendOtp),
+                      onPressed: _loading ? null : _sendOtp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -595,11 +575,9 @@ class _PhoneAuthPageState extends ConsumerState<PhoneAuthPage> {
                                 color: Colors.white,
                               ),
                             )
-                          : Text(
-                              _otpRequested
-                                  ? 'Verify & Enter Lounge ➔'
-                                  : 'Send SMS Code ✦',
-                              style: const TextStyle(
+                          : const Text(
+                              'Send SMS Code ✦',
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
@@ -669,7 +647,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   void _startAudioCall(HostProfile host) {
     ref.read(selectedCallingHostProvider.notifier).state = host;
-    ref.read(activeCallProvider.notifier).initiateAudioCall(host.id, context: context);
+    ref
+        .read(activeCallProvider.notifier)
+        .initiateAudioCall(host.id, context: context);
   }
 
   Future<void> _signOut() async {
@@ -697,7 +677,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         } else if (err.contains('Microphone permission')) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Microphone permission is required for voice calls. Please allow permission.'),
+              content: Text(
+                'Microphone permission is required for voice calls. Please allow permission.',
+              ),
               backgroundColor: Color(0xFFDC2626),
             ),
           );
@@ -724,7 +706,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
     final activeCall = ref.watch(activeCallProvider).asData?.value;
     final isHost = ref.watch(isHostModeProvider);
-    final hasOngoingCall = activeCall != null &&
+    final hasOngoingCall =
+        activeCall != null &&
         (activeCall.status == CallStatus.accepted ||
             activeCall.status == CallStatus.active ||
             activeCall.status == CallStatus.ringing);
@@ -848,7 +831,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         if (snapshot.hasError) {
                           return _DiscoverMessageState(
                             icon: Icons.wifi_off_rounded,
-                            title: 'The host lounge is taking a breath',
+                            title: 'Could not load hosts',
                             message: 'Pull down to reconnect and see who is available.',
                             onRetry: _refreshHosts,
                           );
@@ -917,13 +900,26 @@ class _DiscoverHome extends StatelessWidget {
     final tokens = theme.extension<FriendooDesignTokens>()!;
     final selectedLanguage = filters[selectedFilter];
 
+    final currentUserId =
+        ProfileRepository.currentActiveProfile?.id ??
+        Supabase.instance.client.auth.currentUser?.id;
+    // If a host has blocked this user, she will NOT appear in the user screen even when online
+    final visibleHosts = hosts
+        .where(
+          (h) => !BlockedCallersService.isHostBlockedForUser(
+            hostId: h.id,
+            userId: currentUserId,
+          ),
+        )
+        .toList();
+
     final regionalMatches = <HostProfile>[];
     final otherHosts = <HostProfile>[];
 
     if (selectedLanguage == 'All') {
-      regionalMatches.addAll(hosts);
+      regionalMatches.addAll(visibleHosts);
     } else {
-      for (final h in hosts) {
+      for (final h in visibleHosts) {
         final speaksLang = h.languages.any(
           (l) => l.toLowerCase() == selectedLanguage.toLowerCase(),
         );
@@ -977,7 +973,7 @@ class _DiscoverHome extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Friendly audio spaces with verified regional-language hosts.',
+                    'Find hosts who speak your language.',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: colors.onPrimary.withOpacity(0.88),
                     ),
@@ -1174,7 +1170,7 @@ class _DiscoverHome extends StatelessWidget {
                 const SizedBox(height: 16),
                 const _TrustPoint(
                   icon: Icons.visibility_off_rounded,
-                  title: 'Anonymous first',
+                  title: 'Phone number privacy',
                   detail: 'Connect without sharing your personal number.',
                 ),
                 const SizedBox(height: 14),
@@ -1292,8 +1288,8 @@ class _HostListCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: host.isAvailable
                               ? (host.isBusy
-                                  ? const Color(0xFFF59E0B)
-                                  : const Color(0xFF10B981))
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFF10B981))
                               : const Color(0xFF9CA3AF),
                           shape: BoxShape.circle,
                           border: Border.all(color: colors.surface, width: 2),
@@ -1426,7 +1422,9 @@ class _HostListCard extends StatelessWidget {
                       ? (host.isBusy ? const Color(0xFFF59E0B) : colors.primary)
                       : const Color(0xFF9CA3AF),
                 ),
-                onPressed: (host.isAvailable && !host.isBusy) ? onStartCall : null,
+                onPressed: (host.isAvailable && !host.isBusy)
+                    ? onStartCall
+                    : null,
                 icon: const Icon(Icons.call_rounded),
               ),
             ],
@@ -1659,7 +1657,7 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
       child: profileAsync.when(
         data: (profile) {
           if (profile == null) {
-            return const FriendooLoadingScreen(message: 'Loading profile...');
+            return const DiscoverPage();
           }
 
           final isHost = resolveIsHostNavigation(profile);
@@ -1691,8 +1689,7 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
 
           return const DiscoverPage();
         },
-        loading: () =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        loading: () => const DiscoverPage(),
         error: (e, st) => const DiscoverPage(),
       ),
     );
@@ -1753,7 +1750,10 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
   Future<void> _showIncomingCall(CallSession call) async {
     // Pre-warm Agora credentials in background cache while host views incoming call dialog
     unawaited(
-      ref.read(callRepositoryProvider).getAgoraCredentials(call.id).catchError(
+      ref
+          .read(callRepositoryProvider)
+          .getAgoraCredentials(call.id)
+          .catchError(
             (_) => const AgoraJoinCredentials(
               token: '',
               appId: '',
@@ -2330,6 +2330,25 @@ class _HostCallHistoryCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        '•',
+                        style: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        call.formattedHostLastOnline,
+                        style: TextStyle(
+                          color: call.isOtherPartyOnline
+                              ? const Color(0xFF047857)
+                              : const Color(0xFF6B7280),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -2671,7 +2690,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Top-up coins to start instant voice calls',
+                  'Add coins to call hosts',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -2747,7 +2766,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                         ),
                         SizedBox(width: 4),
                         Text(
-                          'Instant Access',
+                          'Available balance',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -3259,7 +3278,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '100% Anonymous & Secure • Instant Coin Credits • Powered by Cashfree',
+                  'Coins are added after payment confirmation',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                     fontSize: 11,
@@ -3666,30 +3685,30 @@ class _ProfileTab extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // 1. Host Information
+        // 1. Host Profile Details (Change Name, Age, City, Languages, Bio)
         _HostNavigationRow(
           icon: Icons.badge_outlined,
           iconBg: const Color(0xFFEDE9FE),
           iconColor: const Color(0xFF7C3AED),
-          title: 'Host Information',
-          subtitle: 'Voice intro, profession, education & hobbies',
+          title: 'Host Profile Details',
+          subtitle: 'Change your name, age, city & spoken languages',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => const HostInformationPage(),
+                builder: (_) => const HostProfileDetailsPage(),
               ),
             );
           },
         ),
         const SizedBox(height: 10),
 
-        // 2. Payout & Bank Details
+        // 2. Payout & Bank Details (Settings menu for Host Payout Account)
         _HostNavigationRow(
           icon: Icons.account_balance_wallet_outlined,
           iconBg: const Color(0xFFECFDF5),
           iconColor: const Color(0xFF059669),
           title: 'Payout & Bank Details',
-          subtitle: 'UPI ID, bank account & settlement schedule',
+          subtitle: 'UPI, bank & payout schedule',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3706,7 +3725,7 @@ class _ProfileTab extends ConsumerWidget {
           iconBg: const Color(0xFFFEF3C7),
           iconColor: const Color(0xFFD97706),
           title: 'Call & Earnings Preferences',
-          subtitle: 'Per-minute audio rate & priority call alerts',
+          subtitle: 'Call alerts & account security',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3723,7 +3742,7 @@ class _ProfileTab extends ConsumerWidget {
           iconBg: const Color(0xFFE0F2FE),
           iconColor: const Color(0xFF0284C7),
           title: 'Performance Insights',
-          subtitle: 'Caller analytics, ratings & duration trends',
+          subtitle: 'Earnings, ratings & call trends',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3734,17 +3753,50 @@ class _ProfileTab extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
 
-        // 5. Languages
+        // 5. Blocked Callers (Host only)
+        _HostNavigationRow(
+          icon: Icons.block_flipped,
+          iconBg: const Color(0xFFFEF2F2),
+          iconColor: const Color(0xFFDC2626),
+          title: 'Blocked Callers',
+          subtitle: 'Blocked callers cannot see or call your profile',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HostBlockedUsersPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 6. Languages
         _HostNavigationRow(
           icon: Icons.translate_rounded,
           iconBg: const Color(0xFFFDF2F8),
           iconColor: const Color(0xFFDB2777),
           title: 'Languages',
-          subtitle: 'Add or update languages you talk with callers in',
+          subtitle: 'Languages spoken with callers',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => const UserLanguagesPage(isHost: true),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _HostNavigationRow(
+          icon: Icons.language_rounded,
+          iconBg: const Color(0xFFEDE9FE),
+          iconColor: const Color(0xFF7C3AED),
+          title: 'App language',
+          subtitle: 'Choose the language used in the app',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AppLanguageSettingsPage(),
               ),
             );
           },
@@ -3757,7 +3809,7 @@ class _ProfileTab extends ConsumerWidget {
           iconBg: const Color(0xFFF3F4F6),
           iconColor: FriendooUiColors.ink,
           title: 'Help & Support',
-          subtitle: 'Host safety guidelines & 24/7 host partner care',
+          subtitle: 'Safety & support',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3774,7 +3826,7 @@ class _ProfileTab extends ConsumerWidget {
           iconBg: const Color(0xFFF1F5F9),
           iconColor: const Color(0xFF475569),
           title: 'About Friendoo',
-          subtitle: 'Host partner terms, safety policy & version',
+          subtitle: 'Terms & safety',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3791,7 +3843,7 @@ class _ProfileTab extends ConsumerWidget {
           iconBg: const Color(0xFFF5F3FF),
           iconColor: const Color(0xFF6366F1),
           title: 'Edit Profile',
-          subtitle: 'Photo, display name, age & voice intro',
+          subtitle: 'Photo, name & voice intro',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -4168,18 +4220,6 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    isOnline
-                        ? 'Available for incoming voice calls from users.'
-                        : 'You\'re currently unavailable to callers.',
-                    style: const TextStyle(
-                      color: Color(0xFF6B7280),
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // Prominent CTA: Go Offline / Go Live
                   SizedBox(
                     width: double.infinity,
@@ -4215,51 +4255,6 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         ),
                         elevation: 3,
                       ),
-                    ),
-                  ),
-
-                  // Live Host Availability Status Card
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isOnline
-                          ? const Color(0xFFECFDF5)
-                          : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isOnline
-                            ? const Color(0xFF10B981).withOpacity(0.3)
-                            : const Color(0xFFE5E7EB),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isOnline
-                              ? Icons.check_circle_rounded
-                              : Icons.bedtime_outlined,
-                          color: isOnline
-                              ? const Color(0xFF059669)
-                              : const Color(0xFF6B7280),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            isOnline
-                                ? 'Active & receiving incoming caller connections'
-                                : 'Offline • Tap Go Live when you are ready to earn',
-                            style: TextStyle(
-                              color: isOnline
-                                  ? const Color(0xFF065F46)
-                                  : const Color(0xFF4B5563),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -4376,7 +4371,8 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
               child: Row(
                 children: [
                   // Host's Avatar
-                  userProfile?.avatarUrl != null && userProfile!.avatarUrl!.isNotEmpty
+                  userProfile?.avatarUrl != null &&
+                          userProfile!.avatarUrl!.isNotEmpty
                       ? FriendooAvatar(
                           config: FriendooAvatarConfig(
                             gender: 'female',
@@ -4647,7 +4643,10 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                   ),
                                   onPressed: () => ref
                                       .read(activeCallProvider.notifier)
-                                      .acceptIncomingCall(c.id, context: context),
+                                      .acceptIncomingCall(
+                                        c.id,
+                                        context: context,
+                                      ),
                                   child: const Text('Accept'),
                                 ),
                               ],

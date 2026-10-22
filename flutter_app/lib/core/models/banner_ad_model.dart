@@ -126,12 +126,12 @@ class CloudBannerAd {
 
   static const defaultAd = CloudBannerAd(
     id: 'default_promo_1',
-    title: 'Find Your Companion',
-    campaignType: 'user_offer',
+    title: 'Find a Host',
+    campaignType: 'discover',
     targetAudience: 'users',
-    badgeText: '🌟 DISCOVER & CONNECT',
-    headline: "Find someone you'd love to talk with",
-    subtitle: 'Verified friendly voice hosts available 24/7 in your preferred language.',
+    badgeText: 'DISCOVER HOSTS',
+    headline: 'Choose someone to call',
+    subtitle: 'Browse hosts by language, availability and call rate.',
     gradientColors: ['#4F46E5', '#7C3AED', '#DB2777'],
     actionType: 'none',
     placement: 'user_top_banner',
@@ -141,14 +141,13 @@ class CloudBannerAd {
   );
 
   static const defaultHostSurgeAd = CloudBannerAd(
-    id: 'default_host_surge',
-    title: 'Host Peak Hour Surge Incentive',
+    id: 'default_host_dashboard_tip',
+    title: 'Host Dashboard',
     campaignType: 'host_incentive',
     targetAudience: 'hosts',
-    badgeText: 'PEAK HOUR SURGE • +₹10/MIN',
-    headline: 'Earn 2X Extra from 8 PM - 11 PM! 🔥',
-    subtitle:
-        'High caller volume active right now. Stay online to maximize payout.',
+    badgeText: 'HOST TOOLS',
+    headline: 'Track your calls and earnings',
+    subtitle: 'View your recent activity from the host dashboard.',
     gradientColors: ['#D97706', '#F59E0B', '#EF4444'],
     actionType: 'none',
     placement: 'host_top_banner',
@@ -157,44 +156,4 @@ class CloudBannerAd {
     priority: 30,
   );
 
-  static const defaultFlashCashbackAd = CloudBannerAd(
-    id: 'default_flash_60_cashback',
-    title: 'Flash 60% Cashback',
-    campaignType: 'flash_package',
-    targetAudience: 'all',
-    badgeText: '⚡ 60% CASHBACK • ENDS IN 5H',
-    headline: 'Flash 60% Cashback 🔥',
-    subtitle: 'Ends in 5h • Get 60% bonus coins on all recharges!',
-    gradientColors: ['#FFB703', '#FF2A85', '#6366F1'],
-    actionType: 'recharge',
-    placement: 'all',
-    promoCoins: 500,
-    promoPriceInr: 149,
-    originalPriceInr: 299,
-    promoBonusLabel: '+60% Cashback Coins',
-    showAsPopup: false,
-    isActive: true,
-    priority: 120,
-  );
-
-  static const defaultFlashCoinAd = CloudBannerAd(
-    id: 'default_flash_popup',
-    title: 'Flash Coin Drop',
-    campaignType: 'flash_package',
-    targetAudience: 'users',
-    badgeText: '⚡ 50% OFF FLASH DROP',
-    headline: '500 Coins + 250 Bonus for ₹149! 🔥',
-    subtitle:
-        'Limited midnight drop! Claim 2X bonus coins before the timer expires.',
-    gradientColors: ['#FFB703', '#FF2A85', '#6366F1'],
-    actionType: 'recharge',
-    placement: 'pop_up_modal',
-    promoCoins: 500,
-    promoPriceInr: 149,
-    originalPriceInr: 299,
-    promoBonusLabel: '+250 Bonus Coins (50% OFF)',
-    showAsPopup: true,
-    isActive: true,
-    priority: 50,
-  );
 }

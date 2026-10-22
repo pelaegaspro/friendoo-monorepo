@@ -445,6 +445,7 @@ class CallHistoryItem {
     this.otherPartyAge,
     this.otherPartyLanguages,
     this.otherPartyIsOnline,
+    this.otherPartyLastSeenAt,
     this.otherPartyIsStar,
     this.amountInr,
   });
@@ -462,8 +463,20 @@ class CallHistoryItem {
   final int? otherPartyAge;
   final List<String>? otherPartyLanguages;
   final bool? otherPartyIsOnline;
+  final DateTime? otherPartyLastSeenAt;
   final bool? otherPartyIsStar;
   final int? amountInr;
+
+  String get formattedHostLastOnline {
+    if (otherPartyIsOnline == true) return 'Online now';
+    if (otherPartyLastSeenAt == null) return 'Offline';
+    final diff = DateTime.now().difference(otherPartyLastSeenAt!);
+    if (diff.inSeconds < 90) return 'Online now';
+    if (diff.inMinutes < 60) return 'Online m ago';
+    if (diff.inHours < 24) return 'Last seen h ago';
+    if (diff.inDays < 7) return 'Last seen d ago';
+    return 'Last seen /';
+  }
 
   String get formattedDuration {
     if (durationSeconds != null && durationSeconds! > 0) {
@@ -587,6 +600,14 @@ class CallHistoryItem {
         : 60;
     final mins = (durationSecs / 60).ceil().clamp(1, 999);
 
+    final lastSeenRaw = map['other_party_last_seen_at'];
+    final parsedLastSeen = lastSeenRaw != null
+        ? DateTime.tryParse(lastSeenRaw.toString())
+        : null;
+    final isOnlineVal = map['other_party_is_online'] as bool? ??
+        (parsedLastSeen != null &&
+            DateTime.now().difference(parsedLastSeen).inSeconds < 90);
+
     return CallHistoryItem(
       id: map['id']?.toString() ?? '',
       otherPartyName: name,
@@ -599,6 +620,15 @@ class CallHistoryItem {
           DateTime.tryParse(map['created_at'] as String? ?? '') ??
           DateTime.now(),
       isHost: !isCaller,
+      otherPartyIsOnline: isOnlineVal,
+      otherPartyLastSeenAt: parsedLastSeen,
+      otherPartyCity: map['other_party_city'] as String?,
+      otherPartyAge: (map['other_party_age'] as num?)?.toInt(),
+      otherPartyLanguages: (map['other_party_languages'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      otherPartyIsStar: map['other_party_is_star'] as bool?,
+      amountInr: (map['amount_inr'] as num?)?.toInt(),
     );
   }
 }

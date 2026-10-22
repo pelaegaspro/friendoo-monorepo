@@ -6,6 +6,7 @@ import {
   AdminUserRow,
   AppSettingsRecord,
   CallRow,
+  CallStatus,
   CoinPackageRecord,
   HostApplicationRecord,
   HostEarningsRecord,
@@ -375,21 +376,26 @@ export async function listHostApplications(statusFilter?: string): Promise<HostA
       const { data, error } = await q
       if (error) throw error
 
-      return (data ?? []).map(row => ({
-        id: row.id,
-        name: asString(row.display_name, 'Unknown Applicant'),
-        phone: asString(row.phone),
-        age: 22,
-        city: asString(row.city, 'Mumbai'),
-        language: Array.isArray(row.languages) ? row.languages.join(', ') : 'Hindi',
-        about: asString(row.bio),
-        photoURL: '',
-        idProofUrl: null,
-        status: asString(row.status, 'pending') as HostApplicationRecord['status'],
-        notes: asString(row.review_note),
-        submittedAt: toIsoString(row.created_at),
-        reviewedAt: toIsoString(row.reviewed_at),
-      }))
+      return (data ?? []).map(row => {
+        const payload = (row.submitted_payload && typeof row.submitted_payload === 'object') ? row.submitted_payload as Record<string, unknown> : {}
+        return {
+          id: row.id,
+          name: asString(row.display_name, 'Unknown Applicant'),
+          phone: asString(row.phone),
+          age: typeof payload.age === 'number' ? payload.age : (parseInt(String(payload.age || ''), 10) || 22),
+          city: asString(row.city || payload.city, 'Not specified'),
+          language: Array.isArray(row.languages) ? row.languages.join(', ') : 'Hindi',
+          about: asString(row.bio),
+          photoURL: '',
+          idProofUrl: null,
+          status: asString(row.status, 'pending') as HostApplicationRecord['status'],
+          notes: asString(row.review_note),
+          submittedAt: toIsoString(row.created_at),
+          reviewedAt: toIsoString(row.reviewed_at),
+          payoutType: (payload.payout_type === 'bank' ? 'bank' : 'upi') as 'upi' | 'bank',
+          payoutDetails: (payload.payout_details && typeof payload.payout_details === 'object') ? payload.payout_details as Record<string, unknown> : {},
+        }
+      })
     } catch (error) {
       console.warn('listHostApplications error:', error)
       return []
@@ -503,14 +509,62 @@ export async function listUsers(): Promise<AdminUserRow[]> {
             coin_balance
           )
         `)
-        .eq('role', 'user')
         .order('created_at', { ascending: false })
         .limit(500)
 
       if (error) throw error
 
+      const userIds = (profiles ?? []).map(p => p.id)
+
+      // Fetch live presence from user_presence
+      const presenceMap = new Map<string, { state: string; last_seen_at: string | null }>()
+      if (userIds.length > 0) {
+        try {
+          const { data: presences } = await supabase
+            .from('user_presence')
+            .select('user_id, state, last_seen_at')
+            .in('user_id', userIds)
+          ;(presences ?? []).forEach((p) => {
+            if (p.user_id) {
+              presenceMap.set(p.user_id, {
+                state: String(p.state || 'offline').toLowerCase(),
+                last_seen_at: toIsoString(p.last_seen_at),
+              })
+            }
+          })
+        } catch (_) {}
+      }
+
+      // Fetch caller stats from calls table
+      const callsCountMap = new Map<string, { totalCalls: number; totalCoinsSpent: number }>()
+      if (userIds.length > 0) {
+        try {
+          const { data: callsData } = await supabase
+            .from('calls')
+            .select('caller_id, total_coins_deducted')
+            .in('caller_id', userIds)
+          ;(callsData ?? []).forEach((c) => {
+            if (c.caller_id) {
+              const current = callsCountMap.get(c.caller_id) ?? { totalCalls: 0, totalCoinsSpent: 0 }
+              current.totalCalls += 1
+              current.totalCoinsSpent += asNumber(c.total_coins_deducted, 0)
+              callsCountMap.set(c.caller_id, current)
+            }
+          })
+        } catch (_) {}
+      }
+
       return (profiles ?? []).map(p => {
         const wallet = (Array.isArray(p.wallets) ? p.wallets[0] : p.wallets) as Record<string, unknown> | null ?? {}
+        const presence = presenceMap.get(p.id)
+        const stats = callsCountMap.get(p.id) ?? { totalCalls: 0, totalCoinsSpent: 0 }
+
+        let isOnline = false
+        if (presence?.last_seen_at) {
+          const diffSec = (Date.now() - new Date(presence.last_seen_at).getTime()) / 1000
+          isOnline = presence.state === 'online' && diffSec < 90
+        }
+
         return {
           id: p.id,
           displayName: asString(p.display_name, 'Friendoo User'),
@@ -522,13 +576,19 @@ export async function listUsers(): Promise<AdminUserRow[]> {
           coinBalance: asNumber(wallet.coin_balance, 0),
           status: asBoolean(p.is_banned) ? 'banned' : 'active',
           joinedAt: toIsoString(p.created_at),
+          createdAt: toIsoString(p.created_at),
+          isOnline,
+          lastSeenAt: presence?.last_seen_at ?? null,
+          totalCalls: stats.totalCalls,
+          totalSpentCoins: stats.totalCoinsSpent,
+          role: asString(p.role, 'user'),
         }
       })
     } catch (error) {
       console.warn('listUsers error:', error)
       return []
     }
-  }, 20)
+  }, 10)
 }
 
 export async function addCoinsToUser(
@@ -781,7 +841,7 @@ export async function saveAppSettings(payload: SettingsPayload) {
   const supabase = getSupabaseAdmin()
   const actorId = getOperationalAdminActorId()
 
-  const p = payload as Record<string, unknown>
+  const p = payload as unknown as Record<string, unknown>
   const maintenanceMode = asBoolean(p.maintenanceMode, false)
   const welcomeBonusCoins = asNumber(p.welcomeBonusCoins, 50)
   const minCoinBalanceToStartCall = asNumber(p.minCoinBalanceToStartCall, 20)
@@ -884,7 +944,7 @@ export async function listWithdrawals(): Promise<WithdrawalRecord[]> {
   }, 15)
 }
 
-export async function getHost(hostId: string): Promise<HostRecord | null> {
+export async function getHost(hostId: string): Promise<AdminHost | null> {
   try {
     const supabase = getSupabaseAdmin()
     const [{ data: h, error: hError }, { data: p, error: pError }] = await Promise.all([
@@ -899,8 +959,8 @@ export async function getHost(hostId: string): Promise<HostRecord | null> {
     return {
       id: h.id,
       name: asString(p.display_name, 'Host'),
+      displayName: asString(p.display_name, 'Host'),
       phoneNumber: asString(p.phone),
-      email: null,
       city: asString(p.city, 'Mumbai'),
       languages: ['Hindi', 'English'],
       ratePerMinute: asNumber(h.rate_per_audio_minute, 20),

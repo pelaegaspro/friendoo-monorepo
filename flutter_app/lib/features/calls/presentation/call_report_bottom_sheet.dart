@@ -102,8 +102,8 @@ class CallReportBottomSheet extends ConsumerStatefulWidget {
                       ),
                       Text(
                         isHost
-                            ? 'Select the user to file a confidential safety report'
-                            : 'Select the host to report inappropriate behavior',
+                            ? 'Choose a user from your recent calls.'
+                            : 'Choose a host from your recent calls.',
                         style: const TextStyle(
                           fontSize: 12.5,
                           color: Color(0xFF6B7280),
@@ -178,7 +178,7 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
   bool _isSubmitting = false;
 
   static const _reasons = [
-    'Host Silent / Not Speaking / Time Wasting (100% User Refund & Host Strike)',
+    'Other caller was silent or did not respond',
     'Harassment or Abusive Language',
     'Asked for Money / UPI / Offline Payment',
     'Spam, Scams or Solicitation',
@@ -225,7 +225,7 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Report submitted. Trust & safety team has logged this incident.',
+                    'Report submitted for review.',
                   ),
                 ),
               ],
@@ -304,7 +304,7 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
                         ),
                       ),
                       Text(
-                        'Reports are 100% confidential and reviewed promptly',
+                        'Reports are sent to the safety team for review.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),

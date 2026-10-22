@@ -7,48 +7,47 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/banner_ad_model.dart';
 import '../../../core/supabase/backend2_supabase_provider.dart';
 
-/// Rock-solid curated 4-card fallback for Discover Promo Carousel
-/// Used if Backend 2 is offline, in cold-start, or network fails.
+/// Neutral discovery tips used when no remote promotions are available.
 const List<CloudBannerAd> defaultFourDiscoverPromoCards = [
   CloudBannerAd(
-    id: 'promo_flash_cashback',
-    title: 'Flash 60% Cashback',
-    headline: 'Flash 60% Cashback 🔥',
-    subtitle: 'Ends in 5h • Get 60% bonus coins on all recharges!',
-    badgeText: '⚡ 60% CASHBACK',
+    id: 'discover_available_hosts',
+    title: 'Find a host',
+    headline: 'Choose someone to call',
+    subtitle: 'Browse hosts who are available to take a call.',
+    badgeText: 'DISCOVER',
     gradientColors: ['#EC4899', '#8B5CF6', '#3B82F6'],
-    actionType: 'recharge',
+    actionType: 'none',
     priority: 100,
     isActive: true,
   ),
   CloudBannerAd(
-    id: 'promo_first_call_free',
-    title: 'First Call Free',
-    headline: 'New User Gift 🎁',
-    subtitle: 'Get 15 free coins instantly on first signup',
-    badgeText: 'FREE BONUS',
+    id: 'discover_languages',
+    title: 'Choose a language',
+    headline: 'Find someone who speaks your language',
+    subtitle: 'Check host profiles for spoken languages.',
+    badgeText: 'LANGUAGES',
     gradientColors: ['#10B981', '#059669', '#047857'],
-    actionType: 'recharge',
+    actionType: 'none',
     priority: 90,
     isActive: true,
   ),
   CloudBannerAd(
-    id: 'promo_host_lounge',
-    title: 'Host Spotlight',
-    headline: 'Top Rated Hosts 🌟',
-    subtitle: 'Connect with verified listeners in Hindi & English',
-    badgeText: 'POPULAR',
+    id: 'discover_call_rates',
+    title: 'Check call rates',
+    headline: 'Know the rate before you call',
+    subtitle: 'Each host profile shows the per-minute rate.',
+    badgeText: 'CALL RATES',
     gradientColors: ['#F59E0B', '#D97706', '#B45309'],
     actionType: 'none',
     priority: 80,
     isActive: true,
   ),
   CloudBannerAd(
-    id: 'promo_privacy_shield',
-    title: '100% Anonymous',
-    headline: 'Zero Phone Sharing 🛡️',
-    subtitle: 'End-to-end encrypted anonymous voice calls',
-    badgeText: 'PRIVATE & SAFE',
+    id: 'discover_call_controls',
+    title: 'Call controls',
+    headline: 'You control the call',
+    subtitle: 'End a call or report a concern from the call screen.',
+    badgeText: 'CALL SAFETY',
     gradientColors: ['#6366F1', '#4F46E5', '#4338CA'],
     actionType: 'none',
     priority: 70,
@@ -63,7 +62,7 @@ class Backend2PromoRepository {
   final SupabaseClient? _client;
 
   /// Fetches public discover promo items from Backend 2 table `public.public_feature_config`.
-  /// Performs strict payload validation and falls back to `defaultFourDiscoverPromoCards`.
+  /// Validates public promo items and falls back to neutral discovery tips.
   Future<List<CloudBannerAd>> getDiscoverPromoCards() async {
     if (_client == null) {
       return defaultFourDiscoverPromoCards;

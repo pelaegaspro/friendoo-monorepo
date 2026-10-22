@@ -323,12 +323,18 @@ class CallRepository {
 
       final list = rows as List<dynamic>;
 
-      // If user is caller, ensure host names are resolved even if nested join is null
+      // Collect missing host profile IDs and all other party IDs for live presence
       final missingHostIds = <String>{};
+      final allOtherPartyIds = <String>{};
+
       for (final r in list) {
         if (r is Map<String, dynamic>) {
           final cId = r['caller_id']?.toString();
           final hId = r['host_id']?.toString();
+          final otherId = (cId == userId) ? hId : cId;
+          if (otherId != null && otherId.isNotEmpty) {
+            allOtherPartyIds.add(otherId);
+          }
           if (cId == userId && hId != null && hId.isNotEmpty) {
             final hostData = r['host'];
             if (hostData == null ||
@@ -356,12 +362,43 @@ class CallRepository {
         } catch (_) {}
       }
 
+      final Map<String, Map<String, dynamic>> presenceMap = {};
+      if (allOtherPartyIds.isNotEmpty) {
+        try {
+          final presenceRows = await _client
+              .from('user_presence')
+              .select('user_id, state, last_seen_at')
+              .filter('user_id', 'in', allOtherPartyIds.toList());
+          for (final p in presenceRows as List<dynamic>) {
+            if (p is Map<String, dynamic>) {
+              final uid = p['user_id']?.toString();
+              if (uid != null) {
+                presenceMap[uid] = p;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
       return list.map((row) {
         final rowMap = Map<String, dynamic>.from(row as Map<String, dynamic>);
         final hId = rowMap['host_id']?.toString();
         if (hId != null && hostProfilesMap.containsKey(hId)) {
           rowMap['host_profile_fallback'] = hostProfilesMap[hId];
         }
+
+        final otherId = (rowMap['caller_id']?.toString() == userId)
+            ? rowMap['host_id']?.toString()
+            : rowMap['caller_id']?.toString();
+        if (otherId != null && presenceMap.containsKey(otherId)) {
+          final p = presenceMap[otherId]!;
+          rowMap['other_party_last_seen_at'] = p['last_seen_at'];
+          final state = p['state']?.toString().toLowerCase();
+          final lastSeen = DateTime.tryParse(p['last_seen_at']?.toString() ?? '');
+          final isRecent = lastSeen != null && DateTime.now().difference(lastSeen).inSeconds < 90;
+          rowMap['other_party_is_online'] = (state == 'online') && isRecent;
+        }
+
         return CallHistoryItem.fromMap(rowMap, currentUserId: userId);
       }).toList();
     } catch (e, st) {

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/friendoo_models.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/data/profile_repository.dart';
+import '../../profile/data/blocked_callers_service.dart';
 import '../../wallet/data/wallet_repository.dart';
 
 final hostRepositoryProvider = Provider<HostRepository>(
@@ -138,7 +139,14 @@ class HostRepository {
       }
     }
 
-    return applyStarHostQuota(hosts);
+    final activeProfile = ProfileRepository.currentActiveProfile;
+    final currentUserId = activeProfile?.id ?? _client.auth.currentUser?.id;
+    // If a host has blocked this user, she will NOT appear in the user screen even when online
+    final visibleHosts = hosts.where((h) =>
+      !BlockedCallersService.isHostBlockedForUser(hostId: h.id, userId: currentUserId)
+    ).toList();
+
+    return applyStarHostQuota(visibleHosts);
   }
 
   Future<void> updateCurrentHostLanguages(List<String> languages) async {

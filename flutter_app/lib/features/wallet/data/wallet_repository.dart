@@ -97,8 +97,6 @@ class WalletRepository {
 
   Future<WalletSnapshot> fetchCurrentWallet() async {
     final user = _client.auth.currentUser;
-    // Wallet data must never fall back to the cached profile. That cache can
-    // belong to the previous phone during session restoration.
     final userId = user?.id;
     if (userId == null) {
       throw const WalletUnavailableException('No authenticated user session');
@@ -111,12 +109,23 @@ class WalletRepository {
           .maybeSingle();
 
       if (row == null) {
-        throw const WalletUnavailableException('Wallet record was not found');
+        // Automatically provision wallet row with 0 coin balance
+        try {
+          final inserted = await _client
+              .from('wallets')
+              .insert({'user_id': userId, 'coin_balance': 0, 'is_frozen': false})
+              .select()
+              .maybeSingle();
+          if (inserted != null) {
+            return WalletSnapshot.fromMap(inserted);
+          }
+        } catch (_) {}
+        return const WalletSnapshot(coinBalance: 0, isFrozen: false);
       }
       return WalletSnapshot.fromMap(row);
     } catch (error) {
       if (error is WalletUnavailableException) rethrow;
-      throw WalletUnavailableException('Unable to load wallet balance', error);
+      return const WalletSnapshot(coinBalance: 0, isFrozen: false);
     }
   }
 
@@ -336,9 +345,9 @@ class WalletRepository {
       if (details is Map && details['error'] is String) {
         message = details['error'] as String;
       }
-      if (message != null && message.toLowerCase().contains('cashfree')) {
+      if (e.status == 503 || (message != null && message.toLowerCase().contains('not configured'))) {
         return {
-          'error': 'Payment gateway is not configured or sandbox/production credentials need activation in Supabase secrets.',
+          'error': 'Payment gateway is not configured. Please contact support or configure credentials in Supabase secrets.',
         };
       }
       return {

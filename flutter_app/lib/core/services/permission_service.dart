@@ -64,7 +64,7 @@ class AppPermissionService {
         await _showSettingsDialog(
           context,
           title: 'Microphone Permission Required',
-          message: 'Friendoo requires microphone access for anonymous audio calling with hosts. Please enable it in App Settings.',
+          message: 'Allow microphone access to make and receive voice calls. You can change this permission in Settings.',
           icon: Icons.mic_off_rounded,
         );
       }
@@ -102,7 +102,7 @@ class AppPermissionService {
         await _showSettingsDialog(
           context,
           title: 'Notifications Required',
-          message: 'Enable notifications so you never miss Flash Coin Sales, bonus offers, and incoming host calls.',
+          message: 'Enable notifications to receive call and account updates.',
           icon: Icons.notifications_off_rounded,
         );
       }
@@ -141,7 +141,7 @@ class AppPermissionService {
         await _showSettingsDialog(
           context,
           title: 'Storage & Media Permission Required',
-          message: 'Friendoo needs storage access to save profile avatars and media. Please enable it in App Settings.',
+          message: 'Allow photo access to choose a profile picture. You can change this permission in Settings.',
           icon: Icons.folder_off_rounded,
         );
       }
@@ -197,23 +197,23 @@ class AppPermissionService {
     final (title, subtitle, icon, highlight, gradientColors) = switch (type) {
       AppPermissionType.microphone => (
         'Enable Microphone Access',
-        'Required for real-time 2-way anonymous voice lounge calls with verified hosts. Your identity and phone number always remain 100% private.',
+        'Allow microphone access to speak during voice calls.',
         Icons.mic_rounded,
-        '100% Anonymous Voice Lounge Calls',
+        'Use your microphone for calls',
         [const Color(0xFF6366F1), const Color(0xFFFF2A85)],
       ),
       AppPermissionType.notifications => (
         'Enable Push Notifications',
-        'Get instant alerts for Flash Coin Sales (up to 60% OFF), incoming host call requests, and peak-hour bonus coin rewards.',
+        'Receive notifications about calls and account activity.',
         Icons.notifications_active_rounded,
-        '⚡ Flash Coin Drops & Incoming Calls',
+        'Call and account updates',
         [const Color(0xFFFF2A85), const Color(0xFFFFB703)],
       ),
       AppPermissionType.storage => (
-        'Enable Storage & Media Access',
-        'Allows saving customized 3D avatars, call history receipts, and voice attachments seamlessly.',
+        'Allow Photo Access',
+        'Choose a photo to use on your profile.',
         Icons.photo_library_rounded,
-        'Avatar Customization & Cache',
+        'Choose a profile photo',
         [const Color(0xFF00D2E0), const Color(0xFF6366F1)],
       ),
     };

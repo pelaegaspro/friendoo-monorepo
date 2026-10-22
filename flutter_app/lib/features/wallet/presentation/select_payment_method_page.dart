@@ -162,7 +162,10 @@ class _SelectPaymentMethodPageState
       _selectedApp = app;
       _selectedMethod = 'upi';
     });
-    await _startCashfreeCheckout(paymentMethod: app.displayName);
+    await _startCashfreeCheckout(
+      paymentMethod: app.displayName,
+      upiAppPackage: app.packageName,
+    );
   }
 
   Future<void> _executePayment() async {
@@ -176,10 +179,16 @@ class _SelectPaymentMethodPageState
       await _executeUpiPayment(_selectedApp!);
       return;
     }
-    await _startCashfreeCheckout(paymentMethod: _selectedMethod);
+    await _startCashfreeCheckout(
+      paymentMethod: _selectedMethod,
+      upiAppPackage: _selectedApp?.packageName,
+    );
   }
 
-  Future<void> _startCashfreeCheckout({required String paymentMethod}) async {
+  Future<void> _startCashfreeCheckout({
+    required String paymentMethod,
+    String? upiAppPackage,
+  }) async {
     setState(() => _isProcessing = true);
     try {
       final order = await ref
@@ -188,13 +197,21 @@ class _SelectPaymentMethodPageState
             package: widget.package,
             paymentMethod: paymentMethod,
           );
-      await _openCashfreeOrder(order);
+      await _openCashfreeOrder(
+        order,
+        paymentMethod: paymentMethod,
+        upiAppPackage: upiAppPackage,
+      );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  Future<void> _openCashfreeOrder(Map<String, dynamic>? order) async {
+  Future<void> _openCashfreeOrder(
+    Map<String, dynamic>? order, {
+    String? paymentMethod,
+    String? upiAppPackage,
+  }) async {
     final sessionId = order?['payment_session_id'] as String?;
     final providerOrderId = order?['provider_order_id'] as String?;
     final orderError = order?['error'] as String?;
@@ -221,6 +238,12 @@ class _SelectPaymentMethodPageState
           paymentSessionId: sessionId,
           providerOrderId: providerOrderId,
           sandbox: order?['environment'] != 'production',
+          amountInr:
+              (order?['amount_inr'] as num?)?.toInt() ??
+              widget.package.amountInr,
+          coins: (order?['coins'] as num?)?.toInt() ?? widget.package.coins,
+          paymentMethod: paymentMethod ?? _selectedMethod,
+          upiAppPackage: upiAppPackage ?? _selectedApp?.packageName,
           verifyPayment: (orderId) => ref
               .read(walletRepositoryProvider)
               .confirmCashfreePayment(providerOrderId: orderId),
@@ -236,7 +259,10 @@ class _SelectPaymentMethodPageState
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<GooglePlayPurchaseState>(googlePlayIapServiceProvider, (previous, next) {
+    ref.listen<GooglePlayPurchaseState>(googlePlayIapServiceProvider, (
+      previous,
+      next,
+    ) {
       if (next is GooglePlayPurchaseSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -569,35 +595,9 @@ class _SelectPaymentMethodPageState
                                   color: Color(0xFF0F172A),
                                 ),
                               ),
-                              const Spacer(),
-                              const Row(
-                                children: [
-                                  Icon(
-                                    Icons.bolt_rounded,
-                                    color: Color(0xFF2563EB),
-                                    size: 18,
-                                  ),
-                                  Text(
-                                    'Fastest',
-                                    style: TextStyle(
-                                      color: Color(0xFF2563EB),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Preferred by 95% Users',
-                            style: TextStyle(
-                              color: Color(0xFF10B981),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
                           const SizedBox(height: 18),
 
                           // Dynamic Installed UPI Apps row with inline expansion (0 system popups)
@@ -733,17 +733,17 @@ class _SelectPaymentMethodPageState
                       children: [
                         _TrustBadge(
                           icon: Icons.person_pin_rounded,
-                          label: 'Verified Experts',
+                          label: 'Host profiles',
                         ),
                         _TrustDivider(),
                         _TrustBadge(
                           icon: Icons.shield_rounded,
-                          label: '100% Safe',
+                          label: 'Secure checkout',
                         ),
                         _TrustDivider(),
                         _TrustBadge(
                           icon: Icons.account_balance_rounded,
-                          label: 'Bank Approved',
+                          label: 'UPI & cards',
                         ),
                       ],
                     ),

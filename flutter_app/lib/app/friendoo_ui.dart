@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/models/friendoo_models.dart';
@@ -13,6 +14,8 @@ import '../features/discover/data/host_repository.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
+import '../features/profile/presentation/host_application_page.dart';
+import '../features/profile/data/blocked_callers_service.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
@@ -230,12 +233,10 @@ Future<void> showFriendooPrivacySheet(BuildContext context) async {
                 color: FriendooUiColors.blue,
               ),
               title: Text(
-                '100% Anonymous by design',
+                'Your phone number stays private',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: Text(
-                'Your real phone number and identity remain completely hidden.',
-              ),
+              subtitle: Text('Other callers do not see your phone number.'),
             ),
             const ListTile(
               contentPadding: EdgeInsets.zero,
@@ -262,7 +263,7 @@ Future<void> showFriendooPrivacySheet(BuildContext context) async {
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
-                'End, report, or instant-block any conversation at any moment.',
+                'End a call or report a concern from the call screen.',
               ),
             ),
             const SizedBox(height: 12),
@@ -315,7 +316,7 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Help & 24/7 Support',
+                  'Help & Support',
                   style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w900),
                 ),
@@ -684,11 +685,42 @@ class FriendooDashboardView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final walletAsync = ref.watch(walletStreamProvider);
-    final femaleHosts = hosts.where((host) => host.isFemale).toList();
+    final currentProfile =
+        ref.watch(currentUserProfileStreamProvider).asData?.value ??
+        ProfileRepository.currentActiveProfile;
+    final userLangs = (currentProfile?.preferredLanguages.isNotEmpty == true)
+        ? currentProfile!.preferredLanguages
+              .map((l) => l.trim().toLowerCase())
+              .toSet()
+        : {'tamil', 'hindi', 'english'};
+
+    final currentUserId =
+        currentProfile?.id ?? Supabase.instance.client.auth.currentUser?.id;
+    final femaleHosts = hosts.where((host) {
+      if (!host.isFemale) return false;
+      // If a host has blocked this user, she will NOT appear in the user screen even when online
+      if (BlockedCallersService.isHostBlockedForUser(
+        hostId: host.id,
+        userId: currentUserId,
+      )) {
+        return false;
+      }
+      return true;
+    }).toList();
     final visibleHosts = [...femaleHosts]
       ..sort((a, b) {
         if (a.isAvailable != b.isAvailable) {
           return a.isAvailable ? -1 : 1;
+        }
+        // Prioritize hosts matching the user's spoken languages
+        final aMatches = a.languages.any(
+          (l) => userLangs.contains(l.trim().toLowerCase()),
+        );
+        final bMatches = b.languages.any(
+          (l) => userLangs.contains(l.trim().toLowerCase()),
+        );
+        if (aMatches != bMatches) {
+          return aMatches ? -1 : 1;
         }
         if (a.isStar != b.isStar) {
           return a.isStar ? -1 : 1;
@@ -874,6 +906,9 @@ class FriendooDashboardView extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 14),
               child: _DesiHostCard(
                 host: host,
+                isRecommended: host.languages.any(
+                  (l) => userLangs.contains(l.trim().toLowerCase()),
+                ),
                 onStartCall: () => onStartCall(host),
               ),
             ),
@@ -892,10 +927,12 @@ class _DesiHostCard extends StatelessWidget {
     super.key,
     required this.host,
     required this.onStartCall,
+    this.isRecommended = false,
   });
 
   final HostProfile host;
   final VoidCallback onStartCall;
+  final bool isRecommended;
 
   String _formatCalls(int totalCalls) {
     if (totalCalls >= 1000) {
@@ -1013,6 +1050,31 @@ class _DesiHostCard extends StatelessWidget {
                                 '⭐ STAR',
                                 style: TextStyle(
                                   color: Colors.white,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (isRecommended) ...[
+                          const SizedBox(width: 5),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEDE9FE),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '🎯 MATCH',
+                                style: TextStyle(
+                                  color: Color(0xFF7C3AED),
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.2,
@@ -1697,8 +1759,8 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
           const SizedBox(height: 24),
           _EmptySurface(
             icon: Icons.phone_missed_rounded,
-            title: 'Call history is taking a breath',
-            message: 'Pull down to refresh and see your recent calls.',
+            title: 'Could not load call history',
+            message: 'Pull down to try again.',
             actionLabel: 'Discover Hosts',
             onAction: widget.onExplore,
           ),
@@ -1874,11 +1936,15 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
             if (filteredCalls.isEmpty)
               _EmptySurface(
                 icon: Icons.forum_outlined,
-                title: allCalls.isEmpty ? 'No calls yet' : 'No calls match this filter',
+                title: allCalls.isEmpty
+                    ? 'No calls yet'
+                    : 'No calls match this filter',
                 message: allCalls.isEmpty
                     ? 'Explore available hosts in the Discover tab to connect with someone.'
                     : 'Try resetting your filter to see all your past calls.',
-                actionLabel: allCalls.isEmpty ? 'Discover Hosts' : 'Reset Filters',
+                actionLabel: allCalls.isEmpty
+                    ? 'Discover Hosts'
+                    : 'Reset Filters',
                 onAction: allCalls.isEmpty ? widget.onExplore : _clearFilters,
               )
             else
@@ -2216,7 +2282,7 @@ class _UserCallCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            isOnline ? 'ONLINE' : 'OFFLINE',
+                            call.formattedHostLastOnline.toUpperCase(),
                             style: TextStyle(
                               color: isOnline
                                   ? const Color(0xFF047857)
@@ -2694,11 +2760,6 @@ class FriendooProfileView extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
         const Text('Account & Settings', style: _FriendooTitle()),
-        const SizedBox(height: 4),
-        const Text(
-          'Manage your identity, safety preferences, and call controls.',
-          style: _FriendooMuted(),
-        ),
         const SizedBox(height: 20),
 
         // 1. Male User Profile Hero Card
@@ -2859,59 +2920,11 @@ class FriendooProfileView extends ConsumerWidget {
 
         // Dedicated Page Navigation Rows (Entire Card is Clickable)
         _ProfileNavigationRow(
-          icon: Icons.phone_in_talk_outlined,
-          iconBg: const Color(0xFFEDE9FE),
-          iconColor: const Color(0xFF7C3AED),
-          title: 'Call Preferences',
-          subtitle: 'Audio quality, balance alerts & auto-filters',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const UserCallPreferencesPage(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-
-        _ProfileNavigationRow(
-          icon: Icons.security_rounded,
-          iconBg: const Color(0xFFECFDF5),
-          iconColor: const Color(0xFF059669),
-          title: 'Privacy & Safety',
-          subtitle: 'Incognito mode, encryption & visibility controls',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const UserPrivacySafetyPage(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-
-        _ProfileNavigationRow(
-          icon: Icons.block_flipped,
-          iconBg: const Color(0xFFFEF2F2),
-          iconColor: const Color(0xFFDC2626),
-          title: 'Blocked Users',
-          subtitle: 'Manage and unblock previously blocked accounts',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const UserBlockedUsersPage(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-
-        _ProfileNavigationRow(
           icon: Icons.notifications_none_rounded,
           iconBg: const Color(0xFFFEF3C7),
           iconColor: const Color(0xFFD97706),
           title: 'Notification Settings',
-          subtitle: 'Incoming calls, coin alerts & sound toggles',
+          subtitle: 'Calls, wallet & sound',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -2927,7 +2940,7 @@ class FriendooProfileView extends ConsumerWidget {
           iconBg: const Color(0xFFE0F2FE),
           iconColor: const Color(0xFF0284C7),
           title: 'Help & Support',
-          subtitle: '24/7 caller assistance, FAQs & safety guidelines',
+          subtitle: 'FAQs & safety',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -2943,7 +2956,7 @@ class FriendooProfileView extends ConsumerWidget {
           iconBg: const Color(0xFFF3F4F6),
           iconColor: FriendooUiColors.ink,
           title: 'About Friendoo',
-          subtitle: 'App version, terms, privacy & licenses',
+          subtitle: 'Terms, privacy & guidelines',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -2959,7 +2972,7 @@ class FriendooProfileView extends ConsumerWidget {
           iconBg: const Color(0xFFFDF2F8),
           iconColor: const Color(0xFFDB2777),
           title: 'Languages',
-          subtitle: 'Select languages you speak & understand',
+          subtitle: 'Your spoken languages',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -2971,11 +2984,27 @@ class FriendooProfileView extends ConsumerWidget {
         const SizedBox(height: 10),
 
         _ProfileNavigationRow(
+          icon: Icons.language_rounded,
+          iconBg: const Color(0xFFEDE9FE),
+          iconColor: const Color(0xFF7C3AED),
+          title: 'App language',
+          subtitle: 'Choose the language used in the app',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AppLanguageSettingsPage(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+
+        _ProfileNavigationRow(
           icon: Icons.person_outline_rounded,
           iconBg: const Color(0xFFF5F3FF),
           iconColor: const Color(0xFF6366F1),
           title: 'Edit Profile',
-          subtitle: 'Update your name, age, bio & avatar',
+          subtitle: 'Name, age, bio & avatar',
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -3901,8 +3930,8 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final pkg = displayPackages[index];
-              final isMostPopular = index == 1 || (pkg.coins == 900);
-              final isBestSeller = index == 0 || (pkg.coins == 500);
+              final isFeatured = index == 1 || (pkg.coins == 900);
+              final isStarter = index == 0;
 
               String badgeLabel;
               Color badgeBg;
@@ -3912,16 +3941,16 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
               Color illustrationBg;
               bool showStar;
 
-              if (isBestSeller) {
-                badgeLabel = '🔥 Best Seller';
+              if (isStarter) {
+                badgeLabel = 'Starter';
                 badgeBg = const Color(0xFFFEE2E2);
                 badgeText = const Color(0xFFDC2626);
                 ribbonLabel = 'Pro';
                 ribbonColor = const Color(0xFF6366F1);
                 illustrationBg = const Color(0xFFFFF1F2);
                 showStar = true;
-              } else if (isMostPopular) {
-                badgeLabel = '👑 Most Popular';
+              } else if (isFeatured) {
+                badgeLabel = 'Featured';
                 badgeBg = const Color(0xFFFEF3C7);
                 badgeText = const Color(0xFFD97706);
                 ribbonLabel = 'Max';
@@ -3929,7 +3958,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
                 illustrationBg = const Color(0xFFFEF3C7);
                 showStar = false;
               } else {
-                badgeLabel = 'Value';
+                badgeLabel = 'Coin pack';
                 badgeBg = const Color(0xFFD1FAE5);
                 badgeText = const Color(0xFF059669);
                 ribbonLabel = 'Pro';
@@ -3947,7 +3976,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
                 ribbonColor: ribbonColor,
                 illustrationBg: illustrationBg,
                 showStar: showStar,
-                isHighlighted: isMostPopular,
+                isHighlighted: isFeatured,
                 onTap: () => onSelectPackage(pkg),
               );
             },
@@ -4936,7 +4965,7 @@ void _showTransactionCustomerCareSheet(
                         ),
                         SizedBox(height: 2),
                         Text(
-                          '24x7 Instant Support & Dispute Redressal',
+                          'Help with payments and disputes',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -4982,32 +5011,13 @@ void _showTransactionCustomerCareSheet(
               ),
               const SizedBox(height: 16),
 
-              // Option 1: WhatsApp Support
-              _SupportOptionTile(
-                icon: Icons.chat_rounded,
-                iconColor: const Color(0xFF10B981),
-                bgColor: const Color(0xFFECFDF5),
-                title: 'WhatsApp Customer Support',
-                subtitle: 'Chat live with Friendoo support agent (Fastest)',
-                onTap: () async {
-                  final msg = Uri.encodeComponent(
-                    'Hi Friendoo Support, I need help with transaction: ${transaction.transactionCode} (Amount: ₹${transaction.displayAmountInr}, Status: ${transaction.statusLabel})',
-                  );
-                  final uri = Uri.parse('https://wa.me/919999999999?text=$msg');
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-              ),
-              const SizedBox(height: 10),
-
-              // Option 2: Email Support Desk
+              // Email Support
               _SupportOptionTile(
                 icon: Icons.mail_outline_rounded,
                 iconColor: const Color(0xFF2563EB),
                 bgColor: const Color(0xFFEFF6FF),
-                title: 'Email Support Desk (support@friendoo.in)',
-                subtitle: 'Send detailed query with transaction logs',
+                title: 'Email support',
+                subtitle: 'Send your transaction details',
                 onTap: () async {
                   final subject = Uri.encodeComponent(
                     'Transaction Inquiry: ${transaction.transactionCode}',
@@ -5021,24 +5031,6 @@ void _showTransactionCustomerCareSheet(
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
                   }
-                },
-              ),
-              const SizedBox(height: 10),
-
-              // Option 3: Formal Grievance Officer
-              _SupportOptionTile(
-                icon: Icons.gavel_rounded,
-                iconColor: const Color(0xFF7C3AED),
-                bgColor: const Color(0xFFF5F3FF),
-                title: 'File Statutory Grievance Ticket',
-                subtitle: 'DPDP Act 2023 & IT Rules official resolution desk',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const GrievanceRedressalPage(),
-                    ),
-                  );
                 },
               ),
             ],
@@ -6229,7 +6221,7 @@ void _showWalletSupportSheet(BuildContext context) {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          '24x7 Instant Support & Dispute Resolution',
+                          'Help with wallet and recharge issues',
                           style: TextStyle(
                             color: Color(0xFF6B7280),
                             fontSize: 12.5,
@@ -6247,21 +6239,11 @@ void _showWalletSupportSheet(BuildContext context) {
               _SupportQueryCard(
                 icon: Icons.currency_rupee_rounded,
                 color: const Color(0xFFDC2626),
-                title: 'Money debited but Coins not credited?',
+                title: 'Money debited but coins not credited?',
                 subtitle: 'UPI/Bank payment was successful, but wallet balance not updated.',
-                solution: 'Bank servers sometimes take 2 to 10 minutes to notify the payment gateway. If your coins do not appear within 10 minutes, tap below to check reconciliation or submit your 12-digit UPI Reference / UTR number for immediate credit.',
-                actionText: 'Submit UTR / Ref Number',
-                onAction: () {
-                  Navigator.of(sheetContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF10B981),
-                      content: Text(
-                        'Checking bank reconciliation status with payment gateway...',
-                      ),
-                    ),
-                  );
-                },
+                solution: 'If your payment was successful but coins have not arrived, check the transaction status in your wallet. Keep your UPI reference number if you contact support.',
+                actionText: 'Close',
+                onAction: () => Navigator.of(sheetContext).pop(),
               ),
               const SizedBox(height: 12),
 
@@ -6269,10 +6251,10 @@ void _showWalletSupportSheet(BuildContext context) {
               _SupportQueryCard(
                 icon: Icons.cancel_outlined,
                 color: const Color(0xFFD97706),
-                title: 'Recharge Failed or Cancelled?',
+                title: 'Recharge failed or cancelled?',
                 subtitle: 'UPI app timed out or bank rejected transaction.',
-                solution: 'If money was not deducted from your account, you can safely retry using Google Pay, PhonePe, Paytm, or debit/credit card. Any deducted amount for a failed attempt is auto-refunded by your bank in 24-48 hours.',
-                actionText: 'Retry Recharge Now',
+                solution: 'If a failed payment was deducted, contact your bank or payment provider for an update on the refund.',
+                actionText: 'Close',
                 onAction: () {
                   Navigator.of(sheetContext).pop();
                 },
@@ -6283,21 +6265,11 @@ void _showWalletSupportSheet(BuildContext context) {
               _SupportQueryCard(
                 icon: Icons.phone_missed_rounded,
                 color: FriendooUiColors.blue,
-                title: 'Call Disconnected early or Host dropped?',
+                title: 'Call disconnected early or host dropped?',
                 subtitle: 'Audio dropped within initial seconds of connection.',
-                solution: 'Friendoo automatically detects network drops under 15 seconds and refunds talk time coins back to your vault. If you experienced poor audio quality, you can submit a quick dispute.',
-                actionText: 'Dispute Call Deduction',
-                onAction: () {
-                  Navigator.of(sheetContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF374151),
-                      content: Text(
-                        'Call logs reviewed. No improper deduction detected.',
-                      ),
-                    ),
-                  );
-                },
+                solution: 'Check your call summary for the billed amount. If you think it is incorrect, contact support with the call details.',
+                actionText: 'Close',
+                onAction: () => Navigator.of(sheetContext).pop(),
               ),
               const SizedBox(height: 12),
 
@@ -6305,19 +6277,11 @@ void _showWalletSupportSheet(BuildContext context) {
               _SupportQueryCard(
                 icon: Icons.headset_mic_rounded,
                 color: const Color(0xFF10B981),
-                title: 'Chat with Friendoo Support Team',
-                subtitle: 'Average reply time: under 5 minutes',
-                solution: 'Our dedicated support executives are available 24x7 to assist with payment queries, host reports, account inquiries, and billing questions.',
-                actionText: 'Contact 24x7 Support Desk',
-                onAction: () {
-                  Navigator.of(sheetContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      backgroundColor: Color(0xFF6366F1),
-                      content: Text('Connecting to Friendoo Support Desk...'),
-                    ),
-                  );
-                },
+                title: 'Contact Friendoo Support',
+                subtitle: 'For help with payments, calls or your account',
+                solution: 'Email support@friendoo.in with your transaction or call details.',
+                actionText: 'Close',
+                onAction: () => Navigator.of(sheetContext).pop(),
               ),
               const SizedBox(height: 20),
 
@@ -6522,15 +6486,15 @@ void _showWalletInfoSheet(BuildContext context) {
             _infoBullet(
               icon: Icons.toll_rounded,
               color: FriendooUiColors.blue,
-              title: '5 Coins = 1 Minute Talk Time',
-              description: 'Calls are billed per minute with no hidden fees or setup charges.',
+              title: '5 Coins per minute',
+              description: 'The call rate is shown before you connect.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
               icon: Icons.flash_on_rounded,
               color: const Color(0xFF10B981),
-              title: 'Instant Recharge via UPI & Cards',
-              description: 'Coins are added to your vault immediately after payment confirmation.',
+              title: 'Recharge with UPI or card',
+              description: 'Coins are added after your payment is confirmed.',
             ),
             const SizedBox(height: 12),
             _infoBullet(
@@ -6817,10 +6781,7 @@ void _showAllUserTransactionsSheet(
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Complete ledger of all coin recharges and call spending',
-                style: _FriendooMuted(),
-              ),
+              const Text('Recharges and call charges', style: _FriendooMuted()),
               const SizedBox(height: 16),
               ...transactions.map(
                 (tx) => Padding(
@@ -7084,7 +7045,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '★ ${host.rating.toStringAsFixed(1)} (2.4k+ calls)',
+                          '★ ${host.rating.toStringAsFixed(1)} (${host.totalCalls >= 1000 ? '${(host.totalCalls / 1000).toStringAsFixed(1)}k' : '${host.totalCalls}'} calls)',
                           style: const TextStyle(
                             color: Color(0xFFD97706),
                             fontSize: 12,
@@ -7131,8 +7092,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
 
           const SizedBox(height: 12),
           Text(
-            host.bio ??
-                'Verified female companion ready for friendly voice chats.',
+            host.bio ?? 'Ready for a friendly chat.',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -8437,7 +8397,7 @@ class _TrustCard extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              '100% Anonymous Voice · Encrypted WebRTC · Verified Hosts',
+              'Your phone number stays private · Host profiles are reviewed',
               style: TextStyle(
                 color: Color(0xFF0C4A6E),
                 fontSize: 12,
@@ -8521,7 +8481,7 @@ class _SecurityFooter extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'Secure 256-bit SSL checkout powered by Cashfree',
+              'Checkout is handled by your selected payment provider',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: FriendooUiColors.muted,
                 fontWeight: FontWeight.w700,

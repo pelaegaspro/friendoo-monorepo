@@ -41,6 +41,15 @@ class AgoraAudioService implements RtcAudioService {
   Stream<bool> get remoteMuteStream => _remoteMuteController.stream;
 
   @override
+  Stream<double> get audioLevelStream => const Stream.empty();
+
+  @override
+  Stream<int> get rttMsStream => const Stream.empty();
+
+  @override
+  Future<void> restartIce() async {}
+
+  @override
   void setTokenRenewalHandler(
     Future<String?> Function() onTokenRenewalRequested,
   ) {

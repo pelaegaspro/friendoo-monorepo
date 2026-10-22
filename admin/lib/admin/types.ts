@@ -13,6 +13,7 @@ export interface AdminStats {
 
 export interface AdminHost {
   id: string
+  name?: string
   displayName: string
   phoneNumber: string
   city: string
@@ -45,6 +46,8 @@ export interface HostApplicationRecord {
   notes: string
   submittedAt: string | null
   reviewedAt: string | null
+  payoutType?: 'upi' | 'bank'
+  payoutDetails?: Record<string, unknown>
 }
 
 export interface AdminUserRow {
@@ -59,6 +62,11 @@ export interface AdminUserRow {
   status: 'active' | 'banned'
   joinedAt: string | null
   createdAt: string | null
+  isOnline?: boolean
+  lastSeenAt?: string | null
+  totalCalls?: number
+  totalSpentCoins?: number
+  role?: string
 }
 
 export interface CoinPackageRecord {

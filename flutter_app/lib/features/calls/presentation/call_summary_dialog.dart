@@ -232,7 +232,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Thanks for the great conversation!',
+                  'Call ended',
                   style: TextStyle(
                     color: Color(0xFF9CA3AF),
                     fontSize: 13,

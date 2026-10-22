@@ -49,3 +49,7 @@ e2e/*_report.json
 e2e/*report.json
 *.wireless_adb_history.txt
 .wireless_adb_history.txt
+
+# External / Local Tooling
+rea/
+artifacts/

@@ -35,7 +35,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
     {
       'id': 'Cashfree',
       'title': 'Cashfree Secure Checkout',
-      'subtitle': 'Instant UPI, Cards, Net Banking & Wallets',
+      'subtitle': 'UPI, cards, net banking & wallets',
       'icon': Icons.lock_rounded,
       'badge': 'RECOMMENDED',
     },
@@ -93,6 +93,11 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
             paymentSessionId: sessionId,
             providerOrderId: providerOrderId,
             sandbox: order?['environment'] != 'production',
+            amountInr:
+                (order?['amount_inr'] as num?)?.toInt() ??
+                widget.package.amountInr,
+            coins: (order?['coins'] as num?)?.toInt() ?? widget.package.coins,
+            paymentMethod: _selectedMethod,
             verifyPayment: (orderId) => ref
                 .read(walletRepositoryProvider)
                 .confirmCashfreePayment(providerOrderId: orderId),
@@ -114,8 +119,9 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
     final colors = theme.colorScheme;
     final isFirstTimeBuyer =
         ref.watch(isFirstTimeBuyerProvider).asData?.value ?? false;
-    final feeBreakdown =
-        ref.watch(platformFeeBreakdownProvider(widget.package.amountInr));
+    final feeBreakdown = ref.watch(
+      platformFeeBreakdownProvider(widget.package.amountInr),
+    );
     final payableAmount = feeBreakdown.totalPayable;
 
     final firstTimeBonusCoins = isFirstTimeBuyer
@@ -181,7 +187,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                         ),
                       ),
                       Text(
-                        'Instant recharge for audio voice lounge',
+                        'Add coins to your wallet for calls',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -481,7 +487,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '100% Secure 256-Bit Encrypted Payments',
+                    'Checkout handled by your selected payment provider',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.green[800],

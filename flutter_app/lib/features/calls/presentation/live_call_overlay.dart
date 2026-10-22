@@ -188,14 +188,14 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                     ),
                   ),
                   title: const Text(
-                    'Safe & Anonymous Calling',
+                    'Private voice call',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   subtitle: const Text(
-                    'Your real phone number and identity remain 100% private.',
+                    'Your phone number is not shown to the other caller.',
                     style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                   ),
                 ),
@@ -336,6 +336,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     });
 
     final rtcState = ref.watch(rtcConnectionStateProvider).asData?.value;
+    final rtcLatency = ref.watch(rtcLatencyProvider).asData?.value;
+    final rtcAudioLevel = ref.watch(rtcAudioLevelProvider).asData?.value ?? 0.0;
     final bool isRtcConnected = rtcState == RtcConnectionState.connected;
     final bool isRtcReconnecting =
         isCallActive && rtcState == RtcConnectionState.reconnecting;
@@ -365,11 +367,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     } else if (isRtcConnecting) {
       speakingStatusText = 'Connecting voice channel...';
     } else if (isCallActive) {
-      if (isHost) {
-        speakingStatusText = 'You are speaking...';
-      } else {
-        speakingStatusText = '$displayName is speaking...';
-      }
+      speakingStatusText = isHost
+          ? 'Microphone live (HD Voice)'
+          : '$displayName is speaking...';
     } else if (liveCall.status == CallStatus.ringing) {
       speakingStatusText = isHost
           ? 'Ringing on device...'
@@ -392,522 +392,626 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: Column(
-              children: [
-                // 1. TOP HEADER: Friendoo Logo + Chevron/Menu
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const FriendooCallLogo(),
-                    InkWell(
-                      onTap: () => _showCallMenu(context),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double maxHeight = constraints.maxHeight;
+              final bool isCompact = maxHeight < 700;
+              final bool isVeryCompact = maxHeight < 620;
+
+              final double avatarSize = isVeryCompact
+                  ? 108.0
+                  : (isCompact ? 128.0 : 154.0);
+              final double endBtnSize = isCompact ? 68.0 : 78.0;
+              final double sideBtnSize = isCompact ? 56.0 : 64.0;
+              final double sideIconSize = isCompact ? 22.0 : 26.0;
+              final double endIconSize = isCompact ? 30.0 : 36.0;
+
+              return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCompact ? 18.0 : 24.0,
+                        vertical: isCompact ? 8.0 : 12.0,
                       ),
-                    ),
-                  ],
-                ),
-
-                const Spacer(flex: 3),
-
-                // 2. CENTER PROMINENT AVATAR WITH ROLE-AWARE GLOWING RING & MUTE BADGE
-                Stack(
-                  alignment: Alignment.bottomCenter,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 154,
-                      height: 154,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isHost
-                              ? const Color(0xFF818CF8).withValues(alpha: 0.85)
-                              : const Color(0xFFFF2A85).withValues(alpha: 0.85),
-                          width: 3.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isHost
-                                ? const Color(0xFF818CF8)
-                                      .withValues(alpha: 0.40)
-                                : const Color(0xFFFF2A85)
-                                      .withValues(alpha: 0.42),
-                            blurRadius: 32,
-                            spreadRadius: 4,
-                          ),
-                          BoxShadow(
-                            color: isHost
-                                ? const Color(0xFF6366F1)
-                                      .withValues(alpha: 0.22)
-                                : const Color(0xFFE11D48)
-                                      .withValues(alpha: 0.25),
-                            blurRadius: 54,
-                            spreadRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child:
-                            _remoteAvatarUrl != null &&
-                                _remoteAvatarUrl!.trim().startsWith('http')
-                            ? Image.network(
-                                _remoteAvatarUrl!,
-                                width: 154,
-                                height: 154,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => FriendooAvatar(
-                                  size: 154,
-                                  seed: targetSeedId,
-                                  gender: isHost
-                                      ? DesiGender.male
-                                      : DesiGender.female,
-                                  role: isHost ? 'user' : 'host',
-                                ),
-                              )
-                            : FriendooAvatar(
-                                size: 154,
-                                seed: targetSeedId,
-                                gender: isHost
-                                    ? DesiGender.male
-                                    : DesiGender.female,
-                                role: isHost ? 'user' : 'host',
-                              ),
-                      ),
-                    ),
-                    if (isRemoteMuted)
-                      Positioned(
-                        bottom: -10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFEF4444)
-                                    .withValues(alpha: 0.5),
-                                blurRadius: 10,
-                                spreadRadius: 1,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.mic_off_rounded,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                '${isHost ? 'User' : 'Host'} Muted',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: 22),
-
-                // 3. IDENTITY: NAME + VERIFIED BADGE (IF HOST)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    if (!isHost) ...[
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.verified_rounded,
-                        color: Color(0xFFFF2A85),
-                        size: 18,
-                      ),
-                    ],
-                  ],
-                ),
-
-                const SizedBox(height: 4),
-
-                // 4. ROLE LABEL: "Host" or "User"
-                Text(
-                  roleLabel,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                // 5. LIVE CALL DURATION: "00:12"
-                Text(
-                  timeOrStatusString,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-
-                const Spacer(flex: 2),
-
-                // 6. ANIMATED AUDIO WAVEFORM
-                AnimatedAudioWaveform(
-                  isActive: isCallActive && isRtcConnected && !isRemoteMuted,
-                  barCount: 34,
-                  primaryColor: const Color(0xFFFF2A85),
-                  secondaryColor: const Color(0xFFC084FC),
-                ),
-
-                const SizedBox(height: 18),
-
-                // 7. SPEAKING STATUS PILL CAPSULE
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isRemoteMuted
-                        ? const Color(0xFFEF4444).withValues(alpha: 0.18)
-                        : const Color(0xFF1B1E2E).withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isRemoteMuted
-                          ? const Color(0xFFEF4444).withValues(alpha: 0.6)
-                          : Colors.white.withValues(alpha: 0.08),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isRemoteMuted
-                            ? Icons.mic_off_rounded
-                            : Icons.graphic_eq_rounded,
-                        color: isRemoteMuted
-                            ? const Color(0xFFEF4444)
-                            : const Color(0xFFFF2A85),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        speakingStatusText,
-                        style: TextStyle(
-                          color: isRemoteMuted
-                              ? const Color(0xFFFCA5A5)
-                              : Colors.white,
-                          fontSize: 13,
-                          fontWeight: isRemoteMuted
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 8. CONTEXTUAL RECHARGE OR GRACE PERIOD PILL (Only when relevant)
-                if (!isHost && isLowBalance) ...[
-                  const SizedBox(height: 14),
-                  InkWell(
-                    onTap: () =>
-                        CoinPackagesPage.push(context, isCallRecharge: true),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.redAccent.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Column(
                         children: [
+                          // 1. TOP HEADER: Friendoo Logo + Chevron/Menu
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const FriendooCallLogo(),
+                              InkWell(
+                                onTap: () => _showCallMenu(context),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Spacer(flex: isCompact ? 1 : 3),
+
+                          // 2. CENTER PROMINENT AVATAR WITH ROLE-AWARE GLOWING RING & MUTE BADGE
+                          Stack(
+                            alignment: Alignment.bottomCenter,
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                width: avatarSize,
+                                height: avatarSize,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isHost
+                                        ? const Color(0xFF818CF8)
+                                              .withValues(alpha: 0.85)
+                                        : const Color(0xFFFF2A85)
+                                              .withValues(alpha: 0.85),
+                                    width: 3.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isHost
+                                          ? const Color(0xFF818CF8)
+                                                .withValues(alpha: 0.40)
+                                          : const Color(0xFFFF2A85)
+                                                .withValues(alpha: 0.42),
+                                      blurRadius: 32,
+                                      spreadRadius: 4,
+                                    ),
+                                    BoxShadow(
+                                      color: isHost
+                                          ? const Color(0xFF6366F1)
+                                                .withValues(alpha: 0.22)
+                                          : const Color(0xFFE11D48)
+                                                .withValues(alpha: 0.25),
+                                      blurRadius: 54,
+                                      spreadRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child:
+                                      _remoteAvatarUrl != null &&
+                                          _remoteAvatarUrl!.trim().startsWith(
+                                            'http',
+                                          )
+                                      ? Image.network(
+                                          _remoteAvatarUrl!,
+                                          width: avatarSize,
+                                          height: avatarSize,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              FriendooAvatar(
+                                                size: avatarSize,
+                                                seed: targetSeedId,
+                                                gender: isHost
+                                                    ? DesiGender.male
+                                                    : DesiGender.female,
+                                                role: isHost ? 'user' : 'host',
+                                              ),
+                                        )
+                                      : FriendooAvatar(
+                                          size: avatarSize,
+                                          seed: targetSeedId,
+                                          gender: isHost
+                                              ? DesiGender.male
+                                              : DesiGender.female,
+                                          role: isHost ? 'user' : 'host',
+                                        ),
+                                ),
+                              ),
+                              if (isRemoteMuted)
+                                Positioned(
+                                  bottom: -10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEF4444),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFEF4444)
+                                              .withValues(alpha: 0.5),
+                                          blurRadius: 10,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.mic_off_rounded,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          '${isHost ? 'User' : 'Host'} Muted',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                          SizedBox(height: isCompact ? 14 : 22),
+
+                          // 3. IDENTITY: NAME + VERIFIED BADGE (IF HOST)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                displayName,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isCompact ? 20 : 24,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              if (!isHost) ...[
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  color: Color(0xFFFF2A85),
+                                  size: 18,
+                                ),
+                              ],
+                            ],
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // 4. ROLE LABEL: "Host" or "User"
                           Text(
-                            '⚠️ Low balance · ',
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                            roleLabel,
+                            style: const TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+
+                          const SizedBox(height: 6),
+
+                          // 5. LIVE CALL DURATION: "00:12"
                           Text(
-                            'Recharge Now ➔',
+                            timeOrStatusString,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
+                              fontSize: isCompact ? 16 : 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ] else if (!isHost && isGracePeriod) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.green.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    child: Text(
-                      '5s Grace Period (${5 - _secondsElapsed}s left) · Free',
-                      style: const TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ] else if (isHost) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: const Text(
-                      'Host Session · Verified Calling Active',
-                      style: TextStyle(
-                        color: Color(0xFF10B981),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      remainingCoins == null
-                          ? '$rate coins/min'
-                          : '$remainingCoins Coins · $rate coins/min',
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
 
-                const Spacer(flex: 3),
-
-                // 9. BOTTOM CONTROLS: MUTE, END CALL (LARGE RED), SPEAKER
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // MUTE BUTTON
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          onTap: () => ref
-                              .read(activeCallProvider.notifier)
-                              .toggleMute(),
-                          borderRadius: BorderRadius.circular(32),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isMuted
-                                  ? Colors.redAccent.withValues(alpha: 0.35)
-                                  : Colors.white.withValues(alpha: 0.10),
-                              border: Border.all(
-                                color: isMuted
-                                    ? Colors.redAccent
-                                    : Colors.white.withValues(alpha: 0.15),
-                                width: 1.2,
+                          if (isCallActive && isRtcConnected) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981)
+                                      .withValues(alpha: 0.25),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    (rtcLatency != null && rtcLatency > 0)
+                                        ? 'HD WebRTC • ${rtcLatency}ms'
+                                        : 'HD WebRTC Audio',
+                                    style: const TextStyle(
+                                      color: Color(0xFF34D399),
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Icon(
-                              isMuted
-                                  ? Icons.mic_off_rounded
-                                  : Icons.mic_rounded,
-                              color: Colors.white,
-                              size: 26,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isMuted ? 'Muted' : 'Mute',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                          ],
 
-                    // END CALL BUTTON (LARGE RED CIRCLE WITH GLOW)
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          onTap: () => ref
-                              .read(activeCallProvider.notifier)
-                              .endActiveCall(reason: 'user_hangup'),
-                          borderRadius: BorderRadius.circular(39),
-                          child: Container(
-                            width: 78,
-                            height: 78,
+                          Spacer(flex: isCompact ? 1 : 2),
+
+                          // 6. ANIMATED AUDIO WAVEFORM
+                          AnimatedAudioWaveform(
+                            isActive:
+                                isCallActive &&
+                                isRtcConnected &&
+                                !isRemoteMuted,
+                            barCount: isCompact ? 26 : 34,
+                            primaryColor: const Color(0xFFFF2A85),
+                            secondaryColor: const Color(0xFFC084FC),
+                          ),
+
+                          SizedBox(height: isCompact ? 12 : 18),
+
+                          // 7. SPEAKING STATUS PILL CAPSULE
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isCompact ? 14 : 18,
+                              vertical: isCompact ? 6 : 8,
+                            ),
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFFFF2D55),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF2D55)
-                                      .withValues(alpha: 0.45),
-                                  blurRadius: 26,
-                                  spreadRadius: 3,
-                                  offset: const Offset(0, 4),
+                              color: isRemoteMuted
+                                  ? const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.18)
+                                  : const Color(0xFF1B1E2E)
+                                        .withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: isRemoteMuted
+                                    ? const Color(0xFFEF4444)
+                                          .withValues(alpha: 0.6)
+                                    : Colors.white.withValues(alpha: 0.08),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isRemoteMuted
+                                      ? Icons.mic_off_rounded
+                                      : Icons.graphic_eq_rounded,
+                                  color: isRemoteMuted
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFFFF2A85),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  speakingStatusText,
+                                  style: TextStyle(
+                                    color: isRemoteMuted
+                                        ? const Color(0xFFFCA5A5)
+                                        : Colors.white,
+                                    fontSize: isCompact ? 12 : 13,
+                                    fontWeight: isRemoteMuted
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.call_end_rounded,
-                              color: Colors.white,
-                              size: 36,
-                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'End Call',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
 
-                    // SPEAKER BUTTON
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          onTap: () => ref
-                              .read(activeCallProvider.notifier)
-                              .toggleSpeakerphone(),
-                          borderRadius: BorderRadius.circular(32),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSpeaker
-                                  ? const Color(0xFF6366F1)
-                                        .withValues(alpha: 0.3)
-                                  : Colors.white.withValues(alpha: 0.10),
-                              border: Border.all(
-                                color: isSpeaker
-                                    ? const Color(0xFF818CF8)
-                                    : Colors.white.withValues(alpha: 0.15),
-                                width: 1.2,
+                          // 8. CONTEXTUAL RECHARGE OR GRACE PERIOD PILL (Only when relevant)
+                          if (!isHost && isLowBalance) ...[
+                            SizedBox(height: isCompact ? 10 : 14),
+                            InkWell(
+                              onTap: () => CoinPackagesPage.push(
+                                context,
+                                isCallRecharge: true,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.redAccent.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '⚠️ Low balance · ',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Recharge Now ➔',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            child: Icon(
-                              isSpeaker
-                                  ? Icons.volume_up_rounded
-                                  : Icons.volume_down_rounded,
-                              color: Colors.white,
-                              size: 26,
+                          ] else if (!isHost && isGracePeriod) ...[
+                            SizedBox(height: isCompact ? 10 : 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.green.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              child: Text(
+                                '5s Grace Period (${5 - _secondsElapsed}s left) · Free',
+                                style: const TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Speaker',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          ] else if (isHost) ...[
+                            SizedBox(height: isCompact ? 10 : 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981)
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Text(
+                                'Voice call',
+                                style: TextStyle(
+                                  color: Color(0xFF10B981),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            SizedBox(height: isCompact ? 10 : 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                remainingCoins == null
+                                    ? '$rate coins/min'
+                                    : '$remainingCoins Coins · $rate coins/min',
+                                style: const TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
 
-                const SizedBox(height: 16),
-              ],
-            ),
+                          Spacer(flex: isCompact ? 1 : 3),
+
+                          // 9. BOTTOM CONTROLS: MUTE, END CALL (LARGE RED), SPEAKER
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // MUTE BUTTON
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () => ref
+                                        .read(activeCallProvider.notifier)
+                                        .toggleMute(),
+                                    borderRadius: BorderRadius.circular(32),
+                                    child: Container(
+                                      width: sideBtnSize,
+                                      height: sideBtnSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isMuted
+                                            ? Colors.redAccent.withValues(
+                                                alpha: 0.35,
+                                              )
+                                            : Colors.white.withValues(
+                                                alpha: 0.10,
+                                              ),
+                                        border: Border.all(
+                                          color: isMuted
+                                              ? Colors.redAccent
+                                              : Colors.white.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        isMuted
+                                            ? Icons.mic_off_rounded
+                                            : Icons.mic_rounded,
+                                        color: Colors.white,
+                                        size: sideIconSize,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    isMuted ? 'Muted' : 'Mute',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // END CALL BUTTON (LARGE RED CIRCLE WITH GLOW)
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () => ref
+                                        .read(activeCallProvider.notifier)
+                                        .endActiveCall(reason: 'user_hangup'),
+                                    borderRadius: BorderRadius.circular(39),
+                                    child: Container(
+                                      width: endBtnSize,
+                                      height: endBtnSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: const Color(0xFFFF2D55),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFF2D55)
+                                                .withValues(alpha: 0.45),
+                                            blurRadius: 26,
+                                            spreadRadius: 3,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        Icons.call_end_rounded,
+                                        color: Colors.white,
+                                        size: endIconSize,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'End Call',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // SPEAKER BUTTON
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () => ref
+                                        .read(activeCallProvider.notifier)
+                                        .toggleSpeakerphone(),
+                                    borderRadius: BorderRadius.circular(32),
+                                    child: Container(
+                                      width: sideBtnSize,
+                                      height: sideBtnSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isSpeaker
+                                            ? const Color(0xFF6366F1)
+                                                  .withValues(alpha: 0.3)
+                                            : Colors.white.withValues(
+                                                alpha: 0.10,
+                                              ),
+                                        border: Border.all(
+                                          color: isSpeaker
+                                              ? const Color(0xFF818CF8)
+                                              : Colors.white.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        isSpeaker
+                                            ? Icons.volume_up_rounded
+                                            : Icons.volume_down_rounded,
+                                        color: Colors.white,
+                                        size: sideIconSize,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Speaker',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: isCompact ? 8 : 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

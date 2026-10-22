@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/friendoo_app.dart';
 import 'core/config/app_environment.dart';
+import 'core/localization/app_language.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,14 +30,18 @@ Future<void> main() async {
   );
 
   bool hasSavedSession = false;
+  String? savedAppLanguageCode;
 
   try {
     final prefs = await SharedPreferences.getInstance();
+    savedAppLanguageCode = prefs.getString('friendoo_app_language');
     final savedHasEntered =
         prefs.getBool('friendoo_saved_has_entered') ?? false;
     final authUser = Supabase.instance.client.auth.currentUser;
     hasSavedSession = authUser != null || savedHasEntered;
-  } catch (_) {}
+  } catch (error, stackTrace) {
+    debugPrint('Could not load saved app preferences: $error\n$stackTrace');
+  }
 
   if (!kIsWeb) {
     try {
@@ -47,9 +52,9 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
-        if (hasSavedSession) ...[
-          hasEnteredAppProvider.overrideWith((ref) => true),
-        ],
+        appLanguageCodeProvider.overrideWith(
+          (ref) => AppLanguage.fromCode(savedAppLanguageCode).code,
+        ),
       ],
       child: const FriendooApp(),
     ),

@@ -38,6 +38,15 @@ class VideoSdkAudioService implements RtcAudioService {
   Stream<bool> get remoteMuteStream => const Stream.empty();
 
   @override
+  Stream<double> get audioLevelStream => const Stream.empty();
+
+  @override
+  Stream<int> get rttMsStream => const Stream.empty();
+
+  @override
+  Future<void> restartIce() async {}
+
+  @override
   void setTokenRenewalHandler(Future<String?> Function() onTokenRenewalRequested) {
     // Fallback stub
   }

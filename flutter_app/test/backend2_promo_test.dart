@@ -41,16 +41,26 @@ void main() {
       expect(backend2Client, isNotNull);
     });
 
-    test('3. Backend 2 Promo Repository returns 4 rock-solid default promo cards on offline fallback', () async {
+    test('3. Backend 2 Promo Repository returns neutral discovery tips on offline fallback', () async {
       final repo = Backend2PromoRepository(backend2Client: null);
       final cards = await repo.getDiscoverPromoCards();
 
       expect(cards.length, equals(4));
-      expect(cards[0].id, 'promo_flash_cashback');
-      expect(cards[0].headline, contains('Flash 60% Cashback'));
-      expect(cards[1].id, 'promo_first_call_free');
-      expect(cards[2].id, 'promo_host_lounge');
-      expect(cards[3].id, 'promo_privacy_shield');
+      expect(cards.map((card) => card.id).toList(), [
+        'discover_available_hosts',
+        'discover_languages',
+        'discover_call_rates',
+        'discover_call_controls',
+      ]);
+      expect(cards.every((card) => card.actionType == 'none'), isTrue);
+      expect(
+        cards.every(
+          (card) =>
+              !card.headline.contains('Cashback') &&
+              !card.subtitle.contains('24/7'),
+        ),
+        isTrue,
+      );
     });
 
     test('4. Discover banner provider gracefully integrates Backend 2 four-card fallback', () {
@@ -64,7 +74,10 @@ void main() {
 
       final promoList = container.read(placementBannerAdsListProvider('user_top_banner'));
       expect(promoList.length, greaterThanOrEqualTo(4));
-      expect(promoList.any((ad) => ad.id == 'promo_flash_cashback'), isTrue);
+      expect(
+        promoList.any((ad) => ad.id == 'discover_available_hosts'),
+        isTrue,
+      );
     });
 
     test('5. Zero JWT or Auth credentials leaked to Backend 2 & no session retention', () {

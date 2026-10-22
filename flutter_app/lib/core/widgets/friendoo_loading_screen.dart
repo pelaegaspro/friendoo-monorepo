@@ -161,7 +161,7 @@ class _FriendooLoadingScreenState extends State<FriendooLoadingScreen>
           if (widget.showTagline) ...[
             const SizedBox(height: 6),
             const Text(
-              'Private & Friendly Conversations',
+              'Private voice calls',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12.5,
