@@ -202,7 +202,7 @@ export default function CallLogsPage() {
 
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => void load()}
             disabled={loading}
@@ -213,7 +213,7 @@ export default function CallLogsPage() {
           </Button>
 
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => downloadCsv(filteredLogs)}
             disabled={filteredLogs.length === 0}

@@ -21,8 +21,21 @@ export default function OrderStatusDonut({
   totalLabel = 'Total Orders',
   segments = [],
 }: OrderStatusDonutProps) {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const effectiveSegments = segments
   const displayTotal = total
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-64 flex-col items-center justify-center gap-2">
+        <div className="h-44 w-44 rounded-full border-4 border-violet-500/20 animate-pulse" />
+      </div>
+    )
+  }
 
   if (effectiveSegments.length === 0) {
     return (

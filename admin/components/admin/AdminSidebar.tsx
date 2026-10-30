@@ -5,14 +5,17 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   LineChart,
-  Package,
+  Coins,
+  Megaphone,
   ShoppingCart,
   Users,
+  Radio,
   MessageSquare,
   FileText,
   Settings,
   LogOut,
   Menu,
+  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { adminFetch } from '@/lib/admin/client'
@@ -26,13 +29,28 @@ interface AdminSidebarProps {
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/calls', label: 'Analytics', icon: LineChart },
-  { href: '/admin/packages', label: 'Products', icon: Package },
+  { href: '/admin/packages', label: 'Coin Packages', icon: Coins },
+  { href: '/admin/ads', label: 'Ad Banners & Offers', icon: Megaphone },
   { href: '/admin/transactions', label: 'Orders', icon: ShoppingCart },
-  { href: '/admin/users', label: 'Customers (CRM)', icon: Users },
+  { href: '/admin/users', label: 'Callers', icon: Users },
+  { href: '/admin/hosts', label: 'Voice Hosts', icon: Radio },
   { href: '/admin/notifications', label: 'Messages', icon: MessageSquare },
   { href: '/admin/reports', label: 'Reports', icon: FileText },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
+
+export function MobileSidebarButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.08]"
+      aria-label="Open sidebar"
+    >
+      <Menu className="h-4 w-4" />
+    </button>
+  )
+}
 
 function SidebarBody({ onClose }: { onClose: () => void }) {
   const pathname = usePathname()
@@ -99,30 +117,29 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
                   />
                   <span>{item.label}</span>
                 </div>
-
               </Link>
             )
           })}
         </nav>
       </div>
 
-      <div className="mt-6 space-y-3">
-        <div className="relative overflow-hidden rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-500/[0.12] via-[#14121d] to-cyan-500/[0.06] p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-300">Workspace</span>
+      <div className="pt-4 border-t border-white/[0.06] space-y-2">
+        <a
+          href="/crm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/10 px-3.5 py-2.5 text-xs font-semibold text-purple-200 hover:bg-purple-500/20 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>CRM Operations</span>
           </div>
-          <h4 className="text-xs font-bold text-white">Operations console</h4>
-          <p className="mt-1 text-[11px] leading-snug text-slate-400">
-            Manage members, hosts, calls and payments from one place.
-          </p>
-        </div>
+          <ExternalLink className="h-3.5 w-3.5 text-purple-400" />
+        </a>
 
-        {/* Sign Out link */}
         <button
-          type="button"
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-transparent px-3 py-2 text-xs font-semibold text-rose-400 transition hover:bg-rose-500/10 hover:border-rose-500/20"
+          className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3.5 py-2.5 text-xs font-semibold text-rose-400 hover:border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-300 transition-colors"
         >
           <LogOut className="h-4 w-4" />
           <span>Sign Out</span>
@@ -135,36 +152,23 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
 export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   return (
     <>
-      {/* Mobile Drawer Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar container */}
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 w-60 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-64 shrink-0 h-screen sticky top-0">
         <SidebarBody onClose={onClose} />
       </aside>
-    </>
-  )
-}
 
-export function MobileSidebarButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:bg-white/[0.08] lg:hidden"
-      aria-label="Open sidebar navigation"
-    >
-      <Menu className="h-4 w-4" />
-    </button>
+      {/* Mobile Drawer */}
+      {open && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <aside className="fixed inset-y-0 left-0 w-64 z-50">
+            <SidebarBody onClose={onClose} />
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

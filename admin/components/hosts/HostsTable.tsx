@@ -20,7 +20,7 @@ type FilterTab = 'all' | 'pending' | 'active' | 'suspended'
 
 const PAGE_SIZE = 20
 
-import { getAvatarUrl } from '@/lib/avatar'
+import { getAppAvatarUrl } from '@/lib/avatar'
 
 export default function HostsTable({ hosts, onAction, initialFilter }: HostsTableProps) {
   const [filter, setFilter] = useState<FilterTab>(
@@ -128,14 +128,20 @@ export default function HostsTable({ hosts, onAction, initialFilter }: HostsTabl
                   {/* Avatar + Name */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <Image
-                        src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 64) : host.photoURL || getAvatarUrl(host.uid, 64)}
-                        alt={host.name}
-                        width={32}
-                        height={32}
-                        unoptimized
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
+                      {getAppAvatarUrl(host.photoURL) ? (
+                        <Image
+                          src={getAppAvatarUrl(host.photoURL)!}
+                          alt={host.name}
+                          width={32}
+                          height={32}
+                          unoptimized
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-950/50 text-[10px] font-bold text-purple-300 border border-purple-500/30">
+                          {(host.name || 'H').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <span className="text-white font-medium">{host.name}</span>
                     </div>
                   </td>

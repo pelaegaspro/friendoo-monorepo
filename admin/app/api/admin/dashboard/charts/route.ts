@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdminApi } from '@/lib/admin/guard'
 import { getSupabaseAdmin } from '@/lib/supabaseServer'
 import { getCachedOrFetch } from '@/lib/admin/cache'
+import { getAppAvatarUrl } from '@/lib/avatar'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,7 +123,7 @@ export async function GET() {
       const liveOrders = (paymentOrdersRes.data ?? []).map((o) => {
         const prof = profilesMap.get(o.user_id)
         const customer = prof?.display_name || (prof?.phone ? `User (${prof.phone.slice(-4)})` : `Customer #${o.id.slice(0, 6)}`)
-        const avatar = prof?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customer)}`
+        const avatar = getAppAvatarUrl(prof?.avatar_url) || ''
         const status = o.status === 'success' ? 'Completed' : (o.status === 'pending' ? 'Processing' : 'Failed')
         const statusColor = o.status === 'success'
           ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
@@ -157,7 +158,9 @@ export async function GET() {
 
       const totalCalls = (callsRes.data ?? []).length
       const completedCalls = (callsRes.data ?? []).filter((c) => c.status === 'ended').length
-      const activeCalls = (callsRes.data ?? []).filter((c) => c.status === 'active' || c.status === 'accepted' || c.status === 'ringing').length
+      const activeCalls = (callsRes.data ?? []).filter(
+        (c) => (c.status === 'active' || c.status === 'accepted' || c.status === 'ringing') && !c.ended_at && (Date.now() - new Date(c.created_at).getTime() <= 30 * 60 * 1000)
+      ).length
       const missedCalls = (callsRes.data ?? []).filter((c) => c.status === 'missed' || c.status === 'rejected').length
       const orderCount = (paymentOrdersRes.data ?? []).length
 

@@ -71,6 +71,8 @@ function normalizeBannerAd(value: unknown): BannerAdRecord {
     id: asString(ad.id),
     title: asString(ad.title),
     campaignType: allowedValue(ad.campaign_type, bannerCampaignTypes, 'user_offer'),
+    campaignClass: ad.campaign_class === 'sponsored_ad' || ad.campaign_type === 'sponsor_ad' ? 'sponsored_ad' : 'friendoo_offer',
+    sponsorName: ad.sponsor_name ? asString(ad.sponsor_name) : null,
     targetAudience: allowedValue(ad.target_audience, bannerTargetAudiences, 'all'),
     badgeText: asString(ad.badge_text, 'SPECIAL OFFER'),
     headline: asString(ad.headline),
@@ -131,7 +133,7 @@ export async function getAdminStats(): Promise<AdminStats> {
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'user'),
         supabase.from('hosts').select('id', { count: 'exact', head: true }),
-        supabase.from('calls').select('id', { count: 'exact', head: true }).in('status', ['ringing', 'accepted', 'active']),
+        supabase.from('calls').select('id', { count: 'exact', head: true }).in('status', ['ringing', 'accepted', 'active']).is('ended_at', null).gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()),
         supabase.from('host_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('payment_orders').select('amount_inr').eq('status', 'success').gte('created_at', todayStart.toISOString()),
         supabase.from('wallets').select('coin_balance'),
@@ -188,6 +190,7 @@ export async function listHosts(): Promise<AdminHost[]> {
             display_name,
             phone,
             avatar_path,
+            city,
             about,
             is_banned,
             created_at
@@ -212,12 +215,12 @@ export async function listHosts(): Promise<AdminHost[]> {
           id: h.id,
           displayName: asString(p.display_name, 'Friendoo Host'),
           phoneNumber: asString(p.phone),
-          city: 'Mumbai',
+          city: asString(p.city, 'Mumbai'),
           languages: ['Hindi', 'English'],
           ratePerMinute: asNumber(h.rate_per_audio_minute, 20),
           hostStatus: asBoolean(p.is_banned) ? 'suspended' : 'approved',
           isHost: true,
-          avatarSeed: h.id,
+          avatarSeed: '',
           photoURL: asString(p.avatar_path),
           idProofUrl: null,
           bio: asString(h.bio || p.about),
@@ -494,27 +497,36 @@ export async function listUsers(): Promise<AdminUserRow[]> {
   return getCachedOrFetch('admin:users:list', async () => {
     try {
       const supabase = getSupabaseAdmin()
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          display_name,
-          phone,
-          avatar_path,
-          about,
-          role,
-          is_banned,
-          created_at,
-          wallets (
-            coin_balance
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(500)
+      const [profilesRes, hostsRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select(`
+            id,
+            display_name,
+            phone,
+            avatar_path,
+            city,
+            about,
+            role,
+            is_banned,
+            created_at,
+            wallets (
+              coin_balance
+            )
+          `)
+          .eq('role', 'user')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase.from('hosts').select('id'),
+      ])
 
-      if (error) throw error
+      if (profilesRes.error) throw profilesRes.error
+      const hostIdSet = new Set((hostsRes.data ?? []).map((h) => h.id))
+      const profiles = (profilesRes.data ?? []).filter(
+        (p) => p.role !== 'host' && !hostIdSet.has(p.id)
+      )
 
-      const userIds = (profiles ?? []).map(p => p.id)
+      const userIds = profiles.map(p => p.id)
 
       // Fetch live presence from user_presence
       const presenceMap = new Map<string, { state: string; last_seen_at: string | null }>()
@@ -570,9 +582,9 @@ export async function listUsers(): Promise<AdminUserRow[]> {
           displayName: asString(p.display_name, 'Friendoo User'),
           username: asString(p.phone, 'user'),
           phoneNumber: asString(p.phone),
-          avatarSeed: p.id,
+          avatarSeed: '',
           photoURL: asString(p.avatar_path),
-          city: 'Delhi',
+          city: asString(p.city, '—'),
           coinBalance: asNumber(wallet.coin_balance, 0),
           status: asBoolean(p.is_banned) ? 'banned' : 'active',
           joinedAt: toIsoString(p.created_at),
@@ -649,22 +661,34 @@ export async function listPackages(): Promise<CoinPackageRecord[]> {
 
 export async function upsertPackage(payload: Partial<CoinPackageRecord> & { id?: string }) {
   const supabase = getSupabaseAdmin()
-  const id = payload.id || `pack_${payload.coins || 100}`
-  await supabase.from('coin_packages').upsert({
+  const coins = Math.max(1, Math.round(asNumber(payload.coins, 100)))
+  const id = payload.id || `pkg_${coins}`
+  const { error } = await supabase.from('coin_packages').upsert({
     id,
-    coins: Math.max(1, Math.round(asNumber(payload.coins, 100))),
+    coins,
     amount_inr: Math.max(1, Math.round(asNumber(payload.priceInr, 99))),
     is_active: payload.active ?? true,
     created_at: new Date().toISOString(),
   })
+  if (error) throw error
   invalidateCache('admin:packages')
   return { id }
 }
 
 export async function deletePackage(packageId: string) {
   const supabase = getSupabaseAdmin()
-  await supabase.from('coin_packages').delete().eq('id', packageId)
+  const { error } = await supabase.from('coin_packages').delete().eq('id', packageId)
+  if (error) {
+    if (error.code === '23503') {
+      // Foreign key constraint: orders reference this package. Deactivate instead.
+      await supabase.from('coin_packages').update({ is_active: false }).eq('id', packageId)
+      invalidateCache('admin:packages')
+      return { deactivated: true, message: 'Package has order history; deactivated instead of deleting.' }
+    }
+    throw error
+  }
   invalidateCache('admin:packages')
+  return { deleted: true }
 }
 
 export async function listTransactions(): Promise<TransactionRow[]> {
@@ -754,11 +778,16 @@ export async function listCalls(): Promise<CallRow[]> {
       }
 
       return (data ?? []).map((c) => {
+        const isStale = !c.ended_at && c.created_at && (Date.now() - new Date(c.created_at).getTime() > 30 * 60 * 1000)
+        const hasEnded = Boolean(c.ended_at) || isStale
+
         let durationSeconds = 0
         if (c.started_at && c.ended_at) {
           durationSeconds = Math.max(0, Math.round((new Date(c.ended_at).getTime() - new Date(c.started_at).getTime()) / 1000))
-        } else if (c.started_at && (c.status === 'active' || c.status === 'accepted')) {
+        } else if (c.started_at && (c.status === 'active' || c.status === 'accepted') && !hasEnded) {
           durationSeconds = Math.max(0, Math.round((Date.now() - new Date(c.started_at).getTime()) / 1000))
+        } else if (c.started_at) {
+          durationSeconds = 60
         }
 
         const callerProfile = c.caller_id ? profileMap.get(c.caller_id) : null
@@ -766,10 +795,10 @@ export async function listCalls(): Promise<CallRow[]> {
 
         const rawStatus = (c.status ?? 'missed').toLowerCase()
         const normalizedStatus: CallStatus =
-          rawStatus === 'active' || rawStatus === 'accepted'
-            ? 'active'
-            : rawStatus === 'ended'
+          hasEnded
             ? 'ended'
+            : rawStatus === 'active' || rawStatus === 'accepted'
+            ? 'active'
             : rawStatus === 'ringing'
             ? 'ringing'
             : rawStatus === 'rejected'
@@ -1036,6 +1065,8 @@ export async function upsertBannerAd(payload: Partial<BannerAdRecord>): Promise<
   const dbPayload = {
     title: payload.title,
     campaign_type: payload.campaignType ?? 'user_offer',
+    campaign_class: payload.campaignClass ?? (payload.campaignType === 'sponsor_ad' || payload.sponsorName ? 'sponsored_ad' : 'friendoo_offer'),
+    sponsor_name: payload.sponsorName ?? null,
     target_audience: payload.targetAudience ?? 'all',
     badge_text: payload.badgeText ?? 'SPECIAL OFFER',
     headline: payload.headline,

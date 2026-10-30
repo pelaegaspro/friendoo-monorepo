@@ -266,7 +266,8 @@ class ActiveCallController extends AsyncNotifier<CallSession?> {
   }
 
   Future<void> _joinAudio(CallSession call) async {
-    if (_joinedCallId == call.id || _joinedCallId != null || _isJoiningAudio) {
+    // Allow re-entry for same call (caller pre-connects during ringing)
+    if (_joinedCallId == call.id || _isJoiningAudio) {
       return;
     }
     _isJoiningAudio = true;

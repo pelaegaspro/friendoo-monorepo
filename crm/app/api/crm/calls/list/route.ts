@@ -72,11 +72,16 @@ export async function GET(request: NextRequest) {
       }
 
       const calls: CrmCallLog[] = (data ?? []).map((row) => {
+        const isStale = !row.ended_at && row.created_at && (Date.now() - new Date(row.created_at).getTime() > 30 * 60 * 1000);
+        const hasEnded = Boolean(row.ended_at) || isStale;
+
         let durationSeconds = 0;
         if (row.started_at && row.ended_at) {
           durationSeconds = Math.max(0, Math.round((new Date(row.ended_at).getTime() - new Date(row.started_at).getTime()) / 1000));
-        } else if (row.started_at && (row.status === "active" || row.status === "accepted")) {
+        } else if (row.started_at && (row.status === "active" || row.status === "accepted") && !hasEnded) {
           durationSeconds = Math.max(0, Math.round((Date.now() - new Date(row.started_at).getTime()) / 1000));
+        } else if (row.started_at) {
+          durationSeconds = 60;
         }
 
         const callerProfile = row.caller_id ? profileMap.get(row.caller_id) : null;
@@ -92,7 +97,7 @@ export async function GET(request: NextRequest) {
           hostName: hostProfile?.display_name || (row.host_id ? "Host " + row.host_id.slice(0, 6) : "Unknown Host"),
           hostPhone: hostProfile?.phone || undefined,
           callType: row.call_type || "audio",
-          status: row.status || "ended",
+          status: hasEnded ? "ended" : (row.status || "ended"),
           durationSeconds,
           coinsDeducted: toNumber(row.total_coins_deducted, 0),
           ratePerMinute: toNumber(row.rate_per_minute, 5),

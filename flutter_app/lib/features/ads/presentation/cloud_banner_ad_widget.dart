@@ -64,8 +64,8 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
   }
 
   void _handleAdTap(CloudBannerAd ad) {
-    // Record analytics click
-    ref.read(bannerAdRepositoryProvider).recordClick(ad.id);
+    // Record analytics click with placement
+    ref.read(bannerAdRepositoryProvider).recordClick(ad.id, placement: widget.placement);
 
     if (widget.onTap != null) {
       widget.onTap!();
@@ -74,7 +74,7 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
 
     final isFlash = ad.campaignType == 'flash_package' || ad.promoCoins != null;
 
-    // DIRECT ACTION (Amazon / Flipkart style — ZERO POPUP DIALOGS)
+    // DIRECT ACTION
     if (ad.actionType == 'recharge' || isFlash) {
       RechargeCheckoutSheet.show(
         context,
@@ -121,7 +121,7 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
       _recordedImpressions.add(currentAd.id);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ref.read(bannerAdRepositoryProvider).recordImpression(currentAd.id);
+          ref.read(bannerAdRepositoryProvider).recordImpression(currentAd.id, placement: widget.placement);
         }
       });
     }
@@ -143,6 +143,7 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
               final colors = ad.parsedGradientColors;
               final isFlash =
                   ad.campaignType == 'flash_package' || ad.promoCoins != null;
+              final isSponsored = ad.isSponsored;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -158,27 +159,34 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: colors.length >= 2
-                              ? colors
-                              : [
-                                  const Color(0xFF4F46E5),
-                                  const Color(0xFFDB2777),
-                                ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: isFlash
-                            ? Border.all(
-                                color: const Color(0xFFFFB703)
-                                    .withValues(alpha: 0.7),
-                                width: 1.5,
+                        gradient: isSponsored
+                            ? const LinearGradient(
+                                colors: [Color(0xFF161B26), Color(0xFF1F293D)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               )
-                            : null,
+                            : LinearGradient(
+                                colors: colors.length >= 2
+                                    ? colors
+                                    : [
+                                        const Color(0xFF4F46E5),
+                                        const Color(0xFFDB2777),
+                                      ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isFlash
+                              ? const Color(0xFFFFB703).withValues(alpha: 0.7)
+                              : (isSponsored
+                                  ? const Color(0xFF262D40)
+                                  : Colors.white.withValues(alpha: 0.1)),
+                          width: isFlash ? 1.5 : 1.0,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: colors.first.withValues(
+                            color: (isSponsored ? const Color(0xFF7C3AED) : colors.first).withValues(
                               alpha: isFlash ? 0.35 : 0.22,
                             ),
                             blurRadius: isFlash ? 14 : 10,
@@ -193,16 +201,22 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
                             decoration: BoxDecoration(
                               color: isFlash
                                   ? const Color(0xFFFFB703)
-                                  : Colors.white.withValues(alpha: 0.22),
+                                  : (isSponsored
+                                      ? const Color(0xFF7C3AED).withValues(alpha: 0.25)
+                                      : Colors.white.withValues(alpha: 0.22)),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Icon(
                               isFlash
                                   ? Icons.bolt_rounded
-                                  : Icons.local_offer_rounded,
+                                  : (isSponsored
+                                      ? Icons.campaign_rounded
+                                      : Icons.local_offer_rounded),
                               color: isFlash
                                   ? const Color(0xFF0E1020)
-                                  : Colors.white,
+                                  : (isSponsored
+                                      ? const Color(0xFFEC4899)
+                                      : Colors.white),
                               size: 22,
                             ),
                           ),
@@ -212,76 +226,80 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (ad.badgeText.isNotEmpty ||
-                                    isFlash ||
-                                    ad.promoPriceInr != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 3.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Flexible(
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 7,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 3.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 7,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isFlash
+                                                ? const Color(0xFFFFB703)
+                                                : (isSponsored
+                                                    ? const Color(0xFF7C3AED).withValues(alpha: 0.3)
+                                                    : Colors.white.withValues(alpha: 0.25)),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: isSponsored
+                                                ? Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.5), width: 0.8)
+                                                : null,
+                                          ),
+                                          child: Text(
+                                            isSponsored
+                                                ? (ad.sponsorName != null && ad.sponsorName!.trim().isNotEmpty
+                                                    ? 'SPONSORED • ${ad.sponsorName!.toUpperCase()}'
+                                                    : 'SPONSORED')
+                                                : (ad.badgeText.isNotEmpty
+                                                    ? ad.badgeText.toUpperCase()
+                                                    : (isFlash
+                                                          ? '⚡ FLASH DEAL'
+                                                          : 'OFFER')),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
                                               color: isFlash
-                                                  ? const Color(0xFFFFB703)
-                                                  : Colors.white.withValues(
-                                                      alpha: 0.25,
-                                                    ),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              ad.badgeText.isNotEmpty
-                                                  ? ad.badgeText.toUpperCase()
-                                                  : (isFlash
-                                                        ? '⚡ FLASH DEAL'
-                                                        : 'OFFER'),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: isFlash
-                                                    ? const Color(0xFF0E1020)
-                                                    : Colors.white,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w900,
-                                                letterSpacing: 0.4,
-                                              ),
+                                                  ? const Color(0xFF0E1020)
+                                                  : (isSponsored
+                                                      ? const Color(0xFFF1F5F9)
+                                                      : Colors.white),
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.4,
                                             ),
                                           ),
                                         ),
-                                        if (ad.promoPriceInr != null &&
-                                            !ad.badgeText.contains('₹')) ...[
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
+                                      ),
+                                      if (ad.promoPriceInr != null &&
+                                          !ad.badgeText.contains('₹')) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.3,
                                             ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.3,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            ),
-                                            child: Text(
-                                              '₹${ad.promoPriceInr}',
-                                              style: const TextStyle(
-                                                color: Color(0xFFFFB703),
-                                                fontSize: 9.5,
-                                                fontWeight: FontWeight.w900,
-                                              ),
+                                            borderRadius: BorderRadius.circular(5),
+                                          ),
+                                          child: Text(
+                                            '₹${ad.promoPriceInr}',
+                                            style: const TextStyle(
+                                              color: Color(0xFFFFB703),
+                                              fontSize: 9.5,
+                                              fontWeight: FontWeight.w900,
                                             ),
                                           ),
-                                        ],
+                                        ),
                                       ],
-                                    ),
+                                    ],
                                   ),
+                                ),
                                 Text(
                                   ad.headline,
                                   maxLines: 1,
@@ -314,8 +332,10 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
                               color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.arrow_forward_ios_rounded,
+                            child: Icon(
+                              isSponsored || ad.actionType == 'link'
+                                  ? Icons.open_in_new_rounded
+                                  : Icons.arrow_forward_ios_rounded,
                               color: Colors.white,
                               size: 13,
                             ),

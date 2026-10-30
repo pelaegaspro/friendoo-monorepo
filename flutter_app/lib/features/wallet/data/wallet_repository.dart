@@ -212,12 +212,11 @@ class WalletRepository {
           .from('coin_packages')
           .select()
           .eq('is_active', true)
-          .lt('amount_inr', 1000)
-          .order('amount_inr');
+                    .order('amount_inr');
 
       final raw = (rows as List<dynamic>)
           .map((row) => CoinPackage.fromMap(row as Map<String, dynamic>))
-          .where((p) => p.amountInr < 1000);
+;
 
       // Deduplicate packages by amountInr, prioritizing canonical pkg_* ids
       final uniqueMap = <int, CoinPackage>{};
@@ -233,15 +232,15 @@ class WalletRepository {
     } catch (_) {}
 
     return const [
-      CoinPackage(id: 'base_15', coins: 15, amountInr: 15),
-      CoinPackage(id: 'base_25', coins: 25, amountInr: 25),
-      CoinPackage(id: 'base_50', coins: 50, amountInr: 50),
-      CoinPackage(id: 'base_100', coins: 100, amountInr: 100),
-      CoinPackage(id: 'offer_140', coins: 140, amountInr: 140),
-      CoinPackage(id: 'offer_200', coins: 200, amountInr: 200),
-      CoinPackage(id: 'offer_300', coins: 300, amountInr: 300),
-      CoinPackage(id: 'offer_500', coins: 500, amountInr: 500),
-      CoinPackage(id: 'offer_900', coins: 900, amountInr: 900),
+      CoinPackage(id: 'pkg_15', coins: 15, amountInr: 15),
+      CoinPackage(id: 'pkg_25', coins: 25, amountInr: 25),
+      CoinPackage(id: 'pkg_50', coins: 50, amountInr: 50),
+      CoinPackage(id: 'pkg_100', coins: 100, amountInr: 100),
+      CoinPackage(id: 'pkg_140', coins: 140, amountInr: 140),
+      CoinPackage(id: 'pkg_200', coins: 200, amountInr: 200),
+      CoinPackage(id: 'pkg_300', coins: 300, amountInr: 300),
+      CoinPackage(id: 'pkg_500', coins: 500, amountInr: 500),
+      CoinPackage(id: 'pkg_900', coins: 900, amountInr: 900),
     ];
   }
 

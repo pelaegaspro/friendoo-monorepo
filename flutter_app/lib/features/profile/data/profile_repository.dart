@@ -40,7 +40,7 @@ class ProfileRepository {
       final row = await _client
           .from('profiles')
           .select(
-            'id, phone, display_name, avatar_path, avatar_selected_at, role',
+            'id, phone, display_name, avatar_path, avatar_selected_at, role, city',
           )
           .eq('id', user.id)
           .maybeSingle()
@@ -148,6 +148,7 @@ class ProfileRepository {
   Future<UserProfile> _updateOwnProfile({
     String? displayName,
     String? about,
+    String? city,
     List<String>? preferredLanguages,
   }) async {
     final user = _client.auth.currentUser;
@@ -160,6 +161,7 @@ class ProfileRepository {
       params: {
         'p_display_name': displayName,
         'p_about': about,
+        'p_city': city,
         'p_preferred_languages': preferredLanguages,
       },
     );
@@ -183,20 +185,29 @@ class ProfileRepository {
     required String displayName,
     required String about,
     required int age,
+    String? city,
   }) async {
     final trimmedName = displayName.trim();
     final trimmedAbout = about.trim();
+    final trimmedCity = city?.trim();
     if (trimmedName.isEmpty || trimmedName.length > 50) {
       throw ArgumentError('Name must contain between 1 and 50 characters.');
     }
     if (trimmedAbout.length > 150) {
       throw ArgumentError('Bio must contain at most 150 characters.');
     }
+    if (trimmedCity != null && trimmedCity.length > 60) {
+      throw ArgumentError('City must contain at most 60 characters.');
+    }
     if (age < 18 || age > 100) {
       throw ArgumentError('Age must be between 18 and 100.');
     }
 
-    await _updateOwnProfile(displayName: trimmedName);
+    await _updateOwnProfile(
+      displayName: trimmedName,
+      about: trimmedAbout.isEmpty ? null : trimmedAbout,
+      city: trimmedCity?.isEmpty == true ? null : trimmedCity,
+    );
 
     // Age is not part of the current server profile schema. Keep only the
     // user-entered presentation preference locally, not identity or role data.
@@ -261,9 +272,11 @@ class ProfileRepository {
   Future<void> completeInitialProfile({
     required FriendooAvatarConfig avatarConfig,
     required String displayName,
+    String? city,
   }) async {
     var presetId = avatarConfig.presetId;
     final trimmedName = displayName.trim();
+    final trimmedCity = city?.trim();
     if (presetId == null || presetId.isEmpty) {
       throw ArgumentError.value(
         presetId,
@@ -273,6 +286,9 @@ class ProfileRepository {
     }
     if (trimmedName.isEmpty || trimmedName.length > 50) {
       throw ArgumentError('Name must contain between 1 and 50 characters.');
+    }
+    if (trimmedCity != null && trimmedCity.length > 60) {
+      throw ArgumentError('City must contain between 1 and 60 characters.');
     }
     final currentUser = _client.auth.currentUser;
     if (currentUser == null) {
@@ -315,12 +331,18 @@ class ProfileRepository {
       await prefs.setString('friendoo_profile_avatar_id', presetId);
     } catch (_) {}
 
+    final normalizedCity = trimmedCity?.isNotEmpty == true ? trimmedCity : null;
+
     // The database verifies that the avatar belongs to the account role and
     // locks the one-time selection.
     try {
       await _client.rpc(
         'complete_initial_profile',
-        params: {'p_avatar_path': presetId, 'p_display_name': trimmedName},
+        params: {
+          'p_avatar_path': presetId,
+          'p_display_name': trimmedName,
+          'p_city': normalizedCity,
+        },
       );
     } catch (e) {
       final err = e.toString();
@@ -334,13 +356,17 @@ class ProfileRepository {
           params: {
             'p_avatar_path': swappedPreset,
             'p_display_name': trimmedName,
+            'p_city': normalizedCity,
           },
         );
       } else if (err.contains('Avatar selection already locked') ||
           err.contains('locked') ||
           err.contains('ambiguous')) {
         try {
-          await _updateOwnProfile(displayName: trimmedName);
+          await _updateOwnProfile(
+            displayName: trimmedName,
+            city: normalizedCity,
+          );
         } catch (_) {}
       } else {
         rethrow;

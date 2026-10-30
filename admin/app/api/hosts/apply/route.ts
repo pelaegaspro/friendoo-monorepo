@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseServer';
+import { dispatchAutomationEvent } from '@/lib/automation/dispatcher';
 
 export async function POST(request: Request) {
   try {
@@ -92,6 +93,25 @@ export async function POST(request: Request) {
       applicationId = inserted.id;
     }
 
+    // Trigger Route 1: host.applied -> Make.com -> Google Sheets (Add Row) & Gmail (Welcome Email)
+    void dispatchAutomationEvent({
+      event: 'host.applied',
+      data: {
+        applicationId: applicationId || 'unknown',
+        name,
+        phone,
+        city,
+        age,
+        languages,
+        bio: String(body.bio ?? '').trim(),
+        payoutType,
+        appliedAt: new Date().toISOString(),
+        adminReviewUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/hosts`,
+      },
+    }).catch((err) => {
+      console.warn('Non-blocking automation dispatch warning:', err);
+    });
+
     return NextResponse.json({
       ok: true,
       message: 'Host application and payout details submitted successfully!',
@@ -105,4 +125,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

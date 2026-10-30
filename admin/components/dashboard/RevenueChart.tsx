@@ -22,9 +22,27 @@ interface RevenueChartProps {
 }
 
 export default function RevenueChart({ data, title = 'Revenue Overview' }: RevenueChartProps) {
-  const chartData = data
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
+  const chartData = data
   const totalRevenue = chartData.reduce((acc, curr) => acc + (curr.revenue || 0), 0)
+
+  if (!mounted) {
+    return (
+      <div className="w-full">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-slate-800 dark:text-white">{title}</h3>
+            <p className="text-xs text-slate-400 dark:text-zinc-400 font-medium">Loading telemetry...</p>
+          </div>
+        </div>
+        <div className="h-[250px] w-full rounded-xl bg-white/[0.02] border border-white/[0.05] animate-pulse" />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full">
@@ -54,9 +72,9 @@ export default function RevenueChart({ data, title = 'Revenue Overview' }: Reven
           <AreaChart data={chartData} margin={{ top: 18, right: 10, left: -15, bottom: 0 }}>
             <defs>
               <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563EB" stopOpacity={0.35} />
-                <stop offset="50%" stopColor="#3B82F6" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="#60A5FA" stopOpacity={0.0} />
+                <stop offset="0%" stopColor="#2DD4BF" stopOpacity={0.35} />
+                <stop offset="50%" stopColor="#14B8A6" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="#0D9488" stopOpacity={0.0} />
               </linearGradient>
             </defs>
 
@@ -106,16 +124,16 @@ export default function RevenueChart({ data, title = 'Revenue Overview' }: Reven
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="#2563EB"
-              strokeWidth={3}
+              stroke="#2DD4BF"
+              strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#revenueAreaGradient)"
               activeDot={{
                 r: 6,
-                fill: '#2563EB',
-                stroke: '#FFFFFF',
-                strokeWidth: 3,
-                className: 'filter drop-shadow-md',
+                fill: '#2DD4BF',
+                stroke: '#0C101A',
+                strokeWidth: 2.5,
+                className: 'filter drop-shadow-[0_0_8px_rgba(45,212,191,0.6)]',
               }}
             />
           </AreaChart>

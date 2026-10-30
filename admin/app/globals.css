@@ -3,33 +3,36 @@
 @tailwind utilities;
 
 :root {
-  --background: #090a0f;
-  --surface: #0f111a;
-  --surface-elevated: #151824;
-  --card: #121420;
-  --card-hover: #191c2c;
-  --foreground: #f4f4f7;
-  --muted: #8b8f9e;
-  --muted-foreground: #8b8f9e;
-  --border: #1f2337;
-  --border-glow: rgba(168, 85, 247, 0.35);
-  --accent: #a855f7;
-  --accent-glow: rgba(168, 85, 247, 0.4);
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
+  --background: #040D12;
+  --surface: #08171E;
+  --surface-elevated: #0E1F27;
+  --card: #091921;
+  --card-hover: #0E242F;
+  --foreground: #F1F6F8;
+  --muted: #7B96A0;
+  --muted-foreground: #7B96A0;
+  --border: #162831;
+  --border-glow: rgba(96, 206, 202, 0.35);
+  --accent: #60CECA;
+  --accent-glow: rgba(96, 206, 202, 0.4);
+  --success: #2FE5A7;
+  --danger: #FB7185;
+  --warning: #F59E0B;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: #040D12;
   min-height: 100vh;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.07) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 40%),
-    radial-gradient(at 50% 100%, rgba(34, 197, 94, 0.04) 0px, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(96, 206, 202, 0.15), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 85% 15%, rgba(47, 229, 167, 0.08), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 15% 45%, rgba(56, 189, 248, 0.07), transparent 50%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(15, 33, 43, 0.9), #040D12 80%);
   background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer utilities {
@@ -46,10 +49,54 @@ body {
 }
 
 @layer components {
-  /* Bento Grid Card */
+  /* 4K Ultra Frosted Glass Card */
+  .glass-card-4k {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(7, 21, 29, 0.65);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      0 0 0 1px rgba(96, 206, 202, 0.05),
+      0 20px 40px -15px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+      inset 0 0 20px 0 rgba(96, 206, 202, 0.02);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card-4k::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(96, 206, 202, 0.4) 30%, rgba(255, 255, 255, 0.3) 50%, rgba(96, 206, 202, 0.4) 70%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .glass-card-4k:hover {
+    border-color: rgba(96, 206, 202, 0.25);
+    box-shadow:
+      0 0 0 1px rgba(96, 206, 202, 0.15),
+      0 24px 50px -12px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+      inset 0 0 25px 0 rgba(96, 206, 202, 0.04);
+  }
+
+  /* Moorly Marine Bento Grid Card */
   .bento-card {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition-all duration-300;
-    background-color: rgba(18, 20, 32, 0.9);
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 23, 30, 0.75);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.09);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .bento-card::before {
@@ -59,27 +106,28 @@ body {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(96, 206, 202, 0.35) 30%, rgba(255, 255, 255, 0.2) 50%, rgba(96, 206, 202, 0.35) 70%, transparent 100%);
     pointer-events: none;
   }
 
   .bento-card:hover {
-    @apply border-purple-500/30 shadow-bento-hover -translate-y-0.5;
+    border-color: rgba(96, 206, 202, 0.3);
+    box-shadow: 0 0 0 1px rgba(96, 206, 202, 0.25), 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
   }
 
   .bento-card-spotlight {
-    @apply relative overflow-hidden rounded-2xl border border-purple-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-purple;
-    background: linear-gradient(to bottom, rgba(28, 22, 46, 0.9), rgba(18, 20, 32, 0.9));
+    @apply relative overflow-hidden rounded-2xl border border-teal-500/30 p-6 backdrop-blur-xl transition-all duration-300;
+    background: linear-gradient(to bottom, #0C212B, #091921);
   }
 
   .bento-card-cyan {
-    @apply relative overflow-hidden rounded-2xl border border-cyan-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-cyan;
-    background: linear-gradient(to bottom, rgba(14, 33, 43, 0.9), rgba(18, 20, 32, 0.9));
+    @apply relative overflow-hidden rounded-2xl border border-cyan-500/30 p-6 backdrop-blur-xl transition-all duration-300;
+    background: linear-gradient(to bottom, #0B2230, #091921);
   }
 
   .bento-card-emerald {
-    @apply relative overflow-hidden rounded-2xl border border-emerald-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-emerald;
-    background: linear-gradient(to bottom, rgba(16, 36, 27, 0.9), rgba(18, 20, 32, 0.9));
+    @apply relative overflow-hidden rounded-2xl border border-emerald-500/30 p-6 backdrop-blur-xl transition-all duration-300;
+    background: linear-gradient(to bottom, #0C241D, #091921);
   }
 
   .bento-badge {
@@ -94,32 +142,50 @@ body {
     @apply inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-400;
   }
 
-  .bento-pill-purple {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-300;
-  }
-
-  .crm-card {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition-all duration-300;
-    background-color: rgba(18, 20, 32, 0.9);
-  }
-
-  .crm-surface {
-    @apply bg-surface;
+  .bento-pill-teal {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-[#60CECA]/30 bg-[#60CECA]/10 px-2.5 py-0.5 text-xs font-bold text-[#60CECA];
   }
 }
 
-/* Custom Scrollbar for high-tech Bento tables */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@keyframes admin-dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-::-webkit-scrollbar-track {
-  background: rgba(15, 17, 26, 0.6);
+
+.admin-dashboard > * {
+  animation: admin-dashboard-enter 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-::-webkit-scrollbar-thumb {
-  background: #252a3f;
-  border-radius: 9999px;
+
+.admin-dashboard > :nth-child(2) {
+  animation-delay: 50ms;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #3b4263;
+
+.admin-dashboard > :nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.admin-dashboard > :nth-child(4) {
+  animation-delay: 150ms;
+}
+
+:focus-visible {
+  outline: 2px solid #60CECA;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

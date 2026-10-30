@@ -16,13 +16,14 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true })
+  const isHttps = request.headers.get('x-forwarded-proto') === 'https' || request.url.startsWith('https://')
 
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
     value: getAdminSessionValue(),
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     path: '/',
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     value: createCrmSessionValue(),
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     path: '/',
     maxAge: 60 * 60 * 12,
   })

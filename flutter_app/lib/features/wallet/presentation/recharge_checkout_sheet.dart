@@ -33,32 +33,24 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
 
   static const _paymentMethods = [
     {
-      'id': 'Cashfree',
-      'title': 'Cashfree Secure Checkout',
-      'subtitle': 'UPI, cards, net banking & wallets',
-      'icon': Icons.lock_rounded,
-      'badge': 'RECOMMENDED',
+      'id': 'CashfreeInApp',
+      'title': 'Option 1: In-App Instant UPI',
+      'subtitle': 'Direct 1-tap PhonePe, GPay, Paytm on phone',
+      'icon': Icons.flash_on_rounded,
+      'badge': 'DIRECT IN-APP',
     },
     {
-      'id': 'GooglePlay',
-      'title': 'Google Play Store',
-      'subtitle': '1-tap UPI, cards, net banking & balance',
-      'icon': Icons.shop_two_rounded,
-      'badge': 'OPTIONAL',
+      'id': 'CashfreeBrowser',
+      'title': 'Option 2: External Browser Checkout',
+      'subtitle': 'Opens Chrome with UPI, QR, Cards & NetBanking',
+      'icon': Icons.open_in_browser_rounded,
+      'badge': 'RECOMMENDED',
     },
   ];
 
   Future<void> _processPayment(bool isFirstTimeBuyer) async {
-    if (_selectedMethod == 'GooglePlay') {
-      final success = await ref
-          .read(googlePlayIapServiceProvider.notifier)
-          .buyCoinPackage(widget.package);
-      if (mounted && success) {
-        Navigator.of(context).pop(true);
-      }
-      return;
-    }
     setState(() => _isProcessing = true);
+    final isExternal = _selectedMethod == 'CashfreeBrowser';
     try {
       final order = await ref
           .read(walletRepositoryProvider)
@@ -76,6 +68,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
       }
       final sessionId = order?['payment_session_id'] as String?;
       final providerOrderId = order?['provider_order_id'] as String?;
+      final checkoutUrl = order?['checkout_url'] as String?;
       if (sessionId == null ||
           sessionId.isEmpty ||
           providerOrderId == null ||
@@ -98,6 +91,8 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 widget.package.amountInr,
             coins: (order?['coins'] as num?)?.toInt() ?? widget.package.coins,
             paymentMethod: _selectedMethod,
+            externalBrowserMode: isExternal,
+            checkoutUrl: checkoutUrl,
             verifyPayment: (orderId) => ref
                 .read(walletRepositoryProvider)
                 .confirmCashfreePayment(providerOrderId: orderId),

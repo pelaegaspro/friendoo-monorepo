@@ -50,10 +50,17 @@ export default function CallsAdminPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const response = await adminFetch<{ calls: CallRow[] }>('/api/admin/calls/list')
-      setCalls(response.calls)
+      const response = await adminFetch<{ calls?: CallRow[] }>('/api/admin/calls/list')
+      setCalls(
+        Array.isArray(response?.calls)
+          ? response.calls
+          : Array.isArray(response)
+          ? (response as unknown as CallRow[])
+          : []
+      )
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load calls')
+      setCalls([])
     } finally {
       setLoading(false)
     }
@@ -64,7 +71,7 @@ export default function CallsAdminPage() {
   }, [])
 
   const filteredCalls = useMemo(
-    () => calls.filter((call) => (statusFilter === 'all' ? true : call.status === statusFilter)),
+    () => (Array.isArray(calls) ? calls : []).filter((call) => (statusFilter === 'all' ? true : call.status === statusFilter)),
     [calls, statusFilter]
   )
 
@@ -97,7 +104,7 @@ export default function CallsAdminPage() {
                   : 'border border-[#343434] bg-[#111111] text-zinc-400'
               }`}
             >
-              {status === 'all' ? `All (${calls.length})` : `${status.charAt(0).toUpperCase() + status.slice(1)} (${calls.filter(c => c.status === status).length})`}
+              {status === 'all' ? `All (${(calls || []).length})` : `${status.charAt(0).toUpperCase() + status.slice(1)} (${(calls || []).filter(c => c.status === status).length})`}
             </button>
           ))}
         </div>
@@ -143,8 +150,8 @@ export default function CallsAdminPage() {
                           {call.callType || 'audio'}
                         </span>
                       </td>
-                      <td className="px-3 py-4 text-zinc-300">{formatDuration(call.durationSeconds)}</td>
-                      <td className="px-3 py-4 text-zinc-300">{call.coinsSpent.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-4 text-zinc-300">{formatDuration(call.durationSeconds ?? 0)}</td>
+                      <td className="px-3 py-4 text-zinc-300">{(call.coinsSpent ?? 0).toLocaleString('en-IN')}</td>
                       <td className="px-3 py-4">
                         <Badge
                           label={call.status}

@@ -29,47 +29,41 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md bento-card p-8 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-[#040D12] px-4 font-sans selection:bg-[#60CECA]/30 selection:text-[#60CECA]">
+      <div className="w-full max-w-md rounded-2xl border border-[#17333D] bg-[#08171E] p-8 shadow-2xl backdrop-blur-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto w-fit mb-4 select-none">
-            <svg viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-auto">
-              <defs>
-                <linearGradient id="logoGradLogin" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="50%" stopColor="#ec4899" />
-                  <stop offset="100%" stopColor="#38bdf8" />
-                </linearGradient>
-              </defs>
-              <text x="0" y="22" fill="url(#logoGradLogin)" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900, fontSize: 24, letterSpacing: '-0.05em' }}>friendoo</text>
-            </svg>
+          <div className="mx-auto w-fit mb-3 select-none flex items-center justify-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#2FE5A7] animate-pulse"></span>
+            <span className="font-extrabold text-lg tracking-tight text-white font-mono">
+              friendoo<span className="text-[#60CECA]">.admin</span>
+            </span>
           </div>
-          <h1 className="mt-5 text-xl font-bold tracking-tight text-foreground">Admin Operations Bento</h1>
-          <p className="mt-2 text-xs text-muted-foreground">Authenticate to access live governance matrix.</p>
+          <h1 className="mt-3 text-xl font-bold tracking-tight text-white">Underwriting & Ops Desk</h1>
+          <p className="mt-1 text-xs text-[#8BA3AB]">Authenticate to access live governance & desk operations.</p>
         </div>
 
         <form onSubmit={submit} className="space-y-4">
           <label className="block">
-            <span className="mb-2 block text-xs font-semibold text-muted-foreground">Admin Password</span>
+            <span className="mb-2 block text-xs font-medium text-[#8BA3AB]">Admin Password</span>
             <div className="relative">
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
                 placeholder="Enter password"
-                className="w-full rounded-2xl border border-border bg-surface pl-11 pr-4 py-3 text-foreground text-sm outline-none transition placeholder:text-muted-foreground focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full rounded-xl border border-[#17333D] bg-[#051016] pl-11 pr-4 py-3 text-white text-sm outline-none transition placeholder:text-[#526B75] focus:border-[#60CECA] focus:ring-1 focus:ring-[#60CECA]"
                 required
               />
-              <LockKeyhole className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground" />
+              <LockKeyhole className="absolute left-4 top-3.5 h-4 w-4 text-[#8BA3AB]" />
             </div>
           </label>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Dev Password: <strong className="text-purple-400 font-mono">friendoo-admin</strong></span>
+          <div className="flex items-center justify-between text-xs text-[#8BA3AB]">
+            <span>Password: <strong className="text-[#60CECA] font-mono">friendoo-admin</strong></span>
             <button
               type="button"
               onClick={() => setPassword("friendoo-admin")}
-              className="text-purple-400 hover:underline hover:text-purple-300 font-medium"
+              className="text-[#60CECA] hover:underline hover:text-[#7DE2DE] font-medium"
             >
               Autofill
             </button>
@@ -78,9 +72,9 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60 shadow-lg shadow-purple-900/30"
+            className="w-full rounded-xl bg-[#60CECA] px-4 py-3 text-sm font-bold text-[#032024] transition hover:bg-[#72DFDB] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 shadow-lg shadow-[#60CECA]/10"
           >
-            {loading ? 'Authenticating...' : 'Sign In to Admin Matrix'}
+            {loading ? 'Authenticating...' : 'Sign In to Desk'}
           </button>
         </form>
       </div>

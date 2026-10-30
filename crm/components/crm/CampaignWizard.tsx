@@ -12,8 +12,8 @@ interface CampaignWizardProps {
 }
 
 const segmentOptions: Array<{ value: SegmentKey; label: string }> = [
-  { value: "all", label: "All Users" },
-  { value: "new_user", label: "New Users" },
+  { value: "all", label: "All Callers (Users)" },
+  { value: "new_user", label: "New Callers" },
   { value: "low_balance", label: "Low Balance" },
   { value: "inactive", label: "Inactive" },
   { value: "vip", label: "VIP" },

@@ -78,6 +78,8 @@ class HostProfile {
     this.vipTier = HostVipTier.silver,
     this.isFavorite = false,
     this.isSurgeActive = false,
+    this.voiceIntroUrl,
+    this.voiceIntroDurationSecs = 8,
   });
 
   final String id;
@@ -97,7 +99,10 @@ class HostProfile {
   final HostVipTier vipTier;
   final bool isFavorite;
   final bool isSurgeActive;
+  final String? voiceIntroUrl;
+  final int voiceIntroDurationSecs;
 
+  bool get hasVoiceIntro => voiceIntroUrl != null && voiceIntroUrl!.trim().isNotEmpty;
   bool get isFemale => gender.trim().toLowerCase() != 'male';
   bool get isOnline => isAvailable && status == HostStatus.online;
   bool get isBusy => status == HostStatus.busy;
@@ -151,6 +156,8 @@ class HostProfile {
     HostVipTier? vipTier,
     bool? isFavorite,
     bool? isSurgeActive,
+    String? voiceIntroUrl,
+    int? voiceIntroDurationSecs,
   }) {
     return HostProfile(
       id: id ?? this.id,
@@ -170,6 +177,8 @@ class HostProfile {
       vipTier: vipTier ?? this.vipTier,
       isFavorite: isFavorite ?? this.isFavorite,
       isSurgeActive: isSurgeActive ?? this.isSurgeActive,
+      voiceIntroUrl: voiceIntroUrl ?? this.voiceIntroUrl,
+      voiceIntroDurationSecs: voiceIntroDurationSecs ?? this.voiceIntroDurationSecs,
     );
   }
 
@@ -222,6 +231,8 @@ class HostProfile {
       vipTier: resolvedTier,
       isFavorite: (map['is_favorite'] as bool?) ?? false,
       isSurgeActive: (map['is_surge'] as bool?) ?? false,
+      voiceIntroUrl: map['voice_intro_url'] as String? ?? map['audio_bio_url'] as String?,
+      voiceIntroDurationSecs: (map['voice_intro_duration_secs'] as num?)?.toInt() ?? 8,
     );
   }
 }
@@ -353,6 +364,7 @@ class UserProfile {
     required this.phone,
     required this.displayName,
     required this.preferredLanguages,
+    this.city,
     this.avatarUrl,
     this.avatarSelectedAt,
     this.isHost = false,
@@ -362,6 +374,7 @@ class UserProfile {
   final String phone;
   final String displayName;
   final List<String> preferredLanguages;
+  final String? city;
   final String? avatarUrl;
   final DateTime? avatarSelectedAt;
   final bool isHost;
@@ -373,6 +386,7 @@ class UserProfile {
     String? phone,
     String? displayName,
     List<String>? preferredLanguages,
+    String? city,
     String? avatarUrl,
     DateTime? avatarSelectedAt,
     bool? isHost,
@@ -381,6 +395,7 @@ class UserProfile {
     phone: phone ?? this.phone,
     displayName: displayName ?? this.displayName,
     preferredLanguages: preferredLanguages ?? this.preferredLanguages,
+    city: city ?? this.city,
     avatarUrl: avatarUrl ?? this.avatarUrl,
     avatarSelectedAt: avatarSelectedAt ?? this.avatarSelectedAt,
     isHost: isHost ?? this.isHost,
@@ -392,6 +407,7 @@ class UserProfile {
       id: map['id'] as String,
       phone: phone,
       displayName: map['display_name'] as String? ?? 'User',
+      city: map['city'] as String?,
       preferredLanguages:
           (map['preferred_languages'] as List<dynamic>?)
               ?.map((e) => e.toString())

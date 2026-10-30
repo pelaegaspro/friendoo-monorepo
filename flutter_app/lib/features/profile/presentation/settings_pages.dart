@@ -15,6 +15,7 @@ import '../../notifications/data/notification_repository.dart';
 import '../../notifications/presentation/in_app_notification_banner.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/blocked_callers_service.dart';
+import '../../support/presentation/support_desk_page.dart';
 import 'instagram_profile_form.dart';
 import 'profile_input_widgets.dart';
 
@@ -238,6 +239,7 @@ class EditUserProfilePage extends ConsumerStatefulWidget {
 
 class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   late TextEditingController _nameController;
+  late TextEditingController _cityController;
   late TextEditingController _ageController;
   late TextEditingController _bioController;
   String _selectedAvatarId = 'user_01';
@@ -248,6 +250,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: '');
+    _cityController = TextEditingController(text: '');
     _ageController = TextEditingController(text: '24');
     _bioController = TextEditingController();
     _loadAvatarSelection();
@@ -266,6 +269,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     setState(() {
       if (profile != null) {
         _nameController.text = profile.displayName;
+        _cityController.text = profile.city ?? '';
         if (DesiAvatarPack.isValidPresetForRole(savedId ?? '', 'user')) {
           _selectedAvatarId = savedId!;
         }
@@ -278,6 +282,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _cityController.dispose();
     _ageController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -286,8 +291,13 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   Future<void> _saveChanges() async {
     final name = _nameController.text.trim();
     final bio = _bioController.text.trim();
+    final city = _cityController.text.trim();
     if (name.isEmpty || name.length > 50) {
       _showMessage('Enter a name between 1 and 50 characters.');
+      return;
+    }
+    if (city.length > 60) {
+      _showMessage('City must be 60 characters or less.');
       return;
     }
     if (bio.length > 150) {
@@ -303,6 +313,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             displayName: name,
             about: bio,
             age: _selectedAge,
+            city: city.isEmpty ? null : city,
           );
     } catch (_) {
       if (!mounted) return;
@@ -473,6 +484,18 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                         maxLength: 50,
                         accentColor: FriendooUiColors.violet,
                         isRequired: true,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 8),
+
+                      InstagramTextField(
+                        controller: _cityController,
+                        label: 'City / Metro',
+                        hintText: 'e.g. Chennai, Mumbai, Delhi',
+                        helperText: 'Your home city or metro region',
+                        maxLength: 50,
+                        accentColor: FriendooUiColors.violet,
+                        prefixIcon: Icons.location_on_outlined,
                         onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 8),
@@ -2331,6 +2354,32 @@ class HelpSupportPage extends StatelessWidget {
         SettingsSectionCard(
           title: 'CONTACT CHANNELS',
           children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: FriendooUiColors.violet.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.support_agent_rounded,
+                  color: FriendooUiColors.violet,
+                  size: 22,
+                ),
+              ),
+              title: const Text(
+                '24/7 Live Support Desk',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              ),
+              subtitle: const Text(
+                'Direct help for failed recharges, call drops & refunds',
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+              trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
+              onTap: () => SupportDeskPage.show(context, isHost: isHost),
+            ),
+            const Divider(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(

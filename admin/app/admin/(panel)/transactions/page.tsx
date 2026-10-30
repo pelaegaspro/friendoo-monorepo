@@ -48,10 +48,17 @@ export default function TransactionsAdminPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const response = await adminFetch<{ transactions: TransactionRow[] }>('/api/admin/transactions/list')
-      setTransactions(response.transactions)
+      const response = await adminFetch<{ transactions?: TransactionRow[] }>('/api/admin/transactions/list')
+      setTransactions(
+        Array.isArray(response?.transactions)
+          ? response.transactions
+          : Array.isArray(response)
+          ? (response as unknown as TransactionRow[])
+          : []
+      )
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load transactions')
+      setTransactions([])
     } finally {
       setLoading(false)
     }
@@ -62,7 +69,7 @@ export default function TransactionsAdminPage() {
   }, [])
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
+    return (Array.isArray(transactions) ? transactions : []).filter((transaction) => {
       const matchesType = typeFilter === 'all' ? true : transaction.type === typeFilter
       const createdAt = transaction.createdAt ? new Date(transaction.createdAt) : null
       const matchesStart = startDate && createdAt ? createdAt >= new Date(`${startDate}T00:00:00`) : true

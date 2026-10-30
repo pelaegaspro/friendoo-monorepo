@@ -55,7 +55,7 @@ export function setSessionCookie(response: NextResponse) {
   response.cookies.set(CRM_SESSION_COOKIE, createSessionValue(), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.COOKIE_SECURE === "true",
     path: "/",
     maxAge: 60 * 60 * 12,
   });
@@ -65,7 +65,7 @@ export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(CRM_SESSION_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.COOKIE_SECURE === "true",
     path: "/",
     maxAge: 0,
   });

@@ -18,47 +18,35 @@ const config: Config = {
         muted: "var(--muted)",
         "muted-foreground": "var(--muted-foreground)",
         border: "var(--border)",
-        "border-glow": "var(--border-glow)",
-        accent: "var(--accent)",
-        "accent-glow": "var(--accent-glow)",
-        success: "var(--success)",
-        danger: "var(--danger)",
-        warning: "var(--warning)",
-        cyan: {
-          400: "#22d3ee",
-          500: "#06b6d4",
+        accent: {
+          DEFAULT: "#1F5C4E",
+          hover: "#17463B",
+          light: "#EBF3F0",
         },
       },
       borderRadius: {
-        "2xl": "1rem",
-        "3xl": "1.5rem",
-        "4xl": "2rem",
+        DEFAULT: "12px",
+        card: "12px",
       },
-      boxShadow: {
-        bento: "0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border)",
-        "bento-hover": "0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-glow), 0 0 25px -5px rgba(168, 85, 247, 0.15)",
-        "bento-glow-purple": "0 0 30px -5px rgba(168, 85, 247, 0.25)",
-        "bento-glow-cyan": "0 0 30px -5px rgba(6, 182, 212, 0.25)",
-        "bento-glow-emerald": "0 0 30px -5px rgba(34, 197, 94, 0.25)",
+      fontSize: {
+        // Strict 4-size typography hierarchy: 12px, 14px, 20px, 32px
+        xs: ["12px", { lineHeight: "16px" }],
+        sm: ["14px", { lineHeight: "20px" }],
+        base: ["14px", { lineHeight: "20px" }],
+        xl: ["20px", { lineHeight: "28px" }],
+        "3xl": ["32px", { lineHeight: "40px" }],
       },
-      animation: {
-        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "radar-sweep": "radarSweep 4s linear infinite",
-        shimmer: "shimmer 2.5s linear infinite",
-      },
-      keyframes: {
-        radarSweep: {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
+      spacing: {
+        // 8px spacing grid: 4, 8, 16, 24, 32
+        1: "4px",
+        2: "8px",
+        4: "16px",
+        6: "24px",
+        8: "32px",
       },
     },
   },
   plugins: [],
 };
-export default config;
 
+export default config;

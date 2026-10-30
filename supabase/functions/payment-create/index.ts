@@ -58,6 +58,72 @@ function isPackageId(value: unknown): value is string {
 Deno.serve(async (request) => {
   const responseHeaders = allowedCorsHeaders(request);
   if (request.method === 'OPTIONS') return new Response('ok', {headers: responseHeaders});
+
+  if (request.method === 'GET') {
+    const url = new URL(request.url);
+    const sessionId = url.searchParams.get('session_id');
+    const env = url.searchParams.get('env') === 'sandbox' ? 'sandbox' : 'production';
+    if (!sessionId) {
+      return new Response('Missing session_id parameter', { status: 400 });
+    }
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friendoo Secure Checkout</title>
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background-color: #0B0E17; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .card { background: #161B26; border: 1px solid #262D40; border-radius: 24px; padding: 36px 24px; text-align: center; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .logo { width: 56px; height: 56px; background: #7C3AED; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; font-weight: 900; font-size: 24px; color: #FFFFFF; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #262D40; border-top-color: #EC4899; border-radius: 50%; animation: spin 0.8s infinite linear; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    h2 { margin: 0 0 10px; font-size: 20px; font-weight: 700; }
+    p { margin: 0 0 16px; color: #94A3B8; font-size: 14px; line-height: 1.5; }
+    .btn { display: inline-block; background: #7C3AED; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">F</div>
+    <h2>Redirecting to Secure Payment</h2>
+    <p>Opening UPI (PhonePe, GPay, Paytm), Cards & NetBanking options…</p>
+    <div class="spinner" id="spinner"></div>
+    <div id="fallback" style="display:none;">
+      <p style="color:#F59E0B;">If payment did not open automatically, tap below:</p>
+      <button class="btn" onclick="startCheckout()">Open Payment Options</button>
+    </div>
+  </div>
+  <script>
+    const cashfree = Cashfree({ mode: "${env}" });
+    function startCheckout() {
+      cashfree.checkout({
+        paymentSessionId: "${sessionId}",
+        redirectTarget: "_self"
+      }).then(function(result) {
+        if (result && result.error) {
+          document.getElementById('spinner').style.display = 'none';
+          document.getElementById('fallback').style.display = 'block';
+        }
+      });
+    }
+    startCheckout();
+    setTimeout(function() {
+      document.getElementById('fallback').style.display = 'block';
+    }, 3500);
+  </script>
+</body>
+</html>`;
+    return new Response(html, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
+  }
+
   if (request.method !== 'POST') return error('Method not allowed', 405, responseHeaders);
 
   try {
@@ -206,6 +272,8 @@ Deno.serve(async (request) => {
       metadata: {package_id: body.package_id, environment: activeEnv},
     });
 
+    const checkoutUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-create?session_id=${encodeURIComponent(providerOrder.payment_session_id)}&env=${activeEnv}`;
+
     return json({
       order_id: order.id,
       provider_order_id: providerOrderId,
@@ -213,6 +281,7 @@ Deno.serve(async (request) => {
       coins: order.coins,
       environment: activeEnv,
       payment_session_id: providerOrder.payment_session_id,
+      checkout_url: checkoutUrl,
     }, 200, responseHeaders);
   } catch (caught) {
     const code = caught instanceof Error && caught.message === 'REQUEST_BODY_TOO_LARGE' ? 413 : 500;

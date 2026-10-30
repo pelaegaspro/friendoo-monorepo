@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { SegmentBuilder } from "@/components/crm/SegmentBuilder";
 import { UserJourneySheet } from "@/components/crm/UserJourneySheet";
+import Image from "next/image";
 import { KPICard } from "@/components/crm/KPICard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,23 +27,27 @@ import { useCrmStore } from "@/store/useCrmStore";
 import { CustomSegmentFilter, SegmentKey } from "@/lib/types";
 import { toDate } from "@/lib/utils";
 import { crmFetch } from "@/lib/client";
+import { getAppAvatarUrl } from "@/lib/avatar";
 
 type UserRow = {
   uid: string;
   displayName?: string;
   phone?: string;
   photoURL?: string;
+  avatarPath?: string | null;
+  city?: string;
   coinBalance?: number;
   totalSpentInr?: number;
   totalCalls?: number;
+  createdAt?: unknown;
   lastActive?: unknown;
   isBanned?: boolean;
   isHost?: boolean;
 };
 
 const defaultTabs: Array<{ value: SegmentKey; label: string }> = [
-  { value: "all", label: "All Users" },
-  { value: "new_user", label: "New Users" },
+  { value: "all", label: "All Callers" },
+  { value: "new_user", label: "New Callers" },
   { value: "low_balance", label: "Low Balance" },
   { value: "vip", label: "VIP Spenders" },
   { value: "inactive", label: "Inactive Dormant" },
@@ -93,14 +98,53 @@ export default function UsersPage() {
   );
 
   const filteredUsers = useMemo(() => {
+    let list = users.filter((u) => !u.isHost);
+
+    // Filter & Sort by selected segment
+    if (selectedSegment === "low_balance") {
+      list = list.filter((u) => (u.coinBalance ?? 0) < 15);
+      list.sort((a, b) => (a.coinBalance ?? 0) - (b.coinBalance ?? 0));
+    } else if (selectedSegment === "vip") {
+      list = list.filter((u) => (u.totalSpentInr ?? 0) > 0 || (u.coinBalance ?? 0) >= 50);
+      list.sort((a, b) => ((b.totalSpentInr ?? 0) - (a.totalSpentInr ?? 0)) || ((b.coinBalance ?? 0) - (a.coinBalance ?? 0)));
+    } else if (selectedSegment === "new_user") {
+      const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      list = list.filter((u) => {
+        const d = toDate(u.createdAt);
+        return d ? d.getTime() >= fourteenDaysAgo || (u.totalSpentInr ?? 0) === 0 : true;
+      });
+      list.sort((a, b) => {
+        const da = toDate(a.createdAt)?.getTime() ?? 0;
+        const db = toDate(b.createdAt)?.getTime() ?? 0;
+        return db - da;
+      });
+    } else if (selectedSegment === "first_call") {
+      list = list.filter((u) => (u.totalCalls ?? 0) >= 1);
+      list.sort((a, b) => (b.totalCalls ?? 0) - (a.totalCalls ?? 0));
+    } else if (selectedSegment === "inactive") {
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      list = list.filter((u) => {
+        const d = toDate(u.lastActive ?? u.createdAt);
+        return d ? d.getTime() < sevenDaysAgo : false;
+      });
+      list.sort((a, b) => {
+        const da = toDate(a.lastActive ?? a.createdAt)?.getTime() ?? 0;
+        const db = toDate(b.lastActive ?? b.createdAt)?.getTime() ?? 0;
+        return da - db;
+      });
+    } else if (selectedSegment === "at_risk") {
+      list = list.filter((u) => ((u.totalCalls ?? 0) > 0 || (u.totalSpentInr ?? 0) > 0) && (u.coinBalance ?? 0) < 15);
+      list.sort((a, b) => (a.coinBalance ?? 0) - (b.coinBalance ?? 0));
+    }
+
     const needle = query.trim().toLowerCase();
-    if (!needle) return users;
-    return users.filter((user) => {
+    if (!needle) return list;
+    return list.filter((user) => {
       const name = (user.displayName || "").toLowerCase();
       const phone = (user.phone || "").toLowerCase();
       return name.includes(needle) || phone.includes(needle);
     });
-  }, [query, users]);
+  }, [query, selectedSegment, users]);
 
   const openJourney = async (uid: string) => {
     const json = await crmFetch<{ user?: { displayName?: string; username?: string }; timeline?: Array<{ title: string; detail?: string; level?: "ok" | "warn"; date: Date }> }>(`/api/crm/users/journey/${uid}`);
@@ -179,13 +223,16 @@ export default function UsersPage() {
   };
 
   const segmentFromUser = (user: UserRow) => {
+    if ((user.totalSpentInr || 0) > 0 || (user.coinBalance || 0) >= 100) return "VIP";
     if ((user.coinBalance || 0) < 15) return "Low Balance";
-    if ((user.totalSpentInr || 0) > 500) return "VIP";
     if ((user.totalCalls || 0) === 1) return "First Call";
+    if ((user.totalCalls || 0) > 1) return "Active Caller";
+    const createdDate = toDate(user.createdAt);
+    if (createdDate && Date.now() - createdDate.getTime() < 14 * 24 * 60 * 60 * 1000) return "New User";
     return "Member";
   };
 
-  const vipCount = users.filter((u) => (u.totalSpentInr || 0) > 500).length;
+  const vipCount = users.filter((u) => (u.totalSpentInr || 0) > 0 || (u.coinBalance || 0) >= 50).length;
   const lowBalanceCount = users.filter((u) => (u.coinBalance || 0) < 15).length;
 
   return (
@@ -195,12 +242,12 @@ export default function UsersPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
-              User Intelligence Bento
+              Caller Intelligence Bento
             </h1>
-            <span className="bento-badge text-purple-400">Cohort Explorer</span>
+            <span className="bento-badge text-purple-400">Callers Only (Voice Hosts Separated)</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Segment telemetry, user journey timeline tracing, and direct coin interventions.
+            Caller segment telemetry, coin balances, and lifecycle metrics. Voice hosts are strictly managed in Voice Hosts.
           </p>
         </div>
         <Button onClick={() => setBuilderOpen(true)} className="gap-2">
@@ -212,12 +259,12 @@ export default function UsersPage() {
       {/* Bento KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
-          title="Segment Population"
+          title="Caller Population"
           value={`${users.length}`}
           icon={Users}
           variant="spotlight"
           badge="Cohort"
-          footer="Active users in view"
+          footer="Active callers in view"
         />
         <KPICard
           title="VIP High Spenders"
@@ -277,8 +324,9 @@ export default function UsersPage() {
               <Table>
                 <thead>
                   <TableRow className="border-b border-white/5 hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold text-muted-foreground">User</TableHead>
+                    <TableHead className="text-xs font-semibold text-muted-foreground">Caller</TableHead>
                     <TableHead className="text-xs font-semibold text-muted-foreground">Phone</TableHead>
+                    <TableHead className="text-xs font-semibold text-muted-foreground">City</TableHead>
                     <TableHead className="text-xs font-semibold text-muted-foreground">Cohort Tag</TableHead>
                     <TableHead className="text-xs font-semibold text-muted-foreground">Coin Balance</TableHead>
                     <TableHead className="text-xs font-semibold text-muted-foreground">Lifetime Spent</TableHead>
@@ -292,10 +340,37 @@ export default function UsersPage() {
                   {filteredUsers.map((user) => {
                     const activeAt = toDate(user.lastActive);
                     const tag = segmentFromUser(user);
+                    const avatarSrc = getAppAvatarUrl(user.avatarPath || user.photoURL);
+                    const initials = (user.displayName || "U")
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase();
+
                     return (
                       <TableRow key={user.uid} className="border-b border-white/5 transition-colors hover:bg-white/5">
-                        <TableCell className="font-bold text-foreground text-xs">{user.displayName || "Anonymous User"}</TableCell>
+                        <TableCell className="font-bold text-foreground text-xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative h-7 w-7 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-purple-950/40 flex items-center justify-center">
+                              {avatarSrc ? (
+                                <Image
+                                  src={avatarSrc}
+                                  alt={user.displayName || "Caller"}
+                                  width={28}
+                                  height={28}
+                                  unoptimized
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-[10px] font-bold text-purple-300">{initials}</span>
+                              )}
+                            </div>
+                            <span>{user.displayName || "Anonymous Caller"}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">{user.phone || "—"}</TableCell>
+                        <TableCell className="text-xs text-zinc-300 font-medium">{user.city || "—"}</TableCell>
                         <TableCell>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -303,6 +378,10 @@ export default function UsersPage() {
                                 ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                                 : tag === "Low Balance"
                                 ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                                : tag === "New User"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : tag === "First Call" || tag === "Active Caller"
+                                ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                                 : "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                             }`}
                           >

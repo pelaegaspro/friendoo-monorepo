@@ -153,6 +153,8 @@ export interface BannerAdRecord {
   id: string
   title: string
   campaignType: 'user_offer' | 'host_incentive' | 'flash_package' | 'sponsor_ad'
+  campaignClass?: 'friendoo_offer' | 'sponsored_ad' | null
+  sponsorName?: string | null
   targetAudience: 'all' | 'users' | 'hosts' | 'new_users' | 'priority_users'
   badgeText: string
   headline: string

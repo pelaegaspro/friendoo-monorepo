@@ -22,7 +22,7 @@ export async function adminFetch<T>(input: RequestInfo | URL, init?: AdminFetchO
   const method = (init?.method || 'GET').toUpperCase();
   const urlKey = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
   const isGet = method === 'GET';
-  const ttl = init?.ttlMs ?? 15000; // 15-second default TTL
+  const ttl = init?.ttlMs ?? 60000; // 60s client cache for instant tab transitions // 15-second default TTL
   const now = Date.now();
 
   // On non-GET mutations, clear relevant cache

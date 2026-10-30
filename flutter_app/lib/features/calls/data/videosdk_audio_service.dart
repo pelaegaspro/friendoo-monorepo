@@ -10,6 +10,7 @@ class VideoSdkAudioService implements RtcAudioService {
   bool _isMuted = false;
   bool _isSpeaker = true;
   String? _currentRoomId;
+  String? get currentRoomId => _currentRoomId;
   bool _isConnected = false;
 
   final StreamController<RtcConnectionState> _connectionStateController =

@@ -36,6 +36,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   late Timer _timer;
   int _secondsElapsed = 0;
   int? _initialCoinBalance;
+  int? _lastRecordedWalletCoins;
+  bool _hasWarnedLowBalance = false;
   bool _autoEnding = false;
 
   String? _remoteName;
@@ -120,6 +122,37 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
     final maxSeconds = (startCoins ~/ rate) * 60;
     final remainingSeconds = maxSeconds - _secondsElapsed;
+
+    if (remainingSeconds <= 60 && remainingSeconds > 0 && !_hasWarnedLowBalance) {
+      _hasWarnedLowBalance = true;
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: const Color(0xFFE11D48),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'TOP UP',
+              textColor: Colors.white,
+              onPressed: () => CoinPackagesPage.push(context, isCallRecharge: true),
+            ),
+            content: const Row(
+              children: [
+                Icon(Icons.hourglass_bottom_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⏳ 1 minute remaining! Tap Top Up to stay connected.',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
 
     if (remainingSeconds <= 0 && !_autoEnding) {
       _autoEnding = true;
@@ -255,8 +288,17 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
         liveCall.status == CallStatus.accepted ||
         liveCall.status == CallStatus.active;
 
-    if (_initialCoinBalance == null && wallet != null) {
-      _initialCoinBalance = wallet.coinBalance;
+    if (wallet != null) {
+      if (_initialCoinBalance == null) {
+        _initialCoinBalance = wallet.coinBalance;
+        _lastRecordedWalletCoins = wallet.coinBalance;
+      } else if (_lastRecordedWalletCoins != null && wallet.coinBalance > _lastRecordedWalletCoins!) {
+        final added = wallet.coinBalance - _lastRecordedWalletCoins!;
+        _initialCoinBalance = _initialCoinBalance! + added;
+        _lastRecordedWalletCoins = wallet.coinBalance;
+        _autoEnding = false;
+        _hasWarnedLowBalance = false;
+      }
     }
     final startingCoins = _initialCoinBalance;
     final rate = widget.call.ratePerMinute > 0 ? widget.call.ratePerMinute : 5;
@@ -337,7 +379,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     final rtcState = ref.watch(rtcConnectionStateProvider).asData?.value;
     final rtcLatency = ref.watch(rtcLatencyProvider).asData?.value;
-    final rtcAudioLevel = ref.watch(rtcAudioLevelProvider).asData?.value ?? 0.0;
+    // final rtcAudioLevel = ref.watch(rtcAudioLevelProvider).asData?.value ?? 0.0;
     final bool isRtcConnected = rtcState == RtcConnectionState.connected;
     final bool isRtcReconnecting =
         isCallActive && rtcState == RtcConnectionState.reconnecting;

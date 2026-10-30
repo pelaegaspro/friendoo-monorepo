@@ -20,6 +20,7 @@ import '../features/wallet/data/wallet_repository.dart';
 import '../features/wallet/presentation/coin_packages_page.dart';
 import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import '../features/wallet/presentation/select_payment_method_page.dart';
+import '../features/support/presentation/support_desk_page.dart';
 import '../features/ads/presentation/cloud_banner_ad_widget.dart';
 import '../features/ads/presentation/live_ad_banner_widget.dart';
 import '../features/notifications/presentation/notifications_sheet.dart';
@@ -934,6 +935,173 @@ class _DesiHostCard extends StatelessWidget {
   final VoidCallback onStartCall;
   final bool isRecommended;
 
+  void _showVoiceGreetingPreview(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF161B26),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(color: Color(0xFF262D40), width: 1.5),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  DesiFemaleAvatar(
+                    seed: host.displayName,
+                    age: host.displayAge,
+                    isStar: host.isStar,
+                    size: 52,
+                    showPresence: true,
+                    isOnline: host.isAvailable,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              host.displayName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: Color(0xFF10B981),
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          host.languages.join(' · ') + ' • ' + host.displayCity,
+                          style: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF26123D), Color(0xFF191632)],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.volume_up_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Voice Bio Preview',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            host.bio != null && host.bio!.isNotEmpty
+                                ? '"' + host.bio! + '"'
+                                : '"Namaste! Call me to talk anytime, free to chat in Hindi and English."',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFE2E8F0),
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    onStartCall();
+                  },
+                  icon: const Icon(Icons.call_rounded, size: 18),
+                  label: Text(
+                    'Call ' + host.displayName + ' · ₹' + host.ratePerAudioMinute.toString() + '/min',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   String _formatCalls(int totalCalls) {
     if (totalCalls >= 1000) {
       return '${(totalCalls / 1000).toStringAsFixed(1)}K';
@@ -959,14 +1127,21 @@ class _DesiHostCard extends StatelessWidget {
           width: host.isStar ? 1.8 : 1.2,
         ),
         boxShadow: [
+          // Layer 1: Ambient contact shadow (ui-skills beautiful-shadows)
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+          // Layer 2: Diffuse elevation lift
           BoxShadow(
             color: host.isStar
-                ? const Color(0x18FFB703)
+                ? const Color(0xFFFFB703).withValues(alpha: 0.16)
                 : (host.isAvailable
-                      ? const Color(0x126366F1)
-                      : Colors.black.withValues(alpha: 0.02)),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+                    ? const Color(0xFF6366F1).withValues(alpha: 0.10)
+                    : Colors.black.withValues(alpha: 0.025)),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1202,8 +1377,55 @@ class _DesiHostCard extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
           ],
+
+          // Voice Greeting Snippet Pill (ui-skills baseline-ui touch target + craft)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: InkWell(
+              onTap: () => _showVoiceGreetingPreview(context),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFD8B4FE).withValues(alpha: 0.8),
+                    width: 1.1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 16,
+                      color: Color(0xFF7C3AED),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Voice Bio (${host.voiceIntroDurationSecs}s)',
+                      style: const TextStyle(
+                        color: Color(0xFF6B21A8),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.graphic_eq_rounded,
+                      size: 14,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
           // Footer Row: City + Availability + Call Now CTA
           Row(
@@ -6235,15 +6457,92 @@ void _showWalletSupportSheet(BuildContext context) {
               ),
               const SizedBox(height: 20),
 
+              // 24/7 Support Desk Direct Banner
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            '24/7 Live Support Desk',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Instant resolution & coin credits',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF7C3AED),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      ),
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        SupportDeskPage.show(context, initialScenario: 'payment_failure');
+                      },
+                      child: const Text('Open Desk', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                    ),
+                  ],
+                ),
+              ),
+
               // Scenario 1: Money debited but coins not credited
               _SupportQueryCard(
                 icon: Icons.currency_rupee_rounded,
                 color: const Color(0xFFDC2626),
                 title: 'Money debited but coins not credited?',
                 subtitle: 'UPI/Bank payment was successful, but wallet balance not updated.',
-                solution: 'If your payment was successful but coins have not arrived, check the transaction status in your wallet. Keep your UPI reference number if you contact support.',
-                actionText: 'Close',
-                onAction: () => Navigator.of(sheetContext).pop(),
+                solution: 'If your payment was successful but coins have not arrived, report it directly to our 24/7 Desk. Admins can verify the transaction and credit coins immediately.',
+                actionText: 'Raise Ticket',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  SupportDeskPage.show(
+                    context,
+                    initialScenario: 'payment_failure',
+                    initialSubject: 'Money debited but coins not added to wallet',
+                  );
+                },
               ),
               const SizedBox(height: 12),
 
@@ -6253,10 +6552,15 @@ void _showWalletSupportSheet(BuildContext context) {
                 color: const Color(0xFFD97706),
                 title: 'Recharge failed or cancelled?',
                 subtitle: 'UPI app timed out or bank rejected transaction.',
-                solution: 'If a failed payment was deducted, contact your bank or payment provider for an update on the refund.',
-                actionText: 'Close',
+                solution: 'If money was deducted from your account during a failed payment, our support team can verify the gateway status.',
+                actionText: 'Report Issue',
                 onAction: () {
                   Navigator.of(sheetContext).pop();
+                  SupportDeskPage.show(
+                    context,
+                    initialScenario: 'payment_failure',
+                    initialSubject: 'Recharge payment failed or cancelled',
+                  );
                 },
               ),
               const SizedBox(height: 12),
@@ -6267,9 +6571,16 @@ void _showWalletSupportSheet(BuildContext context) {
                 color: FriendooUiColors.blue,
                 title: 'Call disconnected early or host dropped?',
                 subtitle: 'Audio dropped within initial seconds of connection.',
-                solution: 'Check your call summary for the billed amount. If you think it is incorrect, contact support with the call details.',
-                actionText: 'Close',
-                onAction: () => Navigator.of(sheetContext).pop(),
+                solution: 'If a call was disconnected prematurely due to network or host disconnect, request a coin refund review here.',
+                actionText: 'Request Refund',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  SupportDeskPage.show(
+                    context,
+                    initialScenario: 'call_drop_billing',
+                    initialSubject: 'Call disconnected early - request coin refund',
+                  );
+                },
               ),
               const SizedBox(height: 12),
 
@@ -6277,11 +6588,18 @@ void _showWalletSupportSheet(BuildContext context) {
               _SupportQueryCard(
                 icon: Icons.headset_mic_rounded,
                 color: const Color(0xFF10B981),
-                title: 'Contact Friendoo Support',
-                subtitle: 'For help with payments, calls or your account',
-                solution: 'Email support@friendoo.in with your transaction or call details.',
-                actionText: 'Close',
-                onAction: () => Navigator.of(sheetContext).pop(),
+                title: 'Contact 24/7 Friendoo Support',
+                subtitle: 'Any other question, host misconduct or wallet balance',
+                solution: 'Open our live support console to submit a ticket. You can track your ticket progress in real-time.',
+                actionText: 'Live Support',
+                onAction: () {
+                  Navigator.of(sheetContext).pop();
+                  SupportDeskPage.show(
+                    context,
+                    initialScenario: 'general',
+                    initialSubject: 'General inquiry or wallet assistance',
+                  );
+                },
               ),
               const SizedBox(height: 20),
 

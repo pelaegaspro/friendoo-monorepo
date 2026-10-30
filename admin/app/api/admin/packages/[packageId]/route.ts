@@ -11,8 +11,8 @@ export async function DELETE(
   if (unauthorized) return unauthorized
 
   try {
-    await deletePackage(packageId)
-    return NextResponse.json({ ok: true })
+    const result = await deletePackage(packageId)
+    return NextResponse.json({ ok: true, ...result })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 400 })
   }

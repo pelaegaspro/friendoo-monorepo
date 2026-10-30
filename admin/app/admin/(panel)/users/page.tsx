@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { getAvatarUrl } from '@/lib/avatar'
+import { getAppAvatarUrl } from '@/lib/avatar'
 import SectionCard from '@/components/admin/SectionCard'
 import StatCard from '@/components/admin/StatCard'
 import LoadingBlock from '@/components/admin/LoadingBlock'
@@ -53,7 +53,7 @@ export default function UsersAdminPage() {
   }, [])
 
   const filteredUsers = useMemo(() => {
-    let result = users
+    let result = Array.isArray(users) ? users : []
     const query = search.trim().toLowerCase()
 
     if (query) {
@@ -76,7 +76,7 @@ export default function UsersAdminPage() {
   }, [search, filterType, users])
 
   const totalBalance = useMemo(() => {
-    return users.reduce((acc, u) => acc + (u.coinBalance || 0), 0)
+    return (Array.isArray(users) ? users : []).reduce((acc, u) => acc + (u.coinBalance || 0), 0)
   }, [users])
 
   const addCoins = async (event: FormEvent<HTMLFormElement>) => {
@@ -154,26 +154,26 @@ export default function UsersAdminPage() {
         <div className="pointer-events-none absolute -right-8 -top-24 -z-10 h-64 w-64 rounded-full bg-violet-500/20 blur-[90px]" />
         <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-violet-300/[0.07] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-violet-200">
           <span className="h-1.5 w-1.5 rounded-full bg-violet-300 shadow-[0_0_10px_rgba(196,181,253,0.8)]" />
-          Customer workspace
+          Caller workspace (Non-Hosts)
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Customer CRM</h1>
+        <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Callers (End Users)</h1>
         <p className="mt-1 max-w-xl text-xs font-medium leading-5 text-zinc-400">
-          Review accounts, wallet balances, and customer access.
+          Review registered caller accounts, coin balances, and security status. Voice hosts are strictly managed in Voice Hosts.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Clients"
+          label="Registered Callers"
           value={users.length.toLocaleString('en-IN')}
           icon={UserRound}
           color="blue"
           variant="glass"
-          helper="Registered non-host accounts"
+          helper="Calling users (hosts excluded)"
         />
 
         <StatCard
-          label="Client Balances"
+          label="Caller Coin Balances"
           value={`${totalBalance.toLocaleString('en-IN')} Coins`}
           icon={Coins}
           color="purple"
@@ -320,14 +320,10 @@ export default function UsersAdminPage() {
                         {/* Customer Avatar & Name */}
                         <td className="px-3.5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#1e2235]">
-                              {user.avatarSeed || user.photoURL ? (
+                            <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#1e2235] flex items-center justify-center">
+                              {getAppAvatarUrl(user.photoURL) ? (
                                 <Image
-                                  src={
-                                    user.avatarSeed
-                                      ? getAvatarUrl(user.avatarSeed, 80)
-                                      : user.photoURL || getAvatarUrl(user.id, 80)
-                                  }
+                                  src={getAppAvatarUrl(user.photoURL)!}
                                   alt={user.displayName}
                                   width={40}
                                   height={40}
@@ -455,19 +451,21 @@ export default function UsersAdminPage() {
           <div className="space-y-4 text-xs">
             {/* Header Identity Card */}
             <div className="flex items-center gap-3.5 rounded-2xl border border-white/10 bg-[#161826] p-4.5">
-              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-purple-950/40">
-                <Image
-                  src={
-                    selectedUser.avatarSeed
-                      ? getAvatarUrl(selectedUser.avatarSeed, 100)
-                      : selectedUser.photoURL || getAvatarUrl(selectedUser.id, 100)
-                  }
-                  alt={selectedUser.displayName}
-                  width={56}
-                  height={56}
-                  unoptimized
-                  className="h-full w-full object-cover"
-                />
+              <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-purple-950/40 flex items-center justify-center">
+                {getAppAvatarUrl(selectedUser.photoURL) ? (
+                  <Image
+                    src={getAppAvatarUrl(selectedUser.photoURL)!}
+                    alt={selectedUser.displayName}
+                    width={56}
+                    height={56}
+                    unoptimized
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-bold text-purple-300">
+                    {(selectedUser.displayName || 'U').slice(0, 2).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="text-base font-bold text-white">{selectedUser.displayName}</p>

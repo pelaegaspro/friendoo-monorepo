@@ -62,7 +62,6 @@ class HostRepository {
             .select(
               'id, bio, rate_per_audio_minute, is_available, profiles:profiles(display_name, avatar_path)',
             )
-            .eq('is_available', true)
             .timeout(
               const Duration(seconds: 4),
               onTimeout: () => <Map<String, dynamic>>[],
@@ -145,6 +144,19 @@ class HostRepository {
     final visibleHosts = hosts.where((h) =>
       !BlockedCallersService.isHostBlockedForUser(hostId: h.id, userId: currentUserId)
     ).toList();
+
+        // Sort so:
+    // 1. Online & ready hosts appear first
+    // 2. Busy hosts appear next
+    // 3. Offline hosts appear after, sorted by rating
+    visibleHosts.sort((a, b) {
+      final aPriority = (a.isAvailable && !a.isBusy) ? 0 : (a.isBusy ? 1 : 2);
+      final bPriority = (b.isAvailable && !b.isBusy) ? 0 : (b.isBusy ? 1 : 2);
+      if (aPriority != bPriority) {
+        return aPriority.compareTo(bPriority);
+      }
+      return b.rating.compareTo(a.rating);
+    });
 
     return applyStarHostQuota(visibleHosts);
   }

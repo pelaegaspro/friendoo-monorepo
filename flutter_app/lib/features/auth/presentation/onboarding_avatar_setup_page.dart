@@ -9,7 +9,6 @@ import '../../profile/data/profile_repository.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../profile/presentation/profile_input_widgets.dart';
 
 /// Step 1: Profile Creation Page (Name & Date of Birth with live Age calculation).
 class NameAndDobSetupPage extends ConsumerStatefulWidget {
@@ -49,6 +48,7 @@ class NameAndDobSetupPage extends ConsumerStatefulWidget {
 class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
   late bool _isHost;
   final _nameController = TextEditingController();
+  final _cityController = TextEditingController();
   DateTime? _selectedDob;
   int? _computedAge;
 
@@ -66,6 +66,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
         ? active.displayName
         : '';
     _nameController.text = initialName;
+    _cityController.text = active?.city ?? '';
     _selectedDob = DateTime(2002, 5, 15);
     _recalculateAge();
   }
@@ -73,6 +74,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
   @override
   void dispose() {
     _nameController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -142,10 +144,18 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
 
   void _createProfileAndProceed() {
     final name = _nameController.text.trim();
+    final city = _cityController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please enter your name.')));
+      return;
+    }
+
+    if (city.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter or select your city.')));
       return;
     }
 
@@ -173,6 +183,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
       MaterialPageRoute(
         builder: (_) => StandaloneAvatarSelectionPage(
           displayName: name,
+          city: city,
           isHost: _isHost,
           dateOfBirth: _selectedDob!,
           userAge: _computedAge!,
@@ -285,6 +296,97 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: themeColor, width: 2),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // City Field
+                const Text(
+                  'City / Metro',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _cityController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your city (e.g. Chennai, Mumbai)',
+                    prefixIcon: Icon(
+                      Icons.location_on_outlined,
+                      color: themeColor,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: themeColor, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Popular Indian Cities Quick-Select Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      'Chennai',
+                      'Mumbai',
+                      'Delhi',
+                      'Bengaluru',
+                      'Hyderabad',
+                      'Kolkata',
+                      'Pune',
+                      'Ahmedabad',
+                      'Coimbatore',
+                      'Madurai',
+                    ].map((cityName) {
+                      final isSelected =
+                          _cityController.text.trim().toLowerCase() ==
+                          cityName.toLowerCase();
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(cityName),
+                          selected: isSelected,
+                          selectedColor: themeColor.withValues(alpha: 0.15),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                isSelected
+                                    ? themeColor
+                                    : const Color(0xFF4B5563),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color:
+                                  isSelected
+                                      ? themeColor
+                                      : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          backgroundColor: Colors.white,
+                          onSelected: (_) {
+                            setState(() {
+                              _cityController.text = cityName;
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -416,6 +518,7 @@ class StandaloneAvatarSelectionPage extends ConsumerStatefulWidget {
   const StandaloneAvatarSelectionPage({
     super.key,
     required this.displayName,
+    this.city,
     required this.isHost,
     required this.dateOfBirth,
     required this.userAge,
@@ -423,6 +526,7 @@ class StandaloneAvatarSelectionPage extends ConsumerStatefulWidget {
   });
 
   final String displayName;
+  final String? city;
   final bool isHost;
   final DateTime dateOfBirth;
   final int userAge;
@@ -467,6 +571,7 @@ class _StandaloneAvatarSelectionPageState
           .completeInitialProfile(
             avatarConfig: avatarConfig,
             displayName: widget.displayName,
+            city: widget.city,
           );
     } catch (e) {
       if (mounted) {

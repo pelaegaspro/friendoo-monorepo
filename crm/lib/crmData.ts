@@ -112,7 +112,7 @@ export async function getDashboardData(now = new Date()) {
       ] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "user"),
         supabase.from("hosts").select("id", { count: "exact", head: true }),
-        supabase.from("calls").select("id", { count: "exact", head: true }).in("status", ["ringing", "accepted", "active"]),
+        supabase.from("calls").select("id", { count: "exact", head: true }).in("status", ["ringing", "accepted", "active"]).is("ended_at", null).gte("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString()),
         supabase.from("payment_orders").select("amount_inr").eq("status", "success").gte("created_at", todayStart.toISOString()).lte("created_at", todayEnd.toISOString()),
         supabase.from("payment_orders").select("amount_inr").eq("status", "success").gte("created_at", yesterdayStart.toISOString()).lte("created_at", yesterdayEnd.toISOString()),
         supabase.from("wallets").select("coin_balance"),

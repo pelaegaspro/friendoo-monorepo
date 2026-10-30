@@ -21,16 +21,13 @@ export default function SectionCard({
 }: SectionCardProps) {
   return (
     <section
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-[#121420]/75 backdrop-blur-xl shadow-lg transition-all duration-300 ${className}`}
+      className={`glass-card-4k ${className}`}
     >
-      {/* Top subtle highlight line */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-
       {(title || description || actions) && (
-        <div className="flex flex-col gap-3 border-b border-white/5 px-6 py-4.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-white/[0.06] bg-[#071821]/40 px-6 py-4.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             {icon && (
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-zinc-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#09222B]/80 border border-[#60CECA]/25 text-[#60CECA] shadow-[0_0_12px_rgba(96,206,202,0.15)]">
                 {icon}
               </div>
             )}
@@ -42,21 +39,20 @@ export default function SectionCard({
                   </h2>
                 ) : null}
                 {badge && (
-                  <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+                  <span className="rounded-full bg-[#60CECA]/15 border border-[#60CECA]/30 px-2.5 py-0.5 text-[10px] font-semibold text-[#60CECA] tracking-wide uppercase">
                     {badge}
                   </span>
                 )}
               </div>
               {description ? (
-                <p className="mt-0.5 text-xs text-zinc-400">{description}</p>
+                <p className="mt-0.5 text-xs text-[#8BA3AB]">{description}</p>
               ) : null}
             </div>
           </div>
-          {actions ? (
-            <div className="flex flex-wrap items-center gap-2.5">{actions}</div>
-          ) : null}
+          {actions ? <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">{actions}</div> : null}
         </div>
       )}
+
       <div className="p-6">{children}</div>
     </section>
   )

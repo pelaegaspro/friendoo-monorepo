@@ -6,57 +6,47 @@ interface LiveChartProps {
   title: string;
   subtitle?: string;
   badge?: string;
+  metaBadge?: string;
   icon?: LucideIcon;
+  variant?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  variant?: "default" | "spotlight" | "cyan" | "emerald";
 }
 
 export function LiveChart({
   title,
   subtitle,
   badge,
-  icon: Icon,
+  metaBadge,
   action,
   children,
   className,
-  variant = "default",
 }: LiveChartProps) {
-  const variantClass = {
-    default: "bento-card",
-    spotlight: "bento-card-spotlight",
-    cyan: "bento-card-cyan",
-    emerald: "bento-card-emerald",
-  }[variant];
+  const displayBadge = metaBadge || badge;
 
   return (
-    <div className={cn(variantClass, "flex flex-col justify-between", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
-        <div className="flex items-center gap-2.5">
-          {Icon && (
-            <div aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-purple-400">
-              <Icon className="h-4 w-4" />
-            </div>
+    <div className={cn("crm-clean-card flex flex-col justify-between", className)}>
+      <div className="flex items-center justify-between pb-4 border-b border-border">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+          {subtitle && (
+            <p className="mt-1 text-xs text-muted">{subtitle}</p>
           )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold tracking-tight text-foreground">{title}</h2>
-              {badge && (
-                <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200">
-                  {badge}
-                </span>
-              )}
-            </div>
-            {subtitle && (
-              <p className="text-xs text-slate-300 mt-0.5">{subtitle}</p>
-            )}
-          </div>
         </div>
-        {action && <div>{action}</div>}
+        <div className="flex items-center gap-2">
+          {displayBadge && (
+            <span className="text-xs text-muted font-medium">
+              {displayBadge}
+            </span>
+          )}
+          {action}
+        </div>
       </div>
-      <div className="flex-1">{children}</div>
+
+      <div className="pt-4 flex-1">
+        {children}
+      </div>
     </div>
   );
 }
-

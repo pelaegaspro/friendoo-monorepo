@@ -11,7 +11,7 @@ interface HostProfileModalProps {
   onClose: () => void
 }
 
-import { getAvatarUrl } from '@/lib/avatar'
+import { getAppAvatarUrl } from '@/lib/avatar'
 
 export default function HostProfileModal({ host, isOpen, onClose }: HostProfileModalProps) {
   if (!host) return null
@@ -21,14 +21,20 @@ export default function HostProfileModal({ host, isOpen, onClose }: HostProfileM
       <div className="space-y-5">
         {/* Avatar + Name */}
         <div className="flex items-center gap-4">
-          <Image
-            src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 128) : host.photoURL || getAvatarUrl(host.uid, 128)}
-            alt={host.name}
-            width={64}
-            height={64}
-            unoptimized
-            className="h-16 w-16 rounded-full object-cover"
-          />
+          {getAppAvatarUrl(host.photoURL) ? (
+            <Image
+              src={getAppAvatarUrl(host.photoURL)!}
+              alt={host.name}
+              width={64}
+              height={64}
+              unoptimized
+              className="h-16 w-16 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-950/50 text-base font-bold text-purple-300 border border-purple-500/30">
+              {(host.name || 'H').slice(0, 2).toUpperCase()}
+            </div>
+          )}
           <div>
             <h3 className="text-white text-lg font-semibold">{host.name}</h3>
             <Badge label={host.status} variant={host.status} />

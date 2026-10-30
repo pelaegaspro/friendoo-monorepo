@@ -46,10 +46,10 @@ export default function NotificationsPage() {
   const loadLogs = async () => {
     setLogsLoading(true)
     try {
-      const res = await adminFetch<{ logs: NotifLog[] }>('/api/admin/notifications')
-      setLogs(res.logs)
+      const res = await adminFetch<{ logs?: NotifLog[] }>('/api/admin/notifications')
+      setLogs(Array.isArray(res?.logs) ? res.logs : Array.isArray(res) ? (res as unknown as NotifLog[]) : [])
     } catch {
-      // silent
+      setLogs([])
     } finally {
       setLogsLoading(false)
     }
@@ -292,7 +292,7 @@ export default function NotificationsPage() {
       <SectionCard title="Notification Broadcast Log" description="Recent notifications sent via push">
         {logsLoading ? (
           <div className="py-8 text-center text-sm text-zinc-500">Loading broadcast history...</div>
-        ) : logs.length === 0 ? (
+        ) : (logs || []).length === 0 ? (
           <div className="py-8 text-center text-sm text-zinc-500">No push notifications sent yet.</div>
         ) : (
           <div className="space-y-3">

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState, useMemo } from 'react'
 
 import toast from 'react-hot-toast'
-import { getAvatarUrl } from '@/lib/avatar'
+import { getAppAvatarUrl } from '@/lib/avatar'
 import { adminFetch } from '@/lib/admin/client'
 import type { AdminHost } from '@/lib/admin/types'
 import SectionCard from '@/components/admin/SectionCard'
@@ -168,14 +168,20 @@ export default function PaymentsPage() {
                   <tr key={p.hostId} className="border-b border-[#202020] align-middle hover:bg-white/[0.02]">
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-3">
-                                                <Image
-                          src={p.photoURL || getAvatarUrl(p.hostId, 72)}
-                          alt={p.hostName}
-                          width={36}
-                          height={36}
-                          unoptimized
-                          className="h-9 w-9 rounded-full object-cover"
-                        />
+                        {getAppAvatarUrl(p.photoURL) ? (
+                          <Image
+                            src={getAppAvatarUrl(p.photoURL)!}
+                            alt={p.hostName}
+                            width={36}
+                            height={36}
+                            unoptimized
+                            className="h-9 w-9 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-950/50 text-xs font-bold text-purple-300 border border-purple-500/30">
+                            {(p.hostName || 'H').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
 
                         <span className="font-medium text-white">{p.hostName}</span>
                       </div>

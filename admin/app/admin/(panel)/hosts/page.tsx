@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { getAvatarUrl } from '@/lib/avatar'
+import { getAppAvatarUrl } from '@/lib/avatar'
 import Badge from '@/components/ui/Badge'
 import SectionCard from '@/components/admin/SectionCard'
 import DataState from '@/components/admin/DataState'
@@ -233,13 +233,15 @@ export default function HostsAdminPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const response = await adminFetch<{ hosts: AdminHost[]; applications: HostApplicationRecord[] }>(
+      const response = await adminFetch<{ hosts?: AdminHost[]; applications?: HostApplicationRecord[] }>(
         '/api/admin/hosts/list'
       )
-      setHosts(response.hosts)
-      setApplications(response.applications)
+      setHosts(Array.isArray(response?.hosts) ? response.hosts : [])
+      setApplications(Array.isArray(response?.applications) ? response.applications : [])
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to load hosts')
+      setHosts([])
+      setApplications([])
     } finally {
       setLoading(false)
     }
@@ -251,7 +253,8 @@ export default function HostsAdminPage() {
 
   const filteredHosts = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return hosts.filter((host) => {
+    const list = Array.isArray(hosts) ? hosts : []
+    return list.filter((host) => {
       const matchesFilter = filter === 'all' ? true : host.hostStatus === filter
       const matchesSearch = query
         ? [host.displayName, host.phoneNumber, host.city].some((value) =>
@@ -485,14 +488,20 @@ export default function HostsAdminPage() {
                   {filteredHosts.map((host) => (
                     <tr key={host.id} className="border-b border-[#202020] align-top">
                       <td className="px-3 py-4">
-                        <Image
-                          src={host.avatarSeed ? getAvatarUrl(host.avatarSeed, 88) : host.photoURL || getAvatarUrl(host.id, 88)}
-                          alt={host.displayName}
-                          width={44}
-                          height={44}
-                          unoptimized
-                          className="h-11 w-11 rounded-full object-cover"
-                        />
+                        {getAppAvatarUrl(host.photoURL) ? (
+                          <Image
+                            src={getAppAvatarUrl(host.photoURL)!}
+                            alt={host.displayName}
+                            width={44}
+                            height={44}
+                            unoptimized
+                            className="h-11 w-11 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-purple-950/50 text-xs font-bold text-purple-300 border border-purple-500/30">
+                            {(host.displayName || 'H').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-4 text-white">
                         <div className="font-medium">{host.displayName}</div>
@@ -570,14 +579,20 @@ export default function HostsAdminPage() {
                 return (
                   <div key={application.id} className="rounded-2xl border border-[#2d2d2d] bg-[#151515] p-4">
                     <div className="flex items-start gap-4">
-                      <Image
-                        src={application.photoURL || getAvatarUrl(application.id, 128)}
-                        alt={application.name}
-                        width={64}
-                        height={64}
-                        unoptimized
-                        className="h-16 w-16 rounded-2xl object-cover"
-                      />
+                      {getAppAvatarUrl(application.photoURL) ? (
+                        <Image
+                          src={getAppAvatarUrl(application.photoURL)!}
+                          alt={application.name}
+                          width={64}
+                          height={64}
+                          unoptimized
+                          className="h-16 w-16 rounded-2xl object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-950/50 text-base font-bold text-purple-300 border border-purple-500/30">
+                          {(application.name || 'A').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-3">
                           <h3 className="truncate text-base font-semibold text-white">{application.name}</h3>

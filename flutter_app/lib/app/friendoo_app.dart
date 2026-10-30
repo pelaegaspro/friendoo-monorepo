@@ -1070,8 +1070,8 @@ class _DiscoverHome extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         selectedLanguage == 'All'
-                            ? '${regionalMatches.length} verified hosts online'
-                            : 'Prioritized at the top based on your language selection',
+                            ? '${regionalMatches.where((h) => h.isAvailable).length} online · ${regionalMatches.length} total hosts'
+                            : '${regionalMatches.where((h) => h.isAvailable).length} online now (${regionalMatches.length} total)',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
@@ -1212,8 +1212,20 @@ class _HostListCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final tokens = theme.extension<FriendooDesignTokens>()!;
-    final gradient =
-        tokens.profileGradients[colorIndex % tokens.profileGradients.length];
+    final isOffline = !host.isAvailable;
+    final isBusy = host.isAvailable && host.isBusy;
+    final isOnline = host.isAvailable && !host.isBusy;
+
+    final offlineGradient = const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF64748B), Color(0xFF475569)],
+    );
+
+    final gradient = isOffline
+        ? offlineGradient
+        : tokens.profileGradients[colorIndex % tokens.profileGradients.length];
+
     final initial = host.displayName.isEmpty
         ? '?'
         : host.displayName.substring(0, 1).toUpperCase();
@@ -1224,129 +1236,214 @@ class _HostListCard extends StatelessWidget {
           (l) => l.toLowerCase() == preferredLanguage.toLowerCase(),
         );
 
-    return Card(
-      elevation: isRegionalMatch ? 2 : 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: isRegionalMatch
-            ? BorderSide(color: colors.primary.withOpacity(0.5), width: 1.5)
-            : BorderSide(color: colors.outlineVariant.withOpacity(0.35)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onStartCall,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
+    final void Function() handleTap = isOnline
+        ? onStartCall
+        : () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
                   children: [
-                    Center(
-                      child: Text(
-                        initial,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: colors.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    Icon(
+                      isBusy ? Icons.phone_in_talk_rounded : Icons.cloud_off_rounded,
+                      color: Colors.white,
+                      size: 18,
                     ),
-                    if (host.isStar)
-                      Positioned(
-                        top: 4,
-                        left: 4,
-                        child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: Colors.amber,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colors.surface,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    Positioned(
-                      right: 4,
-                      bottom: 4,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: host.isAvailable
-                              ? (host.isBusy
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFF10B981))
-                              : const Color(0xFF9CA3AF),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: colors.surface, width: 2),
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isBusy
+                            ? '${host.displayName} is currently in another call.'
+                            : '${host.displayName} is currently offline. You can call when she comes back online.',
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                       ),
                     ),
                   ],
                 ),
+                backgroundColor: isBusy ? const Color(0xFFD97706) : const Color(0xFF334155),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                duration: const Duration(seconds: 3),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            host.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+            );
+          };
+
+    return Opacity(
+      opacity: isOffline ? 0.88 : 1.0,
+      child: Card(
+        elevation: isRegionalMatch && !isOffline ? 2 : 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: isRegionalMatch && !isOffline
+              ? BorderSide(color: colors.primary.withOpacity(0.5), width: 1.5)
+              : BorderSide(
+                  color: isOffline
+                      ? colors.outlineVariant.withOpacity(0.18)
+                      : colors.outlineVariant.withOpacity(0.35),
+                ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: handleTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 66,
+                  height: 66,
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: isOffline
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: colors.primary.withOpacity(0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          initial,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: colors.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (host.isStar)
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.amber,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: colors.surface,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: Colors.black87,
                             ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: Container(
+                          width: 13,
+                          height: 13,
                           decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                color: Colors.amber,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${host.rating}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.amber,
-                                ),
-                              ),
-                            ],
+                            color: isOnline
+                                ? const Color(0xFF10B981)
+                                : (isBusy
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFF94A3B8)),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: colors.surface, width: 2),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              host.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isOffline ? colors.onSurface.withOpacity(0.85) : null,
+                              ),
+                            ),
+                          ),
+                          // Live Status Grade Pill
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isOnline
+                                  ? const Color(0xFF10B981).withOpacity(0.15)
+                                  : (isBusy
+                                      ? const Color(0xFFF59E0B).withOpacity(0.15)
+                                      : const Color(0xFF64748B).withOpacity(0.2)),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isOnline
+                                    ? const Color(0xFF10B981).withOpacity(0.3)
+                                    : (isBusy
+                                        ? const Color(0xFFF59E0B).withOpacity(0.3)
+                                        : const Color(0xFF64748B).withOpacity(0.3)),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              isOnline ? 'ONLINE' : (isBusy ? 'BUSY' : 'OFFLINE'),
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                                color: isOnline
+                                    ? const Color(0xFF10B981)
+                                    : (isBusy
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFF94A3B8)),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  color: Colors.amber,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${host.rating}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 3),
                     Text(
                       host.bio ?? 'Ready for a safe audio conversation',
@@ -1414,18 +1511,19 @@ class _HostListCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton.filled(
-                tooltip: host.isAvailable
-                    ? (host.isBusy ? 'Host is busy' : 'Start audio call')
-                    : 'Host is offline',
+                tooltip: isOnline
+                    ? 'Start audio call'
+                    : (isBusy ? 'Host is currently in call' : 'Host is offline (tap for info)'),
                 style: IconButton.styleFrom(
-                  backgroundColor: host.isAvailable
-                      ? (host.isBusy ? const Color(0xFFF59E0B) : colors.primary)
-                      : const Color(0xFF9CA3AF),
+                  backgroundColor: isOnline
+                      ? colors.primary
+                      : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFF475569)),
                 ),
-                onPressed: (host.isAvailable && !host.isBusy)
-                    ? onStartCall
-                    : null,
-                icon: const Icon(Icons.call_rounded),
+                onPressed: handleTap,
+                icon: Icon(
+                  isOffline ? Icons.phone_disabled_rounded : Icons.call_rounded,
+                  color: isOffline ? const Color(0xFFCBD5E1) : Colors.white,
+                ),
               ),
             ],
           ),

@@ -5,6 +5,8 @@ class CloudBannerAd {
     required this.id,
     required this.title,
     this.campaignType = 'user_offer',
+    this.campaignClass = 'friendoo_offer',
+    this.sponsorName,
     this.targetAudience = 'all',
     this.badgeText = 'SPECIAL OFFER',
     required this.headline,
@@ -27,10 +29,10 @@ class CloudBannerAd {
 
   final String id;
   final String title;
-  final String
-  campaignType; // 'user_offer', 'host_incentive', 'flash_package', 'sponsor_ad'
-  final String
-  targetAudience; // 'all', 'users', 'hosts', 'new_users', 'priority_users'
+  final String campaignType; // 'user_offer', 'host_incentive', 'flash_package', 'sponsor_ad'
+  final String campaignClass; // 'friendoo_offer', 'sponsored_ad'
+  final String? sponsorName;
+  final String targetAudience; // 'all', 'users', 'hosts', 'new_users', 'priority_users'
   final String badgeText;
   final String headline;
   final String subtitle;
@@ -48,6 +50,11 @@ class CloudBannerAd {
   final int priority;
   final int clickCount;
   final int impressionCount;
+
+  bool get isSponsored =>
+      campaignClass == 'sponsored_ad' ||
+      campaignType == 'sponsor_ad' ||
+      (sponsorName != null && sponsorName!.trim().isNotEmpty);
 
   List<Color> get parsedGradientColors {
     if (gradientColors.isEmpty) {
@@ -74,19 +81,26 @@ class CloudBannerAd {
       return const ['#4F46E5', '#7C3AED', '#DB2777'];
     }
 
+    final rawClass = map['campaign_class']?.toString();
+    final rawType = map['campaign_type']?.toString() ?? 'user_offer';
+    final sponsor = map['sponsor_name']?.toString() ?? map['advertiser_name']?.toString();
+    final isSpon = rawClass == 'sponsored_ad' || rawType == 'sponsor_ad' || (sponsor != null && sponsor.isNotEmpty);
+
     return CloudBannerAd(
       id: map['id']?.toString() ?? '',
       title: map['title']?.toString() ?? 'Special Offer',
-      campaignType: map['campaign_type']?.toString() ?? 'user_offer',
+      campaignType: rawType,
+      campaignClass: rawClass ?? (isSpon ? 'sponsored_ad' : 'friendoo_offer'),
+      sponsorName: sponsor,
       targetAudience: map['target_audience']?.toString() ?? 'all',
-      badgeText: map['badge_text']?.toString() ?? 'SPECIAL OFFER',
+      badgeText: map['badge_text']?.toString() ?? (isSpon ? 'SPONSORED' : 'SPECIAL OFFER'),
       headline: map['headline']?.toString() ?? 'Talk More, Connect Freely!',
       subtitle:
           map['subtitle']?.toString() ?? 'Get bonus coins on talk packs today.',
       imageUrl: map['image_url']?.toString(),
       gradientColors: parseColors(map['gradient_colors']),
       actionType: map['action_type']?.toString() ?? 'recharge',
-      actionUrl: map['action_url']?.toString(),
+      actionUrl: map['action_url']?.toString() ?? map['destination_url']?.toString(),
       placement: map['placement']?.toString() ?? 'user_top_banner',
       promoCoins: (map['promo_coins'] as num?)?.toInt(),
       promoPriceInr: (map['promo_price_inr'] as num?)?.toInt(),
@@ -95,8 +109,8 @@ class CloudBannerAd {
       showAsPopup: map['show_as_popup'] as bool? ?? false,
       isActive: map['is_active'] as bool? ?? true,
       priority: (map['priority'] as num?)?.toInt() ?? 0,
-      clickCount: (map['click_count'] as num?)?.toInt() ?? 0,
-      impressionCount: (map['impression_count'] as num?)?.toInt() ?? 0,
+      clickCount: (map['click_count'] as num?)?.toInt() ?? (map['current_clicks'] as num?)?.toInt() ?? 0,
+      impressionCount: (map['impression_count'] as num?)?.toInt() ?? (map['current_impressions'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -105,6 +119,8 @@ class CloudBannerAd {
       'id': id,
       'title': title,
       'campaign_type': campaignType,
+      'campaign_class': campaignClass,
+      'sponsor_name': sponsorName,
       'target_audience': targetAudience,
       'badge_text': badgeText,
       'headline': headline,
@@ -128,6 +144,7 @@ class CloudBannerAd {
     id: 'default_promo_1',
     title: 'Find a Host',
     campaignType: 'discover',
+    campaignClass: 'friendoo_offer',
     targetAudience: 'users',
     badgeText: 'DISCOVER HOSTS',
     headline: 'Choose someone to call',
@@ -144,6 +161,7 @@ class CloudBannerAd {
     id: 'default_host_dashboard_tip',
     title: 'Host Dashboard',
     campaignType: 'host_incentive',
+    campaignClass: 'friendoo_offer',
     targetAudience: 'hosts',
     badgeText: 'HOST TOOLS',
     headline: 'Track your calls and earnings',
@@ -155,5 +173,4 @@ class CloudBannerAd {
     isActive: true,
     priority: 30,
   );
-
 }

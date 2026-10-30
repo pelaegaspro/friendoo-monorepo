@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.friendoo.app.data.model.Host
@@ -24,10 +25,12 @@ fun HostCard(
     modifier: Modifier = Modifier
 ) {
     val friendooColors = LocalFriendooColors.current
+    val isOffline = !host.isOnline
+
     Card(
         modifier = modifier.fillMaxWidth().padding(8.dp),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isOffline) 1.dp else 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
@@ -35,7 +38,7 @@ fun HostCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(if (isOffline) Color(0xFF1E2430) else MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 FriendooAvatar(
@@ -43,16 +46,15 @@ fun HostCard(
                     size = 100.dp
                 )
 
-                if (host.isOnline) {
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(SuccessGreen)
-                            .align(Alignment.TopEnd)
-                    )
-                }
+                // Status Indicator Dot (Green for Online, Slate for Offline)
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(if (host.isOnline) SuccessGreen else Color(0xFF9CA3AF))
+                        .align(Alignment.TopEnd)
+                )
 
                 if (host.isStarHost == true) {
                     Surface(
@@ -66,12 +68,27 @@ fun HostCard(
                             Text("STAR #${host.starRank}", color = DeepPlum, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
                         }
                     }
+                } else if (isOffline) {
+                    // Offline Grade Tag
+                    Surface(
+                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF374151).copy(alpha = 0.9f)
+                    ) {
+                        Text(
+                            text = "OFFLINE",
+                            color = Color(0xFFD1D5DB),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
                 Surface(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                     shape = RoundedCornerShape(8.dp),
-                    color = Violet.copy(alpha = 0.15f)
+                    color = if (isOffline) Color(0xFF374151).copy(alpha = 0.5f) else Violet.copy(alpha = 0.15f)
                 ) {
                     Row(modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                         if (host.isStarHost == true) {
@@ -92,19 +109,20 @@ fun HostCard(
                                 text = "₹5/min",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Violet
+                                color = if (isOffline) Color(0xFF9CA3AF) else Violet
                             )
                         }
                     }
                 }
             }
+
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = host.alias.ifEmpty { "Anonymous Host" },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = friendooColors.textPrimary
+                        color = if (isOffline) friendooColors.textPrimary.copy(alpha = 0.8f) else friendooColors.textPrimary
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     val ratingText = if ((host.ratingCount ?: 0) < 3) "New" else "⭐ ${String.format("%.1f", host.avgRating ?: 0.0)}"
@@ -127,7 +145,7 @@ fun HostCard(
                 Text(
                     text = vibeText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Mint,
+                    color = if (isOffline) Color(0xFF9CA3AF) else Mint,
                     fontWeight = FontWeight.Medium
                 )
 
@@ -150,9 +168,9 @@ fun HostCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val buttonText = when(host.callStatus) {
-                    "available" -> "Call Now"
-                    "busy" -> "Busy · Try Quick Match"
+                val buttonText = when {
+                    host.isOnline && host.callStatus == "available" -> "Call Now"
+                    host.isOnline && host.callStatus == "busy" -> "Busy · Try Quick Match"
                     else -> "Currently Offline"
                 }
 
@@ -160,8 +178,16 @@ fun HostCard(
                     onClick = onCallClick,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    enabled = host.callStatus != "offline",
-                    colors = if (host.callStatus == "busy") ButtonDefaults.buttonColors(containerColor = Mint) else ButtonDefaults.buttonColors(containerColor = Violet)
+                    enabled = host.isOnline && host.callStatus != "offline",
+                    colors = when {
+                        !host.isOnline -> ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF374151),
+                            disabledContainerColor = Color(0xFF374151),
+                            disabledContentColor = Color(0xFF9CA3AF)
+                        )
+                        host.callStatus == "busy" -> ButtonDefaults.buttonColors(containerColor = Mint)
+                        else -> ButtonDefaults.buttonColors(containerColor = Violet)
+                    }
                 ) {
                     Text(buttonText, fontWeight = FontWeight.Bold)
                 }

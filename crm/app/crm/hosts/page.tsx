@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   Bar,
   BarChart,
@@ -23,6 +24,7 @@ import {
   Star,
 } from "lucide-react";
 import { LiveChart } from "@/components/crm/LiveChart";
+import { getAppAvatarUrl } from "@/lib/avatar";
 import { KPICard } from "@/components/crm/KPICard";
 import { Button } from "@/components/ui/button";
 import { Table, TableCell, TableHead, TableRow } from "@/components/ui/table";
@@ -291,15 +293,42 @@ export default function HostsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  hosts.map((host, index) => (
-                    <TableRow
-                      key={host.uid}
-                      onClick={() => setSelectedHost(host)}
-                      className="border-b border-white/5 transition-colors hover:bg-white/5 cursor-pointer"
-                    >
-                      <TableCell className="font-mono text-xs text-muted-foreground">{index + 1}</TableCell>
-                      <TableCell className="font-bold text-foreground text-xs">{host.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{host.city || "—"}</TableCell>
+                  hosts.map((host, index) => {
+                    const avatarSrc = getAppAvatarUrl(host.photoURL);
+                    const initials = (host.name || "H")
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase();
+
+                    return (
+                      <TableRow
+                        key={host.uid}
+                        onClick={() => setSelectedHost(host)}
+                        className="border-b border-white/5 transition-colors hover:bg-white/5 cursor-pointer"
+                      >
+                        <TableCell className="font-mono text-xs text-muted-foreground">{index + 1}</TableCell>
+                        <TableCell className="font-bold text-foreground text-xs">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative h-7 w-7 flex-shrink-0 overflow-hidden rounded-lg border border-white/10 bg-purple-950/40 flex items-center justify-center">
+                              {avatarSrc ? (
+                                <Image
+                                  src={avatarSrc}
+                                  alt={host.name}
+                                  width={28}
+                                  height={28}
+                                  unoptimized
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-[10px] font-bold text-purple-300">{initials}</span>
+                              )}
+                            </div>
+                            <span>{host.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{host.city || "—"}</TableCell>
                       <TableCell className="text-xs font-semibold text-purple-400">{host.totalCalls}</TableCell>
                       <TableCell className="text-xs font-bold text-amber-400">{host.earningsCoins.toLocaleString()} Coins</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{Math.round(host.avgCallDurationSec / 60)} min</TableCell>
@@ -315,7 +344,7 @@ export default function HostsPage() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 )}
               </tbody>
             </Table>
@@ -387,9 +416,27 @@ export default function HostsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
           <div className="bento-card-spotlight w-full max-w-lg p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div>
-                <h3 className="text-lg font-black text-foreground">{selectedHost.name}</h3>
-                <p className="text-xs text-muted-foreground">Host UID: {selectedHost.uid}</p>
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-purple-950/40 flex items-center justify-center">
+                  {getAppAvatarUrl(selectedHost.photoURL) ? (
+                    <Image
+                      src={getAppAvatarUrl(selectedHost.photoURL)!}
+                      alt={selectedHost.name}
+                      width={48}
+                      height={48}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-bold text-purple-300">
+                      {(selectedHost.name || "H").slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-foreground">{selectedHost.name}</h3>
+                  <p className="text-xs text-muted-foreground">Host UID: {selectedHost.uid}</p>
+                </div>
               </div>
               <span className={`bento-badge ${selectedHost.isOnline ? "text-emerald-400" : "text-muted-foreground"}`}>
                 {selectedHost.isOnline ? "ONLINE" : "OFFLINE"}

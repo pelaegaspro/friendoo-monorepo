@@ -1,3 +1,5 @@
+import 'cashfree_local_host.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,13 +32,81 @@ class SelectPaymentMethodPage extends ConsumerStatefulWidget {
 }
 
 class _SelectPaymentMethodPageState
-    extends ConsumerState<SelectPaymentMethodPage> {
+    extends ConsumerState<SelectPaymentMethodPage>
+    with WidgetsBindingObserver {
   List<UpiInstalledAppInfo> _installedUpiApps = [];
   UpiInstalledAppInfo? _selectedApp;
-  String _selectedMethod = 'upi';
+  String _selectedMethod = 'in_app_upi';
   bool _isLoadingApps = true;
   bool _isProcessing = false;
   bool _isUpiExpanded = false;
+  String? _pendingProviderOrderId;
+  int? _pendingCoins;
+  bool _isAutoChecking = false;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    CashfreeLocalHost.stopCheckoutServer();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _pendingProviderOrderId != null &&
+        !_isAutoChecking) {
+      _checkPendingPayment(silent: true);
+    }
+  }
+
+  Future<void> _checkPendingPayment({bool silent = false}) async {
+    final orderId = _pendingProviderOrderId;
+    if (orderId == null || _isAutoChecking) return;
+    _isAutoChecking = true;
+    try {
+      final isPaid = await ref
+          .read(walletRepositoryProvider)
+          .confirmCashfreePayment(providerOrderId: orderId);
+      if (!mounted) return;
+      if (isPaid) {
+        final coins = _pendingCoins ?? widget.package.coins;
+        _pendingProviderOrderId = null;
+        _pendingCoins = null;
+        await CashfreeLocalHost.stopCheckoutServer();
+        ref.invalidate(walletStreamProvider);
+        ref.invalidate(walletTransactionsProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              '🎉 Successfully added $coins coins to your wallet!',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+        Navigator.of(context).pop(true);
+      } else if (!silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              'Payment not confirmed yet. Please complete payment in your browser or retry shortly.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification check failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) _isAutoChecking = false;
+    }
+  }
 
   @override
   void initState() {
@@ -160,34 +230,38 @@ class _SelectPaymentMethodPageState
   Future<void> _executeUpiPayment(UpiInstalledAppInfo app) async {
     setState(() {
       _selectedApp = app;
-      _selectedMethod = 'upi';
+      _selectedMethod = 'in_app_upi';
     });
     await _startCashfreeCheckout(
       paymentMethod: app.displayName,
       upiAppPackage: app.packageName,
+      externalBrowser: false,
     );
   }
 
   Future<void> _executePayment() async {
-    if (_selectedMethod == 'google_play') {
-      await ref
-          .read(googlePlayIapServiceProvider.notifier)
-          .buyCoinPackage(widget.package);
+    if (_selectedMethod == 'external_browser') {
+      await _startCashfreeCheckout(
+        paymentMethod: 'external_browser',
+        externalBrowser: true,
+      );
       return;
     }
-    if (_selectedMethod == 'upi' && _selectedApp != null) {
+    if (_selectedApp != null) {
       await _executeUpiPayment(_selectedApp!);
       return;
     }
     await _startCashfreeCheckout(
-      paymentMethod: _selectedMethod,
+      paymentMethod: 'in_app_upi',
       upiAppPackage: _selectedApp?.packageName,
+      externalBrowser: false,
     );
   }
 
   Future<void> _startCashfreeCheckout({
     required String paymentMethod,
     String? upiAppPackage,
+    bool externalBrowser = false,
   }) async {
     setState(() => _isProcessing = true);
     try {
@@ -201,6 +275,7 @@ class _SelectPaymentMethodPageState
         order,
         paymentMethod: paymentMethod,
         upiAppPackage: upiAppPackage,
+        externalBrowser: externalBrowser,
       );
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -211,6 +286,7 @@ class _SelectPaymentMethodPageState
     Map<String, dynamic>? order, {
     String? paymentMethod,
     String? upiAppPackage,
+    bool externalBrowser = false,
   }) async {
     final sessionId = order?['payment_session_id'] as String?;
     final providerOrderId = order?['provider_order_id'] as String?;
@@ -232,6 +308,7 @@ class _SelectPaymentMethodPageState
       );
       return;
     }
+    final checkoutUrl = order?['checkout_url'] as String?;
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => CashfreeCheckoutPage(
@@ -244,6 +321,8 @@ class _SelectPaymentMethodPageState
           coins: (order?['coins'] as num?)?.toInt() ?? widget.package.coins,
           paymentMethod: paymentMethod ?? _selectedMethod,
           upiAppPackage: upiAppPackage ?? _selectedApp?.packageName,
+          externalBrowserMode: externalBrowser,
+          checkoutUrl: checkoutUrl,
           verifyPayment: (orderId) => ref
               .read(walletRepositoryProvider)
               .confirmCashfreePayment(providerOrderId: orderId),
@@ -577,7 +656,7 @@ class _SelectPaymentMethodPageState
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: const Text(
-                                  'UPI',
+                                  'Option 1: In-App UPI',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w900,
@@ -694,26 +773,33 @@ class _SelectPaymentMethodPageState
                     ),
                     const SizedBox(height: 14),
 
+                    // Option 2: External Browser
                     _PaymentOptionTile(
-                      icon: Icons.credit_card_rounded,
-                      title: 'Pay using Credit/Debit Card',
+                      icon: Icons.open_in_browser_rounded,
+                      title: 'Option 2: External Browser Checkout',
+                      subtitle:
+                          'Directly opens in Chrome / Web Browser (PhonePe, GPay, Paytm, Cards, NetBanking, QR)',
                       iconColor: const Color(0xFF2563EB),
-                      onTap: () =>
-                          _startCashfreeCheckout(paymentMethod: 'card'),
-                    ),
-                    const SizedBox(height: 14),
-
-                    _PaymentOptionTile(
-                      icon: Icons.shop_two_rounded,
-                      title: 'Pay using Google Play Store',
-                      iconColor: const Color(0xFF00875A),
+                      badge: 'RECOMMENDED',
                       onTap: () {
                         setState(() {
-                          _selectedMethod = 'google_play';
+                          _selectedMethod = 'external_browser';
                           _selectedApp = null;
                         });
                         _executePayment();
                       },
+                    ),
+                    const SizedBox(height: 14),
+
+                    _PaymentOptionTile(
+                      icon: Icons.credit_card_rounded,
+                      title: 'Pay using Credit/Debit Card',
+                      subtitle: 'Opens secure card checkout in external browser',
+                      iconColor: const Color(0xFF2563EB),
+                      onTap: () => _startCashfreeCheckout(
+                        paymentMethod: 'card',
+                        externalBrowser: true,
+                      ),
                     ),
                   ],
                 ),
@@ -1038,12 +1124,16 @@ class _PaymentOptionTile extends StatelessWidget {
   const _PaymentOptionTile({
     required this.icon,
     required this.title,
+    this.subtitle,
+    this.badge,
     required this.iconColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
+  final String? badge;
   final Color iconColor;
   final VoidCallback onTap;
 
@@ -1069,18 +1159,60 @@ class _PaymentOptionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: iconColor, size: 24),
+              Icon(icon, color: iconColor, size: 28),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        if (badge != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF059669),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
               const Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 15,

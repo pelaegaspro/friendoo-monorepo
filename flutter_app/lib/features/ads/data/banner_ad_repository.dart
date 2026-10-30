@@ -142,6 +142,28 @@ class BannerAdRepository {
   final SupabaseClient _client;
 
   Future<List<CloudBannerAd>> fetchActiveBannerAds() async {
+    // 1. Try fetching from ad_campaigns with advertisers
+    try {
+      final campaignsData = await _client
+          .from('ad_campaigns')
+          .select('*, advertisers(display_name)')
+          .eq('status', 'live')
+          .order('priority', ascending: false);
+
+      if (campaignsData is List && campaignsData.isNotEmpty) {
+        return campaignsData.map((row) {
+          final map = Map<String, dynamic>.from(row as Map);
+          if (map['advertisers'] is Map) {
+            map['sponsor_name'] = map['advertisers']['display_name'];
+          }
+          return CloudBannerAd.fromMap(map);
+        }).toList();
+      }
+    } catch (_) {
+      // Fall through to banner_ads compatibility read
+    }
+
+    // 2. Compatibility read from banner_ads
     try {
       final data = await _client
           .from('banner_ads')
@@ -176,8 +198,24 @@ class BannerAdRepository {
     yield ads;
   }
 
-  Future<void> recordImpression(String adId) async {
+  Future<void> recordImpression(String adId, {String placement = 'banner'}) async {
     if (adId.isEmpty || adId.startsWith('default_')) return;
+    final hourTimestamp = DateTime.now().toUtc().toIso8601String().substring(0, 13);
+    final idempotencyKey = 'imp_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$hourTimestamp';
+    try {
+      final recorded = await _client.rpc(
+        'record_ad_delivery_event',
+        params: {
+          'p_campaign_id': adId,
+          'p_event_type': 'impression',
+          'p_placement': placement,
+          'p_idempotency_key': idempotencyKey,
+        },
+      );
+      if (recorded == true) return;
+    } catch (_) {}
+
+    // Fallback to legacy record_ad_event
     try {
       await _client.rpc(
         'record_ad_event',
@@ -186,8 +224,24 @@ class BannerAdRepository {
     } catch (_) {}
   }
 
-  Future<void> recordClick(String adId) async {
+  Future<void> recordClick(String adId, {String placement = 'banner'}) async {
     if (adId.isEmpty || adId.startsWith('default_')) return;
+    final minuteTimestamp = DateTime.now().toUtc().toIso8601String().substring(0, 16);
+    final idempotencyKey = 'clk_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$minuteTimestamp';
+    try {
+      final recorded = await _client.rpc(
+        'record_ad_delivery_event',
+        params: {
+          'p_campaign_id': adId,
+          'p_event_type': 'click',
+          'p_placement': placement,
+          'p_idempotency_key': idempotencyKey,
+        },
+      );
+      if (recorded == true) return;
+    } catch (_) {}
+
+    // Fallback to legacy record_ad_event
     try {
       await _client.rpc(
         'record_ad_event',

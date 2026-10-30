@@ -148,3 +148,97 @@ export async function recordSecurityEvent(
     console.error('security audit event could not be recorded', auditError.code);
   }
 }
+
+// --- TRACEN Pattern: Edge Rate Limiting & Gateway Claims ---
+
+export interface RateLimitConfig {
+  maxRequests: number;
+  windowSeconds: number;
+  keyPrefix?: string;
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetSeconds: number;
+  retryAfterSeconds: number;
+}
+
+const edgeRateLimitStore = new Map<string, { count: number; expiresAt: number }>();
+
+export function getClientIdentifier(request: Request, userId?: string | null): string {
+  if (userId) return `user_${userId}`;
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) return `ip_${cfIp.trim()}`;
+  const xForwarded = request.headers.get('x-forwarded-for');
+  if (xForwarded) return `ip_${xForwarded.split(',')[0].trim()}`;
+  return 'ip_unknown';
+}
+
+export function checkRateLimit(
+  key: string,
+  config: RateLimitConfig = { maxRequests: 60, windowSeconds: 60 },
+): RateLimitResult {
+  const now = Date.now();
+  const fullKey = `${config.keyPrefix ?? 'rl'}:${key}`;
+  const entry = edgeRateLimitStore.get(fullKey);
+
+  if (!entry || now > entry.expiresAt) {
+    const expiresAt = now + config.windowSeconds * 1000;
+    edgeRateLimitStore.set(fullKey, { count: 1, expiresAt });
+    return {
+      allowed: true,
+      limit: config.maxRequests,
+      remaining: config.maxRequests - 1,
+      resetSeconds: config.windowSeconds,
+      retryAfterSeconds: 0,
+    };
+  }
+
+  if (entry.count < config.maxRequests) {
+    entry.count += 1;
+    const remainingSeconds = Math.max(1, Math.ceil((entry.expiresAt - now) / 1000));
+    return {
+      allowed: true,
+      limit: config.maxRequests,
+      remaining: config.maxRequests - entry.count,
+      resetSeconds: remainingSeconds,
+      retryAfterSeconds: 0,
+    };
+  }
+
+  const retryAfterSeconds = Math.max(1, Math.ceil((entry.expiresAt - now) / 1000));
+  return {
+    allowed: false,
+    limit: config.maxRequests,
+    remaining: 0,
+    resetSeconds: retryAfterSeconds,
+    retryAfterSeconds,
+  };
+}
+
+export function rateLimitExceededResponse(
+  result: RateLimitResult,
+  headers = corsHeaders,
+): Response {
+  return new Response(
+    JSON.stringify({
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded. Please retry after ${result.retryAfterSeconds} seconds.`,
+      retry_after_seconds: result.retryAfterSeconds,
+    }),
+    {
+      status: 429,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'Retry-After': result.retryAfterSeconds.toString(),
+        'X-RateLimit-Limit': result.limit.toString(),
+        'X-RateLimit-Remaining': result.remaining.toString(),
+        'X-RateLimit-Reset': result.resetSeconds.toString(),
+      },
+    },
+  );
+}

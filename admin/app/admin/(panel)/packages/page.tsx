@@ -21,10 +21,10 @@ type PackageForm = {
 }
 
 const blankPackage: PackageForm = {
-  displayName: '',
+  displayName: '100 Coins',
   coins: 100,
   bonus: 0,
-  priceInr: 99,
+  priceInr: 100,
   active: true,
 }
 
@@ -105,8 +105,12 @@ export default function PackagesAdminPage() {
     if (!confirmed) return
 
     try {
-      await adminFetch(`/api/admin/packages/${packageId}`, { method: 'DELETE' })
-      toast.success('Package deleted')
+      const res = await adminFetch<{ ok?: boolean; deactivated?: boolean; message?: string }>(`/api/admin/packages/${packageId}`, { method: 'DELETE' })
+      if (res?.deactivated) {
+        toast.success(res.message || 'Package deactivated (order history preserved)')
+      } else {
+        toast.success('Package deleted')
+      }
       await load()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to delete package')

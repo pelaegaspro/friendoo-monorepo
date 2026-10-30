@@ -15,17 +15,16 @@ const securityHeaders = [
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co https://*.cashfree.com http://localhost:* ws://localhost:*",
       "media-src 'self' blob: https:",
-      ...(isDev ? [] : ['upgrade-insecure-requests']),
     ].join('; '),
   },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
-  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
 ];
 
 const nextConfig = {
+  output: 'standalone',
   compress: true,
   poweredByHeader: false,
   images: { unoptimized: true },

@@ -139,12 +139,12 @@ export default function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.01 }}
-      transition={{ duration: 0.28 }}
-      className={`group relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-[#12121b]/90 p-5 shadow-[0_12px_38px_-26px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.14] hover:shadow-[0_22px_55px_-28px_rgba(139,92,246,0.32)] ${className}`}
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className={`group relative isolate overflow-hidden rounded-2xl border border-white/[0.08] bg-[#12121b]/90 p-5 shadow-[0px_0px_0px_1px_rgba(255,255,255,0.06),0px_2px_4px_rgba(0,0,0,0.4),0px_12px_28px_-4px_rgba(0,0,0,0.65)] backdrop-blur-xl transition-all duration-300 hover:border-purple-500/30 hover:shadow-[0px_0px_0px_1px_rgba(168,85,247,0.3),0px_4px_12px_rgba(0,0,0,0.5),0px_20px_40px_-8px_rgba(124,58,237,0.35)] ${className}`}
     >
-      <span className={`pointer-events-none absolute -right-9 -top-10 h-32 w-32 rounded-full opacity-[0.12] blur-3xl transition-opacity duration-300 group-hover:opacity-25 ${accent}`} />
-      <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <span className={`pointer-events-none absolute -right-9 -top-10 h-32 w-32 rounded-full opacity-[0.14] blur-3xl transition-opacity duration-300 group-hover:opacity-30 ${accent}`} />
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
       <div className="flex items-start justify-between gap-3">
         {Icon && (
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-violet-200 shadow-inner">

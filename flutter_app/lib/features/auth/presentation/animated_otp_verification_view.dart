@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -60,6 +61,7 @@ class _AnimatedOtpVerificationViewState
 
   final FocusNode _inputFocusNode = FocusNode();
   String _currentOtp = '';
+  Timer? _autoSubmitTimer;
 
   @override
   void initState() {
@@ -153,6 +155,7 @@ class _AnimatedOtpVerificationViewState
 
   @override
   void dispose() {
+    _autoSubmitTimer?.cancel();
     widget.otpController.removeListener(_onOtpChanged);
     _spinnerController.dispose();
     _cursorController.dispose();
@@ -382,7 +385,9 @@ class _AnimatedOtpVerificationViewState
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '+91 ${widget.phoneDigits}',
+                  widget.phoneDigits.trim().startsWith('+')
+                      ? widget.phoneDigits.trim()
+                      : '+91 ${widget.phoneDigits.trim()}',
                   style: const TextStyle(
                     color: Color(0xFF0F172A),
                     fontSize: 13,
@@ -800,8 +805,11 @@ class _AnimatedOtpVerificationViewState
     final minutes = (widget.resendCountdown ~/ 60).toString();
     final seconds = (widget.resendCountdown % 60).toString().padLeft(2, '0');
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      runSpacing: 4,
       children: [
         const Text(
           "Didn't get a code? ",

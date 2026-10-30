@@ -3,32 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #090a0f;
-  --surface: #0f111a;
-  --surface-elevated: #151824;
-  --card: #121420;
-  --card-hover: #191c2c;
-  --foreground: #f4f4f7;
-  --muted: #8b8f9e;
-  --muted-foreground: #8b8f9e;
-  --border: #1f2337;
-  --border-glow: rgba(168, 85, 247, 0.35);
-  --accent: #a855f7;
-  --accent-glow: rgba(168, 85, 247, 0.4);
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
+  /* Clean, grounded neutral palette */
+  --background: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-elevated: #F4F4F5;
+  --card: #FFFFFF;
+  --card-hover: #F8F9FA;
+  --foreground: #18181B;
+  --muted: #71717A;
+  --muted-foreground: #71717A;
+  --border: #E4E4E7;
+  --hairline: #E4E4E7;
+  
+  /* Primary muted calm accent */
+  --accent: #1F5C4E;
+  --accent-light: #EBF3F0;
+  --accent-foreground: #FFFFFF;
+
+  --success: #1F5C4E;
+  --danger: #991B1B;
+  --warning: #B45309;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   min-height: 100vh;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.07) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 40%),
-    radial-gradient(at 50% 100%, rgba(34, 197, 94, 0.04) 0px, transparent 50%);
-  background-attachment: fixed;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer utilities {
@@ -44,75 +46,95 @@ body {
 }
 
 @layer components {
-  /* Bento Grid Card */
-  .bento-card {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition-all duration-300;
-    background-color: #121420;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  /* Minimal hairline card - 12px border radius, no shadow */
+  .crm-clean-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color 150ms ease;
   }
 
-  .bento-card:hover {
-    @apply border-purple-500/30 shadow-bento-hover -translate-y-0.5;
+  .crm-clean-card-compact {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 150ms ease;
   }
 
-  .bento-card-spotlight {
-    @apply relative overflow-hidden rounded-2xl border border-purple-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-purple;
-    background-color: #151424;
-    background-image: linear-gradient(to bottom, rgba(28, 22, 46, 0.9), rgba(18, 20, 32, 0.9));
+  .crm-clean-card:hover,
+  .crm-clean-card-compact:hover {
+    border-color: #D4D4D8;
   }
 
-  .bento-card-cyan {
-    @apply relative overflow-hidden rounded-2xl border border-cyan-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-cyan;
-    background-color: #0d1a24;
-    background-image: linear-gradient(to bottom, rgba(14, 33, 43, 0.9), rgba(18, 20, 32, 0.9));
+  /* Status dot: 6px */
+  .status-dot-green {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #1F5C4E;
+    display: inline-block;
   }
 
-  .bento-card-emerald {
-    @apply relative overflow-hidden rounded-2xl border border-emerald-500/30 p-6 backdrop-blur-xl transition-all duration-300 shadow-bento-glow-emerald;
-    background-color: #0f1c16;
-    background-image: linear-gradient(to bottom, rgba(16, 36, 27, 0.9), rgba(18, 20, 32, 0.9));
+  .status-dot-amber {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #B45309;
+    display: inline-block;
   }
 
-  .bento-badge {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-md text-slate-200;
-    background-color: #181a26;
+  .status-dot-neutral {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #A1A1AA;
+    display: inline-block;
   }
 
-  .bento-pill-live {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-400;
-  }
-
-  .bento-pill-danger {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-400;
-  }
-
-  .bento-pill-purple {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-300;
-  }
-
-  .crm-card {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition-all duration-300;
-    background-color: rgba(18, 20, 32, 0.9);
-  }
-
-  .crm-surface {
-    @apply bg-surface;
+  .status-dot-red {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #991B1B;
+    display: inline-block;
   }
 }
 
-/* Custom Scrollbar for high-tech Bento tables */
+/* 44px Table Row Height Standard */
+.crm-table-row {
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 17, 26, 0.6);
+  background: #FAFAFA;
 }
 ::-webkit-scrollbar-thumb {
-  background: #252a3f;
+  background: #D4D4D8;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4263;
+  background: #A1A1AA;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

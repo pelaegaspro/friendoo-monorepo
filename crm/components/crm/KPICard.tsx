@@ -1,16 +1,17 @@
 import React from "react";
-import { ArrowDownRight, ArrowUpRight, LucideIcon } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {
   title: string;
   value: string;
+  metricChange?: string;
   deltaText?: string;
   deltaValue?: number;
   alert?: boolean;
   footer?: string;
   icon?: LucideIcon;
-  variant?: "default" | "spotlight" | "cyan" | "emerald" | "danger";
+  variant?: "default" | "spotlight" | "cyan" | "emerald" | "danger" | string;
   badge?: string;
   className?: string;
 }
@@ -18,82 +19,41 @@ interface KPICardProps {
 export function KPICard({
   title,
   value,
+  metricChange,
   deltaText,
   deltaValue,
   alert,
   footer,
-  icon: Icon,
-  variant = "default",
-  badge,
   className,
 }: KPICardProps) {
-  const isPositive = (deltaValue ?? 0) >= 0;
-  const showDelta = typeof deltaValue === "number";
-
-  const variantClass = {
-    default: "bento-card",
-    spotlight: "bento-card-spotlight",
-    cyan: "bento-card-cyan",
-    emerald: "bento-card-emerald",
-    danger: "bento-card border-red-500/40 bg-red-950/20",
-  }[alert ? "danger" : variant];
+  // If deltaValue is provided, format it clean like "+12% vs last week"
+  let computedChange = metricChange;
+  if (!computedChange && typeof deltaValue === "number") {
+    computedChange = `${deltaValue >= 0 ? "+" : ""}${deltaValue}% ${deltaText || "vs yesterday"}`;
+  }
 
   return (
-    <div className={cn(variantClass, "flex flex-col justify-between p-5", className)}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-300">
-              {title}
-            </span>
-            {badge && (
-              <span className="inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-slate-100">
-                {badge}
-              </span>
-            )}
-          </div>
+    <div className={cn("crm-clean-card flex flex-col justify-between", className)}>
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted">
+            {title}
+          </span>
+          {alert && <span className="status-dot-amber" />}
         </div>
-        {Icon && (
-          <div aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-muted-foreground transition-colors group-hover:text-foreground">
-            <Icon className="h-4 w-4" />
-          </div>
-        )}
+        <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+          {value}
+        </div>
       </div>
 
-      <div className="mt-4">
-        <div className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          <span className="sr-only">{title}: </span>
-          <span>{value}</span>
-        </div>
-        
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {showDelta ? (
-            <div
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium",
-                isPositive
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "bg-red-500/15 text-red-400"
-              )}
-            >
-              <span aria-hidden="true">
-                {isPositive ? (
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowDownRight className="h-3.5 w-3.5" />
-                )}
-              </span>
-              {deltaText || `${Math.abs(deltaValue).toFixed(1)}% vs yesterday`}
-            </div>
-          ) : null}
-          {footer ? (
-            <span className="text-xs text-slate-400">
-              {footer}
-            </span>
-          ) : null}
-        </div>
+      <div className="mt-4 flex items-center justify-between text-xs text-muted border-t border-border pt-2">
+        <span>{footer || "Current status"}</span>
+        {computedChange && (
+          <span className="font-medium text-accent">
+            {computedChange}
+          </span>
+        )}
       </div>
     </div>
   );
 }
-

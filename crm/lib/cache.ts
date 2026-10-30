@@ -14,7 +14,7 @@ const memoryStore = new Map<string, CacheEntry<unknown>>();
 export async function getCachedOrFetch<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttlSeconds = 20
+  ttlSeconds = 60
 ): Promise<T> {
   const now = Date.now();
   const cached = memoryStore.get(key) as CacheEntry<T> | undefined;
