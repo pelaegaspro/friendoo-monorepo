@@ -167,3 +167,4 @@ final adminSupportNoticeProvider =
     StateNotifierProvider<AdminSupportNotificationNotifier, AdminSupportNotice>(
   (ref) => AdminSupportNotificationNotifier(ref.watch(supabaseProvider)),
 );
+
