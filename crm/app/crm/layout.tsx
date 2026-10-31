@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/crm/LogoutButton";
 import { CrmDesktopNavigation, CrmMobileNavigation } from "@/components/crm/CrmNavigation";
-import { isAuthedServer } from "@/lib/session";
+import { isAuthedServer, isSignInPaused } from "@/lib/session";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isAuthedServer())) {
+  if (!isSignInPaused() && !(await isAuthedServer())) {
     redirect("/login");
   }
 

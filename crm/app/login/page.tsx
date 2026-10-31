@@ -1,14 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole } from "lucide-react";
+import Link from "next/link";
+import { LockKeyhole, Sparkles, ArrowRight } from "lucide-react";
+
+const isSignInPaused = process.env.NEXT_PUBLIC_PAUSE_SIGN_IN !== "false";
 
 export default function LoginPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    // If sign-in is paused for testing, automatically proceed to CRM
+    if (isSignInPaused) {
+      router.replace("/crm");
+    }
+  }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,7 +64,26 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-zinc-400">Enter the CRM password to access data.</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
+        {isSignInPaused && (
+          <div className="mb-6 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-purple-400">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Testing Mode: Sign-in Paused</span>
+            </div>
+            <p className="mt-1 text-xs text-zinc-300">
+              Authentication requirement is currently paused for testing.
+            </p>
+            <Link
+              href="/crm"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-purple-500"
+            >
+              Enter CRM Directly
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
+
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-zinc-300">CRM Password</span>
             <div className="relative">
@@ -62,9 +91,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
+                autoComplete="new-password"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Enter password"
                 className="w-full rounded-2xl border border-[#343434] bg-[#101010] pl-11 pr-4 py-3 text-white outline-none transition placeholder:text-zinc-600 focus:border-purple-500"
-                required
+                required={!isSignInPaused}
               />
               <LockKeyhole className="absolute left-4 top-3.5 h-4 w-4 text-zinc-500" />
             </div>
@@ -75,17 +107,6 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-
-          <div className="flex items-center justify-between text-xs text-zinc-400">
-            <span>Dev Password: <strong className="text-purple-400 font-mono">friendoo-admin</strong></span>
-            <button
-              type="button"
-              onClick={() => setPassword("friendoo-admin")}
-              className="text-purple-400 hover:underline hover:text-purple-300"
-            >
-              Autofill
-            </button>
-          </div>
 
           <button
             type="submit"

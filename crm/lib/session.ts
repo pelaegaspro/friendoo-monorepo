@@ -22,7 +22,12 @@ export function createSessionValue() {
   return `${issuedAt}.${signature}`;
 }
 
+export function isSignInPaused(): boolean {
+  return process.env.PAUSE_SIGN_IN !== "false";
+}
+
 export function verifySessionValue(value?: string): boolean {
+  if (isSignInPaused()) return true;
   try {
     if (!value) return false;
 
@@ -77,6 +82,7 @@ export function isAuthedRequest(request: NextRequest): boolean {
 }
 
 export async function isAuthedServer(): Promise<boolean> {
+  if (isSignInPaused()) return true;
   const cookieStore = await cookies();
   const session = cookieStore.get(CRM_SESSION_COOKIE)?.value;
   return verifySessionValue(session);

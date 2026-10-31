@@ -4,4 +4,5 @@
 
 [build.environment]
   NEXT_DISABLE_NETLIFY_EDGE = "true"
-
+  PAUSE_SIGN_IN = "true"
+  NEXT_PUBLIC_PAUSE_SIGN_IN = "true"
