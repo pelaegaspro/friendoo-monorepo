@@ -1,3 +1,4 @@
+import '../../profile/data/profile_repository.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -554,6 +555,28 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
 
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
 
+    // 1. Broadcast directly to Admin Console via Supabase Realtime for instant popup alert
+    try {
+      final deskChannel = Supabase.instance.client.channel('support_live_desk');
+      final activeProfile = ProfileRepository.currentActiveProfile;
+      final lang = (activeProfile?.preferredLanguages.isNotEmpty == true)
+          ? activeProfile!.preferredLanguages.first
+          : 'Tamil';
+      deskChannel.sendBroadcastMessage(
+        event: 'incoming_chat_alert',
+        payload: {
+          'userId': _currentUserId,
+          'name': activeProfile?.displayName ?? (widget.isHost ? 'Verified Host' : 'Caller User'),
+          'role': widget.isHost ? 'host' : 'user',
+          'language': lang,
+          'message': message,
+          'scenario': 'live_support',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+    } catch (_) {}
+
+    // 2. HTTP Escalation
     for (final url in candidates) {
       try {
         final req = await client.postUrl(Uri.parse(url));

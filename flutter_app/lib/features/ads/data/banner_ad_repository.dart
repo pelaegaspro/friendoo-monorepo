@@ -177,9 +177,9 @@ class BannerAdRepository {
       if (fetched.isNotEmpty) {
         return fetched;
       }
-      return const [CloudBannerAd.defaultAd, CloudBannerAd.defaultHostSurgeAd];
+      return defaultFourDiscoverPromoCards;
     } catch (_) {
-      return const [CloudBannerAd.defaultAd, CloudBannerAd.defaultHostSurgeAd];
+      return defaultFourDiscoverPromoCards;
     }
   }
 

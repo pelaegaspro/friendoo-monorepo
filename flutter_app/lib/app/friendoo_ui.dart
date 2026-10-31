@@ -1,3 +1,4 @@
+import '../features/support/data/admin_support_notification_service.dart';
 // ignore_for_file: unused_element, unused_element_parameter
 import 'dart:async';
 import 'dart:ui';
@@ -837,25 +838,30 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
 
     final onlineCount = femaleHosts.where((host) => host.isAvailable && host.status != HostStatus.busy).length;
 
-    // Favorites & Recent Spoken Top 6 Hosts
+    // Favorites & Recommended Top 6 Hosts: strictly prioritize user preferred language (e.g. Tamil)
     final favIds = ref.watch(favoriteHostIdsProvider).asData?.value ??
         ref.watch(favoritesRepositoryProvider).currentFavorites;
 
-    final List<HostProfile> top6Hosts = [];
-    final favList = femaleHosts.where((h) => favIds.contains(h.id)).toList();
-    final nonFavList = femaleHosts.where((h) => !favIds.contains(h.id)).toList();
+    final sortedCandidates = [...femaleHosts]
+      ..sort((a, b) {
+        final rankA = _availabilityRank(a);
+        final rankB = _availabilityRank(b);
+        if (rankA != rankB) return rankA.compareTo(rankB);
+        final aMatches = a.languages.any(
+          (l) => userLangs.contains(l.trim().toLowerCase()),
+        );
+        final bMatches = b.languages.any(
+          (l) => userLangs.contains(l.trim().toLowerCase()),
+        );
+        if (aMatches != bMatches) return aMatches ? -1 : 1;
+        final aFav = favIds.contains(a.id);
+        final bFav = favIds.contains(b.id);
+        if (aFav != bFav) return aFav ? -1 : 1;
+        if (a.isStar != b.isStar) return a.isStar ? -1 : 1;
+        return b.rating.compareTo(a.rating);
+      });
 
-    top6Hosts.addAll(favList);
-    for (final h in nonFavList) {
-      if (top6Hosts.length >= 6) break;
-      top6Hosts.add(h);
-    }
-    top6Hosts.sort((a, b) {
-      final rankA = _availabilityRank(a);
-      final rankB = _availabilityRank(b);
-      if (rankA != rankB) return rankA.compareTo(rankB);
-      return b.rating.compareTo(a.rating);
-    });
+    final top6Hosts = sortedCandidates.take(6).toList();
 
 
     return ListView(
@@ -1573,35 +1579,66 @@ class _DesiHostCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // LEFT: Persisted host avatar when available, deterministic pack fallback otherwise.
-              savedAvatarId != null && savedAvatarId.isNotEmpty
-                  ? FriendooAvatar(
-                      config: FriendooAvatarConfig.fromRawString(
-                        savedAvatarId,
-                        gender: 'female',
-                        role: 'host',
+              // LEFT: Avatar with Crown for Star Host
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.topCenter,
+                children: [
+                  savedAvatarId != null && savedAvatarId.isNotEmpty
+                      ? FriendooAvatar(
+                          config: FriendooAvatarConfig.fromRawString(
+                            savedAvatarId,
+                            gender: 'female',
+                            role: 'host',
+                          ),
+                          age: host.displayAge,
+                          isStar: false,
+                          size: 58,
+                          showPresence: true,
+                          isOnline: host.isAvailable,
+                        )
+                      : DesiFemaleAvatar(
+                          seed: host.displayName,
+                          age: host.displayAge,
+                          isStar: false,
+                          size: 58,
+                          showPresence: true,
+                          isOnline: host.isAvailable,
+                        ),
+                  if (host.isStar)
+                    Positioned(
+                      top: -10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1B4B),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFFB703).withValues(alpha: 0.6),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          '👑',
+                          style: TextStyle(fontSize: 11.5, height: 1.1),
+                        ),
                       ),
-                      age: host.displayAge,
-                      isStar: host.isStar,
-                      size: 68,
-                      showPresence: true,
-                      isOnline: host.isAvailable,
-                    )
-                  : DesiFemaleAvatar(
-                      seed: host.displayName,
-                      age: host.displayAge,
-                      isStar: host.isStar,
-                      size: 68,
-                      showPresence: true,
-                      isOnline: host.isAvailable,
                     ),
+                ],
+              ),
               const SizedBox(width: 12),
 
               // CENTER: Host Information
@@ -1632,33 +1669,11 @@ class _DesiHostCard extends StatelessWidget {
                           size: 15,
                         ),
                         if (host.isStar) ...[
-                          const SizedBox(width: 5),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 1.5,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFFFFB703),
-                                    Color(0xFFFF5400),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text(
-                                '⭐ STAR',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFFFB703),
+                            size: 16,
                           ),
                         ],
                         if (isRecommended) ...[
@@ -1792,71 +1807,21 @@ class _DesiHostCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Short Description / Bio
+          // Short Description / Bio (Compact Single Line)
           if (host.bio != null && host.bio!.isNotEmpty) ...[
             Text(
               host.bio!,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Color(0xFF4B5563),
-                fontSize: 13,
-                height: 1.35,
+                fontSize: 12,
+                height: 1.3,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
           ],
-
-          // Voice Greeting Snippet Pill (Apple fluid press response)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: ApplePressable(
-              pressedScale: 0.94,
-              onTap: () => _showVoiceGreetingPreview(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFD8B4FE).withValues(alpha: 0.8),
-                    width: 1.1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 16,
-                      color: Color(0xFF7C3AED),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Voice Bio (${host.voiceIntroDurationSecs}s)',
-                      style: const TextStyle(
-                        color: Color(0xFF6B21A8),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.graphic_eq_rounded,
-                      size: 14,
-                      color: Color(0xFF7C3AED),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
 
           // Footer Row: City + Availability + Call Now CTA
           Row(
@@ -3540,6 +3505,7 @@ class FriendooProfileView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileStreamProvider).asData?.value;
+    final adminNotice = ref.watch(adminSupportNoticeProvider);
 
     final name = profile?.displayName ?? 'User';
     final languages =
@@ -3731,13 +3697,48 @@ class FriendooProfileView extends ConsumerWidget {
           iconBg: const Color(0xFFE0F2FE),
           iconColor: const Color(0xFF0284C7),
           title: 'Help & Support',
-          subtitle: 'FAQs & safety',
+          subtitle: adminNotice.hasActiveNotice ? 'Message from Support Team' : 'FAQs & safety',
+          trailingBadge: adminNotice.hasActiveNotice
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                      SizedBox(width: 3),
+                      Text(
+                        '1 New',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : null,
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const HelpSupportPage(isHost: false),
-              ),
-            );
+            if (adminNotice.hasActiveNotice) {
+              ref.read(adminSupportNoticeProvider.notifier).openSupportChat(context, isHost: false);
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const HelpSupportPage(isHost: false),
+                ),
+              );
+            }
           },
         ),
         const SizedBox(height: 10),
@@ -3837,6 +3838,7 @@ class _ProfileNavigationRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.trailingBadge,
   });
 
   final IconData icon;
@@ -3845,6 +3847,7 @@ class _ProfileNavigationRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Widget? trailingBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -3897,7 +3900,10 @@ class _ProfileNavigationRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              if (trailingBadge != null) ...[
+                trailingBadge!,
+                const SizedBox(width: 6),
+              ],
               const Icon(
                 Icons.chevron_right_rounded,
                 color: Color(0xFF9CA3AF),
@@ -7881,26 +7887,11 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                           ),
                         ),
                         if (host.isStar) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFFB703), Color(0xFFFF5400)],
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              '⭐ STAR',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
+                          const SizedBox(width: 5),
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFFFB703),
+                            size: 18,
                           ),
                         ],
                       ],

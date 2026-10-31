@@ -60,6 +60,11 @@ enum HostStatus {
 }
 
 class HostProfile {
+  static const int standardHostRate = 5;
+  static const int starHostRate = 7;
+  static const double standardHostPayout = 2.50;
+  static const double starHostPayout = 4.00;
+
   const HostProfile({
     required this.id,
     required this.displayName,
@@ -108,11 +113,14 @@ class HostProfile {
   bool get isBusy => status == HostStatus.busy;
   bool get isOffline => status == HostStatus.offline || !isAvailable;
 
-  /// Effective coin rate per minute including VIP tier multiplier and peak surge
+  /// Payout in INR per minute for the host
+  double get hostPayoutPerMinute => isStar ? starHostPayout : standardHostPayout;
+
+  /// Effective coin rate per minute paid by caller
   int get effectiveRatePerMinute {
-    double base = ratePerAudioMinute > 0 ? ratePerAudioMinute.toDouble() : 5.0;
-    if (isSurgeActive) base *= 1.5;
-    return base.round().clamp(1, 100);
+    final int base = isStar ? starHostRate : (ratePerAudioMinute > 0 ? ratePerAudioMinute : standardHostRate);
+    if (isSurgeActive) return (base * 1.5).round().clamp(1, 100);
+    return base;
   }
 
   int get displayAge {

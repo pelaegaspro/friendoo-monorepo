@@ -69,6 +69,10 @@ class Backend2PromoRepository {
 
   final SupabaseClient? _client;
 
+  Future<List<CloudBannerAd>> getDiscoverPromoCards() async {
+    return watchDiscoverPromoCards().first;
+  }
+
   Stream<List<CloudBannerAd>> watchDiscoverPromoCards() {
     final client = _client;
     if (client == null) {

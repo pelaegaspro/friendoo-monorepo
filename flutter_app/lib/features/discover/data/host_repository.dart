@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -31,6 +32,12 @@ class HostRepository {
 
   /// Applies the 3/10 Star Host rule (Top 30% ranked hosts are marked as Star Hosts):
   /// e.g. 10 hosts -> 3 star hosts, 20 hosts -> 6 star hosts, 30 hosts -> 9 star hosts.
+  /// Applies the Star Host appointment rule:
+  /// 1. Appointed based on reviews (rating) and call attended time: (rating * 1000) + totalCalls.
+  /// 2. Top 10 hosts across all languages.
+  /// 3. Strict guarantee: Every regional language represented in list has at least 1 Star Host.
+  /// 4. Star Hosts: Caller pays 7 coins/min (ratePerAudioMinute = 7). Host payout: 4.00/min.
+  /// 5. Standard Hosts: Caller pays 5 coins/min (ratePerAudioMinute = 5). Host payout: 2.50/min.
   static List<HostProfile> applyStarHostQuota(List<HostProfile> list) {
     if (list.isEmpty) return list;
 
@@ -41,14 +48,40 @@ class HostRepository {
         return scoreB.compareTo(scoreA);
       });
 
-    final starQuota = (sorted.length * 0.3).ceil().clamp(1, sorted.length);
-    final Set<String> starIds = sorted.take(starQuota).map((h) => h.id).toSet();
+    final Set<String> starIds = {};
+
+    // 1. Language Guarantee: Every unique regional language gets at least 1 Star Host
+    final Set<String> allLanguages = {};
+    for (final host in sorted) {
+      for (final lang in host.languages) {
+        final norm = lang.trim().toLowerCase();
+        if (norm.isNotEmpty && norm != 'english') {
+          allLanguages.add(norm);
+        }
+      }
+    }
+
+    for (final lang in allLanguages) {
+      final bestHostForLang = sorted.firstWhere(
+        (h) => h.languages.any((l) => l.trim().toLowerCase() == lang),
+        orElse: () => sorted.first,
+      );
+      starIds.add(bestHostForLang.id);
+    }
+
+    // 2. Fill up to top 10 from overall highest scored hosts
+    final int maxStarHosts = math.min(10, sorted.length);
+    for (final host in sorted) {
+      if (starIds.length >= maxStarHosts) break;
+      starIds.add(host.id);
+    }
 
     return list.map((host) {
       final isStar = starIds.contains(host.id);
       return host.copyWith(
         isStar: isStar,
-        vipTier: isStar ? HostVipTier.star : host.vipTier,
+        ratePerAudioMinute: isStar ? HostProfile.starHostRate : HostProfile.standardHostRate,
+        vipTier: isStar ? HostVipTier.star : (host.vipTier == HostVipTier.star ? HostVipTier.silver : host.vipTier),
       );
     }).toList();
   }
@@ -86,7 +119,7 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000001',
       displayName: 'Priya Sharma',
       bio: 'Sweet conversations & late night laughs. Let\'s talk about movies & life! 🌸',
-      ratePerAudioMinute: 5,
+      ratePerAudioMinute: 7,
       isAvailable: true,
       isStar: true,
       status: HostStatus.online,
@@ -101,7 +134,7 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000002',
       displayName: 'Ananya Iyer',
       bio: 'RJ & college student. Love listening and sharing chill stories ☕',
-      ratePerAudioMinute: 5,
+      ratePerAudioMinute: 7,
       isAvailable: true,
       isStar: true,
       status: HostStatus.online,
@@ -116,7 +149,7 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000003',
       displayName: 'Meera Nair',
       bio: 'Singer & coffee lover. Feeling lonely? I am just one call away! 🎶',
-      ratePerAudioMinute: 6,
+      ratePerAudioMinute: 7,
       isAvailable: true,
       isStar: true,
       status: HostStatus.online,
@@ -131,9 +164,9 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000004',
       displayName: 'Kavya Reddy',
       bio: 'Soft spoken friend to brighten your day. Talk about anything freely 💫',
-      ratePerAudioMinute: 5,
+      ratePerAudioMinute: 7,
       isAvailable: true,
-      isStar: false,
+      isStar: true,
       status: HostStatus.online,
       languages: ['Telugu', 'Hindi'],
       gender: 'female',
@@ -146,9 +179,9 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000005',
       displayName: 'Sneha Patel',
       bio: 'Techie by day, warm companion by evening. Let\'s connect! ✨',
-      ratePerAudioMinute: 5,
+      ratePerAudioMinute: 7,
       isAvailable: true,
-      isStar: false,
+      isStar: true,
       status: HostStatus.online,
       languages: ['Kannada', 'Hindi'],
       gender: 'female',
@@ -176,7 +209,7 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000007',
       displayName: 'Rhea Sen',
       bio: 'Currently speaking with a caller. Tap favorite to catch me next! 📞',
-      ratePerAudioMinute: 6,
+      ratePerAudioMinute: 7,
       isAvailable: true,
       isStar: true,
       status: HostStatus.busy,
@@ -206,9 +239,9 @@ class HostRepository {
       id: '11111111-0000-4000-8000-000000000009',
       displayName: 'Tanvi Joshi',
       bio: 'Offline for now. Leave a favorite to know when I am back online 🌙',
-      ratePerAudioMinute: 5,
+      ratePerAudioMinute: 7,
       isAvailable: false,
-      isStar: false,
+      isStar: true,
       status: HostStatus.offline,
       languages: ['Marathi', 'Hindi'],
       gender: 'female',

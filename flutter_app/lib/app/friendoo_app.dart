@@ -1,3 +1,4 @@
+import '../features/support/data/admin_support_notification_service.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -707,6 +708,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
     final activeCall = ref.watch(activeCallProvider).asData?.value;
     final isHost = ref.watch(isHostModeProvider);
+    final adminNotice = ref.watch(adminSupportNoticeProvider);
     final hasOngoingCall =
         activeCall != null &&
         (activeCall.status == CallStatus.accepted ||
@@ -781,40 +783,52 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 destinations: isHost
-                    ? const [
-                        NavigationDestination(
+                    ? [
+                        const NavigationDestination(
                           icon: Icon(Icons.dashboard_outlined),
                           selectedIcon: Icon(Icons.dashboard_rounded),
                           label: 'Dashboard',
                         ),
-                        NavigationDestination(
+                        const NavigationDestination(
                           icon: Icon(Icons.call_outlined),
                           selectedIcon: Icon(Icons.call_rounded),
                           label: 'Requests',
                         ),
-                        NavigationDestination(
+                        const NavigationDestination(
                           icon: Icon(Icons.monetization_on_outlined),
                           selectedIcon: Icon(Icons.monetization_on_rounded),
                           label: 'Earnings',
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.badge_outlined),
-                          selectedIcon: Icon(Icons.badge_rounded),
+                          icon: adminNotice.hasActiveNotice
+                              ? const Badge(
+                                  label: Text('1'),
+                                  backgroundColor: Color(0xFFEF4444),
+                                  child: Icon(Icons.badge_outlined),
+                                )
+                              : const Icon(Icons.badge_outlined),
+                          selectedIcon: adminNotice.hasActiveNotice
+                              ? const Badge(
+                                  label: Text('1'),
+                                  backgroundColor: Color(0xFFEF4444),
+                                  child: Icon(Icons.badge_rounded),
+                                )
+                              : const Icon(Icons.badge_rounded),
                           label: 'Host Profile',
                         ),
                       ]
-                    : const [
-                        NavigationDestination(
+                    : [
+                        const NavigationDestination(
                           icon: Icon(Icons.explore_outlined),
                           selectedIcon: Icon(Icons.explore_rounded),
                           label: 'Discover',
                         ),
-                        NavigationDestination(
+                        const NavigationDestination(
                           icon: Icon(Icons.call_outlined),
                           selectedIcon: Icon(Icons.call_rounded),
                           label: 'Calls',
                         ),
-                        NavigationDestination(
+                        const NavigationDestination(
                           icon: Icon(Icons.account_balance_wallet_outlined),
                           selectedIcon: Icon(
                             Icons.account_balance_wallet_rounded,
@@ -822,8 +836,20 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           label: 'Wallet',
                         ),
                         NavigationDestination(
-                          icon: Icon(Icons.person_outline_rounded),
-                          selectedIcon: Icon(Icons.person_rounded),
+                          icon: adminNotice.hasActiveNotice
+                              ? const Badge(
+                                  label: Text('1'),
+                                  backgroundColor: Color(0xFFEF4444),
+                                  child: Icon(Icons.person_outline_rounded),
+                                )
+                              : const Icon(Icons.person_outline_rounded),
+                          selectedIcon: adminNotice.hasActiveNotice
+                              ? const Badge(
+                                  label: Text('1'),
+                                  backgroundColor: Color(0xFFEF4444),
+                                  child: Icon(Icons.person_rounded),
+                                )
+                              : const Icon(Icons.person_rounded),
                           label: 'Profile',
                         ),
                       ],
@@ -835,7 +861,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       body: SafeArea(
         top: true,
         bottom: false,
-        child: IndexedStack(
+        child: Stack(
+          children: [
+            IndexedStack(
           index: _currentTabIndex,
           children: isHost
               ? [
@@ -898,6 +926,103 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   // Tab 3: User Profile & Account Settings
                   FriendooProfileView(onSignOut: _signOut),
                 ],
+            ),
+            if (adminNotice.hasActiveNotice && adminNotice.message != null)
+              Positioned(
+                top: 8,
+                left: 14,
+                right: 14,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      ref.read(adminSupportNoticeProvider.notifier).openSupportChat(context, isHost: isHost);
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.support_agent_rounded,
+                              color: Color(0xFF38BDF8),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Support Team Message',
+                                      style: TextStyle(
+                                        color: Color(0xFF38BDF8),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      'Tap to reply',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.7),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  adminNotice.message!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -3636,7 +3761,7 @@ class _ProfileTab extends ConsumerWidget {
                               child: Text(
                                 hostStatsAsync.when(
                                   data: (s) => s.rating >= 4.8
-                                      ? '⭐ Star Host'
+                                      ? '⭐ Active Host'
                                       : '⭐ Active Host',
                                   loading: () => '⭐ Host',
                                   error: (_, _) => '⭐ Host',
@@ -4618,7 +4743,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                               ),
                               child: Text(
                                 stats.rating >= 4.8
-                                    ? '⭐ Star Host'
+                                    ? '⭐ Active Host'
                                     : '⭐ Active Host',
                                 style: const TextStyle(
                                   color: Colors.white,

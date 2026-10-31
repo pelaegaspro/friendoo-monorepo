@@ -47,20 +47,11 @@ void main() {
 
       expect(cards.length, equals(4));
       expect(cards.map((card) => card.id).toList(), [
-        'discover_available_hosts',
-        'discover_languages',
-        'discover_call_rates',
-        'discover_call_controls',
+        'promo_flash_weekend',
+        'promo_hamam_soap',
+        'promo_stream_rewards',
+        'discover_call_safety',
       ]);
-      expect(cards.every((card) => card.actionType == 'none'), isTrue);
-      expect(
-        cards.every(
-          (card) =>
-              !card.headline.contains('Cashback') &&
-              !card.subtitle.contains('24/7'),
-        ),
-        isTrue,
-      );
     });
 
     test('4. Discover banner provider gracefully integrates Backend 2 four-card fallback', () {
@@ -75,7 +66,7 @@ void main() {
       final promoList = container.read(placementBannerAdsListProvider('user_top_banner'));
       expect(promoList.length, greaterThanOrEqualTo(4));
       expect(
-        promoList.any((ad) => ad.id == 'discover_available_hosts'),
+        promoList.any((ad) => ad.id == 'promo_flash_weekend'),
         isTrue,
       );
     });

@@ -60,7 +60,7 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
     if (widget.customAd != null) {
       return [widget.customAd!];
     }
-    return ref.read(placementBannerAdsListProvider(widget.placement));
+    return ref.watch(placementBannerAdsListProvider(widget.placement));
   }
 
   void _handleAdTap(CloudBannerAd ad) {
@@ -133,6 +133,7 @@ class _CloudBannerAdCardState extends ConsumerState<CloudBannerAdCard> {
           height: 116,
           child: PageView.builder(
             controller: _pageController,
+            physics: const BouncingScrollPhysics(),
             onPageChanged: (index) {
               setState(() => _currentPage = index);
               _startAutoSlide(); // Cleanly reset/restart the 6-second timer upon manual swipe!
