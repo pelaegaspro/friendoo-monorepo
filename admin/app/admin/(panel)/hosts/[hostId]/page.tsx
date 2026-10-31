@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export default async function HostDetailPage({
   params,
 }: {
-  params: Promise<{ hostId: string }> | { hostId: string }
+  params: Promise<{ hostId: string }>
 }) {
   const resolvedParams = await Promise.resolve(params)
   const hostId = resolvedParams.hostId

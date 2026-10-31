@@ -56,3 +56,6 @@ artifacts/
 scratch/
 .claude/
 .manus/
+
+# Local Netlify folder
+.netlify

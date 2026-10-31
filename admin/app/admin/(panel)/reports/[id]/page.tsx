@@ -3,7 +3,7 @@ import ReportThread from "@/components/reports/ReportThread";
 export default async function ReportDetailsPage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string }
+  params: Promise<{ id: string }>
 }) {
   const resolvedParams = await Promise.resolve(params);
   return (

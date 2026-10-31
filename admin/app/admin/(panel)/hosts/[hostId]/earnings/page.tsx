@@ -5,7 +5,7 @@ import { IndianRupee, Clock, Wallet, TrendingUp } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default async function HostEarningsPage({ params }: { params: Promise<{ hostId: string }> | { hostId: string } }) {
+export default async function HostEarningsPage({ params }: { params: Promise<{ hostId: string }> }) {
   const resolvedParams = await Promise.resolve(params);
   const hostId = resolvedParams.hostId;
   const earnings = await getHostEarnings(hostId);

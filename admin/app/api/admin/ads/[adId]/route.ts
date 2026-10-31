@@ -4,7 +4,7 @@ import { deleteBannerAd } from '@/lib/admin/data'
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ adId: string }> | { adId: string } }
+  { params }: { params: Promise<{ adId: string }> }
 ) {
   const unauthorized = await requireAdminApi()
   if (unauthorized) return unauthorized
