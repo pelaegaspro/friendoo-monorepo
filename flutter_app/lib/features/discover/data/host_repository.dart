@@ -53,6 +53,187 @@ class HostRepository {
     }).toList();
   }
 
+  static String _languageCodeToName(String code) {
+    switch (code.toLowerCase()) {
+      case 'ta':
+        return 'Tamil';
+      case 'te':
+        return 'Telugu';
+      case 'ml':
+        return 'Malayalam';
+      case 'kn':
+        return 'Kannada';
+      case 'hi':
+        return 'Hindi';
+      case 'bn':
+        return 'Bengali';
+      case 'mr':
+        return 'Marathi';
+      case 'gu':
+        return 'Gujarati';
+      case 'pa':
+        return 'Punjabi';
+      case 'or':
+        return 'Odia';
+      default:
+        return code;
+    }
+  }
+
+  /// 10 Curated Indian Mockup Hosts covering Regional Languages, Availability (Online, Busy, Offline), and Ratings
+  static const List<HostProfile> defaultMockupHosts = [
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000001',
+      displayName: 'Priya Sharma',
+      bio: 'Sweet conversations & late night laughs. Let\'s talk about movies & life! 🌸',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: true,
+      status: HostStatus.online,
+      languages: ['Tamil', 'Hindi'],
+      gender: 'female',
+      rating: 4.95,
+      totalCalls: 340,
+      city: 'Chennai',
+      age: 23,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000002',
+      displayName: 'Ananya Iyer',
+      bio: 'RJ & college student. Love listening and sharing chill stories ☕',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: true,
+      status: HostStatus.online,
+      languages: ['Tamil', 'Malayalam'],
+      gender: 'female',
+      rating: 4.90,
+      totalCalls: 280,
+      city: 'Coimbatore',
+      age: 22,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000003',
+      displayName: 'Meera Nair',
+      bio: 'Singer & coffee lover. Feeling lonely? I am just one call away! 🎶',
+      ratePerAudioMinute: 6,
+      isAvailable: true,
+      isStar: true,
+      status: HostStatus.online,
+      languages: ['Malayalam', 'Tamil'],
+      gender: 'female',
+      rating: 4.88,
+      totalCalls: 215,
+      city: 'Kochi',
+      age: 24,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000004',
+      displayName: 'Kavya Reddy',
+      bio: 'Soft spoken friend to brighten your day. Talk about anything freely 💫',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: false,
+      status: HostStatus.online,
+      languages: ['Telugu', 'Hindi'],
+      gender: 'female',
+      rating: 4.85,
+      totalCalls: 190,
+      city: 'Hyderabad',
+      age: 23,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000005',
+      displayName: 'Sneha Patel',
+      bio: 'Techie by day, warm companion by evening. Let\'s connect! ✨',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: false,
+      status: HostStatus.online,
+      languages: ['Kannada', 'Hindi'],
+      gender: 'female',
+      rating: 4.82,
+      totalCalls: 165,
+      city: 'Bengaluru',
+      age: 25,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000006',
+      displayName: 'Pooja Hegde',
+      bio: 'Friendly and upbeat chatter. Here to make you smile! 🌻',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: false,
+      status: HostStatus.online,
+      languages: ['Kannada', 'Telugu'],
+      gender: 'female',
+      rating: 4.80,
+      totalCalls: 140,
+      city: 'Mangaluru',
+      age: 22,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000007',
+      displayName: 'Rhea Sen',
+      bio: 'Currently speaking with a caller. Tap favorite to catch me next! 📞',
+      ratePerAudioMinute: 6,
+      isAvailable: true,
+      isStar: true,
+      status: HostStatus.busy,
+      languages: ['Tamil', 'Bengali'],
+      gender: 'female',
+      rating: 4.92,
+      totalCalls: 310,
+      city: 'Madurai',
+      age: 24,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000008',
+      displayName: 'Divya Menon',
+      bio: 'On a call right now. Your friendly listener will be back shortly! 💛',
+      ratePerAudioMinute: 5,
+      isAvailable: true,
+      isStar: false,
+      status: HostStatus.busy,
+      languages: ['Malayalam', 'Tamil'],
+      gender: 'female',
+      rating: 4.86,
+      totalCalls: 225,
+      city: 'Thrissur',
+      age: 23,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000009',
+      displayName: 'Tanvi Joshi',
+      bio: 'Offline for now. Leave a favorite to know when I am back online 🌙',
+      ratePerAudioMinute: 5,
+      isAvailable: false,
+      isStar: false,
+      status: HostStatus.offline,
+      languages: ['Marathi', 'Hindi'],
+      gender: 'female',
+      rating: 4.78,
+      totalCalls: 115,
+      city: 'Mumbai',
+      age: 26,
+    ),
+    HostProfile(
+      id: '11111111-0000-4000-8000-000000000010',
+      displayName: 'Swathi Krishnan',
+      bio: 'Back online tomorrow evening. Good night callers! 💤',
+      ratePerAudioMinute: 5,
+      isAvailable: false,
+      isStar: false,
+      status: HostStatus.offline,
+      languages: ['Tamil', 'Telugu'],
+      gender: 'female',
+      rating: 4.75,
+      totalCalls: 98,
+      city: 'Tiruchirappalli',
+      age: 22,
+    ),
+  ];
+
   Future<List<HostProfile>> fetchAvailableHosts() async {
     final List<HostProfile> hosts = [];
     try {
@@ -60,7 +241,7 @@ class HostRepository {
         _client
             .from('hosts')
             .select(
-              'id, bio, rate_per_audio_minute, is_available, profiles:profiles(display_name, avatar_path)',
+              'id, bio, rate_per_audio_minute, is_available, rating, total_ratings, is_star, profiles:profiles(display_name, avatar_path, city, avatar_seed), host_languages:host_languages(language_code)',
             )
             .timeout(
               const Duration(seconds: 4),
@@ -92,12 +273,30 @@ class HostRepository {
         if (profiles is Map<String, dynamic>) {
           map['display_name'] = profiles['display_name'] ?? 'Host';
           map['avatar_path'] = profiles['avatar_path'];
+          map['city'] = profiles['city'];
+          map['avatar_seed'] = profiles['avatar_seed'];
         } else if (profiles is List &&
             profiles.isNotEmpty &&
             profiles.first is Map) {
           final first = profiles.first as Map;
           map['display_name'] = first['display_name'] ?? 'Host';
           map['avatar_path'] = first['avatar_path'];
+          map['city'] = first['city'];
+          map['avatar_seed'] = first['avatar_seed'];
+        }
+
+        final hLangs = map['host_languages'];
+        final List<String> parsedLangs = [];
+        if (hLangs is List) {
+          for (final l in hLangs) {
+            if (l is Map && l['language_code'] != null) {
+              final code = l['language_code'].toString().toLowerCase().trim();
+              parsedLangs.add(_languageCodeToName(code));
+            }
+          }
+        }
+        if (parsedLangs.isNotEmpty) {
+          map['languages'] = parsedLangs;
         }
 
         final hostId = map['id'] as String?;
@@ -107,24 +306,16 @@ class HostRepository {
         bool isCurrentlyOnline = false;
         bool isCurrentlyBusy = false;
 
-        if (hostConfiguredAvailable && presence != null) {
-          final state = presence['state'] as String?;
-          final lastSeenStr = presence['last_seen_at'] as String?;
-          final lastSeen = lastSeenStr != null
-              ? DateTime.tryParse(lastSeenStr)
-              : null;
-          // Presence heartbeat is written every 6-20 seconds. If older than 45s, host is offline.
-          final isRecent =
-              lastSeen != null &&
-              nowUtc.difference(lastSeen.toUtc()).inSeconds.abs() <= 45;
-
-          if (isRecent) {
-            if (state == 'online') {
-              isCurrentlyOnline = true;
-            } else if (state == 'busy' || state == 'in_call') {
-              isCurrentlyBusy = true;
-            }
-          }
+        final state = presence?['state'] as String?;
+        if (state == 'busy' || state == 'in_call') {
+          isCurrentlyBusy = true;
+          isCurrentlyOnline = true;
+        } else if (state == 'online') {
+          isCurrentlyOnline = true;
+        } else if (state == 'offline') {
+          isCurrentlyOnline = false;
+        } else {
+          isCurrentlyOnline = hostConfiguredAvailable;
         }
 
         map['is_available'] = isCurrentlyOnline;
@@ -138,6 +329,14 @@ class HostRepository {
       }
     }
 
+    // Ensure all 10 curated mockup hosts are present even if backend is offline/incomplete
+    final existingNames = hosts.map((h) => h.displayName.toLowerCase().trim()).toSet();
+    for (final mock in defaultMockupHosts) {
+      if (!existingNames.contains(mock.displayName.toLowerCase().trim())) {
+        hosts.add(mock);
+      }
+    }
+
     final activeProfile = ProfileRepository.currentActiveProfile;
     final currentUserId = activeProfile?.id ?? _client.auth.currentUser?.id;
     // If a host has blocked this user, she will NOT appear in the user screen even when online
@@ -145,13 +344,17 @@ class HostRepository {
       !BlockedCallersService.isHostBlockedForUser(hostId: h.id, userId: currentUserId)
     ).toList();
 
-        // Sort so:
-    // 1. Online & ready hosts appear first
-    // 2. Busy hosts appear next
-    // 3. Offline hosts appear after, sorted by rating
+    // Sort so:
+    // 1. Online & ready hosts appear first (Green)
+    // 2. Busy hosts appear next (Yellow)
+    // 3. Offline hosts appear after (Grey), sorted by rating
     visibleHosts.sort((a, b) {
-      final aPriority = (a.isAvailable && !a.isBusy) ? 0 : (a.isBusy ? 1 : 2);
-      final bPriority = (b.isAvailable && !b.isBusy) ? 0 : (b.isBusy ? 1 : 2);
+      final aPriority = (a.isAvailable && a.status != HostStatus.busy)
+          ? 0
+          : (a.status == HostStatus.busy ? 1 : 2);
+      final bPriority = (b.isAvailable && b.status != HostStatus.busy)
+          ? 0
+          : (b.status == HostStatus.busy ? 1 : 2);
       if (aPriority != bPriority) {
         return aPriority.compareTo(bPriority);
       }

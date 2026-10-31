@@ -690,7 +690,6 @@ class FriendooDashboardView extends ConsumerStatefulWidget {
 }
 
 class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
-  int _visibleHostsCount = 4;
   late final PageController _favoritesPageController;
   int _favoritesPageIndex = 0;
 
@@ -858,7 +857,6 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
       return b.rating.compareTo(a.rating);
     });
 
-    final pagedHosts = visibleHosts.take(_visibleHostsCount).toList();
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -1107,7 +1105,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
 
                               // Per Minute Rate
                               Text(
-                                '₹/min',
+                                '₹${host.ratePerAudioMinute}/min',
                                 style: const TextStyle(
                                   color: Color(0xFF6366F1),
                                   fontWeight: FontWeight.w700,
@@ -1250,7 +1248,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
             message: 'Check back in a few moments to see who is online.',
           )
         else ...[
-          ...pagedHosts.map(
+          ...visibleHosts.map(
             (host) => Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: _DesiHostCard(
@@ -1262,56 +1260,6 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
               ),
             ),
           ),
-
-          // Show More Hosts (+6) Button
-          if (visibleHosts.length > _visibleHostsCount)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 16),
-              child: ApplePressable(
-                pressedScale: 0.95,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    _visibleHostsCount = math.min(_visibleHostsCount + 6, visibleHosts.length);
-                  });
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.expand_more_rounded,
-                        color: Color(0xFF7C3AED),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Show More Hosts (+6) •  of ',
-                        style: const TextStyle(
-                          color: Color(0xFF7C3AED),
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
         ],
       ],
     );
