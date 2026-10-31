@@ -363,6 +363,29 @@ export default function SupportDeskPage() {
     };
   }, [activeSession?.userId, activeSession?.name]);
 
+  // Helper to resolve user ID or short ID / phone to full UUID
+  const resolveTargetProfile = async (rawId: string) => {
+    if (!supabase) return null;
+    const clean = rawId.replace(/^(host-|user-)/i, '').trim();
+    // 1. Exact UUID match
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean)) {
+      const { data } = await supabase.from('profiles').select('id, display_name, role, phone').eq('id', clean).maybeSingle();
+      if (data) return data;
+      return { id: clean, display_name: 'Friendoo User', role: 'user', phone: '' };
+    }
+    // 2. Search by phone or UUID prefix
+    const { data: list } = await supabase
+      .from('profiles')
+      .select('id, display_name, role, phone')
+      .or(`phone.ilike.%${clean}%,id.ilike.${clean}%`)
+      .limit(1);
+
+    if (list && list.length > 0) {
+      return list[0];
+    }
+    return null;
+  };
+
   // Send Reply directly to App
   const handleSendReply = async (textToSend?: string) => {
     const text = (textToSend || replyInput).trim();
@@ -379,10 +402,32 @@ export default function SupportDeskPage() {
     setMessages((prev) => [...prev, newMsg]);
     setReplyInput('');
 
-    // Broadcast directly to user's Support Sheet in real-time
     if (supabase && activeSession.userId) {
       try {
-        const channel = supabase.channel(`support_live:${activeSession.userId}`);
+        const resolved = await resolveTargetProfile(activeSession.userId);
+        const targetId = resolved?.id || activeSession.userId;
+
+        // 1. Persist to support_messages if ticket exists in DB
+        if (activeSession.id && !activeSession.id.startsWith('sess-')) {
+          await supabase.from('support_messages').insert({
+            ticket_id: activeSession.id,
+            body: text,
+            is_internal: false,
+          });
+
+          await supabase.from('support_tickets').update({
+            status: 'waiting_for_user',
+            updated_at: new Date().toISOString(),
+            metadata: {
+              last_admin_message: text,
+              admin_sender: 'Friendoo Admin Support 🛡️',
+              has_admin_message: true,
+            },
+          }).eq('id', activeSession.id);
+        }
+
+        // 2. Realtime Broadcast to user's Support Sheet & In-App Banner
+        const channel = supabase.channel(`support_live:${targetId}`);
         await channel.send({
           type: 'broadcast',
           event: 'admin_message',
@@ -393,10 +438,11 @@ export default function SupportDeskPage() {
             timestamp: new Date().toISOString(),
           },
         });
-        toast.success('Delivered to user screen & notification badge in real-time');
+
+        toast.success(`Delivered to ${resolved?.display_name || 'user'} screen & notification badge`);
       } catch (err) {
-        console.error('Error broadcasting reply:', err);
-        toast.error('Failed to broadcast to live channel');
+        console.error('Error delivering reply:', err);
+        toast.error('Failed to deliver reply');
       }
     }
   };
@@ -1191,14 +1237,38 @@ export default function SupportDeskPage() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-300 block mb-1 font-medium">Target User ID / Profile ID</label>
+                <label className="text-slate-300 block mb-1 font-medium">Target User ID / Phone Number / Profile UUID</label>
                 <input
                   type="text"
-                  placeholder="e.g. 11111111-0000-4000-8000-000000000001"
+                  placeholder="e.g. 919876513210 or 6f67f287 or HOST-6F67F2"
                   value={directUserId}
                   onChange={(e) => setDirectUserId(e.target.value)}
                   className="w-full bg-[#040D12] border border-[#164E53]/60 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400"
                 />
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-[10px] text-slate-400 font-medium">Quick Target:</span>
+                  <button
+                    type="button"
+                    onClick={() => { setDirectUserId('2cbc3a93-e0e8-40a3-8e71-8a029a20558f'); setDirectRole('user'); }}
+                    className="px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-semibold hover:bg-emerald-500/25 active:scale-95"
+                  >
+                    📱 Active Phone (919876513210)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setDirectUserId('6f67f287-0e9c-4c72-891b-c045cafc17cf'); setDirectRole('host'); }}
+                    className="px-2 py-0.5 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-semibold hover:bg-purple-500/25 active:scale-95"
+                  >
+                    🎙️ Host 6F6 (917604991136)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setDirectUserId('0d4c6444-9718-48aa-bd3c-5480fb1ffdd2'); setDirectRole('host'); }}
+                    className="px-2 py-0.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold hover:bg-indigo-500/25 active:scale-95"
+                  >
+                    👑 Test Host (+919876543210)
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

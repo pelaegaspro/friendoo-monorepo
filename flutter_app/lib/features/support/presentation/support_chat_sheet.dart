@@ -138,6 +138,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     _currentUserId = user?.id ?? 'guest_${DateTime.now().millisecondsSinceEpoch}';
 
     _subscribeToLiveSupportChannel();
+    _loadPreviousAdminMessages();
 
     // Initial Role-Aware Welcome Message
     _messages.add(
@@ -208,6 +209,51 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     } catch (e) {
       debugPrint('Realtime support channel error: $e');
     }
+  }
+
+  Future<void> _loadPreviousAdminMessages() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final tickets = await Supabase.instance.client
+          .from('support_tickets')
+          .select('id, metadata, subject, updated_at')
+          .eq('reporter_id', user.id)
+          .inFilter('status', ['open', 'waiting_for_user', 'in_progress', 'active'])
+          .order('updated_at', ascending: false)
+          .limit(1);
+
+      if (tickets.isNotEmpty && mounted) {
+        final ticket = tickets.first;
+        final ticketId = ticket['id']?.toString();
+        if (ticketId != null) {
+          final msgs = await Supabase.instance.client
+              .from('support_messages')
+              .select('id, author_id, body, created_at, is_internal')
+              .eq('ticket_id', ticketId)
+              .eq('is_internal', false)
+              .order('created_at', ascending: true);
+
+          if (msgs.isNotEmpty && mounted) {
+            setState(() {
+              _isSupportTeamActive = true;
+              for (final m in msgs) {
+                final isUser = m['author_id'] == user.id;
+                _messages.add(
+                  SupportChatMessage(
+                    role: isUser ? 'user' : 'admin',
+                    senderName: isUser ? 'You' : 'Friendoo Admin Support 🛡️',
+                    content: m['body']?.toString() ?? '',
+                    timestamp: DateTime.tryParse(m['created_at']?.toString() ?? '') ?? DateTime.now(),
+                  ),
+                );
+              }
+            });
+            _scrollToBottom();
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -548,6 +594,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
   /// Escalate session to Admin Live Support Desk
   Future<void> _escalateToLiveDesk(String message) async {
     final candidates = [
+      'https://friendoo-admin.netlify.app/api/support/escalate-live',
       'http://127.0.0.1:3000/api/support/escalate-live',
       'http://localhost:3000/api/support/escalate-live',
       'http://10.0.2.2:3000/api/support/escalate-live',
@@ -860,6 +907,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     // Call Groq Whisper transcription API
     try {
       final candidates = [
+        'https://friendoo-admin.netlify.app/api/support/voice-transcribe',
         'http://127.0.0.1:3000/api/support/voice-transcribe',
         'http://localhost:3000/api/support/voice-transcribe',
         'http://10.0.2.2:3000/api/support/voice-transcribe',

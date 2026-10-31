@@ -51,6 +51,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
   final _cityController = TextEditingController();
   DateTime? _selectedDob;
   int? _computedAge;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -142,7 +143,9 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
     return '${dt.day.toString().padLeft(2, '0')} ${months[dt.month - 1]} ${dt.year}';
   }
 
-  void _createProfileAndProceed() {
+  Future<void> _createProfileAndProceed() async {
+    if (_isSubmitting) return;
+
     final name = _nameController.text.trim();
     final city = _cityController.text.trim();
     if (name.isEmpty) {
@@ -179,18 +182,59 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
       return;
     }
 
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (_) => StandaloneAvatarSelectionPage(
-          displayName: name,
-          city: city,
-          isHost: _isHost,
-          dateOfBirth: _selectedDob!,
-          userAge: _computedAge!,
-          onComplete: widget.onComplete,
+    setState(() => _isSubmitting = true);
+
+    try {
+      final defaultPreset = _isHost ? 'host_01' : 'user_01';
+      final avatarConfig = FriendooAvatarConfig(
+        gender: 'male',
+        role: _isHost ? 'host' : 'user',
+        presetId: defaultPreset,
+      );
+
+      // Immediately write name, city, and default avatar to Supabase
+      await ref.read(profileRepositoryProvider).completeInitialProfile(
+        avatarConfig: avatarConfig,
+        displayName: name,
+        city: city,
+      );
+
+      // Persist to local SharedPreferences for immediate cold-start hydration
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('friendoo_profile_name', name);
+        await prefs.setString('friendoo_profile_city', city);
+        await prefs.setInt('friendoo_profile_age', _computedAge!);
+        await prefs.setString('friendoo_profile_avatar_id', defaultPreset);
+        await prefs.setBool('friendoo_saved_is_host', _isHost);
+      } catch (_) {}
+
+      if (!mounted) return;
+
+      // Navigate to avatar selection page where user can optionally customize
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => StandaloneAvatarSelectionPage(
+            displayName: name,
+            city: city,
+            isHost: _isHost,
+            dateOfBirth: _selectedDob!,
+            userAge: _computedAge!,
+            onComplete: widget.onComplete,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   void _handleExitOrBack() {
@@ -485,7 +529,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
 
                 // Continue Button
                 FilledButton(
-                  onPressed: _createProfileAndProceed,
+                  onPressed: _isSubmitting ? null : _createProfileAndProceed,
                   style: FilledButton.styleFrom(
                     backgroundColor: themeColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -494,14 +538,22 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                     ),
                     elevation: 2,
                   ),
-                  child: const Text(
-                    'Continue ➔',
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Continue ➔',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -604,8 +656,9 @@ class _StandaloneAvatarSelectionPageState
 
     if (widget.onComplete != null) {
       widget.onComplete!();
-    } else {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -623,7 +676,14 @@ class _StandaloneAvatarSelectionPageState
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (widget.onComplete != null) {
+              widget.onComplete!();
+            }
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         title: Text(
           widget.isHost ? 'Choose Host Avatar' : 'Choose Your Avatar',
@@ -633,6 +693,28 @@ class _StandaloneAvatarSelectionPageState
             fontWeight: FontWeight.w900,
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: _isSaving
+                ? null
+                : () {
+                    if (widget.onComplete != null) {
+                      widget.onComplete!();
+                    }
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+            child: Text(
+              'Skip',
+              style: TextStyle(
+                color: themeColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

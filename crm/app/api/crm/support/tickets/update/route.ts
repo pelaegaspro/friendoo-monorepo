@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     if (!body.ticketId) return NextResponse.json({ error: 'ticketId is required.' }, { status: 400 });
     const supabase = getSupabaseAdmin();
     const actorId = getOperationalAdminActorId();
-    const { data: before, error: beforeError } = await supabase.from('support_tickets').select('id, status, priority, assigned_to, metadata').eq('id', body.ticketId).maybeSingle();
+    const { data: before, error: beforeError } = await supabase.from('support_tickets').select('id, status, priority, assigned_to, metadata, reporter_id').eq('id', body.ticketId).maybeSingle();
     if (beforeError) throw beforeError;
     if (!before) return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 });
     const metadata = { ...(before.metadata as Record<string, unknown> ?? {}) };
@@ -30,6 +30,22 @@ export async function POST(request: NextRequest) {
     if (auditError) throw auditError;
     const { error: eventError } = await supabase.from('operational_events').insert({ event_key: 'support-ticket-update:' + body.ticketId + ':' + Date.now().toString(), event_type: 'support_ticket.updated', aggregate_type: 'support_ticket', aggregate_id: body.ticketId, actor_id: actorId, payload: { status: after.status, priority: after.priority } });
     if (eventError) throw eventError;
+
+    // Realtime broadcast to dismiss in-app notification banner & badge
+    if (before?.reporter_id && (body.status === 'resolved' || body.status === 'closed')) {
+      try {
+        const channel = supabase.channel('support_live:' + before.reporter_id);
+        await channel.send({
+          type: 'broadcast',
+          event: 'ticket_resolved',
+          payload: {
+            ticketId: body.ticketId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } catch (_) {}
+    }
+
     return NextResponse.json({ ok: true, ticket: after });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not update support ticket.' }, { status: 500 });

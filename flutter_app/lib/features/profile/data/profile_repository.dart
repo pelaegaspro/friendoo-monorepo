@@ -36,6 +36,32 @@ class ProfileRepository {
     final user = _client.auth.currentUser;
     if (user == null) return currentActiveProfile;
 
+    // 1. Cold-start / Reinstall check: If in-memory is empty, immediately restore from SharedPreferences
+    if (currentActiveProfile == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedName = prefs.getString('friendoo_profile_name');
+        if (cachedName != null &&
+            cachedName.trim().isNotEmpty &&
+            cachedName.trim().toLowerCase() != 'user' &&
+            cachedName.trim().toLowerCase() != 'friendoo user') {
+          final cachedCity = prefs.getString('friendoo_profile_city');
+          final cachedAvatar = prefs.getString('friendoo_profile_avatar_id');
+          final cachedIsHost = prefs.getBool('friendoo_saved_is_host') ?? false;
+          currentActiveProfile = UserProfile(
+            id: user.id,
+            phone: user.phone ?? '',
+            displayName: cachedName.trim(),
+            city: cachedCity,
+            avatarUrl: cachedAvatar,
+            avatarSelectedAt: cachedAvatar != null ? DateTime.now() : null,
+            isHost: cachedIsHost,
+            preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+          );
+        }
+      } catch (_) {}
+    }
+
     try {
       final row = await _client
           .from('profiles')
@@ -44,25 +70,25 @@ class ProfileRepository {
           )
           .eq('id', user.id)
           .maybeSingle()
-          .timeout(const Duration(seconds: 5), onTimeout: () => null);
+          .timeout(const Duration(seconds: 15));
 
       if (row == null) {
-        // If profile row doesn't exist yet, attempt to create it or build fallback
+        // Only if row genuinely does not exist in DB
         final phone = user.phone ?? '';
         try {
           await _client.from('profiles').insert({
             'id': user.id,
             'phone': phone,
-            'display_name': 'User',
+            'display_name': 'Friendoo user',
             'role': 'user',
-          }).timeout(const Duration(seconds: 4));
+          }).timeout(const Duration(seconds: 6));
         } catch (_) {}
 
         final fallback = currentActiveProfile ??
             UserProfile(
               id: user.id,
               phone: phone,
-              displayName: 'User',
+              displayName: 'Friendoo user',
               preferredLanguages: const ['Tamil', 'Hindi', 'English'],
               isHost: false,
             );
@@ -71,6 +97,7 @@ class ProfileRepository {
       }
 
       UserProfile profile = UserProfile.fromMap(Map<String, dynamic>.from(row));
+
       try {
         final prefs = await SharedPreferences.getInstance();
         final savedAvatarId = prefs.getString('friendoo_profile_avatar_id');
@@ -82,66 +109,92 @@ class ProfileRepository {
             avatarSelectedAt: DateTime.now(),
           );
         }
+
+        // Cache valid profile locally for immediate cold-start retrieval
+        if (profile.displayName.trim().isNotEmpty &&
+            profile.displayName.trim().toLowerCase() != 'user' &&
+            profile.displayName.trim().toLowerCase() != 'friendoo user') {
+          await prefs.setString('friendoo_profile_name', profile.displayName);
+          if (profile.city != null) {
+            await prefs.setString('friendoo_profile_city', profile.city!);
+          }
+          if (profile.avatarUrl != null) {
+            await prefs.setString('friendoo_profile_avatar_id', profile.avatarUrl!);
+          }
+          await prefs.setBool('friendoo_saved_is_host', profile.isHost);
+        }
       } catch (_) {}
+
       currentActiveProfile = profile;
       return profile;
     } catch (_) {
+      // On network timeout or connection error, NEVER overwrite with a fake fallback
+      // if we already have a profile in memory or cache!
+      if (currentActiveProfile != null) {
+        return currentActiveProfile;
+      }
+
       final phone = user.phone ?? '';
-      final fallback = currentActiveProfile ??
-          UserProfile(
-            id: user.id,
-            phone: phone,
-            displayName: 'User',
-            preferredLanguages: const ['Tamil', 'Hindi', 'English'],
-            isHost: false,
-          );
+      final fallback = UserProfile(
+        id: user.id,
+        phone: phone,
+        displayName: 'Friendoo user',
+        preferredLanguages: const ['Tamil', 'Hindi', 'English'],
+        isHost: false,
+      );
       currentActiveProfile = fallback;
       return fallback;
     }
   }
 
   Stream<UserProfile?> watchCurrentUserProfile() async* {
-    try {
-      final initial = currentActiveProfile ??
-          await fetchCurrentUserProfile().timeout(
-            const Duration(seconds: 4),
-            onTimeout: () => currentActiveProfile,
-          );
-      if (initial != null) {
-        yield initial;
-      } else {
+    // 1. Immediately yield cached profile if already available (0ms cold start)
+    if (currentActiveProfile != null) {
+      yield currentActiveProfile;
+    } else {
+      // Check local cache synchronously
+      try {
         final user = _client.auth.currentUser;
         if (user != null) {
-          final fallback = UserProfile(
-            id: user.id,
-            phone: user.phone ?? '',
-            displayName: 'User',
-            preferredLanguages: const ['Tamil', 'Hindi', 'English'],
-            isHost: false,
-          );
-          currentActiveProfile = fallback;
-          yield fallback;
-        } else {
-          yield null;
-        }
-      }
-    } catch (_) {
-      final user = _client.auth.currentUser;
-      if (user != null) {
-        final fallback = currentActiveProfile ??
-            UserProfile(
+          final prefs = await SharedPreferences.getInstance();
+          final cachedName = prefs.getString('friendoo_profile_name');
+          if (cachedName != null &&
+              cachedName.trim().isNotEmpty &&
+              cachedName.trim().toLowerCase() != 'user' &&
+              cachedName.trim().toLowerCase() != 'friendoo user') {
+            final cachedCity = prefs.getString('friendoo_profile_city');
+            final cachedAvatar = prefs.getString('friendoo_profile_avatar_id');
+            final cachedIsHost = prefs.getBool('friendoo_saved_is_host') ?? false;
+            final cached = UserProfile(
               id: user.id,
               phone: user.phone ?? '',
-              displayName: 'User',
+              displayName: cachedName.trim(),
+              city: cachedCity,
+              avatarUrl: cachedAvatar,
+              avatarSelectedAt: cachedAvatar != null ? DateTime.now() : null,
+              isHost: cachedIsHost,
               preferredLanguages: const ['Tamil', 'Hindi', 'English'],
-              isHost: false,
             );
-        currentActiveProfile = fallback;
-        yield fallback;
-      } else {
+            currentActiveProfile = cached;
+            yield cached;
+          }
+        }
+      } catch (_) {}
+    }
+
+    try {
+      final initial = await fetchCurrentUserProfile().timeout(
+        const Duration(seconds: 15),
+      );
+      if (initial != null) {
+        yield initial;
+      }
+    } catch (_) {
+      if (currentActiveProfile != null) {
         yield currentActiveProfile;
       }
     }
+
     yield* _profileChangeNotifier.stream;
   }
 
@@ -325,10 +378,17 @@ class ProfileRepository {
       }
     }
 
-    // Persist selected avatar preset locally so client state remains consistent
+    // Persist selected profile details locally so client state remains consistent
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('friendoo_profile_name', trimmedName);
+      if (trimmedCity != null && trimmedCity.isNotEmpty) {
+        await prefs.setString('friendoo_profile_city', trimmedCity);
+      }
       await prefs.setString('friendoo_profile_avatar_id', presetId);
+      if (authoritativeRole != null) {
+        await prefs.setBool('friendoo_saved_is_host', authoritativeRole == 'host');
+      }
     } catch (_) {}
 
     final normalizedCity = trimmedCity?.isNotEmpty == true ? trimmedCity : null;

@@ -99,6 +99,18 @@ export async function createHostAction(data: z.infer<typeof hostSchema>) {
       updated_at: new Date().toISOString(),
     })
 
+    // 4. Create host_languages records
+    if (validated.languages && validated.languages.length > 0) {
+      await supabase.from('host_languages').delete().eq('host_id', uid);
+      await supabase.from('host_languages').insert(
+        validated.languages.map((l: string, idx: number) => ({
+          host_id: uid,
+          language_code: l,
+          is_primary: idx === 0,
+        }))
+      );
+    }
+
     return { success: true, uid }
     } catch (error) {
     console.error("Error creating host:", error)

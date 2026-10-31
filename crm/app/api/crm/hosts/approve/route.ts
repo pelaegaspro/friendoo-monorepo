@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     });
 
+    const langs = (Array.isArray(application.languages) && application.languages.length > 0)
+      ? application.languages
+      : ["Tamil", "English"];
+    await supabase.from("host_languages").delete().eq("host_id", profileId);
+    await supabase.from("host_languages").insert(
+      langs.map((l: string, idx: number) => ({
+        host_id: profileId,
+        language_code: l,
+        is_primary: idx === 0,
+      }))
+    );
+
     await supabase.from("host_applications").update({
       status: "approved",
       reviewed_by: actorId,

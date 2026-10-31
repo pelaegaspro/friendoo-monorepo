@@ -74,12 +74,12 @@ class AdminSupportNotificationNotifier extends StateNotifier<AdminSupportNotice>
           .from('support_tickets')
           .select('id, subject, metadata, status, updated_at')
           .eq('reporter_id', userId)
-          .eq('status', 'active')
+          .inFilter('status', ['open', 'waiting_for_user', 'in_progress', 'active'])
           .order('updated_at', ascending: false)
           .limit(1)
           .maybeSingle();
 
-      if (res != null && res['status'] == 'active') {
+      if (res != null) {
         final meta = res['metadata'] as Map<String, dynamic>? ?? {};
         final adminDirect = meta['admin_direct_message'] == true || meta['has_admin_message'] == true;
         final lastMsg = meta['last_admin_message']?.toString() ?? res['subject']?.toString();

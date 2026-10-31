@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     if (!body.ticketId || !body.message?.trim()) return NextResponse.json({ error: 'ticketId and message are required.' }, { status: 400 });
     const supabase = getSupabaseAdmin();
     const actorId = getOperationalAdminActorId();
-    const { data: ticket, error: ticketError } = await supabase.from('support_tickets').select('id, status').eq('id', body.ticketId).maybeSingle();
+    const { data: ticket, error: ticketError } = await supabase.from('support_tickets').select('id, status, reporter_id, metadata').eq('id', body.ticketId).maybeSingle();
     if (ticketError) throw ticketError;
     if (!ticket) return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 });
     if (ticket.status === 'closed') return NextResponse.json({ error: 'Closed tickets cannot receive replies.' }, { status: 409 });
@@ -24,8 +24,39 @@ export async function POST(request: NextRequest) {
       .select('id, created_at')
       .single();
     if (messageError) throw messageError;
-    const { error: updateError } = await supabase.from('support_tickets').update({ assigned_to: actorId, status: body.internal ? 'in_progress' : 'waiting_for_user' }).eq('id', body.ticketId);
+
+    const existingMeta = (ticket.metadata as Record<string, unknown>) || {};
+    const updatedMeta = {
+      ...existingMeta,
+      last_admin_message: body.message.trim(),
+      admin_sender: 'Friendoo CRM Support 🛡️',
+      has_admin_message: true,
+    };
+
+    const { error: updateError } = await supabase.from('support_tickets').update({
+      assigned_to: actorId,
+      status: body.internal ? 'in_progress' : 'waiting_for_user',
+      metadata: updatedMeta,
+      updated_at: new Date().toISOString(),
+    }).eq('id', body.ticketId);
     if (updateError) throw updateError;
+
+    // Realtime broadcast to mobile app
+    if (!body.internal && ticket.reporter_id) {
+      try {
+        const channel = supabase.channel('support_live:' + ticket.reporter_id);
+        await channel.send({
+          type: 'broadcast',
+          event: 'admin_message',
+          payload: {
+            message: body.message.trim(),
+            sender: 'Friendoo CRM Support 🛡️',
+            ticketId: body.ticketId,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } catch (_) {}
+    }
     const { error: eventError } = await supabase.from('operational_events').insert({
       event_key: 'support-reply:' + message.id,
       event_type: 'support_ticket.reply_added',

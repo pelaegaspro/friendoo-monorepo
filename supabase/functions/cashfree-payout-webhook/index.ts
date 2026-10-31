@@ -49,9 +49,11 @@ Deno.serve(async (request) => {
   const timestamp = request.headers.get('x-webhook-timestamp');
   const signature = request.headers.get('x-webhook-signature');
 
+  // Read the body ONCE to prevent "Body has already been consumed" error
+  const rawPayload = await readBodyLimited(request, CASHFREE_WEBHOOK_MAX_BYTES);
+
   // Verify signature if secret and signature are provided
   if (secret && signature && timestamp) {
-    const rawPayload = await readBodyLimited(request, CASHFREE_WEBHOOK_MAX_BYTES);
     const expected = await expectedSignature(secret, timestamp, rawPayload);
     if (!signaturesMatch(expected, signature)) {
       return error('Invalid webhook signature', 401, responseHeaders);
@@ -59,7 +61,6 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const rawPayload = await request.text();
     const payload = JSON.parse(rawPayload);
 
     const eventType = String(

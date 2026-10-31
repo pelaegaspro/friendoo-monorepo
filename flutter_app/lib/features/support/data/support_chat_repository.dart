@@ -32,20 +32,23 @@ class SupportChatMessage {
 }
 
 class SupportChatRepository {
-  // Try 127.0.0.1 (works with ADB reverse on real device), localhost, and 10.0.2.2 (Android Emulator)
+  // Prefer production Netlify backend, fall back to local dev URLs
   static const List<String> _candidateUrls = [
+    'https://friendoo-admin.netlify.app/api/support/ai-chat',
     'http://127.0.0.1:3000/api/support/ai-chat',
     'http://localhost:3000/api/support/ai-chat',
     'http://10.0.2.2:3000/api/support/ai-chat',
   ];
 
   static const List<String> _flowCandidateUrls = [
+    'https://friendoo-admin.netlify.app/api/support/flow',
     'http://127.0.0.1:3000/api/support/flow',
     'http://localhost:3000/api/support/flow',
     'http://10.0.2.2:3000/api/support/flow',
   ];
 
   static const List<String> _webhookCandidateUrls = [
+    'https://friendoo-admin.netlify.app/api/support/webhook',
     'http://127.0.0.1:3000/api/support/webhook',
     'http://localhost:3000/api/support/webhook',
     'http://10.0.2.2:3000/api/support/webhook',

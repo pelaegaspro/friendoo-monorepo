@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
 
     const userPrompt = `Translate the following text ${sourceHint}into ${targetLanguageName}:\n\n${text.trim()}`;
 
-    // Primary: openai/gpt-oss-20b, Fallback: qwen/qwen3.8-27b
-    const models = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b'];
+    // Primary: llama-3.3-70b-versatile, Fallback: llama-3.1-8b-instant
+    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
     let translatedText = '';
 
     for (const model of models) {

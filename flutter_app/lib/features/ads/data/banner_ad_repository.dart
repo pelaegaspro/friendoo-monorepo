@@ -138,28 +138,7 @@ class BannerAdRepository {
   final SupabaseClient _client;
 
   Future<List<CloudBannerAd>> fetchActiveBannerAds() async {
-    // 1. Try fetching from ad_campaigns with advertisers
-    try {
-      final campaignsData = await _client
-          .from('ad_campaigns')
-          .select('*, advertisers(display_name)')
-          .eq('status', 'live')
-          .order('priority', ascending: false);
-
-      if (campaignsData.isNotEmpty) {
-        return campaignsData.map((row) {
-          final map = Map<String, dynamic>.from(row as Map);
-          if (map['advertisers'] is Map) {
-            map['sponsor_name'] = map['advertisers']['display_name'];
-          }
-          return CloudBannerAd.fromMap(map);
-        }).toList();
-      }
-    } catch (_) {
-      // Fall through to banner_ads compatibility read
-    }
-
-    // 2. Compatibility read from banner_ads
+    // 1. Primary read from authoritative banner_ads table managed by Admin Portal
     try {
       final data = await _client
           .from('banner_ads')
@@ -177,10 +156,9 @@ class BannerAdRepository {
       if (fetched.isNotEmpty) {
         return fetched;
       }
-      return defaultFourDiscoverPromoCards;
-    } catch (_) {
-      return defaultFourDiscoverPromoCards;
-    }
+    } catch (_) {}
+
+    return defaultFourDiscoverPromoCards;
   }
 
   Stream<List<CloudBannerAd>> watchActiveBannerAds() async* {

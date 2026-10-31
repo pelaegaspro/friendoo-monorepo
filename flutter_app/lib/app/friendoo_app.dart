@@ -1965,15 +1965,36 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
               (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) ||
               profile.avatarSelectedAt != null;
 
-          // Hosts are established accounts and go directly to discover.
-          // Users who have already configured their profile go directly to discover.
-          final isFirstTimeSignup = !isHost && (!hasNamedProfile || !hasAvatar);
+          // If the user already has a named profile, they have finished onboarding
+          // and must NEVER be forced back into NameAndDobSetupPage!
+          final isFirstTimeSignup = !isHost && !hasNamedProfile;
 
           if (isFirstTimeSignup) {
             return NameAndDobSetupPage(
               isHostInitial: isHost,
               initialPhone: profile.phone,
+              onComplete: () {
+                ref.invalidate(currentUserProfileStreamProvider);
+              },
             );
+          }
+
+          // If user has a named profile but avatar is missing, assign default avatar
+          // in the background without blocking the user from Discover.
+          if (!isHost && !hasAvatar) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              unawaited(
+                ref.read(profileRepositoryProvider).completeInitialProfile(
+                  avatarConfig: const FriendooAvatarConfig(
+                    gender: 'male',
+                    role: 'user',
+                    presetId: 'user_01',
+                  ),
+                  displayName: profile.displayName,
+                  city: profile.city,
+                ),
+              );
+            });
           }
 
           return const DiscoverPage();

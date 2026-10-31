@@ -217,7 +217,7 @@ export async function listHosts(): Promise<AdminHost[]> {
           phoneNumber: asString(p.phone),
           city: asString(p.city, 'Mumbai'),
           languages: ['Hindi', 'English'],
-          ratePerMinute: asNumber(h.rate_per_audio_minute, 20),
+          ratePerMinute: asNumber(h.rate_per_audio_minute, 5),
           hostStatus: asBoolean(p.is_banned) ? 'suspended' : 'approved',
           isHost: true,
           avatarSeed: '',
@@ -314,11 +314,17 @@ export async function createHost(payload: Record<string, unknown>) {
   await supabase.from('hosts').upsert({
     id,
     bio: asString(payload.bio),
-    rate_per_audio_minute: asNumber(payload.ratePerMinute, 20),
-    rate_per_video_minute: asNumber(payload.ratePerMinute, 20) * 2,
+    rate_per_audio_minute: asNumber(payload.ratePerMinute, 5),
+    rate_per_video_minute: asNumber(payload.ratePerMinute, 5) * 2,
     is_available: true,
     updated_at: new Date().toISOString(),
   })
+
+  const langs = (Array.isArray(payload.languages) && payload.languages.length > 0) ? payload.languages : ['Hindi', 'English'];
+  await supabase.from('host_languages').delete().eq('host_id', id);
+  await supabase.from('host_languages').insert(
+    langs.map((l: string, idx: number) => ({ host_id: id, language_code: l, is_primary: idx === 0 }))
+  );
 
   invalidateCache('admin:hosts')
   invalidateCache('admin:stats')
@@ -475,11 +481,17 @@ export async function reviewHostApplication(applicationId: string, input: { acti
   await supabase.from('hosts').upsert({
     id: profileId,
     bio: application.bio,
-    rate_per_audio_minute: 20,
-    rate_per_video_minute: 40,
+    rate_per_audio_minute: 5,
+    rate_per_video_minute: 10,
     is_available: true,
     updated_at: new Date().toISOString(),
   })
+
+  const appLangs = (Array.isArray(application.languages) && application.languages.length > 0) ? application.languages : ['Hindi', 'English'];
+  await supabase.from('host_languages').delete().eq('host_id', profileId);
+  await supabase.from('host_languages').insert(
+    appLangs.map((l: string, idx: number) => ({ host_id: profileId, language_code: l, is_primary: idx === 0 }))
+  );
 
   await supabase.from('host_applications').update({
     status: 'approved',
@@ -992,7 +1004,7 @@ export async function getHost(hostId: string): Promise<AdminHost | null> {
       phoneNumber: asString(p.phone),
       city: asString(p.city, 'Mumbai'),
       languages: ['Hindi', 'English'],
-      ratePerMinute: asNumber(h.rate_per_audio_minute, 20),
+      ratePerMinute: asNumber(h.rate_per_audio_minute, 5),
       hostStatus: asBoolean(p.is_banned) ? 'suspended' : 'approved',
       isHost: true,
       avatarSeed: h.id,
