@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../app/friendoo_ui.dart';
-
 // Modern Form Section Header with Badge & Supporting Subtitle
 class ModernFormSectionHeader extends StatelessWidget {
   const ModernFormSectionHeader({
@@ -48,11 +46,16 @@ class ModernFormSectionHeader extends StatelessWidget {
             if (badgeText != null) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2.5,
+                ),
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Text(
                   badgeText!,
@@ -123,7 +126,8 @@ class PremiumProfileTextField extends StatefulWidget {
   final bool isRequired;
 
   @override
-  State<PremiumProfileTextField> createState() => _PremiumProfileTextFieldState();
+  State<PremiumProfileTextField> createState() =>
+      _PremiumProfileTextFieldState();
 }
 
 class _PremiumProfileTextFieldState extends State<PremiumProfileTextField> {
@@ -162,9 +166,7 @@ class _PremiumProfileTextFieldState extends State<PremiumProfileTextField> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _isFocused
-              ? widget.accentColor
-              : const Color(0xFFE2E8F0),
+          color: _isFocused ? widget.accentColor : const Color(0xFFE2E8F0),
           width: _isFocused ? 1.8 : 1.2,
         ),
         boxShadow: [
@@ -196,11 +198,7 @@ class _PremiumProfileTextFieldState extends State<PremiumProfileTextField> {
                   color: widget.accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: 17,
-                  color: widget.accentColor,
-                ),
+                child: Icon(widget.icon, size: 17, color: widget.accentColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -229,7 +227,10 @@ class _PremiumProfileTextFieldState extends State<PremiumProfileTextField> {
               ),
               if (widget.maxLength != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: textLength >= widget.maxLength!
                         ? const Color(0xFFFEE2E2)
@@ -436,7 +437,11 @@ class PremiumAgeSelector extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified_rounded, size: 12, color: Color(0xFF059669)),
+                    Icon(
+                      Icons.verified_rounded,
+                      size: 12,
+                      color: Color(0xFF059669),
+                    ),
                     SizedBox(width: 4),
                     Text(
                       '18+ Verified',
@@ -523,17 +528,26 @@ class PremiumAgeSelector extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? accentColor : const Color(0xFFF1F5F9),
+                        color: isSelected
+                            ? accentColor
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '$preset',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                          color: isSelected ? Colors.white : const Color(0xFF475569),
+                          fontWeight: isSelected
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF475569),
                         ),
                       ),
                     ),
@@ -569,7 +583,9 @@ class _StepperButton extends StatelessWidget {
             color: enabled ? Colors.white : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: enabled ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0),
+              color: enabled
+                  ? const Color(0xFFCBD5E1)
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               if (enabled)
@@ -822,7 +838,10 @@ class _PremiumBioTextAreaState extends State<PremiumBioTextArea> {
                 onTap: isPresent ? null : () => _appendPrompt(chip),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isPresent
                         ? const Color(0xFFE2E8F0)
@@ -865,4 +884,3 @@ class _PremiumBioTextAreaState extends State<PremiumBioTextArea> {
     );
   }
 }
-

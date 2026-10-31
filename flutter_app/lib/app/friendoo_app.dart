@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -137,9 +138,9 @@ class MaintenanceScreen extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                     border: Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
                     ),
                   ),
                   child: const Icon(
@@ -722,85 +723,113 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     }
 
     return Scaffold(
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFEDE9FE), // Soft lavender pill
-          elevation: 8,
-          shadowColor: Colors.black.withValues(alpha: 0.08),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF4F46E5),
-              );
-            }
-            return const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF94A3B8),
-            );
-          }),
-          iconTheme: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF4F46E5), size: 24);
-            }
-            return const IconThemeData(color: Color(0xFF94A3B8), size: 24);
-          }),
+      extendBody: true,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.88),
+          border: Border(
+            top: BorderSide(
+              color: Colors.black.withValues(alpha: 0.06),
+              width: 0.5,
+            ),
+          ),
         ),
-        child: NavigationBar(
-          selectedIndex: _currentTabIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentTabIndex = index;
-            });
-          },
-          destinations: isHost
-              ? const [
-                  NavigationDestination(
-                    icon: Icon(Icons.dashboard_outlined),
-                    selectedIcon: Icon(Icons.dashboard_rounded),
-                    label: 'Dashboard',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.call_outlined),
-                    selectedIcon: Icon(Icons.call_rounded),
-                    label: 'Requests',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.monetization_on_outlined),
-                    selectedIcon: Icon(Icons.monetization_on_rounded),
-                    label: 'Earnings',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.badge_outlined),
-                    selectedIcon: Icon(Icons.badge_rounded),
-                    label: 'Host Profile',
-                  ),
-                ]
-              : const [
-                  NavigationDestination(
-                    icon: Icon(Icons.explore_outlined),
-                    selectedIcon: Icon(Icons.explore_rounded),
-                    label: 'Discover',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.call_outlined),
-                    selectedIcon: Icon(Icons.call_rounded),
-                    label: 'Calls',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.account_balance_wallet_outlined),
-                    selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-                    label: 'Wallet',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.person_outline_rounded),
-                    selectedIcon: Icon(Icons.person_rounded),
-                    label: 'Profile',
-                  ),
-                ],
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: NavigationBarTheme(
+              data: NavigationBarThemeData(
+                backgroundColor: Colors.transparent,
+                indicatorColor: const Color(0xFFEDE9FE),
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF4F46E5),
+                    );
+                  }
+                  return const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF94A3B8),
+                  );
+                }),
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const IconThemeData(
+                      color: Color(0xFF4F46E5),
+                      size: 24,
+                    );
+                  }
+                  return const IconThemeData(
+                    color: Color(0xFF94A3B8),
+                    size: 24,
+                  );
+                }),
+              ),
+              child: NavigationBar(
+                selectedIndex: _currentTabIndex,
+                onDestinationSelected: (index) {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _currentTabIndex = index;
+                  });
+                },
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                destinations: isHost
+                    ? const [
+                        NavigationDestination(
+                          icon: Icon(Icons.dashboard_outlined),
+                          selectedIcon: Icon(Icons.dashboard_rounded),
+                          label: 'Dashboard',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.call_outlined),
+                          selectedIcon: Icon(Icons.call_rounded),
+                          label: 'Requests',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.monetization_on_outlined),
+                          selectedIcon: Icon(Icons.monetization_on_rounded),
+                          label: 'Earnings',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.badge_outlined),
+                          selectedIcon: Icon(Icons.badge_rounded),
+                          label: 'Host Profile',
+                        ),
+                      ]
+                    : const [
+                        NavigationDestination(
+                          icon: Icon(Icons.explore_outlined),
+                          selectedIcon: Icon(Icons.explore_rounded),
+                          label: 'Discover',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.call_outlined),
+                          selectedIcon: Icon(Icons.call_rounded),
+                          label: 'Calls',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.account_balance_wallet_outlined),
+                          selectedIcon: Icon(
+                            Icons.account_balance_wallet_rounded,
+                          ),
+                          label: 'Wallet',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.person_outline_rounded),
+                          selectedIcon: Icon(Icons.person_rounded),
+                          label: 'Profile',
+                        ),
+                      ],
+              ),
+            ),
+          ),
         ),
       ),
       body: SafeArea(
@@ -975,7 +1004,7 @@ class _DiscoverHome extends StatelessWidget {
                   Text(
                     'Find hosts who speak your language.',
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colors.onPrimary.withOpacity(0.88),
+                      color: colors.onPrimary.withValues(alpha: 0.88),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -985,9 +1014,11 @@ class _DiscoverHome extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.25)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1245,7 +1276,9 @@ class _HostListCard extends StatelessWidget {
                 content: Row(
                   children: [
                     Icon(
-                      isBusy ? Icons.phone_in_talk_rounded : Icons.cloud_off_rounded,
+                      isBusy
+                          ? Icons.phone_in_talk_rounded
+                          : Icons.cloud_off_rounded,
                       color: Colors.white,
                       size: 18,
                     ),
@@ -1255,14 +1288,21 @@ class _HostListCard extends StatelessWidget {
                         isBusy
                             ? '${host.displayName} is currently in another call.'
                             : '${host.displayName} is currently offline. You can call when she comes back online.',
-                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                backgroundColor: isBusy ? const Color(0xFFD97706) : const Color(0xFF334155),
+                backgroundColor: isBusy
+                    ? const Color(0xFFD97706)
+                    : const Color(0xFF334155),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 duration: const Duration(seconds: 3),
               ),
             );
@@ -1275,11 +1315,14 @@ class _HostListCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: isRegionalMatch && !isOffline
-              ? BorderSide(color: colors.primary.withOpacity(0.5), width: 1.5)
+              ? BorderSide(
+                  color: colors.primary.withValues(alpha: 0.5),
+                  width: 1.5,
+                )
               : BorderSide(
                   color: isOffline
-                      ? colors.outlineVariant.withOpacity(0.18)
-                      : colors.outlineVariant.withOpacity(0.35),
+                      ? colors.outlineVariant.withValues(alpha: 0.18)
+                      : colors.outlineVariant.withValues(alpha: 0.35),
                 ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1299,7 +1342,7 @@ class _HostListCard extends StatelessWidget {
                         ? null
                         : [
                             BoxShadow(
-                              color: colors.primary.withOpacity(0.12),
+                              color: colors.primary.withValues(alpha: 0.12),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -1348,8 +1391,8 @@ class _HostListCard extends StatelessWidget {
                             color: isOnline
                                 ? const Color(0xFF10B981)
                                 : (isBusy
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFF94A3B8)),
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFF94A3B8)),
                             shape: BoxShape.circle,
                             border: Border.all(color: colors.surface, width: 2),
                           ),
@@ -1372,7 +1415,9 @@ class _HostListCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: isOffline ? colors.onSurface.withOpacity(0.85) : null,
+                                color: isOffline
+                                    ? colors.onSurface.withValues(alpha: 0.85)
+                                    : null,
                               ),
                             ),
                           ),
@@ -1385,22 +1430,30 @@ class _HostListCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: isOnline
-                                  ? const Color(0xFF10B981).withOpacity(0.15)
+                                  ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.15)
                                   : (isBusy
-                                      ? const Color(0xFFF59E0B).withOpacity(0.15)
-                                      : const Color(0xFF64748B).withOpacity(0.2)),
+                                        ? const Color(0xFFF59E0B)
+                                              .withValues(alpha: 0.15)
+                                        : const Color(0xFF64748B)
+                                              .withValues(alpha: 0.2)),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: isOnline
-                                    ? const Color(0xFF10B981).withOpacity(0.3)
+                                    ? const Color(0xFF10B981)
+                                          .withValues(alpha: 0.3)
                                     : (isBusy
-                                        ? const Color(0xFFF59E0B).withOpacity(0.3)
-                                        : const Color(0xFF64748B).withOpacity(0.3)),
+                                          ? const Color(0xFFF59E0B)
+                                                .withValues(alpha: 0.3)
+                                          : const Color(0xFF64748B)
+                                                .withValues(alpha: 0.3)),
                                 width: 0.8,
                               ),
                             ),
                             child: Text(
-                              isOnline ? 'ONLINE' : (isBusy ? 'BUSY' : 'OFFLINE'),
+                              isOnline
+                                  ? 'ONLINE'
+                                  : (isBusy ? 'BUSY' : 'OFFLINE'),
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
@@ -1408,8 +1461,8 @@ class _HostListCard extends StatelessWidget {
                                 color: isOnline
                                     ? const Color(0xFF10B981)
                                     : (isBusy
-                                        ? const Color(0xFFF59E0B)
-                                        : const Color(0xFF94A3B8)),
+                                          ? const Color(0xFFF59E0B)
+                                          : const Color(0xFF94A3B8)),
                               ),
                             ),
                           ),
@@ -1419,7 +1472,7 @@ class _HostListCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.18),
+                              color: Colors.amber.withValues(alpha: 0.18),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -1444,88 +1497,99 @@ class _HostListCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                    const SizedBox(height: 3),
-                    Text(
-                      host.bio ?? 'Ready for a safe audio conversation',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
+                      const SizedBox(height: 3),
+                      Text(
+                        host.bio ?? 'Ready for a safe audio conversation',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        // Language Chips
-                        ...host.languages.map((lang) {
-                          final isCurrentLang =
-                              lang.toLowerCase() ==
-                              preferredLanguage.toLowerCase();
-                          return Container(
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          // Language Chips
+                          ...host.languages.map((lang) {
+                            final isCurrentLang =
+                                lang.toLowerCase() ==
+                                preferredLanguage.toLowerCase();
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isCurrentLang
+                                    ? colors.primary
+                                    : colors.primaryContainer.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isCurrentLang ? '🗣️ $lang' : lang,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCurrentLang
+                                      ? Colors.white
+                                      : colors.primary,
+                                ),
+                              ),
+                            );
+                          }),
+                          Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: isCurrentLang
-                                  ? colors.primary
-                                  : colors.primaryContainer.withOpacity(0.5),
+                              color: colors.surfaceContainerHighest.withValues(
+                                alpha: 0.6,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              isCurrentLang ? '🗣️ $lang' : lang,
+                              '${host.ratePerAudioMinute} coins/min',
                               style: TextStyle(
                                 fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isCurrentLang
-                                    ? Colors.white
-                                    : colors.primary,
+                                fontWeight: FontWeight.w600,
+                                color: colors.onSurfaceVariant,
                               ),
                             ),
-                          );
-                        }),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
                           ),
-                          decoration: BoxDecoration(
-                            color: colors.surfaceVariant.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${host.ratePerAudioMinute} coins/min',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: isOnline
-                    ? 'Start audio call'
-                    : (isBusy ? 'Host is currently in call' : 'Host is offline (tap for info)'),
-                style: IconButton.styleFrom(
-                  backgroundColor: isOnline
-                      ? colors.primary
-                      : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFF475569)),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  tooltip: isOnline
+                      ? 'Start audio call'
+                      : (isBusy
+                            ? 'Host is currently in call'
+                            : 'Host is offline (tap for info)'),
+                  style: IconButton.styleFrom(
+                    backgroundColor: isOnline
+                        ? colors.primary
+                        : (isBusy
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF475569)),
+                  ),
+                  onPressed: handleTap,
+                  icon: Icon(
+                    isOffline
+                        ? Icons.phone_disabled_rounded
+                        : Icons.call_rounded,
+                    color: isOffline ? const Color(0xFFCBD5E1) : Colors.white,
+                  ),
                 ),
-                onPressed: handleTap,
-                icon: Icon(
-                  isOffline ? Icons.phone_disabled_rounded : Icons.call_rounded,
-                  color: isOffline ? const Color(0xFFCBD5E1) : Colors.white,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1554,7 +1618,7 @@ class _TrustPoint extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
-            color: colors.surface.withOpacity(0.82),
+            color: colors.surface.withValues(alpha: 0.82),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: colors.primary, size: 20),
@@ -1652,7 +1716,7 @@ class ActiveCallBar extends ConsumerWidget {
     final colors = theme.colorScheme;
     return Material(
       elevation: 12,
-      shadowColor: colors.primary.withOpacity(0.3),
+      shadowColor: colors.primary.withValues(alpha: 0.3),
       child: SafeArea(
         top: false,
         child: Container(
@@ -1660,7 +1724,9 @@ class ActiveCallBar extends ConsumerWidget {
           decoration: BoxDecoration(
             color: colors.surface,
             border: Border(
-              top: BorderSide(color: colors.outlineVariant.withOpacity(0.4)),
+              top: BorderSide(
+                color: colors.outlineVariant.withValues(alpha: 0.4),
+              ),
             ),
           ),
           child: Row(
@@ -1954,7 +2020,7 @@ class _CallsTabState extends ConsumerState<_CallsTab> {
 
     return callHistoryAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => ListView(
+      error: (_, _) => ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
           _HostCallsHeader(
@@ -2314,7 +2380,7 @@ class _HostCallHistoryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.025),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2336,7 +2402,7 @@ class _HostCallHistoryCard extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: const Color(0xFFC7D2FE).withOpacity(0.6),
+                color: const Color(0xFFC7D2FE).withValues(alpha: 0.6),
               ),
             ),
             child: Center(
@@ -2576,8 +2642,7 @@ class _HostFilterChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    this.icon,
-  });
+  }) : icon = null;
 
   final String label;
   final bool selected;
@@ -2601,7 +2666,7 @@ class _HostFilterChip extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: FriendooUiColors.ink.withOpacity(0.18),
+                    color: FriendooUiColors.ink.withValues(alpha: 0.18),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -2824,7 +2889,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
             borderRadius: BorderRadius.circular(26),
             boxShadow: [
               BoxShadow(
-                color: colors.primary.withOpacity(0.35),
+                color: colors.primary.withValues(alpha: 0.35),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -2839,7 +2904,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                   Text(
                     'AVAILABLE BALANCE',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
                       letterSpacing: 1.1,
@@ -2851,7 +2916,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Row(
@@ -2913,7 +2978,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                       Text(
                         '≈ $approxMins minutes of voice talk time (at 5 coins/min)',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -2929,7 +2994,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                error: (_, __) => const Text(
+                error: (_, _) => const Text(
                   'Balance unavailable',
                   style: TextStyle(
                     color: Colors.white,
@@ -2954,7 +3019,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.35),
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -2965,7 +3030,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -2991,7 +3056,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                       Text(
                         'First-time buyers receive +50% bonus coins added automatically on any pack.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 11,
                         ),
                       ),
@@ -3016,7 +3081,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: colors.primaryContainer.withOpacity(0.5),
+                color: colors.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -3059,7 +3124,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                   ],
                 ),
                 selected: _selectedFilterIndex == 2,
-                selectedColor: Colors.amber.withOpacity(0.2),
+                selectedColor: Colors.amber.withValues(alpha: 0.2),
                 onSelected: (_) => setState(() => _selectedFilterIndex = 2),
               ),
             ],
@@ -3075,7 +3140,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               child: CircularProgressIndicator(),
             ),
           ),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (packages) {
             var filtered = packages.where((p) => p.amountInr < 1000).toList();
 
@@ -3113,17 +3178,21 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: isAbove800
-                                ? Colors.amber.withOpacity(0.06)
+                                ? Colors.amber.withValues(alpha: 0.06)
                                 : isSpecial
-                                ? colors.primary.withOpacity(0.05)
-                                : colors.surfaceVariant.withOpacity(0.35),
+                                ? colors.primary.withValues(alpha: 0.05)
+                                : colors.surfaceContainerHighest.withValues(
+                                    alpha: 0.35,
+                                  ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isAbove800
-                                  ? Colors.amber.withOpacity(0.7)
+                                  ? Colors.amber.withValues(alpha: 0.7)
                                   : isSpecial
                                   ? colors.primary
-                                  : colors.outlineVariant.withOpacity(0.35),
+                                  : colors.outlineVariant.withValues(
+                                      alpha: 0.35,
+                                    ),
                               width: isAbove800
                                   ? 1.8
                                   : isSpecial
@@ -3261,13 +3330,13 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               child: CircularProgressIndicator(),
             ),
           ),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
           data: (transactions) {
             if (transactions.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: colors.surfaceVariant.withOpacity(0.3),
+                  color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
@@ -3292,7 +3361,9 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: colors.surfaceVariant.withOpacity(0.3),
+                      color: colors.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
@@ -3301,8 +3372,8 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: isCredit
-                                ? Colors.green.withOpacity(0.15)
-                                : Colors.redAccent.withOpacity(0.15),
+                                ? Colors.green.withValues(alpha: 0.15)
+                                : Colors.redAccent.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -3363,7 +3434,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: colors.surfaceVariant.withOpacity(0.3),
+            color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -3472,7 +3543,7 @@ class _ProfileTab extends ConsumerWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: const Color(0xFFFFB703).withOpacity(0.6),
+              color: const Color(0xFFFFB703).withValues(alpha: 0.6),
               width: 1.8,
             ),
             boxShadow: [
@@ -3568,7 +3639,7 @@ class _ProfileTab extends ConsumerWidget {
                                       ? '⭐ Star Host'
                                       : '⭐ Active Host',
                                   loading: () => '⭐ Host',
-                                  error: (_, __) => '⭐ Host',
+                                  error: (_, _) => '⭐ Host',
                                 ),
                                 style: const TextStyle(
                                   color: Colors.white,
@@ -3675,7 +3746,7 @@ class _ProfileTab extends ConsumerWidget {
                             ? '⭐ ${s.rating.toStringAsFixed(1)}'
                             : '⭐ 5.0',
                         loading: () => '⭐ 5.0',
-                        error: (_, __) => '⭐ 5.0',
+                        error: (_, _) => '⭐ 5.0',
                       ),
                       style: const TextStyle(
                         color: FriendooUiColors.ink,
@@ -3688,7 +3759,7 @@ class _ProfileTab extends ConsumerWidget {
                       hostStatsAsync.when(
                         data: (s) => '${s.totalCallsCount} calls',
                         loading: () => '0 calls',
-                        error: (_, __) => '0 calls',
+                        error: (_, _) => '0 calls',
                       ),
                       style: const TextStyle(
                         color: Color(0xFF9CA3AF),
@@ -3716,7 +3787,7 @@ class _ProfileTab extends ConsumerWidget {
                       hostStatsAsync.when(
                         data: (s) => '${s.totalCallsCount}',
                         loading: () => '0',
-                        error: (_, __) => '0',
+                        error: (_, _) => '0',
                       ),
                       style: const TextStyle(
                         color: Color(0xFF10B981),
@@ -3750,7 +3821,7 @@ class _ProfileTab extends ConsumerWidget {
                       hostStatsAsync.when(
                         data: (s) => '₹${s.totalEarningsInr}',
                         loading: () => '₹0',
-                        error: (_, __) => '₹0',
+                        error: (_, _) => '₹0',
                       ),
                       style: const TextStyle(
                         color: FriendooUiColors.blue,
@@ -4077,7 +4148,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
 
     return statsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Center(
+      error: (_, _) => const Center(
         child: Text(
           'Unable to load host dashboard',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -4112,7 +4183,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
                       color: isOnline
-                          ? const Color(0xFF10B981).withOpacity(0.35)
+                          ? const Color(0xFF10B981).withValues(alpha: 0.35)
                           : const Color(0xFFD1D5DB),
                     ),
                   ),
@@ -4152,7 +4223,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                     color: FriendooUiColors.softGold,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFFFFD166).withOpacity(0.6),
+                      color: const Color(0xFFFFD166).withValues(alpha: 0.6),
                     ),
                   ),
                   child: Row(
@@ -4248,7 +4319,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                   BoxShadow(
                     color: isOnline
                         ? const Color(0x1F10B981)
-                        : Colors.black.withOpacity(0.03),
+                        : Colors.black.withValues(alpha: 0.03),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -4275,7 +4346,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                                   ? [
                                       BoxShadow(
                                         color: const Color(0xFF10B981)
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -4454,7 +4525,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: const Color(0xFFFFB703).withOpacity(0.55),
+                  color: const Color(0xFFFFB703).withValues(alpha: 0.55),
                   width: 1.8,
                 ),
                 boxShadow: [
@@ -4791,7 +4862,7 @@ class _HostStatCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -4989,7 +5060,7 @@ class _HostRecentActivitySection extends ConsumerWidget {
               ],
             ),
           ),
-          error: (_, __) => Container(
+          error: (_, _) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white,

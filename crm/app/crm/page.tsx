@@ -136,7 +136,7 @@ export default function CrmDashboardPage() {
             type="button"
             onClick={manualRefresh}
             disabled={isRefreshing}
-            className="inline-flex h-8 items-center justify-center rounded-[8px] bg-accent px-4 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            className="inline-flex h-8 items-center justify-center rounded-[8px] bg-accent px-4 text-xs font-medium text-white active:scale-[0.96] transition-all duration-100 ease-out hover:opacity-95 disabled:opacity-50"
           >
             {isRefreshing ? "Refreshing..." : "Refresh data"}
           </button>

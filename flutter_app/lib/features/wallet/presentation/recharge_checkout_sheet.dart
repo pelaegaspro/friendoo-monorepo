@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/friendoo_models.dart';
-import '../data/google_play_iap_service.dart';
 import '../data/platform_fee_policy.dart';
 import '../data/wallet_repository.dart';
 

@@ -1,7 +1,9 @@
+import '../../../app/friendoo_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/support_repository.dart';
+import 'support_chat_sheet.dart';
 
 class SupportDeskPage extends StatefulWidget {
   const SupportDeskPage({
@@ -315,6 +317,73 @@ class _SupportDeskPageState extends State<SupportDeskPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 24/7 AI Chatbot Quick Action (Apple tactile response)
+          ApplePressable(
+            pressedScale: 0.96,
+            onTap: () {
+              SupportChatSheet.show(
+                context,
+                isHost: widget.isHost,
+                onEscalateToTicket: (subject, message) {
+                  setState(() {
+                    _subjectController.text = subject;
+                    _messageController.text = message;
+                  });
+                },
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF064E3B), Color(0xFF0F172A)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF34D399), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '24/7 WhatsApp AI Support Bot',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              '• LIVE',
+                              style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w800, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Interactive menu for failed recharges, host payouts, coin rates & direct chat.',
+                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF34D399), size: 20),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // 24/7 Priority SLA Banner
           Container(
             padding: const EdgeInsets.all(14),
@@ -549,8 +618,11 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           SizedBox(
             width: double.infinity,
             height: 52,
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submitTicket,
+            child: ApplePressable(
+              pressedScale: 0.95,
+              onTap: _isSubmitting ? null : _submitTicket,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submitTicket,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7C3AED),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -570,6 +642,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                       ],
                     ),
             ),
+          ),
           ),
           const SizedBox(height: 18),
         ],

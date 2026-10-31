@@ -33,6 +33,42 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* =========================================================================
+   Apple Design Fluid Tokens & Tactile Micro-Interactions (WWDC)
+   ========================================================================= */
+
+/* 1. Response: Kill Latency on Pointer-Down (Section 1) */
+button:not(:disabled):active,
+a[role="button"]:not([aria-disabled="true"]):active,
+.apple-pressable:active {
+  transform: scale(0.975);
+  transition: transform 90ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 2. Apple Typography Optical Tracking & Tabular Numbers (Section 15) */
+h1, h2, .apple-display {
+  letter-spacing: -0.025em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+}
+
+.tabular-nums, .metric-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.apple-caption {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* 3. Apple Translucent Materials with Saturate (Section 12) */
+.apple-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -52,7 +88,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 24px;
-    transition: border-color 150ms ease;
+    transition: border-color 150ms ease, transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .crm-clean-card-compact {
@@ -60,7 +96,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px;
-    transition: border-color 150ms ease;
+    transition: border-color 150ms ease, transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .crm-clean-card:hover,
@@ -130,11 +166,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Accessibility: Reduced Motion (Section 14) */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

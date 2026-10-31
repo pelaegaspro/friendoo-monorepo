@@ -18,6 +18,7 @@ class FavoritesRepository {
     _controller.add(Set<String>.from(_favoriteIds));
   }
 
+  static const int maxFavorites = 6;
   final Set<String> _favoriteIds = {};
   final StreamController<Set<String>> _controller =
       StreamController<Set<String>>.broadcast();
@@ -26,13 +27,22 @@ class FavoritesRepository {
 
   bool isFavorite(String hostId) => _favoriteIds.contains(hostId);
 
-  void toggleFavorite(String hostId) {
+  /// Toggles favorite status.
+  /// Returns `true` if operation was successful.
+  /// Returns `false` if user attempted to add a 7th favorite (max 6 constraint).
+  bool toggleFavorite(String hostId) {
     if (_favoriteIds.contains(hostId)) {
       _favoriteIds.remove(hostId);
+      _controller.add(Set<String>.from(_favoriteIds));
+      return true;
     } else {
+      if (_favoriteIds.length >= maxFavorites) {
+        return false;
+      }
       _favoriteIds.add(hostId);
+      _controller.add(Set<String>.from(_favoriteIds));
+      return true;
     }
-    _controller.add(Set<String>.from(_favoriteIds));
   }
 
   Set<String> get currentFavorites => Set<String>.from(_favoriteIds);

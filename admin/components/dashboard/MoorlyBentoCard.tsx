@@ -93,7 +93,7 @@ export default function MoorlyBentoCard({
         'group relative flex flex-col justify-between rounded-xl border p-4 sm:p-5 transition-all duration-200 select-none',
         colorStyles.bg,
         colorStyles.border,
-        onClick && 'cursor-pointer hover:border-opacity-80',
+        onClick && 'cursor-pointer hover:border-opacity-80 active:scale-[0.985] active:transition-transform active:duration-75',
         className
       )}
     >
@@ -116,7 +116,7 @@ export default function MoorlyBentoCard({
 
       {/* Metric Value & Exact SVG Sparkline */}
       <div className="mt-3 mb-1.5 flex items-baseline justify-between gap-2">
-        <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+        <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white tabular-nums">
           {value}
         </span>
 

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -287,29 +286,32 @@ void main() {
       // ══════════════════════════════════════════════════════════════════════════
       // 7. RTC SECURITY: MID-CALL TOKEN PRIVILEGE RENEWAL
       // ══════════════════════════════════════════════════════════════════════════
-      test('P0-7: Approaching token expiry triggers proactive server renewal', () async {
-        bool renewalRequested = false;
-        String? activeToken = 'initial_agora_token_hour_1';
+      test(
+        'P0-7: Approaching token expiry triggers proactive server renewal',
+        () async {
+          bool renewalRequested = false;
+          String? activeToken = 'initial_agora_token_hour_1';
 
-        Future<String?> mockRenewTokenHandler() async {
-          renewalRequested = true;
-          return 'renewed_agora_token_hour_2';
-        }
-
-        // Simulate Agora onTokenPrivilegeWillExpire callback
-        Future<void> simulateTokenPrivilegeExpiring() async {
-          final fresh = await mockRenewTokenHandler();
-          if (fresh != null) {
-            activeToken = fresh;
+          Future<String?> mockRenewTokenHandler() async {
+            renewalRequested = true;
+            return 'renewed_agora_token_hour_2';
           }
-        }
 
-        await simulateTokenPrivilegeExpiring();
+          // Simulate Agora onTokenPrivilegeWillExpire callback
+          Future<void> simulateTokenPrivilegeExpiring() async {
+            final fresh = await mockRenewTokenHandler();
+            if (fresh != null) {
+              activeToken = fresh;
+            }
+          }
 
-        // INVARIANT: Automated renewal occurs seamlessly before call drops
-        expect(renewalRequested, isTrue);
-        expect(activeToken, equals('renewed_agora_token_hour_2'));
-      });
+          await simulateTokenPrivilegeExpiring();
+
+          // INVARIANT: Automated renewal occurs seamlessly before call drops
+          expect(renewalRequested, isTrue);
+          expect(activeToken, equals('renewed_agora_token_hour_2'));
+        },
+      );
 
       // ══════════════════════════════════════════════════════════════════════════
       // 8. ANDROID LIFECYCLE: BACKGROUND & SCREEN LOCK PERSISTENCE
@@ -327,9 +329,10 @@ void main() {
 
         // Simulating AppLifecycleState transitions
         const appStates = [
-          AppLifecycleState.inactive, // User pulled down notification shade or locked screen
-          AppLifecycleState.paused,   // App sent to background
-          AppLifecycleState.resumed,  // User opened app back up
+          AppLifecycleState
+              .inactive, // User pulled down notification shade or locked screen
+          AppLifecycleState.paused, // App sent to background
+          AppLifecycleState.resumed, // User opened app back up
         ];
 
         for (final _ in appStates) {

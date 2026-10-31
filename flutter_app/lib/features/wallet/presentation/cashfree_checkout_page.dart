@@ -1,5 +1,6 @@
 import 'cashfree_local_host.dart';
 import '../../support/presentation/support_desk_page.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,7 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
 
   bool _isVerifying = false;
   String? _verificationError;
-  bool _canOpenExternalBrowser = false;
+  final bool _canOpenExternalBrowser = false;
   bool _fallbackToSimulated = false;
   bool _hasLaunchedPayment = false;
 
@@ -73,11 +74,10 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
-      debugPrint('Failed to launch external browser: ' + e.toString());
+      debugPrint('Failed to launch external browser: $e');
       if (mounted) {
         setState(() {
-          _verificationError =
-              'Unable to launch external browser automatically. Tap Re-open Browser below.';
+          _verificationError = 'Unable to launch external browser automatically. Tap Re-open Browser below.';
         });
       }
     }
@@ -107,7 +107,9 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (widget.externalBrowserMode) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _launchExternalBrowser());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _launchExternalBrowser(),
+      );
       return;
     }
     if (!isSimulatedCheckout) {
@@ -158,13 +160,15 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
           .setPaymentSessionId(widget.paymentSessionId)
           .build();
 
-      final isMobile = !kIsWeb &&
+      final isMobile =
+          !kIsWeb &&
           (defaultTargetPlatform == TargetPlatform.android ||
               defaultTargetPlatform == TargetPlatform.iOS);
 
       if (!forceWeb && isMobile && _isUpiPayment) {
         try {
-          final targetPackage = (!forceChooser &&
+          final targetPackage =
+              (!forceChooser &&
                   widget.upiAppPackage != null &&
                   widget.upiAppPackage!.isNotEmpty)
               ? widget.upiAppPackage!
@@ -265,7 +269,10 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
     });
   }
 
-  Future<void> _verifyPayment({bool silent = false, int maxAttempts = 1}) async {
+  Future<void> _verifyPayment({
+    bool silent = false,
+    int maxAttempts = 1,
+  }) async {
     if (_isVerifying) return;
     setState(() {
       _isVerifying = true;
@@ -305,8 +312,7 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
     setState(() {
       _isVerifying = false;
       if (!silent) {
-        _verificationError =
-            'Payment is not confirmed yet. If you completed payment in your UPI app, please wait a few seconds and tap Check Status.';
+        _verificationError = 'Payment is not confirmed yet. If you completed payment in your UPI app, please wait a few seconds and tap Check Status.';
       }
     });
   }
@@ -768,15 +774,20 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
                 const SizedBox(height: 10),
                 FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                    backgroundColor: const Color(0xFF7C3AED)
+                        .withValues(alpha: 0.12),
                     foregroundColor: const Color(0xFF7C3AED),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   onPressed: () {
                     SupportDeskPage.show(
                       context,
                       initialScenario: 'payment_failure',
-                      initialSubject: 'Recharge Issue: ₹' + (widget.amountInr != null ? widget.amountInr.toString() : '0') + ' (Order #' + widget.providerOrderId + ')',
+                      initialSubject:
+                          'Recharge Issue: ₹${widget.amountInr != null ? widget.amountInr.toString() : '0'} (Order #${widget.providerOrderId})',
                       initialMetadata: {
                         'order_id': widget.providerOrderId,
                         'amount': widget.amountInr,
@@ -927,10 +938,7 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
                     ? 'Launching UPI app on your device…'
                     : 'Opening Cashfree secure gateway…',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
               ),
               const SizedBox(height: 20),
 
@@ -1186,10 +1194,7 @@ class _CashfreeCheckoutPageState extends State<CashfreeCheckoutPage>
                   onPressed: () => Navigator.of(context).pop(false),
                   child: const Text(
                     'Cancel Recharge',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
                   ),
                 ),
               ],

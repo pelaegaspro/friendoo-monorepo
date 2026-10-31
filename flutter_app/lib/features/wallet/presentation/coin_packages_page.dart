@@ -154,13 +154,17 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                   ),
                   child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 20,
+                      ApplePressable(
+                        pressedScale: 0.88,
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 20,
+                            color: Color(0xFF0E1020),
+                          ),
                         ),
-                        color: const Color(0xFF0E1020),
                       ),
                       const SizedBox(width: 4),
                       const Text(
@@ -172,9 +176,9 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                         ),
                       ),
                       const Spacer(),
-                      InkWell(
+                      ApplePressable(
+                        pressedScale: 0.94,
                         onTap: _showTransactionsSheet,
-                        borderRadius: BorderRadius.circular(20),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
@@ -308,7 +312,8 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                           final isValuePack = pkg.amountInr == 140;
                           final isSale = pkg.amountInr >= 300;
 
-                          return GestureDetector(
+                          return ApplePressable(
+                            pressedScale: 0.94,
                             onTap: () => _onSelectPackage(pkg),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
@@ -523,10 +528,13 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-                    child: ElevatedButton(
-                      onPressed: _selectedPackage != null
-                          ? _proceedToPay
-                          : null,
+                    child: ApplePressable(
+                      pressedScale: 0.95,
+                      onTap: _selectedPackage != null ? _proceedToPay : null,
+                      child: ElevatedButton(
+                        onPressed: _selectedPackage != null
+                            ? _proceedToPay
+                            : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3B82F6),
                         foregroundColor: Colors.white,
@@ -545,6 +553,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                             : 'Select a Package',
                       ),
                     ),
+                  ),
                   ),
                 ],
               ),

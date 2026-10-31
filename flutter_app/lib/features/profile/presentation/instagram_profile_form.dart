@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -156,25 +158,33 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     counterText: '',
+                    suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    suffixIcon: (_isFocused && hasText)
+                        ? IconButton(
+                            tooltip: 'Clear',
+                            icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            splashRadius: 18,
+                            onPressed: () {
+                              widget.controller.clear();
+                              widget.onChanged?.call('');
+                              if (mounted) setState(() {});
+                            },
+                          )
+                        : (hasText && widget.maxLines == 1
+                            ? Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: widget.accentColor,
+                                ),
+                              )
+                            : null),
                   ),
                 ),
               ),
-              if (hasText && widget.maxLines == 1)
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.controller.clear();
-                    widget.onChanged?.call('');
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Icon(
-                      Icons.cancel,
-                      size: 18,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ),
             ],
           ),
 
@@ -203,23 +213,18 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
   }
 }
 
-/// Instagram-Style Bio Multi-line Field with Starter Chips
+/// Instagram-Style Bio Multi-line Field with AI Generator
 class InstagramBioField extends StatefulWidget {
   const InstagramBioField({
     super.key,
     required this.controller,
     this.label = 'Bio',
-    this.hintText = 'Add a bio to your profile...',
+    this.hintText = 'Add a bio to introduce yourself...',
     this.maxLength = 150,
-    this.accentColor = const Color(0xFF0095F6),
-    this.promptChips = const [
-      '👋 Love casual chats',
-      '🎵 Music & Movies',
-      '☕ Friendly listener',
-      '🎧 Night owl',
-      '✨ Good vibes only',
-    ],
+    this.accentColor = const Color(0xFF7C3AED),
+    this.promptChips = const [],
     this.onChanged,
+    this.isHost = false,
   });
 
   final TextEditingController controller;
@@ -229,6 +234,7 @@ class InstagramBioField extends StatefulWidget {
   final Color accentColor;
   final List<String> promptChips;
   final ValueChanged<String>? onChanged;
+  final bool isHost;
 
   @override
   State<InstagramBioField> createState() => _InstagramBioFieldState();
@@ -237,6 +243,7 @@ class InstagramBioField extends StatefulWidget {
 class _InstagramBioFieldState extends State<InstagramBioField> {
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
+  bool _isGenerating = false;
 
   @override
   void initState() {
@@ -258,30 +265,188 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
     if (mounted) setState(() {});
   }
 
-  void _appendPrompt(String prompt) {
+  Future<void> _openAiBioSheet(BuildContext context) async {
     HapticFeedback.lightImpact();
-    final current = widget.controller.text.trim();
-    String next;
-    if (current.isEmpty) {
-      next = prompt;
-    } else if (current.contains(prompt)) {
-      return;
-    } else {
-      next = '$current • $prompt';
-    }
-    if (next.length > widget.maxLength) {
-      next = next.substring(0, widget.maxLength);
-    }
-    widget.controller.text = next;
-    widget.controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: next.length),
+    final promptController = TextEditingController();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -4)),
+                  ],
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFEDE9FE),
+                          ),
+                          child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AI Bio Generator',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Type your hobby or vibe (e.g. gamer, late night chats)',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    TextField(
+                      controller: promptController,
+                      autofocus: true,
+                      style: const TextStyle(fontSize: 14.5, color: Color(0xFF0F172A)),
+                      decoration: InputDecoration(
+                        hintText: widget.isHost
+                            ? 'e.g. friendly host, love music and advice'
+                            : 'e.g. I am a gamer person, love casual chats',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF7C3AED), width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: _isGenerating
+                            ? null
+                            : () async {
+                                final userVibe = promptController.text.trim();
+                                if (userVibe.isEmpty) return;
+                                setSheetState(() => _isGenerating = true);
+                                try {
+                                  final bio = await _callAiBioApi(userVibe, widget.isHost);
+                                  widget.controller.text = bio;
+                                  widget.onChanged?.call(bio);
+                                  if (ctx.mounted) Navigator.of(ctx).pop();
+                                  HapticFeedback.mediumImpact();
+                                } catch (_) {
+                                  // Fallback locally
+                                  final fallback = widget.isHost
+                                      ? 'Warm host passionate about meaningful conversations. Always ready for a great chat!'
+                                      : 'Into $userVibe and always up for good conversations and positive vibes.';
+                                  widget.controller.text = fallback;
+                                  widget.onChanged?.call(fallback);
+                                  if (ctx.mounted) Navigator.of(ctx).pop();
+                                } finally {
+                                  if (mounted) setState(() => _isGenerating = false);
+                                }
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C3AED),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        icon: _isGenerating
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Icon(Icons.bolt_rounded, size: 18),
+                        label: Text(
+                          _isGenerating ? 'Generating Bio...' : 'Generate with AI Bio',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
-    widget.onChanged?.call(next);
+  }
+
+  Future<String> _callAiBioApi(String userPrompt, bool isHost) async {
+    try {
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
+      final request = await client.postUrl(Uri.parse('http://localhost:3000/api/profile/generate-bio'));
+      request.headers.set('content-type', 'application/json');
+      request.add(utf8.encode(jsonEncode({
+        'prompt': userPrompt,
+        'role': isHost ? 'host' : 'user',
+      })));
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final reply = await response.transform(utf8.decoder).join();
+        final map = jsonDecode(reply) as Map<String, dynamic>;
+        final bio = map['bio']?.toString().trim();
+        if (bio != null && bio.isNotEmpty) return bio;
+      }
+    } catch (_) {}
+
+    // Instant smart template fallback matching user prompt
+    final lower = userPrompt.toLowerCase();
+    if (lower.contains('game') || lower.contains('gaming')) {
+      return isHost
+        ? 'Passionate gamer host who loves teaming up and chatting about games, anime, and great vibes.'
+        : 'Casual gamer looking for good company and fun conversations while leveling up!';
+    } else if (lower.contains('music') || lower.contains('movie') || lower.contains('song')) {
+      return "Melody and cinema lover with a soundtrack for every mood. Let's talk favorites!";
+    } else if (lower.contains('night') || lower.contains('owl')) {
+      return 'Night owl always up for deep late-night chats, stories, and relaxing banter.';
+    }
+    return isHost
+      ? 'Passionate about $userPrompt. Warm conversationalist always ready for a great chat!'
+      : 'Into $userPrompt and always up for genuine conversations and positive energy.';
   }
 
   @override
   Widget build(BuildContext context) {
-    final textLength = widget.controller.text.length;
+    final hasText = widget.controller.text.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -300,14 +465,33 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                   letterSpacing: 0.1,
                 ),
               ),
-              Text(
-                '$textLength/${widget.maxLength}',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: textLength >= widget.maxLength
-                      ? const Color(0xFFEF4444)
-                      : const Color(0xFF9CA3AF),
+              InkWell(
+                onTap: () => _openAiBioSheet(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEDE9FE), Color(0xFFFCE7F3)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, size: 12, color: Color(0xFF7C3AED)),
+                      SizedBox(width: 4),
+                      Text(
+                        '✨ AI Bio',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF7C3AED),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -338,6 +522,21 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 6),
               counterText: '',
+              suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              suffixIcon: (_isFocused && hasText)
+                  ? IconButton(
+                      tooltip: 'Clear Bio',
+                      icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      splashRadius: 18,
+                      onPressed: () {
+                        widget.controller.clear();
+                        widget.onChanged?.call('');
+                        if (mounted) setState(() {});
+                      },
+                    )
+                  : null,
             ),
           ),
 
@@ -347,56 +546,14 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
             height: _isFocused ? 1.6 : 0.8,
             color: _isFocused ? widget.accentColor : const Color(0xFFE5E7EB),
           ),
-          const SizedBox(height: 8),
-
-          // Quick prompt suggestion pills
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: widget.promptChips.map((chip) {
-                final isPresent = widget.controller.text.contains(chip);
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: InkWell(
-                    onTap: isPresent ? null : () => _appendPrompt(chip),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
-                      decoration: BoxDecoration(
-                        color: isPresent
-                            ? const Color(0xFFF1F5F9)
-                            : const Color(0xFFFAFAFA),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isPresent
-                              ? const Color(0xFFE2E8F0)
-                              : const Color(0xFFE5E7EB),
-                        ),
-                      ),
-                      child: Text(
-                        chip,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isPresent ? FontWeight.w500 : FontWeight.w600,
-                          color: isPresent
-                              ? const Color(0xFF9CA3AF)
-                              : const Color(0xFF374151),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-/// Instagram-Style Age Row with Tappable Pill / Selector
-class InstagramAgeRow extends StatelessWidget {
+/// Instagram-Style Clean Direct Age Input
+class InstagramAgeRow extends StatefulWidget {
   const InstagramAgeRow({
     super.key,
     required this.selectedAge,
@@ -412,24 +569,56 @@ class InstagramAgeRow extends StatelessWidget {
   final int minAge;
   final int maxAge;
 
-  static const List<int> _quickPresets = [18, 20, 22, 24, 26, 28, 30, 35];
+  @override
+  State<InstagramAgeRow> createState() => _InstagramAgeRowState();
+}
+
+class _InstagramAgeRowState extends State<InstagramAgeRow> {
+  late TextEditingController _ageController;
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ageController = TextEditingController(text: '${widget.selectedAge}');
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void didUpdateWidget(InstagramAgeRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedAge != widget.selectedAge &&
+        _ageController.text != '${widget.selectedAge}') {
+      _ageController.text = '${widget.selectedAge}';
+    }
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Age (Years)',
+              Text(
+                'Age',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6B7280),
+                  color: _isFocused ? widget.accentColor : const Color(0xFF6B7280),
                   letterSpacing: 0.1,
                 ),
               ),
@@ -450,99 +639,59 @@ class InstagramAgeRow extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 4),
           Row(
             children: [
-              // Stepper controls
-              InkWell(
-                onTap: selectedAge > minAge ? () => onChanged(selectedAge - 1) : null,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: selectedAge > minAge ? const Color(0xFFF3F4F6) : const Color(0xFFF9FAFB),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: const Icon(Icons.remove, size: 16, color: Color(0xFF374151)),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                '$selectedAge yrs',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: accentColor,
-                ),
-              ),
-              const SizedBox(width: 14),
-              InkWell(
-                onTap: selectedAge < maxAge ? () => onChanged(selectedAge + 1) : null,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: selectedAge < maxAge ? const Color(0xFFF3F4F6) : const Color(0xFFF9FAFB),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: const Icon(Icons.add, size: 16, color: Color(0xFF374151)),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Horizontal Presets
               Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _quickPresets.map((preset) {
-                      final isSelected = selectedAge == preset;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 5),
-                        child: InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            onChanged(preset);
-                          },
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isSelected ? accentColor : const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              '$preset',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                color: isSelected ? Colors.white : const Color(0xFF4B5563),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                child: TextFormField(
+                  controller: _ageController,
+                  focusNode: _focusNode,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
                   ),
+                  decoration: const InputDecoration(
+                    hintText: 'Enter age (e.g. 24)',
+                    hintStyle: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  onChanged: (val) {
+                    final parsed = int.tryParse(val);
+                    if (parsed != null && parsed >= widget.minAge && parsed <= widget.maxAge) {
+                      widget.onChanged(parsed);
+                    }
+                  },
+                ),
+              ),
+              const Text(
+                'years',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF9CA3AF),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-
-          // Underline divider
-          Container(
-            height: 0.8,
-            color: const Color(0xFFE5E7EB),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: _isFocused ? 1.6 : 0.8,
+            color: _isFocused ? widget.accentColor : const Color(0xFFE5E7EB),
           ),
         ],
       ),
     );
   }
 }
-

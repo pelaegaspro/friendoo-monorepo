@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/widgets/apple_pressable.dart';
+
 /// Exact OTP Animation V15 recreation from @code.xr Instagram Reel
 /// Features:
 /// 1. Top Circular Lock with live rotating gradient spinner ring (transforms to green check on success, red on error)
@@ -178,18 +180,19 @@ class _AnimatedOtpVerificationViewState
         constraints: const BoxConstraints(maxWidth: 420),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFF161B26),
             borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFF262D40)),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.45),
                 blurRadius: 36,
                 offset: const Offset(0, 14),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                blurRadius: 28,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -220,7 +223,7 @@ class _AnimatedOtpVerificationViewState
                   isSuccess ? "You're verified" : "Verify it's you",
                   key: ValueKey(isSuccess),
                   style: const TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.6,
@@ -239,7 +242,8 @@ class _AnimatedOtpVerificationViewState
               AnimatedBuilder(
                 animation: _shakeController,
                 builder: (context, child) {
-                  final offset = math.sin(_shakeController.value * math.pi * 5) *
+                  final offset =
+                      math.sin(_shakeController.value * math.pi * 5) *
                       10 *
                       (1.0 - _shakeController.value);
                   return Transform.translate(
@@ -280,16 +284,16 @@ class _AnimatedOtpVerificationViewState
 
     if (isSuccess) {
       iconColor = const Color(0xFF10B981);
-      circleBg = const Color(0xFFECFDF5);
+      circleBg = const Color(0xFF064E3B).withValues(alpha: 0.4);
       ringColor = const Color(0xFF10B981);
     } else if (hasError) {
       iconColor = const Color(0xFFEF4444);
-      circleBg = const Color(0xFFFEF2F2);
+      circleBg = const Color(0xFF7F1D1D).withValues(alpha: 0.4);
       ringColor = const Color(0xFFEF4444);
     } else {
-      iconColor = const Color(0xFF4F46E5);
-      circleBg = const Color(0xFFEEF2FF);
-      ringColor = const Color(0xFF6366F1);
+      iconColor = const Color(0xFF7C3AED);
+      circleBg = const Color(0xFF7C3AED).withValues(alpha: 0.15);
+      ringColor = const Color(0xFF7C3AED);
     }
 
     return AnimatedContainer(
@@ -325,7 +329,7 @@ class _AnimatedOtpVerificationViewState
               color: circleBg,
               boxShadow: [
                 BoxShadow(
-                  color: ringColor.withOpacity(0.18),
+                  color: ringColor.withValues(alpha: 0.18),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -363,7 +367,6 @@ class _AnimatedOtpVerificationViewState
       );
     }
 
-
     return Wrap(
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -371,12 +374,12 @@ class _AnimatedOtpVerificationViewState
         const Text(
           'Enter the 6-digit code we just sent to ',
           style: TextStyle(
-            color: Color(0xFF64748B),
+            color: Color(0xFF94A3B8),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        InkWell(
+        ApplePressable(
           onTap: widget.isLoading ? null : widget.onChangePhone,
           borderRadius: BorderRadius.circular(6),
           child: Padding(
@@ -389,16 +392,16 @@ class _AnimatedOtpVerificationViewState
                       ? widget.phoneDigits.trim()
                       : '+91 ${widget.phoneDigits.trim()}',
                   style: const TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(width: 3),
+                const SizedBox(width: 4),
                 const Icon(
                   Icons.edit_rounded,
                   size: 13,
-                  color: Color(0xFF4F46E5),
+                  color: Color(0xFF7C3AED),
                 ),
               ],
             ),
@@ -489,7 +492,9 @@ class _AnimatedOtpVerificationViewState
       builder: (context, child) {
         final bounceValue = _digitBounceControllers[index].value;
         final scale = isFilled
-            ? (0.7 + 0.3 * Curves.elasticOut.transform(bounceValue.clamp(0.0, 1.0)))
+            ? (0.7 +
+                  0.3 *
+                      Curves.elasticOut.transform(bounceValue.clamp(0.0, 1.0)))
             : (isFocused ? 1.03 : 1.0);
 
         Color borderColor;
@@ -505,53 +510,53 @@ class _AnimatedOtpVerificationViewState
           underlineColor = Colors.white;
           shadows = [
             BoxShadow(
-              color: const Color(0xFF10B981).withOpacity(0.35),
+              color: const Color(0xFF10B981).withValues(alpha: 0.35),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ];
         } else if (hasError) {
           borderColor = const Color(0xFFEF4444);
-          bgColor = const Color(0xFFFEF2F2);
+          bgColor = const Color(0xFF7F1D1D).withValues(alpha: 0.35);
           textColor = const Color(0xFFEF4444);
           underlineColor = const Color(0xFFEF4444);
           shadows = [
             BoxShadow(
-              color: const Color(0xFFEF4444).withOpacity(0.18),
+              color: const Color(0xFFEF4444).withValues(alpha: 0.25),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ];
         } else if (isFocused) {
           final glowOpacity = 0.25 + 0.15 * _pulseController.value;
-          borderColor = const Color(0xFF4F46E5);
-          bgColor = Colors.white;
-          textColor = const Color(0xFF0F172A);
-          underlineColor = const Color(0xFF4F46E5);
+          borderColor = const Color(0xFF7C3AED);
+          bgColor = const Color(0xFF1E2433);
+          textColor = Colors.white;
+          underlineColor = const Color(0xFF7C3AED);
           shadows = [
             BoxShadow(
-              color: const Color(0xFF4F46E5).withOpacity(glowOpacity),
-              blurRadius: 10,
+              color: const Color(0xFF7C3AED).withValues(alpha: glowOpacity),
+              blurRadius: 12,
               offset: const Offset(0, 3),
             ),
           ];
         } else if (isFilled) {
-          borderColor = const Color(0xFF4F46E5).withOpacity(0.7);
-          bgColor = Colors.white;
-          textColor = const Color(0xFF0F172A);
-          underlineColor = const Color(0xFF4F46E5);
+          borderColor = const Color(0xFF7C3AED).withValues(alpha: 0.7);
+          bgColor = const Color(0xFF1E2433);
+          textColor = Colors.white;
+          underlineColor = const Color(0xFF7C3AED);
           shadows = [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ];
         } else {
-          borderColor = const Color(0xFFE2E8F0);
-          bgColor = const Color(0xFFF8FAFC);
-          textColor = const Color(0xFF94A3B8);
-          underlineColor = const Color(0xFFCBD5E1);
+          borderColor = const Color(0xFF262D40);
+          bgColor = const Color(0xFF0F1420);
+          textColor = const Color(0xFF64748B);
+          underlineColor = const Color(0xFF334155);
           shadows = [];
         }
 
@@ -585,25 +590,25 @@ class _AnimatedOtpVerificationViewState
                             ),
                           )
                         : (isFocused
-                            ? Opacity(
-                                opacity: _cursorController.value,
-                                child: Container(
-                                  width: 2.2,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF4F46E5),
-                                    borderRadius: BorderRadius.circular(2),
+                              ? Opacity(
+                                  opacity: _cursorController.value,
+                                  child: Container(
+                                    width: 2.2,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF7C3AED),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
                                   ),
-                                ),
-                              )
-                            : Container(
-                                width: 5,
-                                height: 5,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFFCBD5E1),
-                                ),
-                              )),
+                                )
+                              : Container(
+                                  width: 5,
+                                  height: 5,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFF334155),
+                                  ),
+                                )),
                   ),
                 ),
 
@@ -631,23 +636,23 @@ class _AnimatedOtpVerificationViewState
   /// Signature dynamic progress-fill "Verify code" button
   Widget _buildProgressVerifyButton(bool isSuccess) {
     if (isSuccess) {
-      return Container(
-        height: 52,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFF10B981),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF10B981).withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: InkWell(
-          onTap: widget.onContinue ?? () {},
-          borderRadius: BorderRadius.circular(16),
+      return ApplePressable(
+        onTap: widget.onContinue ?? () {},
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 52,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -661,11 +666,7 @@ class _AnimatedOtpVerificationViewState
                 ),
               ),
               SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
+              Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
             ],
           ),
         ),
@@ -676,93 +677,96 @@ class _AnimatedOtpVerificationViewState
     final isFull = _currentOtp.length == 6;
     final isVerifying = widget.isLoading || (isFull && !widget.isVerified);
 
-    return Container(
-      height: 52,
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF2F6), // Track background
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: isFull
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF4F46E5).withOpacity(0.35),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : [],
-      ),
-      child: Stack(
-        children: [
-          // Dynamic animated progress fill
-          AnimatedFractionallySizedBox(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+    return ApplePressable(
+      onTap: (widget.isLoading || _currentOtp.length < 6)
+          ? null
+          : widget.onVerify,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 52,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F1420), // Dark track background
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isFull ? const Color(0xFF7C3AED) : const Color(0xFF262D40),
+            width: 1.2,
+          ),
+          boxShadow: isFull
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: Stack(
+          children: [
+            // Dynamic animated progress fill with brand gradient
+            AnimatedFractionallySizedBox(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerLeft,
+              widthFactor: progress,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Button content
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: (widget.isLoading || _currentOtp.length < 6)
-                  ? null
-                  : widget.onVerify,
-              borderRadius: BorderRadius.circular(16),
-              child: Center(
-                child: isVerifying
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedBuilder(
-                            animation: _spinnerController,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: _spinnerController.value * 2 * math.pi,
-                                child: CustomPaint(
-                                  size: const Size(18, 18),
-                                  painter: _SpinnerArcPainter(
-                                    color: Colors.white,
-                                    strokeWidth: 2.2,
-                                  ),
+            // Button content
+            Center(
+              child: isVerifying
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _spinnerController,
+                          builder: (context, child) {
+                            return Transform.rotate(
+                              angle: _spinnerController.value * 2 * math.pi,
+                              child: const CustomPaint(
+                                size: Size(18, 18),
+                                painter: _SpinnerArcPainter(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
                                 ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Verifying',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        'Verify code',
-                        style: TextStyle(
-                          color: progress > 0.45 ? Colors.white : const Color(0xFF64748B),
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.3,
+                              ),
+                            );
+                          },
                         ),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Verifying',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      'Verify code',
+                      style: TextStyle(
+                        color: progress > 0.45
+                            ? Colors.white
+                            : const Color(0xFF64748B),
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
                       ),
-              ),
+                    ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -772,24 +776,20 @@ class _AnimatedOtpVerificationViewState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
+        color: const Color(0xFF7F1D1D).withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.error_rounded,
-            color: Color(0xFFEF4444),
-            size: 16,
-          ),
+          const Icon(Icons.error_rounded, color: Color(0xFFEF4444), size: 16),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               message,
               style: const TextStyle(
-                color: Color(0xFFDC2626),
+                color: Color(0xFFFCA5A5),
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
               ),
@@ -829,7 +829,7 @@ class _AnimatedOtpVerificationViewState
                 child: CustomPaint(
                   size: const Size(12, 12),
                   painter: _SpinnerArcPainter(
-                    color: const Color(0xFF4F46E5),
+                    color: const Color(0xFF7C3AED),
                     strokeWidth: 1.8,
                   ),
                 ),
@@ -840,13 +840,13 @@ class _AnimatedOtpVerificationViewState
           Text(
             'Resend in $minutes:$seconds',
             style: const TextStyle(
-              color: Color(0xFF0F172A),
+              color: Color(0xFF94A3B8),
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
           ),
         ] else
-          InkWell(
+          ApplePressable(
             onTap: widget.isLoading ? null : widget.onResend,
             borderRadius: BorderRadius.circular(6),
             child: const Padding(
@@ -854,11 +854,11 @@ class _AnimatedOtpVerificationViewState
               child: Text(
                 'Resend',
                 style: TextStyle(
-                  color: Color(0xFF4F46E5),
+                  color: Color(0xFF7C3AED),
                   fontSize: 13.5,
                   fontWeight: FontWeight.w900,
                   decoration: TextDecoration.underline,
-                  decorationColor: Color(0xFF4F46E5),
+                  decorationColor: Color(0xFF7C3AED),
                 ),
               ),
             ),
@@ -870,10 +870,7 @@ class _AnimatedOtpVerificationViewState
 
 /// Custom painter for spinning gradient arc ring
 class _SpinnerArcPainter extends CustomPainter {
-  const _SpinnerArcPainter({
-    required this.color,
-    required this.strokeWidth,
-  });
+  const _SpinnerArcPainter({required this.color, required this.strokeWidth});
 
   final Color color;
   final double strokeWidth;
@@ -885,7 +882,7 @@ class _SpinnerArcPainter extends CustomPainter {
 
     // Track arc (faint)
     final trackPaint = Paint()
-      ..color = color.withOpacity(0.15)
+      ..color = color.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius, trackPaint);

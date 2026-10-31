@@ -909,8 +909,9 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                           ),
                           validator: (v) {
                             if (_payoutType != 'bank') return null;
-                            if (v == null || v.trim().isEmpty)
+                            if (v == null || v.trim().isEmpty) {
                               return 'Enter account holder name';
+                            }
                             return null;
                           },
                         ),
@@ -936,8 +937,9 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                           ),
                           validator: (v) {
                             if (_payoutType != 'bank') return null;
-                            if (v == null || v.trim().length < 6)
+                            if (v == null || v.trim().length < 6) {
                               return 'Enter valid account number';
+                            }
                             return null;
                           },
                         ),
@@ -996,8 +998,9 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                                     ),
                                     validator: (v) {
                                       if (_payoutType != 'bank') return null;
-                                      if (v == null || v.trim().length < 8)
+                                      if (v == null || v.trim().length < 8) {
                                         return 'Invalid IFSC';
+                                      }
                                       return null;
                                     },
                                   ),

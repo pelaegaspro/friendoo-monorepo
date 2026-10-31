@@ -25,69 +25,65 @@ final placementBannerAdProvider = Provider.family<CloudBannerAd, String>((
   return adsList.first;
 });
 
-final placementBannerAdsListProvider = Provider.family<List<CloudBannerAd>, String>((
-  ref,
-  placement,
-) {
-  final adsAsync = ref.watch(activeBannerAdsStreamProvider);
-  final ads = adsAsync.asData?.value ?? [];
+final placementBannerAdsListProvider =
+    Provider.family<List<CloudBannerAd>, String>((ref, placement) {
+      final adsAsync = ref.watch(activeBannerAdsStreamProvider);
+      final ads = adsAsync.asData?.value ?? [];
 
-  final matching = ads
-      .where(
-        (ad) =>
-            ad.isActive &&
-            (ad.placement == placement ||
-                ad.placement == 'all' ||
-                (placement == 'host_top_banner' &&
-                    ad.campaignType == 'host_incentive') ||
-                (placement == 'user_top_banner' &&
-                    (ad.placement == 'user_top_banner' ||
-                        ad.placement == 'discover'))),
-      )
-      .toList();
+      final matching = ads
+          .where(
+            (ad) =>
+                ad.isActive &&
+                (ad.placement == placement ||
+                    ad.placement == 'all' ||
+                    (placement == 'host_top_banner' &&
+                        ad.campaignType == 'host_incentive') ||
+                    (placement == 'user_top_banner' &&
+                        (ad.placement == 'user_top_banner' ||
+                            ad.placement == 'discover'))),
+          )
+          .toList();
 
-  if (matching.isNotEmpty) {
-    matching.sort((a, b) => b.priority.compareTo(a.priority));
-    return matching;
-  }
+      if (matching.isNotEmpty) {
+        matching.sort((a, b) => b.priority.compareTo(a.priority));
+        return matching;
+      }
 
-  if (placement == 'user_top_banner' || placement == 'discover') {
-    final backend2Cards =
-        ref.watch(discoverPromoCardsStreamProvider).asData?.value;
-    if (backend2Cards != null && backend2Cards.isNotEmpty) {
-      return backend2Cards;
-    }
-    return defaultFourDiscoverPromoCards;
-  }
+      if (placement == 'user_top_banner' || placement == 'discover') {
+        final backend2Cards = ref
+            .watch(discoverPromoCardsStreamProvider)
+            .asData
+            ?.value;
+        if (backend2Cards != null && backend2Cards.isNotEmpty) {
+          return backend2Cards;
+        }
+        return defaultFourDiscoverPromoCards;
+      }
 
-  if (placement == 'host_top_banner') {
-    return const [
-      CloudBannerAd.defaultHostSurgeAd,
-    ];
-  }
+      if (placement == 'host_top_banner') {
+        return const [CloudBannerAd.defaultHostSurgeAd];
+      }
 
-  if (placement == 'host_bottom_banner') {
-    return const [
-      CloudBannerAd(
-        id: 'host_dashboard_tip',
-        title: 'Host Dashboard',
-        headline: 'Track your calls and earnings',
-        subtitle: 'View your recent activity from the host dashboard.',
-        badgeText: 'HOST TOOLS',
-        campaignType: 'host_incentive',
-        placement: 'host_bottom_banner',
-        actionType: 'none',
-        priority: 100,
-        isActive: true,
-        gradientColors: ['#6366F1', '#8B5CF6', '#DB2777'],
-      ),
-    ];
-  }
+      if (placement == 'host_bottom_banner') {
+        return const [
+          CloudBannerAd(
+            id: 'host_dashboard_tip',
+            title: 'Host Dashboard',
+            headline: 'Track your calls and earnings',
+            subtitle: 'View your recent activity from the host dashboard.',
+            badgeText: 'HOST TOOLS',
+            campaignType: 'host_incentive',
+            placement: 'host_bottom_banner',
+            actionType: 'none',
+            priority: 100,
+            isActive: true,
+            gradientColors: ['#6366F1', '#8B5CF6', '#DB2777'],
+          ),
+        ];
+      }
 
-  return const [
-    CloudBannerAd.defaultAd,
-  ];
-});
+      return const [CloudBannerAd.defaultAd];
+    });
 
 final activePopupOfferProvider = Provider<CloudBannerAd?>((ref) {
   final adsAsync = ref.watch(activeBannerAdsStreamProvider);
@@ -150,7 +146,7 @@ class BannerAdRepository {
           .eq('status', 'live')
           .order('priority', ascending: false);
 
-      if (campaignsData is List && campaignsData.isNotEmpty) {
+      if (campaignsData.isNotEmpty) {
         return campaignsData.map((row) {
           final map = Map<String, dynamic>.from(row as Map);
           if (map['advertisers'] is Map) {
@@ -181,15 +177,9 @@ class BannerAdRepository {
       if (fetched.isNotEmpty) {
         return fetched;
       }
-      return const [
-        CloudBannerAd.defaultAd,
-        CloudBannerAd.defaultHostSurgeAd,
-      ];
+      return const [CloudBannerAd.defaultAd, CloudBannerAd.defaultHostSurgeAd];
     } catch (_) {
-      return const [
-        CloudBannerAd.defaultAd,
-        CloudBannerAd.defaultHostSurgeAd,
-      ];
+      return const [CloudBannerAd.defaultAd, CloudBannerAd.defaultHostSurgeAd];
     }
   }
 
@@ -198,10 +188,17 @@ class BannerAdRepository {
     yield ads;
   }
 
-  Future<void> recordImpression(String adId, {String placement = 'banner'}) async {
+  Future<void> recordImpression(
+    String adId, {
+    String placement = 'banner',
+  }) async {
     if (adId.isEmpty || adId.startsWith('default_')) return;
-    final hourTimestamp = DateTime.now().toUtc().toIso8601String().substring(0, 13);
-    final idempotencyKey = 'imp_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$hourTimestamp';
+    final hourTimestamp = DateTime.now().toUtc().toIso8601String().substring(
+      0,
+      13,
+    );
+    final idempotencyKey =
+        'imp_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$hourTimestamp';
     try {
       final recorded = await _client.rpc(
         'record_ad_delivery_event',
@@ -226,8 +223,12 @@ class BannerAdRepository {
 
   Future<void> recordClick(String adId, {String placement = 'banner'}) async {
     if (adId.isEmpty || adId.startsWith('default_')) return;
-    final minuteTimestamp = DateTime.now().toUtc().toIso8601String().substring(0, 16);
-    final idempotencyKey = 'clk_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$minuteTimestamp';
+    final minuteTimestamp = DateTime.now().toUtc().toIso8601String().substring(
+      0,
+      16,
+    );
+    final idempotencyKey =
+        'clk_${adId}_${_client.auth.currentUser?.id ?? "anon"}_${placement}_$minuteTimestamp';
     try {
       final recorded = await _client.rpc(
         'record_ad_delivery_event',

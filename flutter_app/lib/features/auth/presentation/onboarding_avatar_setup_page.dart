@@ -276,26 +276,32 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
                   decoration: InputDecoration(
                     hintText: 'Enter your full name',
+                    hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15),
                     prefixIcon: Icon(
                       Icons.person_outline_rounded,
                       color: themeColor,
+                      size: 22,
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    suffixIcon: const Icon(
+                      Icons.edit_outlined,
+                      color: Color(0xFF9CA3AF),
+                      size: 18,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    filled: false,
+                    isDense: true,
+                    border: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: themeColor, width: 2),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -313,26 +319,27 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                 TextField(
                   controller: _cityController,
                   textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
                   decoration: InputDecoration(
                     hintText: 'Enter your city (e.g. Chennai, Mumbai)',
+                    hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15),
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
                       color: themeColor,
+                      size: 22,
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    filled: false,
+                    isDense: true,
+                    border: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    focusedBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: themeColor, width: 2),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -403,43 +410,41 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _pickDateOfBirth,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
                       children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          color: themeColor,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            _selectedDob != null
-                                ? _formatDob(_selectedDob!)
-                                : 'Select date of birth',
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w700,
-                              color: _selectedDob != null
-                                  ? const Color(0xFF111827)
-                                  : const Color(0xFF9CA3AF),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              color: themeColor,
+                              size: 22,
                             ),
-                          ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                _selectedDob != null
+                                    ? _formatDob(_selectedDob!)
+                                    : 'Select date of birth',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: _selectedDob != null
+                                      ? const Color(0xFF111827)
+                                      : const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ],
                         ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFF9CA3AF),
-                        ),
+                        const SizedBox(height: 8),
+                        Container(height: 0.8, color: const Color(0xFFE5E7EB)),
                       ],
                     ),
                   ),

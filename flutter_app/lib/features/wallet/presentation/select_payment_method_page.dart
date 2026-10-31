@@ -1,5 +1,5 @@
 import 'cashfree_local_host.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -777,8 +777,7 @@ class _SelectPaymentMethodPageState
                     _PaymentOptionTile(
                       icon: Icons.open_in_browser_rounded,
                       title: 'Option 2: External Browser Checkout',
-                      subtitle:
-                          'Directly opens in Chrome / Web Browser (PhonePe, GPay, Paytm, Cards, NetBanking, QR)',
+                      subtitle: 'Directly opens in Chrome / Web Browser (PhonePe, GPay, Paytm, Cards, NetBanking, QR)',
                       iconColor: const Color(0xFF2563EB),
                       badge: 'RECOMMENDED',
                       onTap: () {
@@ -794,7 +793,8 @@ class _SelectPaymentMethodPageState
                     _PaymentOptionTile(
                       icon: Icons.credit_card_rounded,
                       title: 'Pay using Credit/Debit Card',
-                      subtitle: 'Opens secure card checkout in external browser',
+                      subtitle:
+                          'Opens secure card checkout in external browser',
                       iconColor: const Color(0xFF2563EB),
                       onTap: () => _startCashfreeCheckout(
                         paymentMethod: 'card',

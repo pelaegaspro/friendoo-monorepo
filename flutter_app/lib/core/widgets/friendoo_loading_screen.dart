@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../app/friendoo_app.dart';
 import '../../app/friendoo_ui.dart';
 
 /// Beautiful, branded Friendoo Loading Screen with smooth animations.

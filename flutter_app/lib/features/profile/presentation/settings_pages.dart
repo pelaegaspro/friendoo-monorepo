@@ -16,6 +16,7 @@ import '../../notifications/presentation/in_app_notification_banner.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/blocked_callers_service.dart';
 import '../../support/presentation/support_desk_page.dart';
+import '../../support/presentation/support_chat_sheet.dart';
 import 'instagram_profile_form.dart';
 import 'profile_input_widgets.dart';
 
@@ -279,6 +280,15 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
     });
   }
 
+  /// Programmatic function that explicitly clears all active text editing controllers
+  /// and updates the UI dynamically.
+  void clearAllFields() {
+    _nameController.clear();
+    _cityController.clear();
+    _bioController.clear();
+    setState(() {});
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -338,8 +348,52 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   }
 
   void _showAvatarLockedMessage() {
-    _showMessage(
-      "Your avatar was selected during account creation and can't be changed.",
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFEDE9FE),
+              ),
+              child: const Icon(Icons.verified_user_rounded, color: Color(0xFF7C3AED), size: 28),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Permanent Identity Avatar',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Your avatar was verified during account creation to keep the Friendoo voice community safe and genuine.\n\nYou can update your Name, Bio, and Languages at any time.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C3AED),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -381,6 +435,20 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             fontWeight: FontWeight.w900,
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: clearAllFields,
+            child: const Text(
+              'Reset',
+              style: TextStyle(
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -516,35 +584,10 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                         hintText: 'Add a bio to introduce yourself...',
                         maxLength: 150,
                         accentColor: FriendooUiColors.violet,
-                        promptChips: const [
-                          '👋 Love casual chats',
-                          '🎵 Music & Movies',
-                          '☕ Friendly listener',
-                          '🎧 Night owl',
-                          '✨ Good vibes only',
-                        ],
+                        isHost: false,
                         onChanged: (_) => setState(() {}),
                       ),
-                      const SizedBox(height: 18),
-                      const _EditProfileInfoCard(
-                        icon: Icons.verified_user_rounded,
-                        title: 'Phone number verified',
-                        message: 'Other callers do not see your phone number.',
-                        background: Color(0xFFF0FFF9),
-                        foreground: Color(0xFF0C8B68),
-                      ),
-                      const SizedBox(height: 12),
-                      _EditProfileInfoCard(
-                        icon: Icons.lightbulb_outline_rounded,
-                        title: 'Profile Tips',
-                        message: 'A friendly bio helps hosts start better conversations.',
-                        background: const Color(0xFFFFF5FA),
-                        foreground: FriendooUiColors.pink,
-                        onTap: () => _showMessage(
-                          'Keep your profile friendly and genuine.',
-                        ),
-                        showArrow: true,
-                      ),
+
                     ],
                   ),
                 ),
@@ -937,10 +980,7 @@ class _EditProfileField extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.child,
-    this.counter,
-    this.iconColor = FriendooUiColors.violet,
-    this.alignTop = false,
-  });
+  }) : counter = null, iconColor = FriendooUiColors.violet, alignTop = false;
 
   final IconData icon;
   final String label;
@@ -1016,9 +1056,7 @@ class _EditProfileInfoCard extends StatelessWidget {
     required this.message,
     required this.background,
     required this.foreground,
-    this.onTap,
-    this.showArrow = false,
-  });
+  }) : onTap = null, showArrow = false;
 
   final IconData icon;
   final String title;
@@ -1107,6 +1145,15 @@ class AppLanguageSettingsPage extends ConsumerWidget {
         throw StateError('The app language preference could not be saved.');
       }
       ref.read(appLanguageCodeProvider.notifier).state = language.code;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF10B981),
+            content: Text('App language changed to ${language.name}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1172,17 +1219,18 @@ class UserLanguagesPage extends ConsumerStatefulWidget {
 
 class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
   final List<String> _allLanguages = [
+    'Assamese',
+    'Bengali',
+    'Gujarati',
     'Hindi',
-    'Tamil',
-    'Telugu',
     'Kannada',
     'Malayalam',
-    'English',
-    'Bengali',
     'Marathi',
-    'Gujarati',
-    'Punjabi',
     'Odia',
+    'Punjabi',
+    'Tamil',
+    'Telugu',
+    'Urdu',
   ];
 
   late Set<String> _selected;
@@ -1195,11 +1243,11 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
     if (profileLangs != null && profileLangs.isNotEmpty) {
       _selected = profileLangs
           .where(
-            (language) => !widget.isHost || language.toLowerCase() != 'english',
+            (language) => language.toLowerCase() != 'english',
           )
           .toSet();
     } else {
-      _selected = widget.isHost ? {'Tamil'} : {'Tamil', 'English'};
+      _selected = {'Tamil'};
     }
     if (_selected.isEmpty) {
       _selected = {'Tamil'};
@@ -1209,7 +1257,7 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
   Future<void> _saveLanguages() async {
     final languages = _selected
         .where(
-          (language) => !widget.isHost || language.toLowerCase() != 'english',
+          (language) => language.toLowerCase() != 'english',
         )
         .toList();
     if (widget.isHost) {
@@ -1225,7 +1273,7 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: Color(0xFF10B981),
-        content: Text('Language preferences updated!'),
+        content: Text('Regional language preferences updated!'),
       ),
     );
     Navigator.of(context).pop();
@@ -2303,29 +2351,29 @@ class HelpSupportPage extends StatelessWidget {
       title: 'Help & Support',
       subtitle: 'Assistance, safety & guides',
       children: [
+        // Sleek, compact Care Team card (not giant or bulky)
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-            ),
-            borderRadius: BorderRadius.circular(22),
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF334155)),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF334155),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.support_agent_rounded,
-                  color: Colors.white,
-                  size: 28,
+                  Icons.headset_mic_rounded,
+                  color: Color(0xFF38BDF8),
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2335,13 +2383,13 @@ class HelpSupportPage extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 16,
+                        fontSize: 14.5,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 1),
                     Text(
                       'Support and safety resources for callers across India.',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5),
                     ),
                   ],
                 ),
@@ -2349,7 +2397,7 @@ class HelpSupportPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
         SettingsSectionCard(
           title: 'CONTACT CHANNELS',
@@ -2358,26 +2406,51 @@ class HelpSupportPage extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: FriendooUiColors.violet.withValues(alpha: 0.12),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.support_agent_rounded,
-                  color: FriendooUiColors.violet,
-                  size: 22,
+                  Icons.headset_mic_rounded,
+                  color: Colors.white,
+                  size: 20,
                 ),
               ),
-              title: const Text(
-                '24/7 Live Support Desk',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '24/7 Live Support',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'INSTANT',
+                      style: TextStyle(
+                        color: Color(0xFF10B981),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 9.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              subtitle: const Text(
-                'Direct help for failed recharges, call drops & refunds',
-                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              subtitle: Text(
+                isHost
+                    ? 'Direct help for withdrawals, earnings & 1-on-1 support'
+                    : 'Direct help for failed recharges, call drops & refunds',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
               ),
               trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
-              onTap: () => SupportDeskPage.show(context, isHost: isHost),
+              onTap: () => SupportChatSheet.show(context, isHost: isHost),
             ),
             const Divider(height: 16),
             ListTile(
@@ -2391,17 +2464,17 @@ class HelpSupportPage extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
               ),
               subtitle: const Text(
-                'support@friendoo.app',
+                'support@friendoo.in',
                 style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
               ),
               trailing: const Icon(Icons.arrow_forward_rounded, size: 18),
               onTap: () async {
-                final uri = Uri(scheme: 'mailto', path: 'support@friendoo.app');
+                final uri = Uri(scheme: 'mailto', path: 'support@friendoo.in');
                 if (!await launchUrl(uri) && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'Could not open your email app. Write to support@friendoo.app.',
+                        'Could not open your email app. Write to support@friendoo.in.',
                       ),
                     ),
                   );
@@ -2417,14 +2490,14 @@ class HelpSupportPage extends StatelessWidget {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               title: Text(
-                'Can other callers see my phone number?',
+                'What if my UPI recharge fails but money is debited?',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
               ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Your phone number is not shown to other callers. Your display name and profile details may be visible.',
+                    'UPI settlement between banks can take 5 to 15 minutes. Tap "24/7 Live Support" and enter your 12-digit bank UTR number or upload a screenshot. If rejected by your bank, funds auto-reverse within 24–48 banking hours.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2438,14 +2511,14 @@ class HelpSupportPage extends StatelessWidget {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               title: Text(
-                'How do coin deductions work?',
+                'How does the 15-second free drop refund work?',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
               ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Coins are billed strictly by the minute while connected. If a call drops or fails, unspent coins remain safely in your vault balance.',
+                    'Any call ending within 15 seconds is automatically 100% free of charge. No coins are deducted from your balance for accidental taps or quick disconnects.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2459,14 +2532,119 @@ class HelpSupportPage extends StatelessWidget {
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               title: Text(
-                'How to report harassment or abuse?',
+                'How do I report a host asking for money off-platform?',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
               ),
               children: [
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Use the Report button on any call history card to flag an account for review.',
+                    'Friendoo has strict zero-tolerance for off-platform money demands or extortion. Tap "24/7 Live Support", select "Report Host", and tap the host who requested money. The host will be blocked instantly and investigated by Trust & Safety.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 1),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                'Can other callers or hosts see my phone number?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'No. Your real phone number is 100% private and encrypted. Neither callers nor hosts can ever see your phone number or banking details.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 1),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                'How do hosts withdraw their earnings?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Hosts can request payouts once their wallet reaches the minimum ₹500 balance. Payouts are transferred directly to your verified UPI ID or IMPS bank account within 24–48 business hours.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 1),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                'How are coin rates calculated per call?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Each host sets their audio per-minute coin rate, clearly displayed on their card before you call. Billing happens by the minute only while actively connected.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 1),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                'How do I block an abusive user permanently?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Tap the Shield or Block button on any call history card or profile. Blocked users cannot call you or view your availability.',
+                    style: TextStyle(
+                      color: Color(0xFF4B5563),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Divider(height: 1),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                'How can I speak directly with customer support?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Tap the "24/7 Live Support" button above to chat in real time with our support desk, or email our official inbox at support@friendoo.in.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -6303,7 +6481,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                       subtitle: Text(
                         _savedAccountNumber.isNotEmpty
-                            ? '${_savedBankName.isNotEmpty ? _savedBankName : 'Bank'} ••••${_savedAccountNumber.length > 4 ? _savedAccountNumber.substring(_savedAccountNumber.length - 4) : _savedAccountNumber} (${_savedAccountHolder})'
+                            ? '${_savedBankName.isNotEmpty ? _savedBankName : 'Bank'} ••••${_savedAccountNumber.length > 4 ? _savedAccountNumber.substring(_savedAccountNumber.length - 4) : _savedAccountNumber} ($_savedAccountHolder)'
                             : 'Tap "Change Payment Method" to add Bank Details',
                         style: TextStyle(
                           fontSize: 12,

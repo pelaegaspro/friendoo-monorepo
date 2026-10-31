@@ -1,5 +1,6 @@
 // ignore_for_file: unused_element, unused_element_parameter
 import 'dart:async';
+import 'dart:ui';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/models/friendoo_models.dart';
 import '../features/calls/data/call_repository.dart';
 import '../features/discover/data/host_repository.dart';
+import '../features/discover/data/favorites_repository.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
@@ -661,7 +663,7 @@ void showFriendooNotificationsSheet(BuildContext context) {
   showLiveNotificationsSheet(context);
 }
 
-class FriendooDashboardView extends ConsumerWidget {
+class FriendooDashboardView extends ConsumerStatefulWidget {
   const FriendooDashboardView({
     super.key,
     required this.hosts,
@@ -684,7 +686,116 @@ class FriendooDashboardView extends ConsumerWidget {
   final VoidCallback onOpenWallet;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FriendooDashboardView> createState() => _FriendooDashboardViewState();
+}
+
+class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
+  int _visibleHostsCount = 4;
+  late final PageController _favoritesPageController;
+  int _favoritesPageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _favoritesPageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _favoritesPageController.dispose();
+    super.dispose();
+  }
+
+  int _availabilityRank(HostProfile host) {
+    if (host.status == HostStatus.busy) return 1;
+    if (host.isAvailable) return 0;
+    return 2;
+  }
+
+  void _showMaxFavoritesReachedDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161B26),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF262D40), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEC4899).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Color(0xFFEC4899),
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Maximum 6 Favorites Reached',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'You can keep up to 6 favorite hosts on your quick-access deck. Remove a host from your favorites to add a new one.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 12.5,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Understood',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final walletAsync = ref.watch(walletStreamProvider);
     final currentProfile =
         ref.watch(currentUserProfileStreamProvider).asData?.value ??
@@ -693,13 +804,12 @@ class FriendooDashboardView extends ConsumerWidget {
         ? currentProfile!.preferredLanguages
               .map((l) => l.trim().toLowerCase())
               .toSet()
-        : {'tamil', 'hindi', 'english'};
+        : {'tamil', 'hindi'};
 
     final currentUserId =
         currentProfile?.id ?? Supabase.instance.client.auth.currentUser?.id;
-    final femaleHosts = hosts.where((host) {
+    final femaleHosts = widget.hosts.where((host) {
       if (!host.isFemale) return false;
-      // If a host has blocked this user, she will NOT appear in the user screen even when online
       if (BlockedCallersService.isHostBlockedForUser(
         hostId: host.id,
         userId: currentUserId,
@@ -708,111 +818,117 @@ class FriendooDashboardView extends ConsumerWidget {
       }
       return true;
     }).toList();
+
+    // Sort visible hosts: Online priority first (Green), Busy in call second (Yellow), Offline third (Grey)
     final visibleHosts = [...femaleHosts]
       ..sort((a, b) {
-        if (a.isAvailable != b.isAvailable) {
-          return a.isAvailable ? -1 : 1;
-        }
-        // Prioritize hosts matching the user's spoken languages
+        final rankA = _availabilityRank(a);
+        final rankB = _availabilityRank(b);
+        if (rankA != rankB) return rankA.compareTo(rankB);
         final aMatches = a.languages.any(
           (l) => userLangs.contains(l.trim().toLowerCase()),
         );
         final bMatches = b.languages.any(
           (l) => userLangs.contains(l.trim().toLowerCase()),
         );
-        if (aMatches != bMatches) {
-          return aMatches ? -1 : 1;
-        }
-        if (a.isStar != b.isStar) {
-          return a.isStar ? -1 : 1;
-        }
+        if (aMatches != bMatches) return aMatches ? -1 : 1;
+        if (a.isStar != b.isStar) return a.isStar ? -1 : 1;
         return b.rating.compareTo(a.rating);
       });
-    final onlineCount = femaleHosts.where((host) => host.isAvailable).length;
+
+    final onlineCount = femaleHosts.where((host) => host.isAvailable && host.status != HostStatus.busy).length;
+
+    // Favorites & Recent Spoken Top 6 Hosts
+    final favIds = ref.watch(favoriteHostIdsProvider).asData?.value ??
+        ref.watch(favoritesRepositoryProvider).currentFavorites;
+
+    final List<HostProfile> top6Hosts = [];
+    final favList = femaleHosts.where((h) => favIds.contains(h.id)).toList();
+    final nonFavList = femaleHosts.where((h) => !favIds.contains(h.id)).toList();
+
+    top6Hosts.addAll(favList);
+    for (final h in nonFavList) {
+      if (top6Hosts.length >= 6) break;
+      top6Hosts.add(h);
+    }
+    top6Hosts.sort((a, b) {
+      final rankA = _availabilityRank(a);
+      final rankB = _availabilityRank(b);
+      if (rankA != rankB) return rankA.compareTo(rankB);
+      return b.rating.compareTo(a.rating);
+    });
+
+    final pagedHosts = visibleHosts.take(_visibleHostsCount).toList();
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
         // ==========================================
-        // 1. HEADER
-        // Left: Friendoo Logo
-        // Right: Wallet Coin Balance (Click to Recharge) + Notification Icon
+        // 1. HEADER (Logo + Coins Balance Chip)
         // ==========================================
         Row(
           children: [
             const FriendooLogo(fontSize: 22),
             const Spacer(),
-
-            // Right Action Cluster: Coin Balance Chip (Tap -> Recharge) + Notifications
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Wallet Coin Balance Chip (Click redirects directly to recharge)
-                InkWell(
-                  onTap: () => CoinPackagesPage.push(context),
+            ApplePressable(
+              pressedScale: 0.94,
+              onTap: () => CoinPackagesPage.push(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                decoration: BoxDecoration(
+                  color: FriendooUiColors.softGold,
                   borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: FriendooUiColors.softGold,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0xFFFFD166).withValues(alpha: 0.7),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD97706).withValues(alpha: 0.1),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.monetization_on_rounded,
-                          color: Color(0xFFD97706),
-                          size: 17,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          walletAsync.when(
-                            data: (wallet) => '${wallet.coinBalance}',
-                            loading: () => '…',
-                            error: (_, __) => walletAsync.hasValue
-                                ? '${walletAsync.value!.coinBalance}'
-                                : '0',
-                          ),
-                          style: const TextStyle(
-                            color: Color(0xFFB45309),
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.add_circle_rounded,
-                          color: Color(0xFFD97706),
-                          size: 15,
-                        ),
-                      ],
-                    ),
+                  border: Border.all(
+                    color: const Color(0xFFFFD166).withValues(alpha: 0.7),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD97706).withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on_rounded,
+                      color: Color(0xFFD97706),
+                      size: 17,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      walletAsync.when(
+                        data: (wallet) => '',
+                        loading: () => '…',
+                        error: (_, _) => walletAsync.hasValue
+                            ? ''
+                            : '0',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFFB45309),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.add_circle_rounded,
+                      color: Color(0xFFD97706),
+                      size: 15,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
         // ==========================================
-        // 2. TITLE
-        // "Discover a Host" (Clean heading, no standalone subtitle)
+        // 2. DISCOVER HEADING
         // ==========================================
         const Text(
           'Discover a Host',
@@ -827,15 +943,250 @@ class FriendooDashboardView extends ConsumerWidget {
         const SizedBox(height: 14),
 
         // ==========================================
-        // 3. TOP CLOUD PROMOTIONAL BANNER (6-SEC AUTO-SLIDER)
+        // 3. HOTSTAR/NETFLIX STYLE AUTO-SLIDING BANNER
         // ==========================================
         const CloudBannerAdCard(placement: 'user_top_banner'),
-        const SizedBox(height: 12),
-        const LiveAdBannerWidget(placement: 'user_top_banner'),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // ==========================================
-        // 4. HOST SECTION HEADER & COUNTER
+        // 4. FAVORITES & RECENT HOSTS (TOP 6 - 3 PER SWIPE, 2 SWIPES)
+        // ==========================================
+        if (top6Hosts.isNotEmpty) ...[
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDF2F8),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Color(0xFFEC4899),
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Flexible(
+                child: Text(
+                  'Favorites & Recent Hosts',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: FriendooUiColors.ink,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'TOP 6',
+                  style: TextStyle(
+                    color: Color(0xFF7C3AED),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 9.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '${top6Hosts.length}/6',
+                style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Horizontal 2-Swipe PageView (3 profiles per swipe)
+          SizedBox(
+            height: 182,
+            child: PageView.builder(
+              controller: _favoritesPageController,
+              itemCount: 2,
+              onPageChanged: (idx) {
+                setState(() => _favoritesPageIndex = idx);
+              },
+              itemBuilder: (context, pageIdx) {
+                final start = pageIdx * 3;
+                final pageItems = (start < top6Hosts.length)
+                    ? top6Hosts.sublist(start, math.min(start + 3, top6Hosts.length))
+                    : <HostProfile>[];
+
+                return Row(
+                  children: List.generate(3, (colIdx) {
+                    if (colIdx < pageItems.length) {
+                      final host = pageItems[colIdx];
+                      final isFav = favIds.contains(host.id);
+                      final isBusy = host.status == HostStatus.busy;
+                      final isOnline = host.isAvailable && !isBusy;
+
+                      return Expanded(
+                        child: Container(
+                          margin: EdgeInsets.only(
+                            left: colIdx == 0 ? 0 : 4,
+                            right: colIdx == 2 ? 0 : 4,
+                          ),
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isOnline
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                                  : (isBusy
+                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
+                                      : const Color(0xFFE5E7EB)),
+                              width: 1.1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Top Heart icon (toggles favorite with max 6 constraint)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      final repo = ref.read(favoritesRepositoryProvider);
+                                      final ok = repo.toggleFavorite(host.id);
+                                      if (!ok && context.mounted) {
+                                        _showMaxFavoritesReachedDialog(context);
+                                      }
+                                    },
+                                    child: Icon(
+                                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                      color: isFav ? const Color(0xFFEC4899) : const Color(0xFF94A3B8),
+                                      size: 17,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // Avatar with Presence indicator
+                              DesiFemaleAvatar(
+                                seed: host.displayName,
+                                age: host.displayAge,
+                                isStar: host.isStar,
+                                size: 48,
+                                showPresence: true,
+                                isOnline: isOnline,
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Host Name
+                              Text(
+                                host.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: FriendooUiColors.ink,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+
+                              // Per Minute Rate
+                              Text(
+                                '₹/min',
+                                style: const TextStyle(
+                                  color: Color(0xFF6366F1),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+
+                              // Compact Action Button (Strict: NEVER show Busy if offline)
+                              SizedBox(
+                                width: double.infinity,
+                                height: 28,
+                                child: ElevatedButton(
+                                  onPressed: isOnline ? () => widget.onStartCall(host) : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isOnline
+                                        ? const Color(0xFF10B981)
+                                        : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB)),
+                                    foregroundColor: isOnline || isBusy
+                                        ? Colors.white
+                                        : const Color(0xFF9CA3AF),
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isOnline ? 'Call' : (isBusy ? 'Busy' : 'Offline'),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return const Expanded(child: SizedBox());
+                  }),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // 2-Swipe Dots Indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: _favoritesPageIndex == 0 ? 14 : 5,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _favoritesPageIndex == 0 ? const Color(0xFF7C3AED) : const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 4),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: _favoritesPageIndex == 1 ? 14 : 5,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _favoritesPageIndex == 1 ? const Color(0xFF7C3AED) : const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+        ],
+
+        // ==========================================
+        // 5. AVAILABLE HOSTS HEADER & COUNTER
         // ==========================================
         Row(
           children: [
@@ -856,10 +1207,7 @@ class FriendooDashboardView extends ConsumerWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(99),
@@ -877,7 +1225,7 @@ class FriendooDashboardView extends ConsumerWidget {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      '$onlineCount Live Now',
+                      ' Live Now',
                       style: const TextStyle(
                         color: Color(0xFF047857),
                         fontSize: 11.5,
@@ -893,7 +1241,7 @@ class FriendooDashboardView extends ConsumerWidget {
         const SizedBox(height: 14),
 
         // ==========================================
-        // 5. USER HOST CARDS (Large Horizontal Cards - NOT A GRID)
+        // 6. AVAILABLE HOST CARDS (Initial 4 Hosts + Paginated Continuation)
         // ==========================================
         if (visibleHosts.isEmpty)
           const _EmptySurface(
@@ -901,8 +1249,8 @@ class FriendooDashboardView extends ConsumerWidget {
             title: 'No hosts available right now',
             message: 'Check back in a few moments to see who is online.',
           )
-        else
-          ...visibleHosts.map(
+        else ...[
+          ...pagedHosts.map(
             (host) => Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: _DesiHostCard(
@@ -910,15 +1258,129 @@ class FriendooDashboardView extends ConsumerWidget {
                 isRecommended: host.languages.any(
                   (l) => userLangs.contains(l.trim().toLowerCase()),
                 ),
-                onStartCall: () => onStartCall(host),
+                onStartCall: () => widget.onStartCall(host),
               ),
             ),
           ),
-        const SizedBox(height: 8),
 
-        // Privacy & Moderation Trust Card
-        const _TrustCard(),
+          // Show More Hosts (+6) Button
+          if (visibleHosts.length > _visibleHostsCount)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 16),
+              child: ApplePressable(
+                pressedScale: 0.95,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _visibleHostsCount = math.min(_visibleHostsCount + 6, visibleHosts.length);
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.expand_more_rounded,
+                        color: Color(0xFF7C3AED),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Show More Hosts (+6) •  of ',
+                        style: const TextStyle(
+                          color: Color(0xFF7C3AED),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
+    );
+  }
+}
+
+class ApplePressable extends StatefulWidget {
+  const ApplePressable({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.pressedScale = 0.95,
+    this.enableHaptics = true,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final double pressedScale;
+  final bool enableHaptics;
+
+  @override
+  State<ApplePressable> createState() => _ApplePressableState();
+}
+
+class _ApplePressableState extends State<ApplePressable>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 90),
+      reverseDuration: const Duration(milliseconds: 140),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: widget.pressedScale,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onTap == null) return widget.child;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) {
+        if (widget.enableHaptics) {
+          HapticFeedback.lightImpact();
+        }
+        _controller.forward();
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap?.call();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+      },
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
     );
   }
 }
@@ -941,161 +1403,174 @@ class _DesiHostCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF161B26),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(
-              top: BorderSide(color: Color(0xFF262D40), width: 1.5),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B26).withValues(alpha: 0.92),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+                border: const Border(
+                  top: BorderSide(color: Color(0xFF38435C), width: 1.0),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  DesiFemaleAvatar(
-                    seed: host.displayName,
-                    age: host.displayAge,
-                    isStar: host.isStar,
-                    size: 52,
-                    showPresence: true,
-                    isOnline: host.isAvailable,
+                  Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      DesiFemaleAvatar(
+                        seed: host.displayName,
+                        age: host.displayAge,
+                        isStar: host.isStar,
+                        size: 52,
+                        showPresence: true,
+                        isOnline: host.isAvailable,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              host.displayName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  host.displayName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 16,
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.verified_rounded,
-                              color: Color(0xFF10B981),
-                              size: 16,
+                            const SizedBox(height: 3),
+                            Text(
+                              '${host.languages.join(' · ')} • ${host.displayCity}',
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          host.languages.join(' · ') + ' • ' + host.displayCity,
-                          style: const TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF26123D), Color(0xFF191632)],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.volume_up_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Voice Bio Preview',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                host.bio != null && host.bio!.isNotEmpty
+                                    ? '"${host.bio!}"'
+                                    : '"Namaste! Call me to talk anytime, free to chat in Hindi and English."',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFFE2E8F0),
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF26123D), Color(0xFF191632)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        onStartCall();
+                      },
+                      icon: const Icon(Icons.call_rounded, size: 18),
+                      label: Text(
+                        'Call ${host.displayName} · ₹${host.ratePerAudioMinute}/min',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.volume_up_rounded,
-                        color: Colors.white,
-                        size: 22,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Voice Bio Preview',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            host.bio != null && host.bio!.isNotEmpty
-                                ? '"' + host.bio! + '"'
-                                : '"Namaste! Call me to talk anytime, free to chat in Hindi and English."',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFE2E8F0),
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    onStartCall();
-                  },
-                  icon: const Icon(Icons.call_rounded, size: 18),
-                  label: Text(
-                    'Call ' + host.displayName + ' · ₹' + host.ratePerAudioMinute.toString() + '/min',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                    ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 3,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -1113,6 +1588,9 @@ class _DesiHostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final languagesText = host.languages.join(' · ');
     final savedAvatarId = host.avatarUrl?.trim();
+    final isBusy = host.status == HostStatus.busy;
+    final isOnline = host.isAvailable && !isBusy;
+    final isOffline = !host.isAvailable && !isBusy;
 
     return Container(
       decoration: BoxDecoration(
@@ -1121,25 +1599,27 @@ class _DesiHostCard extends StatelessWidget {
         border: Border.all(
           color: host.isStar
               ? const Color(0xFFFFB703).withValues(alpha: 0.55)
-              : (host.isAvailable
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.22)
-                    : const Color(0xFFE5E7EB)),
+              : (isOnline
+                    ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                    : (isBusy
+                        ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+                        : const Color(0xFFE5E7EB))),
           width: host.isStar ? 1.8 : 1.2,
         ),
         boxShadow: [
-          // Layer 1: Ambient contact shadow (ui-skills beautiful-shadows)
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
-          // Layer 2: Diffuse elevation lift
           BoxShadow(
             color: host.isStar
                 ? const Color(0xFFFFB703).withValues(alpha: 0.16)
-                : (host.isAvailable
-                    ? const Color(0xFF6366F1).withValues(alpha: 0.10)
-                    : Colors.black.withValues(alpha: 0.025)),
+                : (isOnline
+                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                      : (isBusy
+                          ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
+                          : Colors.black.withValues(alpha: 0.025))),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1380,14 +1860,17 @@ class _DesiHostCard extends StatelessWidget {
             const SizedBox(height: 8),
           ],
 
-          // Voice Greeting Snippet Pill (ui-skills baseline-ui touch target + craft)
+          // Voice Greeting Snippet Pill (Apple fluid press response)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: InkWell(
+            child: ApplePressable(
+              pressedScale: 0.94,
               onTap: () => _showVoiceGreetingPreview(context),
-              borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFFAF5FF), Color(0xFFF3E8FF)],
@@ -1469,14 +1952,18 @@ class _DesiHostCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: host.isAvailable
+                          color: isOnline
                               ? const Color(0xFFECFDF5)
-                              : const Color(0xFFF3F4F6),
+                              : (isBusy
+                                  ? const Color(0xFFFEF3C7)
+                                  : const Color(0xFFF3F4F6)),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: host.isAvailable
+                            color: isOnline
                                 ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                                : const Color(0xFFE5E7EB),
+                                : (isBusy
+                                    ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
+                                    : const Color(0xFFE5E7EB)),
                           ),
                         ),
                         child: Row(
@@ -1485,17 +1972,23 @@ class _DesiHostCard extends StatelessWidget {
                             Icon(
                               Icons.circle_rounded,
                               size: 6.5,
-                              color: host.isAvailable
+                              color: isOnline
                                   ? const Color(0xFF10B981)
-                                  : const Color(0xFF9CA3AF),
+                                  : (isBusy
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFF9CA3AF)),
                             ),
                             const SizedBox(width: 3.5),
                             Text(
-                              host.isAvailable ? 'ONLINE' : 'OFFLINE',
+                              isOnline
+                                  ? 'ONLINE'
+                                  : (isBusy ? 'BUSY' : 'OFFLINE'),
                               style: TextStyle(
-                                color: host.isAvailable
+                                color: isOnline
                                     ? const Color(0xFF047857)
-                                    : const Color(0xFF6B7280),
+                                    : (isBusy
+                                        ? const Color(0xFFB45309)
+                                        : const Color(0xFF6B7280)),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 0.3,
@@ -1510,38 +2003,44 @@ class _DesiHostCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // [ Call Now ] Button
+              // [ Call Now / Busy / Offline ] Button (Strict: NEVER show Busy if offline)
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: ElevatedButton.icon(
-                  onPressed: host.isAvailable ? onStartCall : null,
-                  icon: Icon(
-                    host.isAvailable
-                        ? Icons.call_rounded
-                        : Icons.phone_disabled_rounded,
-                    size: 15,
-                  ),
-                  label: Text(
-                    host.isAvailable ? 'Call Now' : 'Busy',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 12.5,
+                child: ApplePressable(
+                  pressedScale: 0.92,
+                  onTap: isOnline ? onStartCall : null,
+                  child: ElevatedButton.icon(
+                    onPressed: isOnline ? onStartCall : null,
+                    icon: Icon(
+                      isOnline
+                          ? Icons.call_rounded
+                          : (isBusy ? Icons.phone_in_talk_rounded : Icons.phone_disabled_rounded),
+                      size: 15,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: host.isAvailable
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFE5E7EB),
-                    foregroundColor: host.isAvailable
-                        ? Colors.white
-                        : const Color(0xFF9CA3AF),
-                    elevation: host.isAvailable ? 2 : 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    label: Text(
+                      isOnline
+                          ? 'Call Now'
+                          : (isBusy ? 'Busy' : 'Offline'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
                     ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isOnline
+                          ? const Color(0xFF10B981)
+                          : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB)),
+                      foregroundColor: isOnline || isBusy
+                          ? Colors.white
+                          : const Color(0xFF9CA3AF),
+                      elevation: isOnline ? 2 : 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
                 ),
               ),
@@ -2666,35 +3165,39 @@ class _UserCallCard extends StatelessWidget {
                         ),
                       )
               else
-                ElevatedButton.icon(
-                  onPressed: isOnline ? onCallAgain : null,
-                  icon: Icon(
-                    isOnline
-                        ? Icons.call_rounded
-                        : Icons.phone_disabled_rounded,
-                    size: 15,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    isOnline ? 'Call Again' : 'Offline',
-                    style: const TextStyle(
+                ApplePressable(
+                  pressedScale: 0.94,
+                  onTap: isOnline ? onCallAgain : null,
+                  child: ElevatedButton.icon(
+                    onPressed: isOnline ? onCallAgain : null,
+                    icon: Icon(
+                      isOnline
+                          ? Icons.call_rounded
+                          : Icons.phone_disabled_rounded,
+                      size: 15,
                       color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w900,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isOnline
-                        ? FriendooUiColors.ink
-                        : const Color(0xFF9CA3AF),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    label: Text(
+                      isOnline ? 'Call Again' : 'Offline',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isOnline
+                          ? FriendooUiColors.ink
+                          : const Color(0xFF9CA3AF),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: isOnline ? 2 : 0,
                     ),
-                    elevation: isOnline ? 2 : 0,
                   ),
                 ),
             ],
@@ -2968,6 +3471,124 @@ class FriendooProfileView extends ConsumerWidget {
     );
   }
 
+  void _confirmDeleteAccount(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161B26),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFF262D40), width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFEF4444),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Delete Friendoo Account?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'This action is permanent and cannot be reversed. All remaining coin balance, call logs, blocked hosts, and profile data will be permanently erased.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 13,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF94A3B8),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(dialogCtx).pop();
+                          try {
+                            await Supabase.instance.client.auth.signOut();
+                          } catch (_) {}
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Color(0xFFEF4444),
+                                content: Text('Account deletion initiated. Signing out...'),
+                              ),
+                            );
+                            onSignOut();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(currentUserProfileStreamProvider).asData?.value;
@@ -3222,18 +3843,12 @@ class FriendooProfileView extends ConsumerWidget {
         const SizedBox(height: 10),
 
         _ProfileNavigationRow(
-          icon: Icons.person_outline_rounded,
-          iconBg: const Color(0xFFF5F3FF),
-          iconColor: const Color(0xFF6366F1),
-          title: 'Edit Profile',
-          subtitle: 'Name, age, bio & avatar',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const EditUserProfilePage(),
-              ),
-            );
-          },
+          icon: Icons.delete_outline_rounded,
+          iconBg: const Color(0xFFFEF2F2),
+          iconColor: const Color(0xFFEF4444),
+          title: 'Delete Account',
+          subtitle: 'Permanently erase account data',
+          onTap: () => _confirmDeleteAccount(context),
         ),
         const SizedBox(height: 24),
 
@@ -6484,7 +7099,11 @@ void _showWalletSupportSheet(BuildContext context) {
                         color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 24),
+                      child: const Icon(
+                        Icons.support_agent_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -6515,13 +7134,25 @@ void _showWalletSupportSheet(BuildContext context) {
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF7C3AED),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                       ),
                       onPressed: () {
                         Navigator.of(sheetContext).pop();
-                        SupportDeskPage.show(context, initialScenario: 'payment_failure');
+                        SupportDeskPage.show(
+                          context,
+                          initialScenario: 'payment_failure',
+                        );
                       },
-                      child: const Text('Open Desk', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+                      child: const Text(
+                        'Open Desk',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -6540,7 +7171,8 @@ void _showWalletSupportSheet(BuildContext context) {
                   SupportDeskPage.show(
                     context,
                     initialScenario: 'payment_failure',
-                    initialSubject: 'Money debited but coins not added to wallet',
+                    initialSubject:
+                        'Money debited but coins not added to wallet',
                   );
                 },
               ),
@@ -6578,7 +7210,8 @@ void _showWalletSupportSheet(BuildContext context) {
                   SupportDeskPage.show(
                     context,
                     initialScenario: 'call_drop_billing',
-                    initialSubject: 'Call disconnected early - request coin refund',
+                    initialSubject:
+                        'Call disconnected early - request coin refund',
                   );
                 },
               ),
@@ -6589,7 +7222,8 @@ void _showWalletSupportSheet(BuildContext context) {
                 icon: Icons.headset_mic_rounded,
                 color: const Color(0xFF10B981),
                 title: 'Contact 24/7 Friendoo Support',
-                subtitle: 'Any other question, host misconduct or wallet balance',
+                subtitle:
+                    'Any other question, host misconduct or wallet balance',
                 solution: 'Open our live support console to submit a ticket. You can track your ticket progress in real-time.',
                 actionText: 'Live Support',
                 onAction: () {

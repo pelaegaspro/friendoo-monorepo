@@ -45,6 +45,7 @@ const navTabs: NavTab[] = [
   { href: '/admin/transactions', label: 'Orders' },
   { href: '/admin/ads', label: 'Ad Banners' },
   { href: '/admin/reports', label: 'Reports', badgeKey: 'unresolvedReports' },
+  { href: '/admin/support', label: '24/7 Support Desk' },
   { href: '/admin/settings', label: 'Settings' },
 ]
 
@@ -202,7 +203,7 @@ export default function AdminHeader() {
               <button
                 type="button"
                 onClick={() => setShowSearch(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#1B2F38] bg-[#0E1E26] text-[#8BA3AB] hover:text-white hover:border-[#2D4D5C] transition"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#1B2F38] bg-[#0E1E26] text-[#8BA3AB] hover:text-white hover:border-[#2D4D5C] active:scale-[0.95] transition-all duration-90 ease-out"
                 aria-label="Search"
               >
                 <Search className="h-3.5 w-3.5" />
@@ -215,7 +216,7 @@ export default function AdminHeader() {
             <button
               type="button"
               onClick={() => setShowNewMenu(!showNewMenu)}
-              className="flex items-center gap-1.5 rounded-full bg-[#60CECA] hover:bg-[#4EBDB9] px-3.5 py-1 text-xs font-bold text-[#032024] shadow-[0_2px_12px_rgba(96,206,202,0.3)] transition"
+              className="flex items-center gap-1.5 rounded-full bg-[#60CECA] hover:bg-[#4EBDB9] active:scale-[0.96] px-3.5 py-1 text-xs font-bold text-[#032024] shadow-[0_2px_12px_rgba(96,206,202,0.3)] transition-all duration-90 ease-out"
             >
               <Plus className="h-3.5 w-3.5 stroke-[3]" />
               <span>New</span>

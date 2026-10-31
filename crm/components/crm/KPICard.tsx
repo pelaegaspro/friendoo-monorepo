@@ -41,7 +41,7 @@ export function KPICard({
           </span>
           {alert && <span className="status-dot-amber" />}
         </div>
-        <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+        <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
           {value}
         </div>
       </div>

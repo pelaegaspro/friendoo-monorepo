@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,13 +28,13 @@ class IncomingHostCallDialog extends ConsumerStatefulWidget {
         return IncomingHostCallDialog(call: call);
       },
       transitionBuilder: (context, anim1, anim2, child) {
-        final curved = CurvedAnimation(parent: anim1, curve: Curves.easeOutBack);
+        final curved = CurvedAnimation(
+          parent: anim1,
+          curve: Curves.easeOutBack,
+        );
         return ScaleTransition(
           scale: Tween<double>(begin: 0.9, end: 1.0).animate(curved),
-          child: FadeTransition(
-            opacity: anim1,
-            child: child,
-          ),
+          child: FadeTransition(opacity: anim1, child: child),
         );
       },
     );
@@ -46,8 +45,7 @@ class IncomingHostCallDialog extends ConsumerStatefulWidget {
       _IncomingHostCallDialogState();
 }
 
-class _IncomingHostCallDialogState
-    extends ConsumerState<IncomingHostCallDialog>
+class _IncomingHostCallDialogState extends ConsumerState<IncomingHostCallDialog>
     with SingleTickerProviderStateMixin {
   Timer? _autoAttendTimer;
   int _countdownSeconds = 4;
@@ -141,7 +139,9 @@ class _IncomingHostCallDialogState
                   children: [
                     const FriendooCallLogo(),
                     GestureDetector(
-                      onTap: () => Navigator.of(context).pop(IncomingCallDecision.decline),
+                      onTap: () =>
+                          Navigator.of(context)
+                              .pop(IncomingCallDecision.decline),
                       child: Container(
                         width: 34,
                         height: 34,
@@ -184,8 +184,9 @@ class _IncomingHostCallDialogState
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFFFF2A85)
-                                      .withValues(alpha: 0.15 + (waveValue * 0.1)),
+                                  color: const Color(
+                                    0xFFFF2A85,
+                                  ).withValues(alpha: 0.15 + (waveValue * 0.1)),
                                   width: 1.5,
                                 ),
                               ),
@@ -197,14 +198,16 @@ class _IncomingHostCallDialogState
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFFFF2A85)
-                                      .withValues(alpha: 0.7 + (waveValue * 0.25)),
+                                  color: const Color(
+                                    0xFFFF2A85,
+                                  ).withValues(alpha: 0.7 + (waveValue * 0.25)),
                                   width: 2.2,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFF2A85)
-                                        .withValues(alpha: 0.35 + (waveValue * 0.2)),
+                                    color: const Color(0xFFFF2A85).withValues(
+                                      alpha: 0.35 + (waveValue * 0.2),
+                                    ),
                                     blurRadius: 20 + (waveValue * 6),
                                     spreadRadius: 1,
                                   ),
@@ -286,7 +289,10 @@ class _IncomingHostCallDialogState
 
                 // 4. Rate Pill: "🪙 Rate: 5 coins/min (₹2.50/min)"
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E2235),
                     borderRadius: BorderRadius.circular(22),
@@ -362,14 +368,20 @@ class _IncomingHostCallDialogState
                     decoration: BoxDecoration(
                       color: Colors.amber.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: Colors.amber.withValues(alpha: 0.6),
+                      ),
                     ),
                     child: Column(
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.timer_rounded, color: Colors.amber, size: 18),
+                            const Icon(
+                              Icons.timer_rounded,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Answering in $_countdownSeconds seconds...',
@@ -385,7 +397,10 @@ class _IncomingHostCallDialogState
                         const Text(
                           'Daily skip quota reached. Calls auto-attend while online.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Color(0xFFFDE68A)),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFFDE68A),
+                          ),
                         ),
                       ],
                     ),
@@ -399,7 +414,8 @@ class _IncomingHostCallDialogState
                       Expanded(
                         child: GestureDetector(
                           onTap: () =>
-                              Navigator.of(context).pop(IncomingCallDecision.goOffline),
+                              Navigator.of(context)
+                                  .pop(IncomingCallDecision.goOffline),
                           child: Container(
                             height: 52,
                             decoration: BoxDecoration(
@@ -412,8 +428,11 @@ class _IncomingHostCallDialogState
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.pause_circle_filled_rounded,
-                                    color: Colors.redAccent, size: 20),
+                                Icon(
+                                  Icons.pause_circle_filled_rounded,
+                                  color: Colors.redAccent,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Go Offline',
@@ -432,7 +451,8 @@ class _IncomingHostCallDialogState
                       Expanded(
                         child: GestureDetector(
                           onTap: () =>
-                              Navigator.of(context).pop(IncomingCallDecision.accept),
+                              Navigator.of(context)
+                                  .pop(IncomingCallDecision.accept),
                           child: Container(
                             height: 52,
                             decoration: BoxDecoration(
@@ -442,7 +462,8 @@ class _IncomingHostCallDialogState
                               borderRadius: BorderRadius.circular(26),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF2A85).withValues(alpha: 0.4),
+                                  color: const Color(0xFFFF2A85)
+                                      .withValues(alpha: 0.4),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -451,7 +472,11 @@ class _IncomingHostCallDialogState
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.call_rounded, color: Colors.white, size: 22),
+                                Icon(
+                                  Icons.call_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Attend Now',
@@ -475,7 +500,8 @@ class _IncomingHostCallDialogState
                       Expanded(
                         child: GestureDetector(
                           onTap: () =>
-                              Navigator.of(context).pop(IncomingCallDecision.decline),
+                              Navigator.of(context)
+                                  .pop(IncomingCallDecision.decline),
                           child: Container(
                             height: 52,
                             decoration: BoxDecoration(
@@ -526,7 +552,8 @@ class _IncomingHostCallDialogState
                       Expanded(
                         child: GestureDetector(
                           onTap: () =>
-                              Navigator.of(context).pop(IncomingCallDecision.accept),
+                              Navigator.of(context)
+                                  .pop(IncomingCallDecision.accept),
                           child: Container(
                             height: 52,
                             decoration: BoxDecoration(
@@ -536,7 +563,8 @@ class _IncomingHostCallDialogState
                               borderRadius: BorderRadius.circular(26),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF2A85).withValues(alpha: 0.45),
+                                  color: const Color(0xFFFF2A85)
+                                      .withValues(alpha: 0.45),
                                   blurRadius: 18,
                                   offset: const Offset(0, 4),
                                 ),
@@ -577,7 +605,9 @@ class _IncomingHostCallDialogState
   }
 
   Widget _buildSideWaveform(double animationValue, {required bool isLeft}) {
-    final baseHeights = isLeft ? [6.0, 14.0, 24.0, 16.0, 8.0] : [8.0, 16.0, 24.0, 14.0, 6.0];
+    final baseHeights = isLeft
+        ? [6.0, 14.0, 24.0, 16.0, 8.0]
+        : [8.0, 16.0, 24.0, 14.0, 6.0];
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(baseHeights.length, (i) {
@@ -588,7 +618,8 @@ class _IncomingHostCallDialogState
           height: h,
           margin: const EdgeInsets.symmetric(horizontal: 2.5),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF2A85).withValues(alpha: 0.45 + (factor * 0.35)),
+            color: const Color(0xFFFF2A85)
+                .withValues(alpha: 0.45 + (factor * 0.35)),
             borderRadius: BorderRadius.circular(2),
           ),
         );

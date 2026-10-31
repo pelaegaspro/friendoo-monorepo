@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/friendoo_models.dart';
+import '../../../core/widgets/apple_pressable.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../wallet/data/wallet_repository.dart';
@@ -123,7 +124,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     final maxSeconds = (startCoins ~/ rate) * 60;
     final remainingSeconds = maxSeconds - _secondsElapsed;
 
-    if (remainingSeconds <= 60 && remainingSeconds > 0 && !_hasWarnedLowBalance) {
+    if (remainingSeconds <= 60 &&
+        remainingSeconds > 0 &&
+        !_hasWarnedLowBalance) {
       _hasWarnedLowBalance = true;
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -135,16 +138,25 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
             action: SnackBarAction(
               label: 'TOP UP',
               textColor: Colors.white,
-              onPressed: () => CoinPackagesPage.push(context, isCallRecharge: true),
+              onPressed: () =>
+                  CoinPackagesPage.push(context, isCallRecharge: true),
             ),
             content: const Row(
               children: [
-                Icon(Icons.hourglass_bottom_rounded, color: Colors.white, size: 20),
+                Icon(
+                  Icons.hourglass_bottom_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '⏳ 1 minute remaining! Tap Top Up to stay connected.',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 13),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -178,95 +190,121 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   void _showCallMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF141724),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131626).withValues(alpha: 0.92),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    width: 0.85,
                   ),
                 ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Call Options',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.28),
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Call Options',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      tileColor: Colors.white.withValues(alpha: 0.04),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                      ),
+                      title: const Text(
+                        'Private voice call',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Your phone number is not shared with the other caller.',
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      tileColor: Colors.white.withValues(alpha: 0.04),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.flag_rounded,
+                          color: Colors.redAccent,
+                          size: 20,
+                        ),
+                      ),
+                      title: const Text(
+                        'Report Participant',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Report inappropriate behavior or money solicitation anonymously',
+                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        CallReportBottomSheet.show(
+                          context,
+                          callId: widget.call.id,
+                          autoEndCall: true,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.verified_user_rounded,
-                      color: Color(0xFF10B981),
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Private voice call',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Your phone number is not shown to the other caller.',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                  ),
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.flag_rounded,
-                      color: Colors.redAccent,
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Report Participant',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Report inappropriate behavior anonymously',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    CallReportBottomSheet.show(
-                      context,
-                      callId: widget.call.id,
-                      autoEndCall: true,
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-              ],
+              ),
             ),
           ),
         );
@@ -292,7 +330,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
       if (_initialCoinBalance == null) {
         _initialCoinBalance = wallet.coinBalance;
         _lastRecordedWalletCoins = wallet.coinBalance;
-      } else if (_lastRecordedWalletCoins != null && wallet.coinBalance > _lastRecordedWalletCoins!) {
+      } else if (_lastRecordedWalletCoins != null &&
+          wallet.coinBalance > _lastRecordedWalletCoins!) {
         final added = wallet.coinBalance - _lastRecordedWalletCoins!;
         _initialCoinBalance = _initialCoinBalance! + added;
         _lastRecordedWalletCoins = wallet.coinBalance;
@@ -330,14 +369,14 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     final String displayName = isHost
         ? (_remoteName != null && _remoteName!.trim().isNotEmpty
               ? _remoteName!
-              : 'You')
+              : 'User')
         : (_remoteName != null && _remoteName!.trim().isNotEmpty
               ? _remoteName!
               : (widget.hostName.isNotEmpty && widget.hostName != 'Host'
                     ? widget.hostName
                     : 'Sara'));
 
-    final String roleLabel = isHost ? 'User' : 'Host';
+    final String roleLabel = isHost ? 'Caller' : 'Host';
     final String targetSeedId = isHost
         ? widget.call.callerId
         : widget.call.hostId;
@@ -347,7 +386,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
       final wasMuted = previous?.asData?.value ?? false;
       final nowMuted = next.asData?.value ?? false;
       if (wasMuted != nowMuted && mounted) {
-        final peerName = isHost ? 'User' : displayName;
+        final peerName = isHost ? 'Caller' : displayName;
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -379,7 +418,6 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
     final rtcState = ref.watch(rtcConnectionStateProvider).asData?.value;
     final rtcLatency = ref.watch(rtcLatencyProvider).asData?.value;
-    // final rtcAudioLevel = ref.watch(rtcAudioLevelProvider).asData?.value ?? 0.0;
     final bool isRtcConnected = rtcState == RtcConnectionState.connected;
     final bool isRtcReconnecting =
         isCallActive && rtcState == RtcConnectionState.reconnecting;
@@ -421,7 +459,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0F18),
+      backgroundColor: const Color(0xFF07090E),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -429,8 +467,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0C0E17), Color(0xFF16192B), Color(0xFF0B0D16)],
-            stops: [0.0, 0.45, 1.0],
+            colors: [Color(0xFF07090E), Color(0xFF111422), Color(0xFF07090E)],
+            stops: [0.0, 0.48, 1.0],
           ),
         ),
         child: SafeArea(
@@ -441,12 +479,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
               final bool isVeryCompact = maxHeight < 620;
 
               final double avatarSize = isVeryCompact
-                  ? 108.0
-                  : (isCompact ? 128.0 : 154.0);
-              final double endBtnSize = isCompact ? 68.0 : 78.0;
-              final double sideBtnSize = isCompact ? 56.0 : 64.0;
-              final double sideIconSize = isCompact ? 22.0 : 26.0;
-              final double endIconSize = isCompact ? 30.0 : 36.0;
+                  ? 110.0
+                  : (isCompact ? 130.0 : 156.0);
 
               return SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
@@ -456,30 +490,39 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                     child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: isCompact ? 18.0 : 24.0,
-                        vertical: isCompact ? 8.0 : 12.0,
+                        vertical: isCompact ? 10.0 : 14.0,
                       ),
                       child: Column(
                         children: [
-                          // 1. TOP HEADER: Friendoo Logo + Chevron/Menu
+                          // 1. TOP HEADER: Friendoo Logo + Apple Frosted Glass Menu Button
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const FriendooCallLogo(),
-                              InkWell(
+                              ApplePressable(
                                 onTap: () => _showCallMenu(context),
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.08),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: Colors.white,
-                                    size: 24,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.08),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.15),
+                                          width: 0.75,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.more_horiz_rounded,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -488,11 +531,31 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           Spacer(flex: isCompact ? 1 : 3),
 
-                          // 2. CENTER PROMINENT AVATAR WITH ROLE-AWARE GLOWING RING & MUTE BADGE
+                          // 2. CENTER PROMINENT AVATAR WITH APPLE AMBIENT GLOW & MUTE BADGE
                           Stack(
-                            alignment: Alignment.bottomCenter,
+                            alignment: Alignment.center,
                             clipBehavior: Clip.none,
                             children: [
+                              // Atmospheric soft ambient aura
+                              Container(
+                                width: avatarSize + 32,
+                                height: avatarSize + 32,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      (isHost
+                                              ? const Color(0xFF6366F1)
+                                              : const Color(0xFFFF2A85))
+                                          .withValues(alpha: isCallActive ? 0.38 : 0.18),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.45, 1.0],
+                                  ),
+                                ),
+                              ),
+
+                              // Avatar with Specular Ring
                               Container(
                                 width: avatarSize,
                                 height: avatarSize,
@@ -500,53 +563,37 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: isHost
-                                        ? const Color(0xFF818CF8)
-                                              .withValues(alpha: 0.85)
-                                        : const Color(0xFFFF2A85)
-                                              .withValues(alpha: 0.85),
-                                    width: 3.5,
+                                        ? const Color(0xFF818CF8).withValues(alpha: 0.9)
+                                        : const Color(0xFFFF2A85).withValues(alpha: 0.9),
+                                    width: 3.2,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: isHost
-                                          ? const Color(0xFF818CF8)
-                                                .withValues(alpha: 0.40)
-                                          : const Color(0xFFFF2A85)
-                                                .withValues(alpha: 0.42),
-                                      blurRadius: 32,
-                                      spreadRadius: 4,
-                                    ),
-                                    BoxShadow(
-                                      color: isHost
-                                          ? const Color(0xFF6366F1)
-                                                .withValues(alpha: 0.22)
-                                          : const Color(0xFFE11D48)
-                                                .withValues(alpha: 0.25),
-                                      blurRadius: 54,
-                                      spreadRadius: 8,
+                                      color: (isHost
+                                              ? const Color(0xFF818CF8)
+                                              : const Color(0xFFFF2A85))
+                                          .withValues(alpha: 0.38),
+                                      blurRadius: 30,
+                                      spreadRadius: 3,
                                     ),
                                   ],
                                 ),
                                 child: ClipOval(
-                                  child:
-                                      _remoteAvatarUrl != null &&
-                                          _remoteAvatarUrl!.trim().startsWith(
-                                            'http',
-                                          )
+                                  child: _remoteAvatarUrl != null &&
+                                          _remoteAvatarUrl!.trim().startsWith('http')
                                       ? Image.network(
                                           _remoteAvatarUrl!,
                                           width: avatarSize,
                                           height: avatarSize,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              FriendooAvatar(
-                                                size: avatarSize,
-                                                seed: targetSeedId,
-                                                gender: isHost
-                                                    ? DesiGender.male
-                                                    : DesiGender.female,
-                                                role: isHost ? 'user' : 'host',
-                                              ),
+                                          errorBuilder: (_, _, _) => FriendooAvatar(
+                                            size: avatarSize,
+                                            seed: targetSeedId,
+                                            gender: isHost
+                                                ? DesiGender.male
+                                                : DesiGender.female,
+                                            role: isHost ? 'user' : 'host',
+                                          ),
                                         )
                                       : FriendooAvatar(
                                           size: avatarSize,
@@ -558,59 +605,67 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                         ),
                                 ),
                               ),
+
+                              // Apple Frosted Mute Pill Badge
                               if (isRemoteMuted)
                                 Positioned(
-                                  bottom: -10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFEF4444),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
+                                  bottom: -8,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
                                           color: const Color(0xFFEF4444)
-                                              .withValues(alpha: 0.5),
-                                          blurRadius: 10,
-                                          spreadRadius: 1,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.mic_off_rounded,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          '${isHost ? 'User' : 'Host'} Muted',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.2,
+                                              .withValues(alpha: 0.90),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: 0.25),
+                                            width: 0.75,
                                           ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFEF4444)
+                                                  .withValues(alpha: 0.45),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.mic_off_rounded,
+                                              color: Colors.white,
+                                              size: 13,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              '${isHost ? 'Caller' : 'Host'} Muted',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: -0.2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                             ],
                           ),
 
-                          SizedBox(height: isCompact ? 14 : 22),
+                          SizedBox(height: isCompact ? 14 : 20),
 
-                          // 3. IDENTITY: NAME + VERIFIED BADGE (IF HOST)
+                          // 3. IDENTITY: NAME + VERIFIED BADGE
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -620,9 +675,9 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                 displayName,
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isCompact ? 20 : 24,
+                                  fontSize: isCompact ? 22 : 26,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
                               if (!isHost) ...[
@@ -630,7 +685,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                 const Icon(
                                   Icons.verified_rounded,
                                   color: Color(0xFFFF2A85),
-                                  size: 18,
+                                  size: 19,
                                 ),
                               ],
                             ],
@@ -638,25 +693,40 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           const SizedBox(height: 4),
 
-                          // 4. ROLE LABEL: "Host" or "User"
-                          Text(
-                            roleLabel,
-                            style: const TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                          // 4. ROLE LABEL BADGE
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                width: 0.75,
+                              ),
+                            ),
+                            child: Text(
+                              roleLabel,
+                              style: const TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ),
 
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 10),
 
-                          // 5. LIVE CALL DURATION: "00:12"
+                          // 5. LIVE CALL DURATION (APPLE TABULAR FIGURES)
                           Text(
                             timeOrStatusString,
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isCompact ? 16 : 18,
-                              fontWeight: FontWeight.w600,
+                              fontSize: isCompact ? 18 : 20,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
                               fontFeatures: const [
                                 FontFeature.tabularFigures(),
@@ -666,43 +736,51 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           if (isCallActive && isRtcConnected) ...[
                             const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: const Color(0xFF10B981)
-                                      .withValues(alpha: 0.25),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.3),
+                                      width: 0.75,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF10B981),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        (rtcLatency != null && rtcLatency > 0)
+                                            ? 'HD WebRTC • ${rtcLatency}ms'
+                                            : 'HD WebRTC Audio',
+                                        style: const TextStyle(
+                                          color: Color(0xFF34D399),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: -0.1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF10B981),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    (rtcLatency != null && rtcLatency > 0)
-                                        ? 'HD WebRTC • ${rtcLatency}ms'
-                                        : 'HD WebRTC Audio',
-                                    style: const TextStyle(
-                                      color: Color(0xFF34D399),
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ],
@@ -715,178 +793,212 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                 isCallActive &&
                                 isRtcConnected &&
                                 !isRemoteMuted,
-                            barCount: isCompact ? 26 : 34,
+                            barCount: isCompact ? 28 : 34,
                             primaryColor: const Color(0xFFFF2A85),
                             secondaryColor: const Color(0xFFC084FC),
                           ),
 
-                          SizedBox(height: isCompact ? 12 : 18),
+                          SizedBox(height: isCompact ? 12 : 16),
 
-                          // 7. SPEAKING STATUS PILL CAPSULE
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isCompact ? 14 : 18,
-                              vertical: isCompact ? 6 : 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isRemoteMuted
-                                  ? const Color(0xFFEF4444)
-                                        .withValues(alpha: 0.18)
-                                  : const Color(0xFF1B1E2E)
-                                        .withValues(alpha: 0.85),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: isRemoteMuted
-                                    ? const Color(0xFFEF4444)
-                                          .withValues(alpha: 0.6)
-                                    : Colors.white.withValues(alpha: 0.08),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isRemoteMuted
-                                      ? Icons.mic_off_rounded
-                                      : Icons.graphic_eq_rounded,
-                                  color: isRemoteMuted
-                                      ? const Color(0xFFEF4444)
-                                      : const Color(0xFFFF2A85),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  speakingStatusText,
-                                  style: TextStyle(
-                                    color: isRemoteMuted
-                                        ? const Color(0xFFFCA5A5)
-                                        : Colors.white,
-                                    fontSize: isCompact ? 12 : 13,
-                                    fontWeight: isRemoteMuted
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // 8. CONTEXTUAL RECHARGE OR GRACE PERIOD PILL (Only when relevant)
-                          if (!isHost && isLowBalance) ...[
-                            SizedBox(height: isCompact ? 10 : 14),
-                            InkWell(
-                              onTap: () => CoinPackagesPage.push(
-                                context,
-                                isCallRecharge: true,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
+                          // 7. SPEAKING STATUS PILL CAPSULE (APPLE TRANSLUCENT GLASS)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 6,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isCompact ? 14 : 18,
+                                  vertical: isCompact ? 6 : 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: isRemoteMuted
+                                      ? const Color(0xFFEF4444)
+                                          .withValues(alpha: 0.22)
+                                      : const Color(0xFF191C2E)
+                                          .withValues(alpha: 0.75),
+                                  borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
-                                    color: Colors.redAccent.withValues(
-                                      alpha: 0.6,
-                                    ),
+                                    color: isRemoteMuted
+                                        ? const Color(0xFFEF4444)
+                                            .withValues(alpha: 0.5)
+                                        : Colors.white.withValues(alpha: 0.12),
+                                    width: 0.75,
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      '⚠️ Low balance · ',
-                                      style: TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    Icon(
+                                      isRemoteMuted
+                                          ? Icons.mic_off_rounded
+                                          : Icons.graphic_eq_rounded,
+                                      color: isRemoteMuted
+                                          ? const Color(0xFFEF4444)
+                                          : const Color(0xFFFF2A85),
+                                      size: 16,
                                     ),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'Recharge Now ➔',
+                                      speakingStatusText,
                                       style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
+                                        color: isRemoteMuted
+                                            ? const Color(0xFFFCA5A5)
+                                            : Colors.white,
+                                        fontSize: isCompact ? 12 : 13,
+                                        fontWeight: isRemoteMuted
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        letterSpacing: -0.2,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                          ] else if (!isHost && isGracePeriod) ...[
+                          ),
+
+                          // 8. CONTEXTUAL RECHARGE OR GRACE PERIOD PILL
+                          if (!isHost && isLowBalance) ...[
                             SizedBox(height: isCompact ? 10 : 14),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 5,
+                            ApplePressable(
+                              onTap: () => CoinPackagesPage.push(
+                                context,
+                                isCallRecharge: true,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.15),
+                              child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.green.withValues(alpha: 0.6),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent.withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.redAccent.withValues(alpha: 0.65),
+                                        width: 0.85,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          '⚠️ Low balance · ',
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Recharge Now ➔',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: Text(
-                                '5s Grace Period (${5 - _secondsElapsed}s left) · Free',
-                                style: const TextStyle(
-                                  color: Colors.greenAccent,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
+                            ),
+                          ] else if (!isHost && isGracePeriod) ...[
+                            SizedBox(height: isCompact ? 10 : 14),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.green.withValues(alpha: 0.5),
+                                      width: 0.75,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '5s Grace Period (${5 - _secondsElapsed}s left) · Free',
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ] else if (isHost) ...[
                             SizedBox(height: isCompact ? 10 : 14),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF10B981)
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFF10B981)
-                                      .withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: const Text(
-                                'Voice call',
-                                style: TextStyle(
-                                  color: Color(0xFF10B981),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.35),
+                                      width: 0.75,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Verified Voice Call',
+                                    style: TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ] else ...[
                             SizedBox(height: isCompact ? 10 : 14),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                remainingCoins == null
-                                    ? '$rate coins/min'
-                                    : '$remainingCoins Coins · $rate coins/min',
-                                style: const TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.08),
+                                      width: 0.75,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    remainingCoins == null
+                                        ? '$rate coins/min'
+                                        : '$remainingCoins Coins · $rate coins/min',
+                                    style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      fontFeatures: [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -894,159 +1006,80 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           Spacer(flex: isCompact ? 1 : 3),
 
-                          // 9. BOTTOM CONTROLS: MUTE, END CALL (LARGE RED), SPEAKER
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // MUTE BUTTON
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () => ref
-                                        .read(activeCallProvider.notifier)
-                                        .toggleMute(),
-                                    borderRadius: BorderRadius.circular(32),
-                                    child: Container(
-                                      width: sideBtnSize,
-                                      height: sideBtnSize,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isMuted
-                                            ? Colors.redAccent.withValues(
-                                                alpha: 0.35,
-                                              )
-                                            : Colors.white.withValues(
-                                                alpha: 0.10,
-                                              ),
-                                        border: Border.all(
-                                          color: isMuted
-                                              ? Colors.redAccent
-                                              : Colors.white.withValues(
-                                                  alpha: 0.15,
-                                                ),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        isMuted
-                                            ? Icons.mic_off_rounded
-                                            : Icons.mic_rounded,
-                                        color: Colors.white,
-                                        size: sideIconSize,
-                                      ),
-                                    ),
+                          // 9. APPLE FLOATING ERGONOMIC CALL CONTROLS DOCK
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(44),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isCompact ? 18 : 24,
+                                  vertical: isCompact ? 12 : 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131626).withValues(alpha: 0.75),
+                                  borderRadius: BorderRadius.circular(44),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.14),
+                                    width: 0.85,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    isMuted ? 'Muted' : 'Mute',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.45),
+                                      blurRadius: 32,
+                                      offset: const Offset(0, 10),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // MUTE BUTTON
+                                    _AppleCallDockButton(
+                                      icon: isMuted
+                                          ? Icons.mic_off_rounded
+                                          : Icons.mic_rounded,
+                                      label: isMuted ? 'Muted' : 'Mute',
+                                      isActive: isMuted,
+                                      activeColor: const Color(0xFFEF4444),
+                                      size: isCompact ? 56 : 64,
+                                      iconSize: isCompact ? 22 : 26,
+                                      onTap: () => ref
+                                          .read(activeCallProvider.notifier)
+                                          .toggleMute(),
+                                    ),
 
-                              // END CALL BUTTON (LARGE RED CIRCLE WITH GLOW)
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () => ref
-                                        .read(activeCallProvider.notifier)
-                                        .endActiveCall(reason: 'user_hangup'),
-                                    borderRadius: BorderRadius.circular(39),
-                                    child: Container(
-                                      width: endBtnSize,
-                                      height: endBtnSize,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(0xFFFF2D55),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFFFF2D55)
-                                                .withValues(alpha: 0.45),
-                                            blurRadius: 26,
-                                            spreadRadius: 3,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        Icons.call_end_rounded,
-                                        color: Colors.white,
-                                        size: endIconSize,
-                                      ),
+                                    // END CALL BUTTON (PROMINENT RADIANT RED DISC)
+                                    _AppleCallEndButton(
+                                      size: isCompact ? 68 : 78,
+                                      iconSize: isCompact ? 30 : 36,
+                                      onTap: () => ref
+                                          .read(activeCallProvider.notifier)
+                                          .endActiveCall(reason: 'user_hangup'),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'End Call',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
 
-                              // SPEAKER BUTTON
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () => ref
-                                        .read(activeCallProvider.notifier)
-                                        .toggleSpeakerphone(),
-                                    borderRadius: BorderRadius.circular(32),
-                                    child: Container(
-                                      width: sideBtnSize,
-                                      height: sideBtnSize,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isSpeaker
-                                            ? const Color(0xFF6366F1)
-                                                  .withValues(alpha: 0.3)
-                                            : Colors.white.withValues(
-                                                alpha: 0.10,
-                                              ),
-                                        border: Border.all(
-                                          color: isSpeaker
-                                              ? const Color(0xFF818CF8)
-                                              : Colors.white.withValues(
-                                                  alpha: 0.15,
-                                                ),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        isSpeaker
-                                            ? Icons.volume_up_rounded
-                                            : Icons.volume_down_rounded,
-                                        color: Colors.white,
-                                        size: sideIconSize,
-                                      ),
+                                    // SPEAKER BUTTON
+                                    _AppleCallDockButton(
+                                      icon: isSpeaker
+                                          ? Icons.volume_up_rounded
+                                          : Icons.volume_down_rounded,
+                                      label: isSpeaker ? 'Speaker' : 'Earpiece',
+                                      isActive: isSpeaker,
+                                      activeColor: const Color(0xFF6366F1),
+                                      size: isCompact ? 56 : 64,
+                                      iconSize: isCompact ? 22 : 26,
+                                      onTap: () => ref
+                                          .read(activeCallProvider.notifier)
+                                          .toggleSpeakerphone(),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Speaker',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ],
+                            ),
                           ),
 
-                          SizedBox(height: isCompact ? 8 : 16),
+                          SizedBox(height: isCompact ? 6 : 14),
                         ],
                       ),
                     ),
@@ -1057,6 +1090,143 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tactile Apple Frosted Call Dock Action Button (Mute, Speaker)
+class _AppleCallDockButton extends StatelessWidget {
+  const _AppleCallDockButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.activeColor,
+    required this.size,
+    required this.iconSize,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final Color activeColor;
+  final double size;
+  final double iconSize;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ApplePressable(
+          onTap: onTap,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive
+                  ? activeColor.withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.09),
+              border: Border.all(
+                color: isActive
+                    ? activeColor
+                    : Colors.white.withValues(alpha: 0.16),
+                width: 1.2,
+              ),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: activeColor.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: iconSize,
+            ),
+          ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : Colors.white70,
+            fontSize: 12.5,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Radiant Apple Call End Button (74px Disc with Atmospheric Glow)
+class _AppleCallEndButton extends StatelessWidget {
+  const _AppleCallEndButton({
+    required this.size,
+    required this.iconSize,
+    required this.onTap,
+  });
+
+  final double size;
+  final double iconSize;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ApplePressable(
+          onTap: onTap,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFF3B30), Color(0xFFE11D48)],
+              ),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF3B30).withValues(alpha: 0.50),
+                  blurRadius: 26,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.call_end_rounded,
+              color: Colors.white,
+              size: iconSize,
+            ),
+          ),
+        ),
+        const SizedBox(height: 7),
+        const Text(
+          'End Call',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1077,7 +1247,7 @@ class FriendooCallLogo extends StatelessWidget {
             color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+            letterSpacing: -0.6,
           ),
         ),
         Transform.translate(
@@ -1094,7 +1264,7 @@ class FriendooCallLogo extends StatelessWidget {
             color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+            letterSpacing: -0.6,
           ),
         ),
       ],

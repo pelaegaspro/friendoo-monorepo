@@ -35,6 +35,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* =========================================================================
+   Apple Design Fluid Tokens & Tactile Micro-Interactions (WWDC)
+   ========================================================================= */
+
+/* 1. Response: Kill Latency on Pointer-Down (Section 1) */
+button:not(:disabled):active,
+a:not([aria-disabled="true"]):active,
+.apple-pressable:active {
+  transform: scale(0.975);
+  transition: transform 90ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 2. Apple Typography Optical Tracking & Tabular Numbers (Section 15) */
+h1, h2, .apple-display {
+  letter-spacing: -0.025em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+}
+
+.tabular-nums, .metric-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.apple-caption {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -150,7 +178,7 @@ body {
 @keyframes admin-dashboard-enter {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -159,19 +187,19 @@ body {
 }
 
 .admin-dashboard > * {
-  animation: admin-dashboard-enter 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: admin-dashboard-enter 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .admin-dashboard > :nth-child(2) {
-  animation-delay: 50ms;
+  animation-delay: 40ms;
 }
 
 .admin-dashboard > :nth-child(3) {
-  animation-delay: 100ms;
+  animation-delay: 80ms;
 }
 
 .admin-dashboard > :nth-child(4) {
-  animation-delay: 150ms;
+  animation-delay: 120ms;
 }
 
 :focus-visible {

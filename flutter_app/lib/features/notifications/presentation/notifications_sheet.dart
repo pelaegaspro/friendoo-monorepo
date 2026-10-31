@@ -167,7 +167,7 @@ class _LiveNotificationsSheetContentState
                     return ListView.separated(
                       shrinkWrap: true,
                       itemCount: items.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final item = items[index];
                         final timeAgo = _formatTimeAgo(item.createdAt);
@@ -223,7 +223,9 @@ class _LiveNotificationsSheetContentState
                             ),
                           ),
                           onTap: () {
-                            final isHost = ref.read(isHostNotificationsProvider);
+                            final isHost = ref.read(
+                              isHostNotificationsProvider,
+                            );
                             if (item.actionType == 'recharge') {
                               if (isHost) {
                                 // Host never enters recharge/payment flows

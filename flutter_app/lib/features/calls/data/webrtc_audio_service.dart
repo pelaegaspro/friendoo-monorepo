@@ -8,14 +8,14 @@ import 'rtc_audio_service.dart';
 
 /// Enhanced Production-Grade Peer-to-Peer WebRTC Audio Engine
 /// Features:
-/// - Ultra-HD Opus Voice Optimization (64kbps, In-Band FEC, 10ms frame latency)
-/// - Multi-Region Google & Cloudflare STUN + Metered TCP/UDP TURN Relays
-/// - Automatic Carrier Handover & ICE Restart on network switch (WiFi <-> 4G/5G)
-/// - Live RTT Latency & Audio Energy Level Monitoring via getStats()
-/// - Polite Peer / Impolite Peer Perfect Negotiation pattern
+/// - Single-transceiver Unified Plan audio negotiation
+/// - Clean Opus SDP handling (in-band FEC, 64kbps)
+/// - Multi-Region Google & Cloudflare STUN + Metered TURN Relays
+/// - Dynamic ICE candidate queuing and draining
+/// - Glare-free offer/answer re-transmission without invalid 'rollback' calls
+/// - Automatic speakerphone and audio track activation on connect
 class WebRtcAudioService implements RtcAudioService {
-  WebRtcAudioService({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+  WebRtcAudioService({this._supabaseClient});
 
   // ignore: prefer_initializing_formals — kept explicit for clarity
   final SupabaseClient? _supabaseClient;
@@ -116,9 +116,6 @@ class WebRtcAudioService implements RtcAudioService {
       },
     ],
     'sdpSemantics': 'unified-plan',
-    'iceTransportPolicy': 'all',
-    'bundlePolicy': 'max-bundle',
-    'rtcpMuxPolicy': 'require',
   };
 
   /// High-fidelity voice constraints with hardware noise & echo cancellation
@@ -127,14 +124,15 @@ class WebRtcAudioService implements RtcAudioService {
       'echoCancellation': true,
       'noiseSuppression': true,
       'autoGainControl': true,
-      'highpassFilter': true,
-      'typingNoiseDetection': true,
     },
     'video': false,
   };
 
-  /// Injects Opus HD codec parameters (64kbps, Forward Error Correction, 10ms frame packet time)
+  /// Injects Opus HD codec parameters cleanly and idempotently
   String _optimizeAudioSdp(String sdp) {
+    if (!sdp.contains('opus/48000')) return sdp;
+    if (sdp.contains('useinbandfec=1')) return sdp;
+
     final lines = sdp.split('\r\n');
     String? opusPayload;
 
@@ -152,21 +150,19 @@ class WebRtcAudioService implements RtcAudioService {
 
     bool fmtpModified = false;
     final modifiedLines = lines.map((line) {
-      if (line.startsWith('a=fmtp:$opusPayload')) {
+      if (line.startsWith('a=fmtp:$opusPayload') && !line.contains('useinbandfec=1')) {
         fmtpModified = true;
-        // Strip duplicate params if present and inject optimal voice profile
-        return '$line;minptime=10;useinbandfec=1;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;cbr=1';
+        return '$line;useinbandfec=1;maxaveragebitrate=64000';
       }
       return line;
     }).toList();
 
     var modifiedSdp = modifiedLines.join('\r\n');
 
-    // If no existing fmtp line was present, synthesize one right after rtpmap
     if (!fmtpModified) {
       modifiedSdp = modifiedSdp.replaceFirst(
         'a=rtpmap:$opusPayload opus/48000/2',
-        'a=rtpmap:$opusPayload opus/48000/2\r\na=fmtp:$opusPayload minptime=10;useinbandfec=1;maxaveragebitrate=64000;stereo=0;sprop-stereo=0;cbr=1',
+        'a=rtpmap:$opusPayload opus/48000/2\r\na=fmtp:$opusPayload useinbandfec=1;maxaveragebitrate=64000',
       );
     }
 
@@ -227,11 +223,9 @@ class WebRtcAudioService implements RtcAudioService {
             _connectionTimeoutTimer = null;
             _setConnectionState(RtcConnectionState.connected);
             _startStatsMonitoring();
+            setSpeakerphone(_isSpeaker);
             break;
           case RTCPeerConnectionState.RTCPeerConnectionStateDisconnected:
-            _setConnectionState(RtcConnectionState.reconnecting);
-            _scheduleIceRestart();
-            break;
           case RTCPeerConnectionState.RTCPeerConnectionStateFailed:
             _setConnectionState(RtcConnectionState.reconnecting);
             _scheduleIceRestart();
@@ -254,6 +248,7 @@ class WebRtcAudioService implements RtcAudioService {
             _connectionTimeoutTimer = null;
             _setConnectionState(RtcConnectionState.connected);
             _startStatsMonitoring();
+            setSpeakerphone(_isSpeaker);
             break;
           case RTCIceConnectionState.RTCIceConnectionStateDisconnected:
             _setConnectionState(RtcConnectionState.reconnecting);
@@ -271,8 +266,6 @@ class WebRtcAudioService implements RtcAudioService {
         if (_disposed) return;
         if (candidate.candidate == null || candidate.candidate!.isEmpty) return;
         _localCandidates.add(candidate);
-        // Only send immediately if channel is ready; otherwise queued and
-        // flushed after offer/answer exchange
         if (_channelReady) {
           _sendSignalingMessage('ice_candidate', {
             'candidate': candidate.candidate,
@@ -289,23 +282,23 @@ class WebRtcAudioService implements RtcAudioService {
           if (kDebugMode) {
             debugPrint('WebRTC remote audio track received');
           }
-          // On mobile, just having the track added to the PeerConnection is
-          // enough for audio playback — no renderer needed for audio-only.
+          event.track.enabled = true;
+          if (event.streams.isNotEmpty) {
+            for (final track in event.streams[0].getAudioTracks()) {
+              track.enabled = true;
+            }
+          }
           _setConnectionState(RtcConnectionState.connected);
           _startStatsMonitoring();
+          setSpeakerphone(_isSpeaker);
         }
       };
 
-      // Add a transceiver for audio to ensure we can receive audio
-      await _peerConnection?.addTransceiver(
-        kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
-        init: RTCRtpTransceiverInit(direction: TransceiverDirection.SendRecv),
-      );
-
-      // 3. Attach local microphone tracks
-      _localStream?.getTracks().forEach((track) {
-        _peerConnection?.addTrack(track, _localStream!);
-      });
+      // 3. Attach local microphone tracks directly (creates a single sendrecv transceiver)
+      final audioTracks = _localStream?.getAudioTracks() ?? [];
+      for (final track in audioTracks) {
+        await _peerConnection?.addTrack(track, _localStream!);
+      }
 
       // 4. Connect to Supabase Realtime Signaling Channel
       _setupSignaling(channelOrRoomId);
@@ -359,12 +352,10 @@ class WebRtcAudioService implements RtcAudioService {
         if (kDebugMode) {
           debugPrint('WebRTC peer_ready received from $sender');
         }
-        // Cancel retry timers — peer is here
         _offerRetryTimer?.cancel();
         _peerDiscoveryTimer?.cancel();
 
         if (_isCaller) {
-          // Caller always creates offer when peer joins
           await _createAndSendOffer();
         }
       },
@@ -407,7 +398,6 @@ class WebRtcAudioService implements RtcAudioService {
           debugPrint('Subscribed to WebRTC signaling channel: $channelName');
         }
 
-        // Small delay to ensure both sides have subscribed
         await Future.delayed(const Duration(milliseconds: 300));
         if (_disposed) return;
 
@@ -418,10 +408,8 @@ class WebRtcAudioService implements RtcAudioService {
         });
 
         if (_isCaller) {
-          // Create and send offer immediately
           await _createAndSendOffer();
 
-          // Retry sending offer periodically until answer is received
           _offerRetryTimer?.cancel();
           int attempts = 0;
           _offerRetryTimer = Timer.periodic(const Duration(seconds: 3), (
@@ -440,7 +428,6 @@ class WebRtcAudioService implements RtcAudioService {
             await _createAndSendOffer();
           });
         } else {
-          // Callee: request offer from caller if we haven't received one yet
           _peerDiscoveryTimer?.cancel();
           int attempts = 0;
           _peerDiscoveryTimer = Timer.periodic(const Duration(seconds: 3), (
@@ -463,7 +450,6 @@ class WebRtcAudioService implements RtcAudioService {
         if (kDebugMode) {
           debugPrint('WebRTC signaling channel error: $error');
         }
-        // Retry channel subscription after a delay
         await Future.delayed(const Duration(seconds: 2));
         if (!_disposed && _currentRoomId != null) {
           _setupSignaling(_currentRoomId!);
@@ -489,7 +475,6 @@ class WebRtcAudioService implements RtcAudioService {
     if (_peerConnection == null || _disposed) return;
     try {
       if (_isCaller) {
-        // Reset remote description state to allow new offer/answer exchange
         _remoteDescriptionSet = false;
         final offer = await _peerConnection!.createOffer({
           'iceRestart': true,
@@ -530,10 +515,10 @@ class WebRtcAudioService implements RtcAudioService {
       try {
         final reports = await _peerConnection!.getStats();
         for (final report in reports) {
-          // Audio volume / speaking indicator
           if (report.type == 'inbound-rtp' &&
               report.values.containsKey('audioLevel')) {
-            final rawLevel = double.tryParse(
+            final rawLevel =
+                double.tryParse(
                   report.values['audioLevel']?.toString() ?? '0',
                 ) ??
                 0.0;
@@ -542,11 +527,11 @@ class WebRtcAudioService implements RtcAudioService {
             }
           }
 
-          // RTT / Network latency
           if (report.type == 'candidate-pair' &&
               report.values['state'] == 'succeeded' &&
               report.values.containsKey('currentRoundTripTime')) {
-            final rttSec = double.tryParse(
+            final rttSec =
+                double.tryParse(
                   report.values['currentRoundTripTime']?.toString() ?? '0',
                 ) ??
                 0.0;
@@ -579,16 +564,29 @@ class WebRtcAudioService implements RtcAudioService {
       _makingOffer = true;
       final state = _peerConnection!.signalingState;
 
-      // If we already have a local offer pending, rollback first to avoid
-      // InvalidStateError when creating a new one
+      // If we already have a local offer pending, do not call setLocalDescription with rollback.
+      // Re-broadcast the existing local description so the newly arrived peer receives it!
       if (state == RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
-        try {
-          await _peerConnection!.setLocalDescription(
-            RTCSessionDescription(null, 'rollback'),
-          );
-        } catch (_) {
-          // Rollback not supported on all platforms; proceed anyway
+        final localDesc = await _peerConnection!.getLocalDescription();
+        if (localDesc != null && localDesc.sdp != null) {
+          await _sendSignalingMessage('offer', {
+            'sdp': localDesc.sdp,
+            'type': localDesc.type,
+            'sender': _currentUid,
+          });
+          await _flushLocalCandidates();
+          if (kDebugMode) {
+            debugPrint('WebRTC re-sent existing local offer to remote peer');
+          }
+          return;
         }
+      }
+
+      if (state != RTCSignalingState.RTCSignalingStateStable) {
+        if (kDebugMode) {
+          debugPrint('WebRTC skipping offer creation in non-stable state: $state');
+        }
+        return;
       }
 
       final offer = await _peerConnection!.createOffer({
@@ -608,9 +606,9 @@ class WebRtcAudioService implements RtcAudioService {
       if (kDebugMode) {
         debugPrint('WebRTC HD Opus SDP Offer created and sent');
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to create/send SDP offer: $e');
+        debugPrint('Failed to create/send SDP offer: $e\n$st');
       }
     } finally {
       _makingOffer = false;
@@ -626,28 +624,12 @@ class WebRtcAudioService implements RtcAudioService {
       final type = payload['type'] as String? ?? 'offer';
       if (sdp == null) return;
 
-      // Perfect negotiation: if we're also making an offer (glare), the polite
-      // peer (callee) rolls back; the impolite peer (caller) ignores the remote offer.
-      final signalingState = _peerConnection!.signalingState;
-      final collision =
-          _makingOffer ||
-          signalingState == RTCSignalingState.RTCSignalingStateHaveLocalOffer;
-
-      if (collision && _isCaller) {
-        // Impolite peer (caller) ignores incoming offer during glare
+      // Caller is always the offerer in this architecture. Ignore remote offers if caller.
+      if (_isCaller) {
         if (kDebugMode) {
-          debugPrint('WebRTC offer glare — caller ignoring remote offer');
+          debugPrint('WebRTC caller ignoring incoming remote offer');
         }
         return;
-      }
-
-      // Polite peer (callee): rollback our pending offer if any
-      if (collision) {
-        try {
-          await _peerConnection!.setLocalDescription(
-            RTCSessionDescription(null, 'rollback'),
-          );
-        } catch (_) {}
       }
 
       final optimizedSdp = _optimizeAudioSdp(sdp);
@@ -674,13 +656,14 @@ class WebRtcAudioService implements RtcAudioService {
         'sender': _currentUid,
       });
       await _flushLocalCandidates();
+      await setSpeakerphone(_isSpeaker);
 
       if (kDebugMode) {
         debugPrint('WebRTC HD Opus SDP Answer sent & local candidates flushed');
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to handle remote offer: $e');
+        debugPrint('Failed to handle remote offer: $e\n$st');
       }
     }
   }
@@ -694,7 +677,6 @@ class WebRtcAudioService implements RtcAudioService {
       final type = payload['type'] as String? ?? 'answer';
       if (sdp == null) return;
 
-      // Only accept answer if we're in the right signaling state
       final signalingState = _peerConnection!.signalingState;
       if (signalingState != RTCSignalingState.RTCSignalingStateHaveLocalOffer) {
         if (kDebugMode) {
@@ -712,13 +694,14 @@ class WebRtcAudioService implements RtcAudioService {
       _remoteDescriptionSet = true;
       await _drainQueuedCandidates();
       await _flushLocalCandidates();
+      await setSpeakerphone(_isSpeaker);
 
       if (kDebugMode) {
-        debugPrint('WebRTC Remote Answer set successfully');
+        debugPrint('WebRTC Remote Answer set successfully — audio live');
       }
-    } catch (e) {
+    } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('Failed to handle remote answer: $e');
+        debugPrint('Failed to handle remote answer: $e\n$st');
       }
     }
   }
@@ -861,7 +844,7 @@ class WebRtcAudioService implements RtcAudioService {
     _currentRoomId = null;
     _currentUid = null;
     _setConnectionState(RtcConnectionState.disconnected);
-    _disposed = false; // Reset for potential reuse
+    _disposed = false;
   }
 
   @override
