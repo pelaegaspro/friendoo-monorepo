@@ -561,7 +561,6 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             'reported_at': DateTime.now().toIso8601String(),
           },
         });
-      }
 
         // Also sync into public.reports for CRM Underwriting & Moderation
         if (hostId.length > 20) {
@@ -574,6 +573,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             });
           } catch (_) {}
         }
+      }
     } catch (_) {}
 
     // 3. Broadcast to admin desk
