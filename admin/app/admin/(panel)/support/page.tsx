@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { adminFetch } from '@/lib/admin/client';
 import toast from 'react-hot-toast';
 
 interface SupportSession {
@@ -96,116 +97,76 @@ export default function SupportDeskPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Fetch real live tickets from Supabase database (Zero Mock Data)
-  const fetchLiveTickets = useCallback(async () => {
-    if (!supabase) {
-      setIsLoading(false);
-      return;
-    }
-
+  // Load chat messages for a specific session from database
+  const loadTicketMessages = useCallback(async (session: SupportSession) => {
+    setActiveSession(session);
     try {
-      setIsLoading(true);
-      const { data: tickets, error: ticketError } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(40);
-
-      if (ticketError) {
-        console.error('Error fetching live tickets:', ticketError);
-        toast.error('Could not load live support tickets');
-        setIsLoading(false);
-        return;
-      }
-
-      if (!tickets || tickets.length === 0) {
-        setSessions([]);
-        setActiveSession(null);
-        setMessages([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Fetch corresponding user profiles
-      const reporterIds = Array.from(new Set(tickets.map((t) => t.reporter_id).filter(Boolean)));
-      let profileMap: Record<string, { display_name: string; phone?: string; role: string; languages?: string[] }> = {};
-
-      if (reporterIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, display_name, phone, role, preferred_languages')
-          .in('id', reporterIds);
-
-        if (profiles) {
-          profiles.forEach((p) => {
-            profileMap[p.id] = {
-              display_name: p.display_name || 'Friendoo User',
-              phone: p.phone,
-              role: p.role || 'user',
-              languages: p.preferred_languages,
-            };
-          });
-        }
-      }
-
-      // Map real database rows to session model
-      const liveSessions: SupportSession[] = tickets.map((t) => {
-        const meta = t.metadata || {};
-        const profile = profileMap[t.reporter_id];
-        const role: 'user' | 'host' =
-          meta.reporter_role === 'host' || profile?.role === 'host' ? 'host' : 'user';
-
-        const name =
-          meta.reporter_name || profile?.display_name || (role === 'host' ? 'Host User' : 'Caller User');
-        const phone = meta.reporter_phone || profile?.phone;
-        const utr = meta.utr || meta.order_id || (t.subject?.match(/\b\d{12}\b/)?.[0]);
-        const payoutId = meta.payout_id || meta.payoutId;
-        const amount = meta.amount_inr ? `₹${meta.amount_inr}` : meta.amount;
-        const language = meta.language || (profile?.languages?.length ? profile.languages[0] : 'Tamil');
-
-        const timeStr = new Date(t.created_at).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-
-        return {
-          id: t.id,
-          userId: t.reporter_id || t.id,
-          name,
-          phone,
-          role,
-          scenario: meta.scenario || t.category || 'general',
-          subject: t.subject || 'Support Ticket',
-          status: (t.status === 'resolved' ? 'resolved' : 'active') as 'active' | 'resolved' | 'pending',
-          utr,
-          amount,
-          payoutId,
-          language,
-          lastMessage: meta.verification_error || t.subject,
-          lastMessageTime: timeStr,
-          createdAt: t.created_at,
-        };
-      });
-
-      setSessions(liveSessions);
-      if (!activeSession && liveSessions.length > 0) {
-        setActiveSession(liveSessions[0]);
+      const res = await adminFetch<{ ticket: any; messages: ChatMessage[] }>(
+        `/api/admin/support/tickets/${session.id}`,
+        { forceRefresh: true }
+      );
+      if (res?.messages && res.messages.length > 0) {
+        setMessages(res.messages);
+      } else {
         setMessages([
           {
-            id: `msg-${liveSessions[0].id}`,
+            id: `initial-${Date.now()}`,
             sender: 'user',
-            senderName: liveSessions[0].name,
-            content: liveSessions[0].lastMessage,
-            timestamp: liveSessions[0].lastMessageTime,
+            senderName: session.name,
+            content: session.lastMessage,
+            timestamp: session.lastMessageTime,
           },
         ]);
       }
     } catch (err) {
+      console.warn('Fallback to session initial message:', err);
+      setMessages([
+        {
+          id: `initial-${Date.now()}`,
+          sender: 'user',
+          senderName: session.name,
+          content: session.lastMessage,
+          timestamp: session.lastMessageTime,
+        },
+      ]);
+    }
+  }, []);
+
+  // Fetch real live tickets from Admin server API (Zero Mock Data, Service Role Authorized)
+  const fetchLiveTickets = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const res = await adminFetch<{ tickets: SupportSession[] }>(
+        '/api/admin/support/tickets?limit=50',
+        { forceRefresh: true }
+      );
+
+      const liveSessions = res?.tickets || [];
+      setSessions(liveSessions);
+
+      if (liveSessions.length > 0) {
+        // If no active session or current active session not in list, select first
+        if (!activeSession) {
+          loadTicketMessages(liveSessions[0]);
+        } else {
+          const stillThere = liveSessions.find((s) => s.id === activeSession.id);
+          if (stillThere) {
+            setActiveSession(stillThere);
+          } else {
+            loadTicketMessages(liveSessions[0]);
+          }
+        }
+      } else {
+        setActiveSession(null);
+        setMessages([]);
+      }
+    } catch (err) {
       console.error('Failed to load live sessions:', err);
+      toast.error('Could not load live support tickets');
     } finally {
       setIsLoading(false);
     }
-  }, [activeSession]);
+  }, [activeSession, loadTicketMessages]);
 
   useEffect(() => {
     fetchLiveTickets();
@@ -363,30 +324,7 @@ export default function SupportDeskPage() {
     };
   }, [activeSession?.userId, activeSession?.name]);
 
-  // Helper to resolve user ID or short ID / phone to full UUID
-  const resolveTargetProfile = async (rawId: string) => {
-    if (!supabase) return null;
-    const clean = rawId.replace(/^(host-|user-)/i, '').trim();
-    // 1. Exact UUID match
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean)) {
-      const { data } = await supabase.from('profiles').select('id, display_name, role, phone').eq('id', clean).maybeSingle();
-      if (data) return data;
-      return { id: clean, display_name: 'Friendoo User', role: 'user', phone: '' };
-    }
-    // 2. Search by phone or UUID prefix
-    const { data: list } = await supabase
-      .from('profiles')
-      .select('id, display_name, role, phone')
-      .or(`phone.ilike.%${clean}%,id.ilike.${clean}%`)
-      .limit(1);
-
-    if (list && list.length > 0) {
-      return list[0];
-    }
-    return null;
-  };
-
-  // Send Reply directly to App
+  // Send Reply directly to App via server-authoritative API
   const handleSendReply = async (textToSend?: string) => {
     const text = (textToSend || replyInput).trim();
     if (!text || !activeSession) return;
@@ -402,48 +340,20 @@ export default function SupportDeskPage() {
     setMessages((prev) => [...prev, newMsg]);
     setReplyInput('');
 
-    if (supabase && activeSession.userId) {
-      try {
-        const resolved = await resolveTargetProfile(activeSession.userId);
-        const targetId = resolved?.id || activeSession.userId;
+    try {
+      await adminFetch('/api/admin/support/reply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ticketId: activeSession.id,
+          userId: activeSession.userId,
+          message: text,
+        }),
+      });
 
-        // 1. Persist to support_messages if ticket exists in DB
-        if (activeSession.id && !activeSession.id.startsWith('sess-')) {
-          await supabase.from('support_messages').insert({
-            ticket_id: activeSession.id,
-            body: text,
-            is_internal: false,
-          });
-
-          await supabase.from('support_tickets').update({
-            status: 'waiting_for_user',
-            updated_at: new Date().toISOString(),
-            metadata: {
-              last_admin_message: text,
-              admin_sender: 'Friendoo Admin Support 🛡️',
-              has_admin_message: true,
-            },
-          }).eq('id', activeSession.id);
-        }
-
-        // 2. Realtime Broadcast to user's Support Sheet & In-App Banner
-        const channel = supabase.channel(`support_live:${targetId}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'admin_message',
-          payload: {
-            message: text,
-            sender: 'Friendoo Official Admin 🛡️',
-            ticketId: activeSession.id,
-            timestamp: new Date().toISOString(),
-          },
-        });
-
-        toast.success(`Delivered to ${resolved?.display_name || 'user'} screen & notification badge`);
-      } catch (err) {
-        console.error('Error delivering reply:', err);
-        toast.error('Failed to deliver reply');
-      }
+      toast.success(`Delivered to ${activeSession.name} phone screen & notification badge`);
+    } catch (err) {
+      console.error('Error delivering reply:', err);
+      toast.error('Failed to deliver reply');
     }
   };
 
@@ -496,29 +406,14 @@ export default function SupportDeskPage() {
   const handleMarkResolved = async () => {
     if (!activeSession) return;
     try {
-      // 1. Broadcast resolution to user's live channel to dismiss in-app badge/banner
-      if (supabase && activeSession.userId) {
-        const channel = supabase.channel(`support_live:${activeSession.userId}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'ticket_resolved',
-          payload: {
-            ticketId: activeSession.id,
-            message: 'Your inquiry has been resolved by our support team.',
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
+      await adminFetch('/api/admin/support/resolve', {
+        method: 'POST',
+        body: JSON.stringify({
+          ticketId: activeSession.id,
+          userId: activeSession.userId,
+        }),
+      });
 
-      // 2. Update ticket status in database
-      if (supabase && activeSession.id && !activeSession.id.startsWith('sess-')) {
-        await supabase
-          .from('support_tickets')
-          .update({ status: 'resolved', updated_at: new Date().toISOString() })
-          .eq('id', activeSession.id);
-      }
-
-      // 3. Update local sessions state
       setSessions((prev) =>
         prev.map((s) => (s.id === activeSession.id ? { ...s, status: 'resolved' as const } : s))
       );
@@ -553,77 +448,21 @@ export default function SupportDeskPage() {
         }
       }
 
-      // 1. Broadcast directly to target user phone
-      if (supabase) {
-        const channel = supabase.channel(`support_live:${directUserId.trim()}`);
-        await channel.send({
-          type: 'broadcast',
-          event: 'admin_message',
-          payload: {
-            message: finalMessage,
-            sender: 'Friendoo Official Admin 🛡️',
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-
-      // 2. Persist in support_tickets table
-      let createdTicketId = `sess-${Date.now()}`;
-      if (supabase) {
-        try {
-          const { data: insertedTicket } = await supabase
-            .from('support_tickets')
-            .insert({
-              reporter_id: directUserId.trim(),
-              category: 'admin_outreach',
-              subject: directSubject.trim(),
-              status: 'active',
-              priority: 'high',
-              metadata: {
-                admin_direct_message: true,
-                last_admin_message: finalMessage,
-                reporter_role: directRole,
-              },
-            })
-            .select()
-            .single();
-
-          if (insertedTicket?.id) {
-            createdTicketId = insertedTicket.id;
-          }
-        } catch (_) {}
-      }
-
-      // 3. Add to live queue
-      const newSession: SupportSession = {
-        id: createdTicketId,
-        userId: directUserId.trim(),
-        name: `${directRole === 'host' ? 'Host' : 'User'} (${directUserId.slice(0, 8)})`,
-        role: directRole,
-        scenario: 'admin_outreach',
-        subject: directSubject.trim(),
-        status: 'active',
-        lastMessage: finalMessage,
-        lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        createdAt: new Date().toISOString(),
-      };
-
-      setSessions((prev) => [newSession, ...prev.filter((s) => s.userId !== directUserId.trim())]);
-      setActiveSession(newSession);
-      setMessages([
-        {
-          id: `admin-${Date.now()}`,
-          sender: 'admin',
-          senderName: 'Friendoo Admin Support 🛡️',
-          content: finalMessage,
-          timestamp: newSession.lastMessageTime,
-        },
-      ]);
+      await adminFetch('/api/admin/support/tickets', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: directUserId.trim(),
+          role: directRole,
+          subject: directSubject.trim(),
+          message: finalMessage,
+        }),
+      });
 
       setShowDirectOutreachModal(false);
       setDirectMessage('');
       setDirectUserId('');
       toast.success('Direct message delivered to user screen & badge triggered!');
+      await fetchLiveTickets();
     } catch (err) {
       console.error('Error sending direct outreach:', err);
       toast.error('Failed to send direct message');
@@ -647,61 +486,56 @@ export default function SupportDeskPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#091E24] border border-[#164E53]/40 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#2FE5A7] to-[#60CECA] flex items-center justify-center text-[#041D20] shadow-lg shadow-[#2FE5A7]/20">
-            <Headphones className="w-6 h-6 stroke-[2.2]" />
+    <div className="space-y-4">
+      {/* Top Bar / Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#13383B]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-[#2FE5A7] flex items-center justify-center text-[#041D20] shadow-lg shadow-[#2FE5A7]/20">
+            <Headphones className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white tracking-tight">24/7 Live Support Desk</h1>
-              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <h1 className="text-xl font-black text-white tracking-wide">24/7 Live Support Desk</h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-[#2FE5A7] border border-emerald-500/30">
                 Live Realtime Wire
               </span>
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                <Sparkles className="w-3 h-3 text-purple-400" />
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5" />
                 Groq AI Translation
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Zero mock data • Direct 1-on-1 human assistance connected to verified live users with real-time regional translation.
+              Direct 1-on-1 human assistance connected to verified live users with real-time regional translation.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Direct Message / Outreach Button */}
+        <div className="flex items-center gap-3">
+          {/* Direct Message Outreach Trigger */}
           <button
             onClick={() => setShowDirectOutreachModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 active:scale-[0.97] border border-purple-500/30 shadow-lg shadow-purple-600/20 transition-transform duration-100 ease-out"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/20 active:scale-[0.97] transition-all"
           >
-            <MessageSquarePlus className="w-3.5 h-3.5" />
-            + Direct Message to User/Host
+            <MessageSquarePlus className="w-4 h-4" />
+            <span>+ Direct Message to User/Host</span>
           </button>
 
-          {/* Sync Button */}
           <button
-            onClick={() => {
-              fetchLiveTickets();
-              toast.success('Live database queue synced');
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 active:scale-[0.97] border border-white/10 transition-transform duration-100 ease-out"
+            onClick={fetchLiveTickets}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.97] text-xs font-semibold text-slate-300 border border-white/10 transition-all duration-100 ease-out"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Sync
           </button>
         </div>
       </div>
 
-      {/* Main 2-Pane Terminal */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[680px]">
+      {/* Main Support Grid (Constrained Viewport Height) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[620px] max-h-[880px]">
         {/* Left: Real Live Database Queue (4 Cols) */}
-        <div className="lg:col-span-4 flex flex-col rounded-2xl bg-[#071519]/90 border border-[#13383B] backdrop-blur-xl overflow-hidden shadow-lg">
-          {/* Filter Bar */}
-          <div className="p-3.5 border-b border-[#13383B] space-y-3">
+        <div className="lg:col-span-4 h-full flex flex-col rounded-2xl bg-[#071519]/90 border border-[#13383B] backdrop-blur-xl overflow-hidden shadow-lg">
+          {/* Filter Bar (shrink-0) */}
+          <div className="p-3.5 border-b border-[#13383B] space-y-3 shrink-0">
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -747,8 +581,8 @@ export default function SupportDeskPage() {
             </div>
           </div>
 
-          {/* Sessions List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#13383B]/50 p-2 space-y-1.5">
+          {/* Sessions List (flex-1 min-h-0 overflow-y-auto) */}
+          <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-[#13383B]/50 p-2 space-y-1.5">
             {isLoading ? (
               <div className="p-8 text-center text-xs text-slate-400">Loading live tickets from database...</div>
             ) : filteredSessions.length === 0 ? (
@@ -771,18 +605,7 @@ export default function SupportDeskPage() {
                 return (
                   <div
                     key={session.id}
-                    onClick={() => {
-                      setActiveSession(session);
-                      setMessages([
-                        {
-                          id: `initial-${Date.now()}`,
-                          sender: 'user',
-                          senderName: session.name,
-                          content: session.lastMessage,
-                          timestamp: session.lastMessageTime,
-                        },
-                      ]);
-                    }}
+                    onClick={() => loadTicketMessages(session)}
                     className={`p-3 rounded-xl cursor-pointer active:scale-[0.98] transition-transform duration-100 ease-out ${
                       isSelected
                         ? 'bg-gradient-to-r from-[#0C2B30] to-[#0A2226] border border-[#2FE5A7]/40 shadow-md'
@@ -866,11 +689,11 @@ export default function SupportDeskPage() {
         </div>
 
         {/* Right: Realtime 1-on-1 Chat Terminal (8 Cols) */}
-        <div className="lg:col-span-8 flex flex-col rounded-2xl bg-[#071519]/90 border border-[#13383B] backdrop-blur-xl overflow-hidden shadow-lg">
+        <div className="lg:col-span-8 h-full flex flex-col rounded-2xl bg-[#071519]/90 border border-[#13383B] backdrop-blur-xl overflow-hidden shadow-lg">
           {activeSession ? (
             <>
-              {/* Active Chat Header */}
-              <div className="p-4 border-b border-[#13383B] flex items-center justify-between bg-[#040D12]/60">
+              {/* Active Chat Header (shrink-0) */}
+              <div className="p-4 border-b border-[#13383B] flex items-center justify-between bg-[#040D12]/60 shrink-0">
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-md ${
@@ -926,8 +749,8 @@ export default function SupportDeskPage() {
                 </div>
               </div>
 
-              {/* Scenario Context Card */}
-              <div className="px-4 py-2.5 bg-[#0C2226] border-b border-[#13383B] flex flex-wrap items-center justify-between text-xs gap-2">
+              {/* Scenario Context Card (shrink-0) */}
+              <div className="px-4 py-2.5 bg-[#0C2226] border-b border-[#13383B] flex flex-wrap items-center justify-between text-xs gap-2 shrink-0">
                 <div className="flex items-center gap-3">
                   <span className="text-slate-400">Subject:</span>
                   <span className="font-semibold text-white">{activeSession.subject}</span>
@@ -947,8 +770,8 @@ export default function SupportDeskPage() {
                 </div>
               </div>
 
-              {/* Live Message Feed */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#040D12]/40">
+              {/* Live Message Feed (flex-1 min-h-0 overflow-y-auto) */}
+              <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3 bg-[#040D12]/40">
                 {messages.map((msg) => {
                   const isAdmin = msg.sender === 'admin';
                   return (
@@ -1009,8 +832,8 @@ export default function SupportDeskPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Fast Response Template Pills */}
-              <div className="px-4 py-2 border-t border-[#13383B] bg-[#07191E] flex items-center gap-2 overflow-x-auto text-xs">
+              {/* Fast Response Template Pills (shrink-0) */}
+              <div className="px-4 py-2 border-t border-[#13383B] bg-[#07191E] flex items-center gap-2 overflow-x-auto text-xs shrink-0">
                 <span className="text-[11px] text-slate-400 whitespace-nowrap">Quick Responses:</span>
                 {activeSession.role === 'host' ? (
                   <>
@@ -1081,8 +904,8 @@ export default function SupportDeskPage() {
                 )}
               </div>
 
-              {/* Chat Input Bar with Groq Translation */}
-              <div className="p-3 bg-[#040D12] border-t border-[#13383B] flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              {/* Chat Input Bar with Groq Translation (shrink-0) */}
+              <div className="p-3 bg-[#040D12] border-t border-[#13383B] flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
                 <input
                   type="text"
                   placeholder={`Send 1-on-1 reply to ${activeSession.name} on their phone...`}
@@ -1094,7 +917,7 @@ export default function SupportDeskPage() {
                   className="flex-1 bg-[#071A20] border border-[#164E53]/60 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2FE5A7]/60"
                 />
 
-                <div className="flex items-center gap-2 justify-end">
+                <div className="flex items-center gap-2 justify-end shrink-0">
                   {/* Language Selector */}
                   <select
                     value={targetReplyLang}
