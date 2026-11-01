@@ -562,6 +562,18 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
           },
         });
       }
+
+        // Also sync into public.reports for CRM Underwriting & Moderation
+        if (hostId.length > 20) {
+          try {
+            await client.from('reports').insert({
+              'reporter_id': user.id,
+              'reported_user_id': hostId,
+              'reason': 'CRITICAL SAFETY: ' + reason + ' (Host: ' + hostName + ')',
+              'status': 'open',
+            });
+          } catch (_) {}
+        }
     } catch (_) {}
 
     // 3. Broadcast to admin desk

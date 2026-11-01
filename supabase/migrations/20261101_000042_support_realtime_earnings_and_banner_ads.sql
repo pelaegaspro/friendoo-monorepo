@@ -246,3 +246,4 @@ insert into public.banner_ads (
   90
 )
 on conflict do nothing;
+

@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseServer";
 import { format } from "date-fns";
 import { AlertCircle, ShieldAlert, Fingerprint, MapPin, Repeat, Ban } from "lucide-react";
 
-type FraudSeverity = 'low' | 'medium' | 'high' | 'urgent'
+type FraudSeverity = 'low' | 'medium' | 'high' | 'critical' | 'urgent'
 
 interface FraudAlert {
   id: string
@@ -34,8 +34,12 @@ async function getFraudAlerts(): Promise<FraudAlert[]> {
       id: typeof doc.id === 'string' ? doc.id : '',
       type: typeof doc.alert_type === 'string' ? doc.alert_type : 'unknown',
       title: typeof doc.alert_type === 'string' ? doc.alert_type.replace(/_/g, ' ') : 'Unknown alert',
-      severity: doc.severity === 'low' || doc.severity === 'medium' || doc.severity === 'high' || doc.severity === 'urgent'
-        ? doc.severity
+      severity: (doc.severity === 'critical' || doc.severity === 'urgent')
+        ? 'critical'
+        : doc.severity === 'high'
+        ? 'high'
+        : doc.severity === 'medium'
+        ? 'medium'
         : 'low',
       description: typeof doc.resolution_note === 'string' && doc.resolution_note
         ? doc.resolution_note
@@ -80,7 +84,7 @@ export default async function FraudSurveillancePage() {
 
             <div key={alert.id} className="bg-[#181818] border border-red-900/30 rounded-2xl p-6 shadow-xl flex items-start gap-6 group relative">
               <div className={`p-4 rounded-xl ${
-                alert.severity === 'high' ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
+                (alert.severity === 'high' || alert.severity === 'critical' || alert.severity === 'urgent') ? 'bg-red-500/10 text-red-500' : 'bg-yellow-500/10 text-yellow-500'
               }`}>
                 {alert.type === 'multi_account' ? <Repeat size={24} /> : 
                  alert.type === 'ip_share' ? <MapPin size={24} /> : 
@@ -91,7 +95,7 @@ export default async function FraudSurveillancePage() {
                 <div className="flex items-center gap-3 mb-1">
                     <h3 className="text-lg font-bold text-white uppercase tracking-tight">{alert.title || alert.type?.replace('_', ' ')}</h3>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                        alert.severity === 'high' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-black'
+                        (alert.severity === 'high' || alert.severity === 'critical' || alert.severity === 'urgent') ? 'bg-red-600 text-white' : 'bg-yellow-600 text-black'
                     }`}>
                         {alert.severity} Risk
                     </span>

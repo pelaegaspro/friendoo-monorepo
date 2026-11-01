@@ -440,6 +440,29 @@ class CallRepository {
             'details': details ?? '',
           },
         });
+
+        // Also record in public.reports for CRM Underwriting & Safety Desk
+        try {
+          final callRow = await _client
+              .from('calls')
+              .select('caller_id, host_id')
+              .eq('id', callId)
+              .maybeSingle();
+          if (callRow != null) {
+            final reportedId = (callRow['caller_id'] == user.id)
+                ? callRow['host_id']
+                : callRow['caller_id'];
+            if (reportedId != null) {
+              await _client.from('reports').insert({
+                'reporter_id': user.id,
+                'reported_user_id': reportedId,
+                'call_id': callId,
+                'reason': details != null && details.isNotEmpty ? '$reason: $details' : reason,
+                'status': 'open',
+              });
+            }
+          }
+        } catch (_) {}
       }
     } catch (_) {
       // Graceful fallback for mock/local offline environments

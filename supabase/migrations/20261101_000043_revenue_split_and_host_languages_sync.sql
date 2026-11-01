@@ -28,3 +28,4 @@ $$;
 
 revoke all on function public.get_platform_revenue_split() from public, anon;
 grant execute on function public.get_platform_revenue_split() to authenticated, service_role;
+
