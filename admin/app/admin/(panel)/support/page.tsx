@@ -190,6 +190,11 @@ export default function SupportDeskPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       });
 
+      // Auto-dismiss the popup alert after 6s so it doesn't stay stuck on screen
+      setTimeout(() => {
+        setIncomingAlert((current) => (current?.userId === data.userId ? null : current));
+      }, 6000);
+
       toast.success(`🎧 Live Support Alert: ${data.name || 'User'} (${data.language || 'Tamil'}) connected!`, {
         duration: 8000,
         icon: '🔔',
@@ -339,6 +344,7 @@ export default function SupportDeskPage() {
 
     setMessages((prev) => [...prev, newMsg]);
     setReplyInput('');
+    setIncomingAlert(null);
 
     try {
       await adminFetch('/api/admin/support/reply', {
@@ -405,6 +411,7 @@ export default function SupportDeskPage() {
   // Mark Ticket as Resolved & Broadcast to clear in-app badge
   const handleMarkResolved = async () => {
     if (!activeSession) return;
+    setIncomingAlert(null);
     try {
       await adminFetch('/api/admin/support/resolve', {
         method: 'POST',
@@ -531,7 +538,7 @@ export default function SupportDeskPage() {
       </div>
 
       {/* Main Support Grid (Constrained Viewport Height) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-[620px] max-h-[880px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-210px)] min-h-[520px] max-h-[880px]">
         {/* Left: Real Live Database Queue (4 Cols) */}
         <div className="lg:col-span-4 h-full flex flex-col rounded-2xl bg-[#071519]/90 border border-[#13383B] backdrop-blur-xl overflow-hidden shadow-lg">
           {/* Filter Bar (shrink-0) */}

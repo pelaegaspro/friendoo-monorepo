@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
           last_admin_message: text,
           admin_sender: 'Friendoo Official Admin 🛡️',
           has_admin_message: true,
+          user_has_replied: false,
         },
       })
       .eq('id', ticketId);
@@ -91,3 +92,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

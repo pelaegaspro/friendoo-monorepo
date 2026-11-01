@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../profile/data/profile_repository.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -54,6 +55,8 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
   bool _isSupportTeamActive = false;
   RealtimeChannel? _liveChannel;
   String? _currentUserId;
+  String? _activeTicketId;
+  Map<String, dynamic>? _activeTicketMetadata;
 
   // Track state for Report Host multi-step flow
   String? _selectedReportHostId;
@@ -260,6 +263,8 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
       if (tickets.isNotEmpty && mounted) {
         final ticket = tickets.first;
         final ticketId = ticket['id']?.toString();
+        _activeTicketId = ticketId;
+        _activeTicketMetadata = ticket['metadata'] as Map<String, dynamic>? ?? {};
         if (ticketId != null) {
           final msgs = await Supabase.instance.client
               .from('support_messages')
@@ -490,6 +495,48 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
       event: 'user_message',
       message: userMsg,
     );
+
+    // Persist user reply to database support_messages and mark ticket user_has_replied
+    if (_activeTicketId != null) {
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          await Supabase.instance.client.from('support_messages').insert({
+            'ticket_id': _activeTicketId,
+            'author_id': user.id,
+            'body': userMsg,
+            'is_internal': false,
+          });
+
+          await Supabase.instance.client.from('support_tickets').update({
+            'status': 'in_progress',
+            'updated_at': DateTime.now().toIso8601String(),
+            'metadata': {
+              ...?_activeTicketMetadata,
+              'user_has_replied': true,
+              'last_user_message': userMsg,
+            },
+          }).eq('id', _activeTicketId!);
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            'dismissed_support_notice_${user.id}_${_activeTicketId ?? "general"}',
+            userMsg,
+          );
+        }
+      } catch (err) {
+        debugPrint('Error saving user reply: $err');
+      }
+    }
+
+    if (_isSupportTeamActive) {
+      if (!mounted) return;
+      setState(() {
+        _isTyping = false;
+      });
+      _scrollToBottom();
+      return;
+    }
 
     if (!mounted) return;
 
