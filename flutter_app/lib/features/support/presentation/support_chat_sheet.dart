@@ -182,30 +182,64 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
       final channelName = 'support_live:$_currentUserId';
       _liveChannel = Supabase.instance.client.channel(channelName);
 
-      _liveChannel!.onBroadcast(
-        event: 'admin_message',
-        callback: (payload) {
-          if (!mounted) return;
-          final content = payload['message']?.toString() ?? '';
-          final sender = payload['sender']?.toString() ?? 'Support Specialist 🤝';
+      _liveChannel!
+          .onBroadcast(
+            event: 'admin_message',
+            callback: (payload) {
+              if (!mounted) return;
+              final content = payload['message']?.toString() ?? '';
+              final sender = payload['sender']?.toString() ?? 'Support Specialist 🤝';
 
-          if (content.isNotEmpty) {
-            setState(() {
-              _isSupportTeamActive = true;
-              _isTyping = false;
-              _messages.add(
-                SupportChatMessage(
-                  role: 'admin',
-                  senderName: sender,
-                  content: content,
-                  timestamp: DateTime.now(),
-                ),
-              );
-            });
-            _scrollToBottom();
-          }
-        },
-      ).subscribe();
+              if (content.isNotEmpty) {
+                setState(() {
+                  _isSupportTeamActive = true;
+                  _isTyping = false;
+                  _messages.add(
+                    SupportChatMessage(
+                      role: 'admin',
+                      senderName: sender,
+                      content: content,
+                      timestamp: DateTime.now(),
+                    ),
+                  );
+                });
+                _scrollToBottom();
+              }
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'support_messages',
+            callback: (payload) {
+              if (!mounted) return;
+              final record = payload.newRecord;
+              final content = record['body']?.toString() ?? '';
+              final authorId = record['author_id']?.toString();
+              final isInternal = record['is_internal'] == true;
+              final user = Supabase.instance.client.auth.currentUser;
+
+              if (content.isNotEmpty && !isInternal && authorId != user?.id) {
+                final alreadyExists = _messages.any((m) => m.content == content && m.role == 'admin');
+                if (!alreadyExists) {
+                  setState(() {
+                    _isSupportTeamActive = true;
+                    _isTyping = false;
+                    _messages.add(
+                      SupportChatMessage(
+                        role: 'admin',
+                        senderName: 'Friendoo Admin Support 🛡️',
+                        content: content,
+                        timestamp: DateTime.now(),
+                      ),
+                    );
+                  });
+                  _scrollToBottom();
+                }
+              }
+            },
+          )
+          .subscribe();
     } catch (e) {
       debugPrint('Realtime support channel error: $e');
     }
