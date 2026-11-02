@@ -1,12 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { getSupabaseAdmin } from '@/lib/supabaseServer'
 import { dispatchAutomationEvent } from '@/lib/automation/dispatcher'
+
+function verifyCashfreePaymentSignature(
+  secret: string,
+  timestamp: string,
+  rawBody: string,
+  signature: string
+): boolean {
+  if (!secret || !timestamp || !rawBody || !signature) return false
+  try {
+    const expected = createHmac('sha256', secret).update(`${timestamp}${rawBody}`).digest('base64')
+    const expectedBuffer = Buffer.from(expected, 'utf8')
+    const signatureBuffer = Buffer.from(signature, 'utf8')
+    if (expectedBuffer.length !== signatureBuffer.length) return false
+    return timingSafeEqual(expectedBuffer, signatureBuffer)
+  } catch {
+    return false
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text()
-    let payload: Record<string, unknown>
 
+    // 1. Enforce payload size limit (max 64KB)
+    if (rawBody.length > 64 * 1024) {
+      return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+    }
+
+    // 2. Validate Cashfree HMAC-SHA256 signature
+    const secret = process.env.CASHFREE_SECRET_KEY?.trim()
+    const signature = req.headers.get('x-webhook-signature')
+    const timestamp = req.headers.get('x-webhook-timestamp')
+
+    if (secret) {
+      if (!signature || !timestamp) {
+        return NextResponse.json({ error: 'Missing webhook signature headers' }, { status: 401 })
+      }
+
+      // Anti-replay: reject payloads older than 10 minutes
+      const tsNum = Number(timestamp)
+      if (Number.isFinite(tsNum) && Math.abs(Date.now() - tsNum) > 10 * 60 * 1000) {
+        return NextResponse.json({ error: 'Webhook timestamp expired (replay attack detected)' }, { status: 401 })
+      }
+
+      const isValid = verifyCashfreePaymentSignature(secret, timestamp, rawBody, signature)
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid Cashfree webhook signature' }, { status: 401 })
+      }
+    }
+
+    let payload: Record<string, unknown>
     try {
       payload = JSON.parse(rawBody)
     } catch {
@@ -62,7 +108,7 @@ export async function POST(req: NextRequest) {
           completedAt: new Date().toISOString(),
         },
       }).catch((err) => {
-        console.warn('Non-blocking payment automation warning:', err);
+        console.warn('Non-blocking payment automation warning:', err)
       })
     }
 
@@ -79,4 +125,3 @@ export async function POST(req: NextRequest) {
     )
   }
 }
-

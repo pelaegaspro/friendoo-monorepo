@@ -23,7 +23,7 @@ export function createSessionValue() {
 }
 
 export function isSignInPaused(): boolean {
-  return process.env.PAUSE_SIGN_IN !== "false";
+  return process.env.NODE_ENV !== "production" && process.env.PAUSE_SIGN_IN === "true";
 }
 
 export function verifySessionValue(value?: string): boolean {

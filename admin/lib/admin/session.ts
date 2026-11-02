@@ -29,7 +29,7 @@ export function getAdminSessionValue(now = Date.now()): string {
 }
 
 export function isSignInPaused(): boolean {
-  return process.env.PAUSE_SIGN_IN !== 'false';
+  return process.env.NODE_ENV !== 'production' && process.env.PAUSE_SIGN_IN === 'true';
 }
 
 export function isValidAdminSession(value: string | null | undefined): boolean {
