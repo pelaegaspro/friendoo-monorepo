@@ -57,37 +57,34 @@ class FriendooDesignTokens extends ThemeExtension<FriendooDesignTokens> {
 
 abstract final class FriendooTheme {
   static ThemeData light() {
-    const orchid = Color(0xFF4960F9);
-    const indigo = Color(0xFF17171F);
-    const aqua = Color(0xFF46D4E8);
-    const mango = Color(0xFFFFC857);
-    const rose = Color(0xFFC72FF8);
-    const ink = Color(0xFF17171F);
-    const canvas = Color(0xFFF6F6F3);
+    const orchid = Color(0xFF6366F1); // Apple refined indigo
+    const indigo = Color(0xFF0F172A); // Slate 900
+    const mango = Color(0xFFF59E0B);  // Apple Warm Amber
+    const ink = Color(0xFF0F172A);
+    const canvas = Color(0xFFF8FAFC);
     const card = Color(0xFFFFFFFF);
-    const mutedInk = Color(0xFF777780);
+    const mutedInk = Color(0xFF64748B);
 
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: orchid,
+    final colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: indigo,
       onPrimary: card,
-      primaryContainer: const Color(0xFFE9E9E6),
+      primaryContainer: const Color(0xFFF1F5F9),
       onPrimaryContainer: ink,
-      secondary: aqua,
+      secondary: orchid,
       onSecondary: card,
-      secondaryContainer: const Color(0xFFEAFBFD),
-      onSecondaryContainer: const Color(0xFF0B7276),
+      secondaryContainer: const Color(0xFFEEF2FF),
+      onSecondaryContainer: const Color(0xFF3730A3),
       tertiary: mango,
-      onTertiary: ink,
-      tertiaryContainer: const Color(0xFFFFE9BF),
-      onTertiaryContainer: const Color(0xFF5B3A00),
+      onTertiary: card,
+      tertiaryContainer: const Color(0xFFFEF3C7),
+      onTertiaryContainer: const Color(0xFF92400E),
       surface: card,
       onSurface: ink,
-      surfaceContainerHighest: const Color(0xFFECECE8),
+      surfaceContainerHighest: const Color(0xFFF1F5F9),
       onSurfaceVariant: mutedInk,
-      outline: const Color(0xFFD2D2CD),
-      error: const Color(0xFFB3261E),
+      outline: const Color(0xFFE2E8F0),
+      error: const Color(0xFFEF4444),
       onError: card,
     );
 
@@ -95,33 +92,33 @@ abstract final class FriendooTheme {
       heroGradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [indigo, orchid, rose],
+        colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
       ),
       sectionGradient: const LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-        colors: [Color(0xFFEDE8FF), Color(0xFFDDF9F5)],
+        colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
       ),
       profileGradients: const [
         LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [orchid, Color(0xFFAA75FF)],
+          colors: [Color(0xFF6366F1), Color(0xFF818CF8)],
         ),
         LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [aqua, Color(0xFF63D6CF)],
+          colors: [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
         ),
         LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [rose, Color(0xFFFFA0B3)],
+          colors: [Color(0xFF7C3AED), Color(0xFFA78BFA)],
         ),
         LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [mango, Color(0xFFFFD47A)],
+          colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
         ),
       ],
       tintedCardColor: const Color(0xFFEFF2FF),

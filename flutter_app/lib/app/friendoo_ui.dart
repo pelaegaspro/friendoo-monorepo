@@ -29,20 +29,20 @@ import '../features/ads/presentation/live_ad_banner_widget.dart';
 import '../features/notifications/presentation/notifications_sheet.dart';
 
 abstract final class FriendooUiColors {
-  static const canvas = Color(0xFFF7F7FB);
-  static const ink = Color(0xFF0E1020);
+  static const canvas = Color(0xFFF8FAFC);
+  static const ink = Color(0xFF0F172A);
   static const blue = Color(0xFF6366F1);
-  static const violet = Color(0xFF8B5CF6);
-  static const aqua = Color(0xFF00D2E0);
-  static const pink = Color(0xFFFF2A85);
-  static const gold = Color(0xFFFFB703);
+  static const violet = Color(0xFF7C3AED);
+  static const aqua = Color(0xFF0EA5E9);
+  static const pink = Color(0xFFE11D48); // Refined Apple Rose / Crimson
+  static const gold = Color(0xFFF59E0B); // Apple Warm Amber
   static const emerald = Color(0xFF10B981);
-  static const muted = Color(0xFF6B7280);
-  static const line = Color(0xFFE2E4ED);
-  static const softBlue = Color(0xFFEDE9FE);
-  static const softViolet = Color(0xFFF3E8FF);
-  static const softAqua = Color(0xFFE0F9FD);
-  static const softPink = Color(0xFFFFE4EC);
+  static const muted = Color(0xFF64748B);
+  static const line = Color(0xFFE2E8F0);
+  static const softBlue = Color(0xFFEEF2FF);
+  static const softViolet = Color(0xFFF5F3FF);
+  static const softAqua = Color(0xFFF0F9FF);
+  static const softPink = Color(0xFFFFF1F2);
   static const softGold = Color(0xFFFEF3C7);
 }
 
