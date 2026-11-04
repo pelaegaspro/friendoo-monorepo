@@ -382,40 +382,64 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
 }
 
 class FriendooLogo extends StatelessWidget {
-  const FriendooLogo({super.key, this.fontSize = 20, this.isLight = false});
+  const FriendooLogo({
+    super.key,
+    this.fontSize = 20,
+    this.isLight = false,
+    this.useOriginalFigmaBrand = true,
+  });
 
   final double fontSize;
   final bool isLight;
+  final bool useOriginalFigmaBrand;
 
   @override
   Widget build(BuildContext context) {
+    if (useOriginalFigmaBrand) {
+      return Image.asset(
+        'assets/logo/friendoo_logo_transparent.png',
+        height: fontSize * 1.5,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/friendoo_logo_transparent.png',
+            height: fontSize * 1.5,
+            fit: BoxFit.contain,
+            errorBuilder: (ctx, err, stack) => _fallbackFigmaLogo(context),
+          );
+        },
+      );
+    }
+    return _fallbackFigmaLogo(context);
+  }
+
+  Widget _fallbackFigmaLogo(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: fontSize * 1.45,
-          height: fontSize * 1.45,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [FriendooUiColors.violet, FriendooUiColors.pink],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(fontSize * 0.42),
-            boxShadow: [
-              BoxShadow(
-                color: FriendooUiColors.violet.withValues(alpha: 0.32),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              Icons.graphic_eq_rounded,
-              color: Colors.white,
-              size: fontSize * 0.92,
-            ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(fontSize * 0.35),
+          child: Image.asset(
+            'assets/logo/friendoo_logo_square.png',
+            width: fontSize * 1.35,
+            height: fontSize * 1.35,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Image.asset(
+                'assets/friendoo_logo_square.png',
+                width: fontSize * 1.35,
+                height: fontSize * 1.35,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => Container(
+                  width: fontSize * 1.35,
+                  height: fontSize * 1.35,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED),
+                    borderRadius: BorderRadius.circular(fontSize * 0.35),
+                  ),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 8),
