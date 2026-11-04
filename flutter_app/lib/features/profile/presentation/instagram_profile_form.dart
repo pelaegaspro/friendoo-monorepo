@@ -310,9 +310,10 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFFEDE9FE),
+                            color: const Color(0xFFF1F5F9),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 20),
+                          child: const Icon(Icons.auto_fix_high_rounded, color: Color(0xFF334155), size: 18),
                         ),
                         const SizedBox(width: 10),
                         const Expanded(
@@ -320,16 +321,17 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'AI Bio Generator',
+                                'Smart Bio Suggestion',
                                 style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w700,
                                   color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
                                 ),
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Type your hobby or vibe (e.g. gamer, late night chats)',
+                                'Enter a hobby, vibe, or interest to draft your profile bio',
                                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -337,28 +339,34 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: promptController,
                       autofocus: true,
                       style: const TextStyle(fontSize: 14.5, color: Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         hintText: widget.isHost
-                            ? 'e.g. friendly host, love music and advice'
-                            : 'e.g. I am a gamer person, love casual chats',
+                            ? 'e.g. friendly host, love music and late night advice'
+                            : 'e.g. passionate gamer, love casual conversations',
                         hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
-                        border: UnderlineInputBorder(
-                          borderSide: BorderSide(color: const Color(0xFF7C3AED).withValues(alpha: 0.4)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF7C3AED), width: 2),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -388,15 +396,15 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                                 }
                               },
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF7C3AED),
+                          backgroundColor: const Color(0xFF0F172A),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         icon: _isGenerating
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Icon(Icons.bolt_rounded, size: 18),
+                            : const Icon(Icons.check_rounded, size: 18),
                         label: Text(
-                          _isGenerating ? 'Generating Bio...' : 'Generate with AI Bio',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                          _isGenerating ? 'Drafting Bio...' : 'Apply Suggestion',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                         ),
                       ),
                     ),
@@ -478,25 +486,23 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                 onTap: () => _openAiBioSheet(context),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFEDE9FE), Color(0xFFFCE7F3)],
-                    ),
+                    color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 12, color: Color(0xFF7C3AED)),
+                      Icon(Icons.auto_fix_high_rounded, size: 12, color: Color(0xFF475569)),
                       SizedBox(width: 4),
                       Text(
-                        '✨ AI Bio',
+                        'Smart Bio',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF7C3AED),
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
                         ),
                       ),
                     ],

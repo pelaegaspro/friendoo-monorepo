@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/widgets/apple_pressable.dart';
+
 class IcebreakerTopic {
   const IcebreakerTopic({
     required this.category,
@@ -96,63 +98,84 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0D111A).withValues(alpha: 0.94),
+            color: const Color(0xFF0F131D).withValues(alpha: 0.94),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.12),
-              width: 1,
+              width: 0.85,
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pull Bar
+              // Apple Pull Bar Indicator
               Center(
                 child: Container(
-                  width: 44,
-                  height: 4,
+                  width: 38,
+                  height: 4.5,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(2),
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-              // Title
+              // Title Row
               Row(
                 children: [
-                  const Text('💬', style: TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Icebreaker Starters',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        width: 0.75,
+                      ),
                     ),
+                    child: const Icon(
+                      Icons.forum_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Icebreaker Starters',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      SizedBox(height: 1),
+                      Text(
+                        'Lighthearted questions to kick off great conversations effortlessly',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Fun questions to kick off great conversations effortlessly',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-              // Category Tabs (Horizontal Scroll)
+              // Category Tabs (Apple Segmented Glass Pills)
               SizedBox(
-                height: 38,
+                height: 36,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: kIcebreakerTopics.length,
@@ -161,24 +184,25 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                     final item = kIcebreakerTopics[index];
                     final isSelected = _selectedCategoryIndex == index;
 
-                    return GestureDetector(
+                    return ApplePressable(
                       onTap: () {
                         HapticFeedback.selectionClick();
                         setState(() => _selectedCategoryIndex = index);
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF7C3AED)
-                              : Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(20),
+                              ? Colors.white.withValues(alpha: 0.16)
+                              : Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFFEC4899)
-                                : Colors.white.withValues(alpha: 0.1),
-                            width: 1,
+                                ? Colors.white.withValues(alpha: 0.35)
+                                : Colors.white.withValues(alpha: 0.08),
+                            width: 0.85,
                           ),
                         ),
                         child: Row(
@@ -189,9 +213,10 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                             Text(
                               item.category,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
+                                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
                                 fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                letterSpacing: -0.1,
                               ),
                             ),
                           ],
@@ -202,27 +227,28 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              // Questions List
+              // Questions List (Apple Frosted Glass Tiles)
               Column(
                 children: activeTopic.questions.map((q) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: GestureDetector(
+                    child: ApplePressable(
+                      scale: 0.98,
                       onTap: () {
                         HapticFeedback.lightImpact();
                         Navigator.of(context).pop();
                         widget.onTopicSelected(q);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.04),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            width: 1,
+                            color: Colors.white.withValues(alpha: 0.09),
+                            width: 0.85,
                           ),
                         ),
                         child: Row(
@@ -233,15 +259,16 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                   height: 1.35,
+                                  letterSpacing: -0.15,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             const Icon(
-                              Icons.touch_app_rounded,
-                              color: Color(0xFFEC4899),
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFF94A3B8),
                               size: 18,
                             ),
                           ],
@@ -251,6 +278,18 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                   );
                 }).toList(),
               ),
+
+              const SizedBox(height: 6),
+              Center(
+                child: Text(
+                  'Tap any topic to display as a private prompter on your call screen',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.38),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -258,3 +297,4 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
     );
   }
 }
+

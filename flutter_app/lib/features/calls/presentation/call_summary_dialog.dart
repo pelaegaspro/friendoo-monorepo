@@ -463,7 +463,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                     ),
                     const SizedBox(height: 14),
 
-                    // 5 Tactile Stars with Spring Pop
+                    // 5 Tactile Stars with Spring Pop (Apple Warm Amber)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(5, (index) {
@@ -472,6 +472,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                         return ApplePressable(
                           scale: 0.85,
                           onTap: () {
+                            HapticFeedback.lightImpact();
                             setState(() {
                               _rating = starIndex;
                             });
@@ -482,7 +483,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                               Icons.star_rounded,
                               size: 38,
                               color: isFilled
-                                  ? const Color(0xFFFF2A85)
+                                  ? const Color(0xFFF59E0B)
                                   : const Color(0xFF23273B),
                             ),
                           ),
@@ -491,7 +492,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Voice Compliment Badges (FRND / Chamet style)
+                    // Voice Compliment Badges (Apple Segmented Glass Chips)
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -505,7 +506,8 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                         '🌟 Warm & Friendly',
                       ].map((tag) {
                         final isSelected = _selectedCompliments.contains(tag);
-                        return GestureDetector(
+                        return ApplePressable(
+                          scale: 0.94,
                           onTap: () {
                             HapticFeedback.selectionClick();
                             setState(() {
@@ -518,17 +520,18 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 160),
-                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                            curve: Curves.easeOutCubic,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF7C3AED).withValues(alpha: 0.35)
+                                  ? Colors.white.withValues(alpha: 0.16)
                                   : Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFFEC4899)
-                                    : Colors.white.withValues(alpha: 0.12),
-                                width: 1,
+                                    ? Colors.white.withValues(alpha: 0.35)
+                                    : Colors.white.withValues(alpha: 0.08),
+                                width: 0.85,
                               ),
                             ),
                             child: Text(
@@ -537,6 +540,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                                 color: isSelected ? Colors.white : const Color(0xFF94A3B8),
                                 fontSize: 11.5,
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                letterSpacing: -0.1,
                               ),
                             ),
                           ),

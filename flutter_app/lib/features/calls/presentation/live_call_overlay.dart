@@ -1010,85 +1010,91 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           Spacer(flex: isCompact ? 1 : 3),
 
-                          // Active AI Teleprompter Card
+                          // Active Prompter HUD Card (Apple Frosted Glass)
                           if (_activeAiTip != null) ...[
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFF7C3AED).withValues(alpha: 0.28),
-                                    const Color(0xFFEC4899).withValues(alpha: 0.18),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: const Color(0xFFEC4899).withValues(alpha: 0.5),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 2),
-                                    child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFEC4899), size: 16),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'AI CONVERSATION LEAD',
-                                          style: TextStyle(
-                                            color: Color(0xFFD8B4FE),
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _activeAiTip!,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w600,
-                                            height: 1.35,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.fromLTRB(14, 11, 10, 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F131D).withValues(alpha: 0.88),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.16),
+                                      width: 0.85,
                                     ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.35),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                  GestureDetector(
-                                    onTap: () => setState(() => _activeAiTip = null),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(4),
-                                      child: Icon(Icons.close_rounded, color: Colors.white54, size: 16),
-                                    ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 2),
+                                        child: Icon(
+                                          Icons.tips_and_updates_outlined,
+                                          color: Color(0xFFF59E0B),
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'CONVERSATION PROMPT',
+                                              style: TextStyle(
+                                                color: Color(0xFF94A3B8),
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.6,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              _activeAiTip!,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                height: 1.35,
+                                                letterSpacing: -0.15,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => setState(() => _activeAiTip = null),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(Icons.close_rounded, color: Colors.white60, size: 16),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ],
 
-                          // Interactive Action Pills: AI Conversation Wingman & Topics
+                          // Interactive Action Pills: Prompts Copilot & Topics
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // AI Conversation Wingman Button
-                              GestureDetector(
+                              // Copilot Prompts Button (Apple Frosted Pill)
+                              ApplePressable(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   AiConversationWingmanSheet.show(
@@ -1101,31 +1107,31 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                   );
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
-                                    ),
+                                    color: Colors.white.withValues(alpha: 0.10),
                                     borderRadius: BorderRadius.circular(22),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.18),
+                                      width: 0.85,
+                                    ),
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 15),
+                                      Icon(
+                                        Icons.tips_and_updates_outlined,
+                                        color: Color(0xFFF59E0B),
+                                        size: 15,
+                                      ),
                                       SizedBox(width: 6),
                                       Text(
-                                        'AI Wingman',
+                                        'Copilot Prompts',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 12.5,
-                                          fontWeight: FontWeight.w800,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
                                         ),
                                       ),
                                     ],
@@ -1135,8 +1141,8 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                               const SizedBox(width: 10),
 
-                              // Classic Topics Button
-                              GestureDetector(
+                              // Classic Topics Button (Apple Frosted Pill)
+                              ApplePressable(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   CallIcebreakersSheet.show(
@@ -1147,26 +1153,31 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                   );
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.08),
+                                    color: Colors.white.withValues(alpha: 0.07),
                                     borderRadius: BorderRadius.circular(22),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.14),
-                                      width: 0.75,
+                                      color: Colors.white.withValues(alpha: 0.13),
+                                      width: 0.85,
                                     ),
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text('💬', style: TextStyle(fontSize: 13)),
+                                      Icon(
+                                        Icons.forum_outlined,
+                                        color: Color(0xFF94A3B8),
+                                        size: 14,
+                                      ),
                                       SizedBox(width: 6),
                                       Text(
-                                        'Topics',
+                                        'Icebreakers',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
                                         ),
                                       ),
                                     ],

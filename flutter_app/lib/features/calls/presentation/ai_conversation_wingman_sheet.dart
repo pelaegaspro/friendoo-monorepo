@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/widgets/apple_pressable.dart';
+
 class AiWingmanTip {
   const AiWingmanTip({
     required this.lead,
@@ -61,10 +63,10 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
   List<AiWingmanTip> _activeTips = [];
 
   final Map<String, String> _vibeLabels = {
-    'break_silence': '🧊 Break Silence',
-    'playful': '😂 Playful & Fun',
-    'compliment': '💖 Compliment',
-    'deep': '🌙 Deep Vibe',
+    'break_silence': 'Break Silence',
+    'playful': 'Playful & Fun',
+    'compliment': 'Compliments',
+    'deep': 'Deep Vibe',
   };
 
   @override
@@ -211,67 +213,75 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0D111A).withValues(alpha: 0.95),
+            color: const Color(0xFF0F131D).withValues(alpha: 0.94),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.12),
-              width: 1,
+              width: 0.85,
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pull Bar
+              // Apple Pull Bar Indicator
               Center(
                 child: Container(
-                  width: 44,
-                  height: 4,
+                  width: 38,
+                  height: 4.5,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(2),
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-              // Title Row
+              // Title Header Row (Refined Apple System Aesthetic)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            width: 0.75,
                           ),
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 16),
+                        child: const Icon(
+                          Icons.tips_and_updates_outlined,
+                          color: Color(0xFFF59E0B),
+                          size: 18,
+                        ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'AI Conversation Wingman',
+                            'Conversation Copilot',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
                             ),
                           ),
+                          const SizedBox(height: 1),
                           Text(
-                            'Smart tips to keep the conversation flowing smoothly',
+                            'Smart prompts to keep conversations natural & engaging',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 11.5,
+                              color: Colors.white.withValues(alpha: 0.50),
+                              fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -280,17 +290,17 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                     ],
                   ),
 
-                  // Refresh Button
-                  GestureDetector(
+                  // Refresh Button (Apple Glass Capsule)
+                  ApplePressable(
                     onTap: _isLoadingAi ? null : _fetchFreshAiTips,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
-                          width: 1,
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 0.85,
                         ),
                       ),
                       child: Row(
@@ -305,14 +315,14 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.refresh_rounded, color: Color(0xFFEC4899), size: 14),
-                          const SizedBox(width: 4),
+                              : const Icon(Icons.refresh_rounded, color: Colors.white, size: 14),
+                          const SizedBox(width: 5),
                           const Text(
-                            'AI Generate',
+                            'Refresh',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -322,9 +332,9 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                 ],
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-              // Mood / Vibe Selector Chips
+              // Vibe Selector Tabs (Apple Segmented Glass Pills)
               SizedBox(
                 height: 36,
                 child: ListView(
@@ -333,32 +343,36 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                     final isSelected = _currentVibe == entry.key;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
+                      child: ApplePressable(
                         onTap: () {
                           HapticFeedback.selectionClick();
                           _loadVibeTips(entry.key);
                         },
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 160),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFF7C3AED)
-                                : Colors.white.withValues(alpha: 0.06),
+                                ? Colors.white.withValues(alpha: 0.16)
+                                : Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFFEC4899)
-                                  : Colors.white.withValues(alpha: 0.1),
-                              width: 1,
+                                  ? Colors.white.withValues(alpha: 0.35)
+                                  : Colors.white.withValues(alpha: 0.08),
+                              width: 0.85,
                             ),
                           ),
-                          child: Text(
-                            entry.value,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white70,
-                              fontSize: 11.5,
-                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                          child: Center(
+                            child: Text(
+                              entry.value,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                letterSpacing: -0.1,
+                              ),
                             ),
                           ),
                         ),
@@ -370,12 +384,13 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
 
               const SizedBox(height: 16),
 
-              // Active AI Tips List
+              // Active Prompts List (Apple Frosted Glass Tiles)
               Column(
                 children: _activeTips.map((tip) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: GestureDetector(
+                    child: ApplePressable(
+                      scale: 0.98,
                       onTap: () {
                         HapticFeedback.lightImpact();
                         Navigator.of(context).pop();
@@ -385,27 +400,27 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.04),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            width: 1,
+                            color: Colors.white.withValues(alpha: 0.09),
+                            width: 0.85,
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                                color: Colors.white.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 tip.category,
                                 style: const TextStyle(
-                                  color: Color(0xFFD8B4FE),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFCBD5E1),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -415,17 +430,21 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                                 '"${tip.lead}"',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
                                   height: 1.35,
+                                  letterSpacing: -0.15,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: Color(0xFFEC4899),
-                              size: 14,
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(
+                                Icons.chevron_right_rounded,
+                                color: Color(0xFF94A3B8),
+                                size: 18,
+                              ),
                             ),
                           ],
                         ),
@@ -435,13 +454,14 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
                 }).toList(),
               ),
 
+              const SizedBox(height: 6),
               Center(
                 child: Text(
-                  'Tap any tip to display it as a private teleprompter on your call screen 💡',
+                  'Tap any prompt to display as a private HUD prompter on your call screen',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Colors.white.withValues(alpha: 0.38),
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -452,3 +472,5 @@ class _AiConversationWingmanSheetState extends State<AiConversationWingmanSheet>
     );
   }
 }
+
+
