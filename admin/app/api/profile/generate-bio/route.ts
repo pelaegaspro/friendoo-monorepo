@@ -25,35 +25,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ bio: fallback });
     }
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'qwen/qwen3.8-27b',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userInput },
-        ],
-        temperature: 0.7,
-        max_tokens: 80,
-      }),
-    });
+    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+    let generated = '';
 
-    if (!groqRes.ok) {
-      console.error('Groq Bio error:', groqRes.status, await groqRes.text());
-      const fallback = isHost
-        ? `Passionate host who loves meaningful conversations about ${userInput}. Always ready for a warm chat!`
-        : `Into ${userInput} and always up for good conversations and positive vibes.`;
-      return NextResponse.json({ bio: fallback });
+    for (const model of models) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userInput },
+            ],
+            temperature: 0.7,
+            max_tokens: 80,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const data = await groqRes.json();
+          const content = data.choices?.[0]?.message?.content?.trim();
+          if (content) {
+            generated = content.replace(/^["']|["']$/g, '').trim();
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn(`Groq Bio model ${model} attempt failed:`, err);
+      }
     }
 
-    const data = await groqRes.json();
-    let generated = data.choices?.[0]?.message?.content?.trim() || '';
-    // Clean any quotation marks or leading/trailing prefixes
-    generated = generated.replace(/^["']|["']$/g, '').trim();
+    if (!generated) {
+      generated = isHost
+        ? `Passionate host who loves meaningful conversations about ${userInput}. Always ready for a warm chat!`
+        : `Into ${userInput} and always up for good conversations and positive vibes.`;
+    }
 
     return NextResponse.json({ bio: generated });
   } catch (error) {

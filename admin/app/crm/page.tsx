@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ExternalLink, ArrowLeft, Users, Sparkles, Megaphone, Ticket } from 'lucide-react'
 
 export default function CrmPortalRedirectPage() {
-  const crmUrl = process.env.NEXT_PUBLIC_CRM_URL || 'http://localhost:3001'
+  const crmUrl = process.env.NEXT_PUBLIC_CRM_URL || 'https://friendoo-crm.netlify.app'
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center p-4">

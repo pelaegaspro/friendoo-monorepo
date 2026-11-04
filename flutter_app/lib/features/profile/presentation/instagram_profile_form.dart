@@ -411,22 +411,31 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
   }
 
   Future<String> _callAiBioApi(String userPrompt, bool isHost) async {
-    try {
-      final client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
-      final request = await client.postUrl(Uri.parse('http://localhost:3000/api/profile/generate-bio'));
-      request.headers.set('content-type', 'application/json');
-      request.add(utf8.encode(jsonEncode({
-        'prompt': userPrompt,
-        'role': isHost ? 'host' : 'user',
-      })));
-      final response = await request.close();
-      if (response.statusCode == 200) {
-        final reply = await response.transform(utf8.decoder).join();
-        final map = jsonDecode(reply) as Map<String, dynamic>;
-        final bio = map['bio']?.toString().trim();
-        if (bio != null && bio.isNotEmpty) return bio;
-      }
-    } catch (_) {}
+    final candidateEndpoints = [
+      'https://friendoo-admin.netlify.app/api/profile/generate-bio',
+      'http://10.0.2.2:3000/api/profile/generate-bio',
+      'http://127.0.0.1:3000/api/profile/generate-bio',
+      'http://localhost:3000/api/profile/generate-bio',
+    ];
+
+    for (final endpoint in candidateEndpoints) {
+      try {
+        final client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
+        final request = await client.postUrl(Uri.parse(endpoint));
+        request.headers.set('content-type', 'application/json');
+        request.add(utf8.encode(jsonEncode({
+          'prompt': userPrompt,
+          'role': isHost ? 'host' : 'user',
+        })));
+        final response = await request.close();
+        if (response.statusCode == 200) {
+          final reply = await response.transform(utf8.decoder).join();
+          final map = jsonDecode(reply) as Map<String, dynamic>;
+          final bio = map['bio']?.toString().trim();
+          if (bio != null && bio.isNotEmpty) return bio;
+        }
+      } catch (_) {}
+    }
 
     // Instant smart template fallback matching user prompt
     final lower = userPrompt.toLowerCase();

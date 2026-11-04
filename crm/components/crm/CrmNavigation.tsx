@@ -73,6 +73,18 @@ export function CrmDesktopNavigation() {
           <NavLink key={item.href} item={item} />
         ))}
       </div>
+
+      <div className="space-y-1 pt-2 border-t border-border">
+        <a
+          href="https://friendoo-admin.netlify.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-8 items-center justify-between rounded-[8px] px-2 text-sm font-semibold text-purple-400 hover:bg-purple-950/20 transition-colors"
+        >
+          <span>Admin Console</span>
+          <span className="text-xs">↗</span>
+        </a>
+      </div>
     </nav>
   );
 }
@@ -99,6 +111,14 @@ export function CrmMobileNavigation() {
           </Link>
         );
       })}
+      <a
+        href="https://friendoo-admin.netlify.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="whitespace-nowrap rounded-[8px] px-3 py-1.5 text-xs font-semibold text-purple-400 hover:bg-purple-950/20 transition-colors border border-purple-500/20"
+      >
+        Admin ↗
+      </a>
     </nav>
   );
 }
