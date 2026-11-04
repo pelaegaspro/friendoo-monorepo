@@ -58,7 +58,6 @@ class FriendooDesignTokens extends ThemeExtension<FriendooDesignTokens> {
 abstract final class FriendooTheme {
   static ThemeData light() {
     const orchid = Color(0xFF6366F1); // Apple refined indigo
-    const indigo = Color(0xFF0F172A); // Slate 900
     const mango = Color(0xFFF59E0B);  // Apple Warm Amber
     const ink = Color(0xFF0F172A);
     const canvas = Color(0xFFF8FAFC);
@@ -67,10 +66,10 @@ abstract final class FriendooTheme {
 
     final colorScheme = ColorScheme(
       brightness: Brightness.light,
-      primary: indigo,
+      primary: orchid,
       onPrimary: card,
-      primaryContainer: const Color(0xFFF1F5F9),
-      onPrimaryContainer: ink,
+      primaryContainer: const Color(0xFFEEF2FF),
+      onPrimaryContainer: const Color(0xFF3730A3),
       secondary: orchid,
       onSecondary: card,
       secondaryContainer: const Color(0xFFEEF2FF),
@@ -233,24 +232,31 @@ abstract final class FriendooTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: card,
-        hintStyle: textTheme.bodyMedium,
+        fillColor: const Color(0xFFF8FAFC),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF94A3B8),
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 16,
+          horizontal: 16,
+          vertical: 14,
         ),
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: Color(0xFF6366F1),
+        selectionColor: Color(0x336366F1),
+        selectionHandleColor: Color(0xFF6366F1),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

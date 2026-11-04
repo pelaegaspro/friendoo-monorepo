@@ -83,7 +83,7 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
     final textLength = widget.controller.text.length;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,9 +94,9 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _isFocused ? widget.accentColor : const Color(0xFF6B7280),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: _isFocused ? widget.accentColor : const Color(0xFF475569),
                   letterSpacing: 0.1,
                 ),
               ),
@@ -105,7 +105,7 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
                   '$textLength/${widget.maxLength}',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: textLength >= widget.maxLength!
                         ? const Color(0xFFEF4444)
                         : const Color(0xFF9CA3AF),
@@ -113,97 +113,118 @@ class _InstagramTextFieldState extends State<InstagramTextField> {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
 
-          // Input field row with bottom divider
-          Row(
-            crossAxisAlignment: widget.maxLines > 1
-                ? CrossAxisAlignment.start
-                : CrossAxisAlignment.center,
-            children: [
-              if (widget.prefixIcon != null) ...[
-                Icon(
-                  widget.prefixIcon,
-                  size: 19,
-                  color: _isFocused ? widget.accentColor : const Color(0xFF9CA3AF),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: TextFormField(
-                  controller: widget.controller,
-                  focusNode: _focusNode,
-                  maxLength: widget.maxLength,
-                  maxLines: widget.maxLines,
-                  minLines: widget.minLines,
-                  keyboardType: widget.keyboardType,
-                  textInputAction: widget.textInputAction,
-                  textCapitalization: widget.textCapitalization,
-                  onChanged: widget.onChanged,
-                  validator: widget.validator,
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF0F172A),
-                    height: 1.35,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: widget.hintText,
-                    hintStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    counterText: '',
-                    suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                    suffixIcon: (_isFocused && hasText)
-                        ? IconButton(
-                            tooltip: 'Clear',
-                            icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            splashRadius: 18,
-                            onPressed: () {
-                              widget.controller.clear();
-                              widget.onChanged?.call('');
-                              if (mounted) setState(() {});
-                            },
-                          )
-                        : (hasText && widget.maxLines == 1
-                            ? Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: Icon(
-                                  Icons.edit_outlined,
-                                  size: 18,
-                                  color: widget.accentColor,
-                                ),
-                              )
-                            : null),
-                  ),
-                ),
+          // Apple-style rounded frosted card input (Zero harsh black boxes)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: _isFocused ? Colors.white : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isFocused ? widget.accentColor : const Color(0xFFE2E8F0),
+                width: _isFocused ? 1.5 : 1.0,
               ),
-            ],
+              boxShadow: _isFocused
+                  ? [
+                      BoxShadow(
+                        color: widget.accentColor.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x060E1020),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            child: Row(
+              crossAxisAlignment: widget.maxLines > 1
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
+              children: [
+                if (widget.prefixIcon != null) ...[
+                  Padding(
+                    padding: EdgeInsets.only(top: widget.maxLines > 1 ? 8 : 0),
+                    child: Icon(
+                      widget.prefixIcon,
+                      size: 20,
+                      color: _isFocused ? widget.accentColor : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: TextFormField(
+                    controller: widget.controller,
+                    focusNode: _focusNode,
+                    cursorColor: widget.accentColor,
+                    maxLength: widget.maxLength,
+                    maxLines: widget.maxLines,
+                    minLines: widget.minLines,
+                    keyboardType: widget.keyboardType,
+                    textInputAction: widget.textInputAction,
+                    textCapitalization: widget.textCapitalization,
+                    onChanged: widget.onChanged,
+                    validator: widget.validator,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                      height: 1.35,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: widget.hintText,
+                      hintStyle: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      counterText: '',
+                      suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                      suffixIcon: (_isFocused && hasText)
+                          ? IconButton(
+                              tooltip: 'Clear',
+                              icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              splashRadius: 18,
+                              onPressed: () {
+                                widget.controller.clear();
+                                widget.onChanged?.call('');
+                                if (mounted) setState(() {});
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          // Instagram clean bottom underline divider
-          if (widget.showBottomDivider)
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              height: _isFocused ? 1.6 : 0.8,
-              color: _isFocused ? widget.accentColor : const Color(0xFFE5E7EB),
-            ),
-
           if (widget.helperText != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              widget.helperText!,
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF9CA3AF),
-                height: 1.3,
+            const SizedBox(height: 5),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                widget.helperText!,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: Color(0xFF94A3B8),
+                  height: 1.3,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -361,7 +382,7 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5),
+                          borderSide: BorderSide(color: widget.accentColor, width: 1.5),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
@@ -396,7 +417,7 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                                 }
                               },
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F172A),
+                          backgroundColor: widget.accentColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         icon: _isGenerating
@@ -466,7 +487,7 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
     final hasText = widget.controller.text.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -476,9 +497,9 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _isFocused ? widget.accentColor : const Color(0xFF6B7280),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: _isFocused ? widget.accentColor : const Color(0xFF475569),
                   letterSpacing: 0.1,
                 ),
               ),
@@ -486,23 +507,23 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                 onTap: () => _openAiBioSheet(context),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFFEEF2FF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_fix_high_rounded, size: 12, color: Color(0xFF475569)),
-                      SizedBox(width: 4),
+                      Icon(Icons.auto_fix_high_rounded, size: 13, color: widget.accentColor),
+                      const SizedBox(width: 4),
                       Text(
                         'Smart Bio',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
+                          fontWeight: FontWeight.w700,
+                          color: widget.accentColor,
                         ),
                       ),
                     ],
@@ -511,55 +532,80 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
 
-          TextFormField(
-            controller: widget.controller,
-            focusNode: _focusNode,
-            maxLength: widget.maxLength,
-            minLines: 2,
-            maxLines: 4,
-            onChanged: widget.onChanged,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF0F172A),
-              height: 1.4,
-            ),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF9CA3AF),
-              ),
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 6),
-              counterText: '',
-              suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              suffixIcon: (_isFocused && hasText)
-                  ? IconButton(
-                      tooltip: 'Clear Bio',
-                      icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      splashRadius: 18,
-                      onPressed: () {
-                        widget.controller.clear();
-                        widget.onChanged?.call('');
-                        if (mounted) setState(() {});
-                      },
-                    )
-                  : null,
-            ),
-          ),
-
-          // Underline divider
+          // Apple-style rounded frosted bio card
           AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            height: _isFocused ? 1.6 : 0.8,
-            color: _isFocused ? widget.accentColor : const Color(0xFFE5E7EB),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: _isFocused ? Colors.white : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isFocused ? widget.accentColor : const Color(0xFFE2E8F0),
+                width: _isFocused ? 1.5 : 1.0,
+              ),
+              boxShadow: _isFocused
+                  ? [
+                      BoxShadow(
+                        color: widget.accentColor.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x060E1020),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: TextFormField(
+              controller: widget.controller,
+              focusNode: _focusNode,
+              cursorColor: widget.accentColor,
+              maxLength: widget.maxLength,
+              minLines: 2,
+              maxLines: 4,
+              onChanged: widget.onChanged,
+              style: const TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF0F172A),
+                height: 1.4,
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                hintStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF9CA3AF),
+                ),
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                counterText: '',
+                suffixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                suffixIcon: (_isFocused && hasText)
+                    ? IconButton(
+                        tooltip: 'Clear Bio',
+                        icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        splashRadius: 18,
+                        onPressed: () {
+                          widget.controller.clear();
+                          widget.onChanged?.call('');
+                          if (mounted) setState(() {});
+                        },
+                      )
+                    : null,
+              ),
+            ),
           ),
         ],
       ),
@@ -621,7 +667,7 @@ class _InstagramAgeRowState extends State<InstagramAgeRow> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -631,79 +677,113 @@ class _InstagramAgeRowState extends State<InstagramAgeRow> {
               Text(
                 'Age',
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _isFocused ? widget.accentColor : const Color(0xFF6B7280),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: _isFocused ? widget.accentColor : const Color(0xFF475569),
                   letterSpacing: 0.1,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(6),
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
                 ),
-                child: const Text(
-                  '18+ Verified',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF16A34A),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _ageController,
-                  focusNode: _focusNode,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(2),
-                  ],
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Enter age (e.g. 24)',
-                    hintStyle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF9CA3AF),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified_rounded, size: 12, color: Color(0xFF10B981)),
+                    SizedBox(width: 3),
+                    Text(
+                      '18+ Verified',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF047857),
+                      ),
                     ),
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  onChanged: (val) {
-                    final parsed = int.tryParse(val);
-                    if (parsed != null && parsed >= widget.minAge && parsed <= widget.maxAge) {
-                      widget.onChanged(parsed);
-                    }
-                  },
-                ),
-              ),
-              const Text(
-                'years',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF9CA3AF),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 6),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            height: _isFocused ? 1.6 : 0.8,
-            color: _isFocused ? widget.accentColor : const Color(0xFFE5E7EB),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: _isFocused ? Colors.white : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _isFocused ? widget.accentColor : const Color(0xFFE2E8F0),
+                width: _isFocused ? 1.5 : 1.0,
+              ),
+              boxShadow: _isFocused
+                  ? [
+                      BoxShadow(
+                        color: widget.accentColor.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x060E1020),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _ageController,
+                    focusNode: _focusNode,
+                    cursorColor: widget.accentColor,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter age (e.g. 24)',
+                      hintStyle: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (val) {
+                      final parsed = int.tryParse(val);
+                      if (parsed != null && parsed >= widget.minAge && parsed <= widget.maxAge) {
+                        widget.onChanged(parsed);
+                      }
+                    },
+                  ),
+                ),
+                const Text(
+                  'years',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

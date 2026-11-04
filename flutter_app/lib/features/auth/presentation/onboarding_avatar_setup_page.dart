@@ -319,33 +319,37 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _nameController,
+                  cursorColor: themeColor,
                   textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Enter your full name',
-                    hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.5),
                     prefixIcon: Icon(
                       Icons.person_outline_rounded,
                       color: themeColor,
-                      size: 22,
+                      size: 20,
                     ),
                     suffixIcon: const Icon(
                       Icons.edit_outlined,
-                      color: Color(0xFF9CA3AF),
+                      color: Color(0xFF94A3B8),
                       size: 18,
                     ),
-                    filled: false,
-                    isDense: true,
-                    border: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: themeColor, width: 2),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: themeColor, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -362,28 +366,32 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _cityController,
+                  cursorColor: themeColor,
                   textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                  style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Enter your city (e.g. Chennai, Mumbai)',
-                    hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15),
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14.5),
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
                       color: themeColor,
-                      size: 22,
+                      size: 20,
                     ),
-                    filled: false,
-                    isDense: true,
-                    border: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
-                    enabledBorder: const UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: themeColor, width: 2),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: themeColor, width: 1.5),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
                 const SizedBox(height: 10),

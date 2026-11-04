@@ -1009,27 +1009,26 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
               ),
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEDE9FE),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  'TOP 6',
-                  style: TextStyle(
-                    color: Color(0xFF7C3AED),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 9.5,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '${top6Hosts.length}/6',
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, size: 10, color: Color(0xFF7C3AED)),
+                    SizedBox(width: 3),
+                    Text(
+                      'FEATURED',
+                      style: TextStyle(
+                        color: Color(0xFF7C3AED),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 9.5,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1568,7 +1567,6 @@ class _DesiHostCard extends StatelessWidget {
     final savedAvatarId = host.avatarUrl?.trim();
     final isBusy = host.status == HostStatus.busy;
     final isOnline = host.isAvailable && !isBusy;
-    final isOffline = !host.isAvailable && !isBusy;
 
     return Container(
       decoration: BoxDecoration(
@@ -1576,30 +1574,30 @@ class _DesiHostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: host.isStar
-              ? const Color(0xFFFFB703).withValues(alpha: 0.55)
+              ? const Color(0xFFF59E0B)
               : (isOnline
                     ? const Color(0xFF10B981).withValues(alpha: 0.35)
                     : (isBusy
                         ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
-                        : const Color(0xFFE5E7EB))),
-          width: host.isStar ? 1.8 : 1.2,
+                        : const Color(0xFFE2E8F0))),
+          width: host.isStar ? 1.6 : 1.1,
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
+          const BoxShadow(
+            color: Color(0x060E1020),
             blurRadius: 4,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
           BoxShadow(
             color: host.isStar
-                ? const Color(0xFFFFB703).withValues(alpha: 0.16)
+                ? const Color(0xFFF59E0B).withValues(alpha: 0.16)
                 : (isOnline
-                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                      ? const Color(0xFF10B981).withValues(alpha: 0.10)
                       : (isBusy
-                          ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
-                          : Colors.black.withValues(alpha: 0.025))),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+                          ? const Color(0xFFF59E0B).withValues(alpha: 0.10)
+                          : const Color(0x04000000))),
+            blurRadius: host.isStar ? 20 : 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1610,54 +1608,80 @@ class _DesiHostCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // LEFT: Avatar with Crown for Star Host
+              // LEFT: Avatar with Radiant Halo & Star Badge
               Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.topCenter,
                 children: [
-                  savedAvatarId != null && savedAvatarId.isNotEmpty
-                      ? FriendooAvatar(
-                          config: FriendooAvatarConfig.fromRawString(
-                            savedAvatarId,
-                            gender: 'female',
-                            role: 'host',
+                  Container(
+                    padding: host.isStar ? const EdgeInsets.all(2.5) : EdgeInsets.zero,
+                    decoration: host.isStar
+                        ? const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFFF59E0B), Color(0xFFFBBF24), Color(0xFF818CF8)],
+                            ),
+                          )
+                        : null,
+                    child: savedAvatarId != null && savedAvatarId.isNotEmpty
+                        ? FriendooAvatar(
+                            config: FriendooAvatarConfig.fromRawString(
+                              savedAvatarId,
+                              gender: 'female',
+                              role: 'host',
+                            ),
+                            age: host.displayAge,
+                            isStar: false,
+                            size: 56,
+                            showPresence: true,
+                            isOnline: host.isAvailable,
+                          )
+                        : DesiFemaleAvatar(
+                            seed: host.displayName,
+                            age: host.displayAge,
+                            isStar: false,
+                            size: 56,
+                            showPresence: true,
+                            isOnline: host.isAvailable,
                           ),
-                          age: host.displayAge,
-                          isStar: false,
-                          size: 58,
-                          showPresence: true,
-                          isOnline: host.isAvailable,
-                        )
-                      : DesiFemaleAvatar(
-                          seed: host.displayName,
-                          age: host.displayAge,
-                          isStar: false,
-                          size: 58,
-                          showPresence: true,
-                          isOnline: host.isAvailable,
-                        ),
+                  ),
                   if (host.isStar)
                     Positioned(
-                      top: -10,
+                      top: -7,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
+                          horizontal: 5,
+                          vertical: 1.5,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E1B4B),
+                          color: const Color(0xFFFFFBEB),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFFB703).withValues(alpha: 0.6),
+                              color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
                           ],
                         ),
-                        child: const Text(
-                          '👑',
-                          style: TextStyle(fontSize: 11.5, height: 1.1),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star_rounded, size: 9.5, color: Color(0xFFB45309)),
+                            SizedBox(width: 2),
+                            Text(
+                              'STAR',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFB45309),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1693,11 +1717,30 @@ class _DesiHostCard extends StatelessWidget {
                           size: 15,
                         ),
                         if (host.isStar) ...[
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.star_rounded,
-                            color: Color(0xFFFFB703),
-                            size: 16,
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFDE68A)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star_rounded, size: 10, color: Color(0xFFF59E0B)),
+                                SizedBox(width: 2),
+                                Text(
+                                  'STAR HOST',
+                                  style: TextStyle(
+                                    color: Color(0xFFB45309),
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                         if (isRecommended) ...[
@@ -1793,33 +1836,50 @@ class _DesiHostCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // RIGHT: Rate Badge
+              // RIGHT: Rate Badge (Differentiated for Star vs Standard Host)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: FriendooUiColors.softBlue,
+                  color: host.isStar
+                      ? const Color(0xFFFFFBEB)
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: FriendooUiColors.blue.withValues(alpha: 0.2),
+                    color: host.isStar
+                        ? const Color(0xFFFDE68A)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      '₹${host.ratePerAudioMinute}',
-                      style: const TextStyle(
-                        color: FriendooUiColors.blue,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (host.isStar) ...[
+                          const Icon(Icons.monetization_on_rounded, size: 12, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 2),
+                        ],
+                        Text(
+                          '₹${host.ratePerAudioMinute}',
+                          style: TextStyle(
+                            color: host.isStar
+                                ? const Color(0xFFB45309)
+                                : const Color(0xFF0F172A),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Text(
+                    Text(
                       '/min',
                       style: TextStyle(
-                        color: FriendooUiColors.muted,
+                        color: host.isStar
+                            ? const Color(0xFFD97706)
+                            : const Color(0xFF64748B),
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1940,43 +2000,58 @@ class _DesiHostCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // [ Call Now / Busy / Offline ] Button (Strict: NEVER show Busy if offline)
+              // [ Call Now / Busy / Offline ] Button (Elevated Radiant Gradient for Star Host)
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: ApplePressable(
                   pressedScale: 0.92,
                   onTap: isOnline ? onStartCall : null,
-                  child: ElevatedButton.icon(
-                    onPressed: isOnline ? onStartCall : null,
-                    icon: Icon(
-                      isOnline
-                          ? Icons.call_rounded
-                          : (isBusy ? Icons.phone_in_talk_rounded : Icons.phone_disabled_rounded),
-                      size: 15,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: (isOnline && host.isStar)
+                          ? const LinearGradient(
+                              colors: [Color(0xFF7C3AED), Color(0xFF6366F1)],
+                            )
+                          : null,
+                      color: (isOnline && host.isStar)
+                          ? null
+                          : (isOnline
+                              ? const Color(0xFF10B981)
+                              : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB))),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: isOnline
+                          ? [
+                              BoxShadow(
+                                color: (host.isStar ? const Color(0xFF7C3AED) : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
-                    label: Text(
-                      isOnline
-                          ? 'Call Now'
-                          : (isBusy ? 'Busy' : 'Offline'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isOnline
-                          ? const Color(0xFF10B981)
-                          : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB)),
-                      foregroundColor: isOnline || isBusy
-                          ? Colors.white
-                          : const Color(0xFF9CA3AF),
-                      elevation: isOnline ? 2 : 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isOnline
+                              ? Icons.call_rounded
+                              : (isBusy ? Icons.phone_in_talk_rounded : Icons.phone_disabled_rounded),
+                          size: 15,
+                          color: isOnline || isBusy ? Colors.white : const Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          isOnline
+                              ? (host.isStar ? 'VIP Call' : 'Call Now')
+                              : (isBusy ? 'Busy' : 'Offline'),
+                          style: TextStyle(
+                            color: isOnline || isBusy ? Colors.white : const Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
