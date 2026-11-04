@@ -473,6 +473,7 @@ class CallRepository {
     required String callId,
     required int rating,
     String? feedback,
+    List<String>? tags,
   }) async {
     final user = _client.auth.currentUser;
     try {
@@ -483,9 +484,65 @@ class CallRepository {
         'payload': {
           'rating': rating,
           'feedback': feedback ?? '',
+          'tags': tags ?? [],
           'rated_at': DateTime.now().toIso8601String(),
         },
       });
+    } catch (_) {}
+  }
+
+  Future<void> sendCallGift({
+    required String callId,
+    required String hostId,
+    required String giftId,
+    required String giftName,
+    required int coins,
+    required String emoji,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return;
+
+    final idempotencyKey = 'gift_${callId}_${giftId}_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      await _client.from('call_events').insert({
+        'call_id': callId,
+        'actor_id': user.id,
+        'event_type': 'gift_sent',
+        'payload': {
+          'gift_id': giftId,
+          'gift_name': giftName,
+          'emoji': emoji,
+          'coins': coins,
+          'host_id': hostId,
+          'sent_at': DateTime.now().toIso8601String(),
+        },
+      });
+
+      // Deduct coins from caller wallet
+      try {
+        await _client.rpc('admin_adjust_wallet', params: {
+          'p_actor_id': user.id,
+          'p_user_id': user.id,
+          'p_coin_delta': -coins,
+          'p_reason': 'Gift: $giftName $emoji',
+          'p_idempotency_key': '${idempotencyKey}_debit',
+        });
+      } catch (_) {}
+
+      // Credit host share in coins
+      final hostCoins = (coins * 0.60).round();
+      if (hostCoins > 0) {
+        try {
+          await _client.rpc('admin_adjust_wallet', params: {
+            'p_actor_id': user.id,
+            'p_user_id': hostId,
+            'p_coin_delta': hostCoins,
+            'p_reason': 'Received Gift: $giftName $emoji',
+            'p_idempotency_key': '${idempotencyKey}_credit',
+          });
+        } catch (_) {}
+      }
     } catch (_) {}
   }
 }

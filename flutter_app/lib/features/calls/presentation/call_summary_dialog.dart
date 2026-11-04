@@ -55,6 +55,7 @@ class CallSummaryDialog extends ConsumerStatefulWidget {
 
 class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
   int _rating = 5;
+  final Set<String> _selectedCompliments = {'🎙️ Sweet Voice'};
   final _feedbackController = TextEditingController();
   bool _submitted = false;
   String? _submitError;
@@ -91,6 +92,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
             callId: widget.summary.callId,
             rating: _rating,
             feedback: _feedbackController.text.trim(),
+            tags: _selectedCompliments.toList(),
           );
       _cleanupAndPop();
     } catch (_) {
@@ -486,7 +488,61 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                         );
                       }),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
+
+                    // Voice Compliment Badges (FRND / Chamet style)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        '🎙️ Sweet Voice',
+                        '👂 Great Listener',
+                        '✨ Positive Vibes',
+                        '😂 Very Funny',
+                        '💖 Super Polite',
+                        '🌟 Warm & Friendly',
+                      ].map((tag) {
+                        final isSelected = _selectedCompliments.contains(tag);
+                        return GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              if (isSelected) {
+                                _selectedCompliments.remove(tag);
+                              } else {
+                                _selectedCompliments.add(tag);
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF7C3AED).withValues(alpha: 0.35)
+                                  : Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFFEC4899)
+                                    : Colors.white.withValues(alpha: 0.12),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              tag,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                                fontSize: 11.5,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
 
                     // 6. Frosted Feedback Input
                     ClipRRect(

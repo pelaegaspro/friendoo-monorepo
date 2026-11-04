@@ -14,6 +14,8 @@ import '../../wallet/data/wallet_repository.dart';
 import '../../wallet/presentation/coin_packages_page.dart';
 import '../application/call_controller.dart';
 import '../data/rtc_audio_service.dart';
+import 'call_gift_sheet.dart';
+import 'call_icebreakers_sheet.dart';
 import 'call_report_bottom_sheet.dart';
 
 class LiveCallOverlay extends ConsumerStatefulWidget {
@@ -43,6 +45,19 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
   String? _remoteName;
   String? _remoteAvatarUrl;
+  String? _activeIcebreaker;
+  CallGiftItem? _recentGiftSent;
+  Timer? _giftAnimationTimer;
+
+  void _onGiftSent(CallGiftItem gift) {
+    setState(() => _recentGiftSent = gift);
+    _giftAnimationTimer?.cancel();
+    _giftAnimationTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() => _recentGiftSent = null);
+      }
+    });
+  }
 
   bool get isHostUser {
     if (widget.isHost != null) return widget.isHost!;
@@ -79,6 +94,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   @override
   void dispose() {
     _timer.cancel();
+    _giftAnimationTimer?.cancel();
     super.dispose();
   }
 
@@ -1005,6 +1021,177 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                           ],
 
                           Spacer(flex: isCompact ? 1 : 3),
+
+                          // Active Icebreaker Prompt Banner
+                          if (_activeIcebreaker != null) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.45),
+                                  width: 0.75,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text('💡', style: TextStyle(fontSize: 14)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _activeIcebreaker!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => setState(() => _activeIcebreaker = null),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(4),
+                                      child: Icon(Icons.close_rounded, color: Colors.white54, size: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          // Recent Gift Sent Banner
+                          if (_recentGiftSent != null) ...[
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: _recentGiftSent!.gradient,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _recentGiftSent!.gradient.colors.first.withValues(alpha: 0.45),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(_recentGiftSent!.emoji, style: const TextStyle(fontSize: 18)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Sent ${_recentGiftSent!.name} to $displayName! 💖',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          // Interactive Action Pills: Icebreakers & Gifting (FRND / Chamet style)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Icebreakers Starter Button
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  CallIcebreakersSheet.show(
+                                    context,
+                                    onTopicSelected: (q) {
+                                      setState(() => _activeIcebreaker = q);
+                                    },
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.14),
+                                      width: 0.75,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('💬', style: TextStyle(fontSize: 13)),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Icebreakers',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              if (!isHost) ...[
+                                const SizedBox(width: 10),
+                                // Send Virtual Gift Button
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    CallGiftSheet.show(
+                                      context,
+                                      callId: widget.call.id,
+                                      hostId: widget.call.hostId,
+                                      hostName: displayName,
+                                      onGiftSent: _onGiftSent,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFEC4899).withValues(alpha: 0.35),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('🎁', style: TextStyle(fontSize: 13)),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          'Send Gift',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+
+                          const SizedBox(height: 14),
 
                           // 9. APPLE FLOATING ERGONOMIC CALL CONTROLS DOCK
                           ClipRRect(
