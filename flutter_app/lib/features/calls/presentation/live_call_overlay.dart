@@ -15,7 +15,7 @@ import '../../wallet/data/wallet_repository.dart';
 import '../../wallet/presentation/coin_packages_page.dart';
 import '../application/call_controller.dart';
 import '../data/rtc_audio_service.dart';
-import 'call_gift_sheet.dart';
+import 'ai_conversation_wingman_sheet.dart';
 import 'call_icebreakers_sheet.dart';
 import 'call_report_bottom_sheet.dart';
 
@@ -46,19 +46,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
   String? _remoteName;
   String? _remoteAvatarUrl;
-  String? _activeIcebreaker;
-  CallGiftItem? _recentGiftSent;
-  Timer? _giftAnimationTimer;
-
-  void _onGiftSent(CallGiftItem gift) {
-    setState(() => _recentGiftSent = gift);
-    _giftAnimationTimer?.cancel();
-    _giftAnimationTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() => _recentGiftSent = null);
-      }
-    });
-  }
+  String? _activeAiTip;
 
   bool get isHostUser {
     if (widget.isHost != null) return widget.isHost!;
@@ -95,7 +83,6 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
   @override
   void dispose() {
     _timer.cancel();
-    _giftAnimationTimer?.cancel();
     super.dispose();
   }
 
@@ -1023,37 +1010,69 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
 
                           Spacer(flex: isCompact ? 1 : 3),
 
-                          // Active Icebreaker Prompt Banner
-                          if (_activeIcebreaker != null) ...[
+                          // Active AI Teleprompter Card
+                          if (_activeAiTip != null) ...[
                             Container(
                               margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+                              padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.45),
-                                  width: 0.75,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFF7C3AED).withValues(alpha: 0.28),
+                                    const Color(0xFFEC4899).withValues(alpha: 0.18),
+                                  ],
                                 ),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: const Color(0xFFEC4899).withValues(alpha: 0.5),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('💡', style: TextStyle(fontSize: 14)),
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 2),
+                                    child: Icon(Icons.auto_awesome_rounded, color: Color(0xFFEC4899), size: 16),
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(
-                                      _activeIcebreaker!,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'AI CONVERSATION LEAD',
+                                          style: TextStyle(
+                                            color: Color(0xFFD8B4FE),
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _activeAiTip!,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.35,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   GestureDetector(
-                                    onTap: () => setState(() => _activeIcebreaker = null),
+                                    onTap: () => setState(() => _activeAiTip = null),
                                     child: const Padding(
                                       padding: EdgeInsets.all(4),
                                       child: Icon(Icons.close_rounded, color: Colors.white54, size: 16),
@@ -1064,61 +1083,74 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                             ),
                           ],
 
-                          // Recent Gift Sent Banner
-                          if (_recentGiftSent != null) ...[
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                gradient: _recentGiftSent!.gradient,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _recentGiftSent!.gradient.colors.first.withValues(alpha: 0.45),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_recentGiftSent!.emoji, style: const TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Sent ${_recentGiftSent!.name} to $displayName! 💖',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-
-                          // Interactive Action Pills: Icebreakers & Gifting (FRND / Chamet style)
+                          // Interactive Action Pills: AI Conversation Wingman & Topics
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Icebreakers Starter Button
+                              // AI Conversation Wingman Button
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  AiConversationWingmanSheet.show(
+                                    context,
+                                    partnerName: displayName,
+                                    isHost: isHost,
+                                    onTipSelected: (tip) {
+                                      setState(() => _activeAiTip = tip);
+                                    },
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(22),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 15),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'AI Wingman',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 10),
+
+                              // Classic Topics Button
                               GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   CallIcebreakersSheet.show(
                                     context,
                                     onTopicSelected: (q) {
-                                      setState(() => _activeIcebreaker = q);
+                                      setState(() => _activeAiTip = q);
                                     },
                                   );
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: BorderRadius.circular(22),
                                     border: Border.all(
                                       color: Colors.white.withValues(alpha: 0.14),
                                       width: 0.75,
@@ -1130,7 +1162,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                       Text('💬', style: TextStyle(fontSize: 13)),
                                       SizedBox(width: 6),
                                       Text(
-                                        'Icebreakers',
+                                        'Topics',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -1141,54 +1173,6 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                   ),
                                 ),
                               ),
-
-                              if (!isHost) ...[
-                                const SizedBox(width: 10),
-                                // Send Virtual Gift Button
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    CallGiftSheet.show(
-                                      context,
-                                      callId: widget.call.id,
-                                      hostId: widget.call.hostId,
-                                      hostName: displayName,
-                                      onGiftSent: _onGiftSent,
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFFEC4899).withValues(alpha: 0.35),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text('🎁', style: TextStyle(fontSize: 13)),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          'Send Gift',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
 
