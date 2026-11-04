@@ -77,15 +77,27 @@ export async function POST(req: NextRequest) {
     // Only process successful payments
     if (orderStatus === 'SUCCESS') {
       const supabase = getSupabaseAdmin()
+      const paymentId = String(paymentData.cf_payment_id || paymentData.payment_id || `cf_pay_${orderId}`)
+      const paymentMethod = String(paymentData.payment_group || paymentData.payment_method || 'UPI').slice(0, 64)
 
-      // 1. Update payment order record in database if present
-      await supabase
-        .from('payment_orders')
-        .update({
-          status: 'success',
-          updated_at: new Date().toISOString(),
+      // 1. Authoritative double-entry coin crediting via database RPC
+      try {
+        await supabase.rpc('credit_friendoo_payment', {
+          p_provider_order_id: orderId,
+          p_payment_id: paymentId,
+          p_payment_method: paymentMethod,
         })
-        .eq('order_id', orderId)
+      } catch (rpcErr) {
+        console.warn('credit_friendoo_payment RPC fallback note:', rpcErr)
+        // Fallback update payment order record directly if provider_order_id differs
+        await supabase
+          .from('payment_orders')
+          .update({
+            status: 'success',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('order_id', orderId)
+      }
 
       // 2. Dispatch Route 2: payment.completed -> Make.com -> Google Sheets (Accounting) & Telegram (Revenue Alert)
       const customerName = String(
