@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Headphones,
+  Volume2,
+  VolumeX,
   Send,
   ShieldCheck,
   CheckCircle2,
@@ -91,6 +93,43 @@ export default function SupportDeskPage() {
   const [isSendingDirect, setIsSendingDirect] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Swiggy / Zomato Realtime Executive Console States
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const userTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const adminTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeChannelRef = useRef<any>(null);
+
+  // Web Audio Synthesizer Chime (Swiggy / Zomato Live Sound)
+  const playChime = useCallback((type: 'alert' | 'message') => {
+    if (!soundEnabled || typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === 'alert') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } else {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      }
+    } catch (_) {}
+  }, [soundEnabled]);
 
   // Auto-scroll messages
   useEffect(() => {
@@ -195,6 +234,7 @@ export default function SupportDeskPage() {
         setIncomingAlert((current) => (current?.userId === data.userId ? null : current));
       }, 6000);
 
+      playChime('alert');
       toast.success(`🎧 Live Support Alert: ${data.name || 'User'} (${data.language || 'Tamil'}) connected!`, {
         duration: 8000,
         icon: '🔔',
@@ -238,9 +278,20 @@ export default function SupportDeskPage() {
 
     const channelName = `support_live:${activeSession.userId}`;
     const channel = supabase.channel(channelName);
+    activeChannelRef.current = channel;
 
     channel
+      .on('broadcast', { event: 'user_typing' }, (payload) => {
+        const typing = payload.payload?.typing === true;
+        setIsUserTyping(typing);
+        if (typing) {
+          if (userTypingTimeoutRef.current) clearTimeout(userTypingTimeoutRef.current);
+          userTypingTimeoutRef.current = setTimeout(() => setIsUserTyping(false), 3500);
+        }
+      })
       .on('broadcast', { event: 'user_message' }, (payload) => {
+        playChime('message');
+        setIsUserTyping(false);
         const msg = payload.payload;
         if (msg && msg.message) {
           setMessages((prev) => [
@@ -325,9 +376,51 @@ export default function SupportDeskPage() {
       });
 
     return () => {
+      activeChannelRef.current = null;
       supabase?.removeChannel(channel);
     };
   }, [activeSession?.userId, activeSession?.name]);
+
+  // Swiggy 1-Click Instant Coin Credit to Customer Wallet
+  const handleQuickAddCoins = async (amount: number) => {
+    if (!activeSession) return;
+    try {
+      await adminFetch('/api/admin/users/addCoins', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: activeSession.userId,
+          amountCoins: amount,
+        }),
+      });
+      toast.success(`⚡ Credited +${amount} coins to ${activeSession.name}!`);
+      await handleSendReply(
+        `🪙 Friendoo Priority Care: We have credited ${amount} coins directly to your wallet. Please refresh your balance to verify.`
+      );
+    } catch (err) {
+      toast.error('Could not credit coins');
+    }
+  };
+
+  // Broadcast Admin Typing to User Screen
+  const handleInputChange = (val: string) => {
+    setReplyInput(val);
+    if (!activeChannelRef.current) return;
+    try {
+      activeChannelRef.current.send({
+        type: 'broadcast',
+        event: 'admin_typing',
+        payload: { typing: val.trim().length > 0, adminName: 'Priya S. • Friendoo Support 🛡️' },
+      });
+      if (adminTypingTimeoutRef.current) clearTimeout(adminTypingTimeoutRef.current);
+      adminTypingTimeoutRef.current = setTimeout(() => {
+        activeChannelRef.current?.send({
+          type: 'broadcast',
+          event: 'admin_typing',
+          payload: { typing: false },
+        });
+      }, 2000);
+    } catch (_) {}
+  };
 
   // Send Reply directly to App via server-authoritative API
   const handleSendReply = async (textToSend?: string) => {
@@ -527,6 +620,18 @@ export default function SupportDeskPage() {
             <span>+ Direct Message to User/Host</span>
           </button>
 
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Mute Live Audio Chime" : "Enable Live Audio Chime"}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+              soundEnabled
+                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                : 'bg-white/5 text-slate-400 border-white/10'
+            }`}
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span>{soundEnabled ? 'Live Sound On' : 'Muted'}</span>
+          </button>
           <button
             onClick={fetchLiveTickets}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.97] text-xs font-semibold text-slate-300 border border-white/10 transition-all duration-100 ease-out"
@@ -836,12 +941,40 @@ export default function SupportDeskPage() {
                     </div>
                   );
                 })}
+                {isUserTyping && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 w-fit animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="font-semibold">{activeSession.name} is typing... ✍️</span>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Fast Response Template Pills (shrink-0) */}
+              {/* Swiggy 1-Click Fast Resolution & Instant Coin Credit Toolbar */}
               <div className="px-4 py-2 border-t border-[#13383B] bg-[#07191E] flex items-center gap-2 overflow-x-auto text-xs shrink-0">
-                <span className="text-[11px] text-slate-400 whitespace-nowrap">Quick Responses:</span>
+                <span className="text-[11px] text-emerald-400 font-bold whitespace-nowrap flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" /> 1-Click Refund/Credit:
+                </span>
+                <button
+                  onClick={() => handleQuickAddCoins(50)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 active:scale-95 border border-emerald-500/40 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 transition-all"
+                >
+                  ⚡ +50 Coins
+                </button>
+                <button
+                  onClick={() => handleQuickAddCoins(100)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 active:scale-95 border border-emerald-500/40 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 transition-all"
+                >
+                  ⚡ +100 Coins
+                </button>
+                <button
+                  onClick={() => handleQuickAddCoins(250)}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 active:scale-95 border border-emerald-500/40 text-[11px] font-bold whitespace-nowrap flex items-center gap-1 transition-all"
+                >
+                  ⚡ +250 Coins
+                </button>
+                <div className="w-[1px] h-4 bg-white/10 mx-1 shrink-0" />
+                <span className="text-[11px] text-slate-400 whitespace-nowrap">Canned Replies:</span>
                 {activeSession.role === 'host' ? (
                   <>
                     <button
@@ -917,7 +1050,7 @@ export default function SupportDeskPage() {
                   type="text"
                   placeholder={`Send 1-on-1 reply to ${activeSession.name} on their phone...`}
                   value={replyInput}
-                  onChange={(e) => setReplyInput(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSendReply();
                   }}

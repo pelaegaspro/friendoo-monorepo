@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../profile/data/profile_repository.dart';
 import 'dart:async';
@@ -53,6 +54,10 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
   final List<SupportChatMessage> _messages = [];
   bool _isTyping = false;
   bool _isSupportTeamActive = false;
+  bool _isAdminTyping = false;
+  bool _isSessionResolved = false;
+  Timer? _userTypingTimer;
+  bool _lastSentTyping = false;
   RealtimeChannel? _liveChannel;
   String? _currentUserId;
   String? _activeTicketId;
@@ -140,6 +145,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     final user = Supabase.instance.client.auth.currentUser;
     _currentUserId = user?.id ?? 'guest_${DateTime.now().millisecondsSinceEpoch}';
 
+    _inputController.addListener(_onUserInputChanged);
     _subscribeToLiveSupportChannel();
     _loadPreviousAdminMessages();
 
@@ -194,8 +200,10 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
               final sender = payload['sender']?.toString() ?? 'Support Specialist 🤝';
 
               if (content.isNotEmpty) {
+                HapticFeedback.mediumImpact();
                 setState(() {
                   _isSupportTeamActive = true;
+                  _isAdminTyping = false;
                   _isTyping = false;
                   _messages.add(
                     SupportChatMessage(
@@ -208,6 +216,39 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                 });
                 _scrollToBottom();
               }
+            },
+          )
+          .onBroadcast(
+            event: 'admin_typing',
+            callback: (payload) {
+              if (!mounted) return;
+              final isTyping = payload['typing'] == true;
+              setState(() {
+                _isAdminTyping = isTyping;
+              });
+              if (isTyping) {
+                _scrollToBottom();
+              }
+            },
+          )
+          .onBroadcast(
+            event: 'ticket_resolved',
+            callback: (payload) {
+              if (!mounted) return;
+              setState(() {
+                _isSessionResolved = true;
+                _isAdminTyping = false;
+                _messages.add(
+                  SupportChatMessage(
+                    role: 'admin',
+                    senderName: 'Friendoo Priority Care 🛡️',
+                    content: '✅ This support session has been marked as resolved by our Friendoo Care Executive. Please rate your experience below.',
+                    timestamp: DateTime.now(),
+                  ),
+                );
+              });
+              _scrollToBottom();
+              _showCsatRatingSheet();
             },
           )
           .onPostgresChanges(
@@ -297,6 +338,8 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
 
   @override
   void dispose() {
+    _userTypingTimer?.cancel();
+    _inputController.removeListener(_onUserInputChanged);
     try {
       _liveChannel?.unsubscribe();
     } catch (_) {}
@@ -823,14 +866,14 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   try {
-                    final files = await FilePicker.pickFiles(
+                    final result = await FilePicker.pickFiles(
                       type: FileType.custom,
                       allowedExtensions: ['pdf'],
                     );
-                    if (files.isNotEmpty) {
-                      final file = files.first;
-                      final bytes = await file.xFile.readAsBytes();
-                      final len = bytes.lengthInBytes;
+                    if (result.isNotEmpty) {
+                      final file = result.first;
+                      final bytes = await file.readAsBytes();
+                      final len = bytes.length;
                       final sizeKb = (len / 1024).toStringAsFixed(0);
                       final sizeStr = len > 1024 * 1024
                           ? '${(len / (1024 * 1024)).toStringAsFixed(1)} MB'
@@ -889,7 +932,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     title,
                     style: const TextStyle(
                       color: Color(0xFF0F172A),
@@ -898,7 +941,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     subtitle,
                     style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                   ),
@@ -1081,16 +1124,49 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     _scrollToBottom();
   }
 
-  void _broadcastToSupportDesk({required String event, required String message}) {
+  void _onUserInputChanged() {
+    final hasText = _inputController.text.trim().isNotEmpty;
+    if (hasText != _lastSentTyping) {
+      _lastSentTyping = hasText;
+      _broadcastToSupportDesk(
+        event: 'user_typing',
+        message: hasText ? 'typing' : 'idle',
+        isTypingPayload: true,
+      );
+    }
+    _userTypingTimer?.cancel();
+    if (hasText) {
+      _userTypingTimer = Timer(const Duration(milliseconds: 2500), () {
+        _lastSentTyping = false;
+        _broadcastToSupportDesk(
+          event: 'user_typing',
+          message: 'idle',
+          isTypingPayload: true,
+        );
+      });
+    }
+  }
+
+  void _broadcastToSupportDesk({
+    required String event,
+    required String message,
+    bool isTypingPayload = false,
+  }) {
     try {
       _liveChannel?.sendBroadcastMessage(
         event: event,
-        payload: {
-          'userId': _currentUserId,
-          'message': message,
-          'timestamp': DateTime.now().toIso8601String(),
-          'role': widget.isHost ? 'host' : 'user',
-        },
+        payload: isTypingPayload
+            ? {
+                'userId': _currentUserId,
+                'typing': message == 'typing',
+                'timestamp': DateTime.now().toIso8601String(),
+              }
+            : {
+                'userId': _currentUserId,
+                'message': message,
+                'timestamp': DateTime.now().toIso8601String(),
+                'role': widget.isHost ? 'host' : 'user',
+              },
       );
     } catch (_) {}
   }
@@ -1125,8 +1201,50 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: _messages.length,
+                itemCount: _messages.length + (_isAdminTyping ? 1 : 0),
                 itemBuilder: (context, index) {
+                  if (index == _messages.length && _isAdminTyping) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+                              boxShadow: const [
+                                BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 2)),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Priya S. is typing... ✍️',
+                                  style: TextStyle(
+                                    color: Color(0xFF047857),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                   final msg = _messages[index];
                   final isUser = msg.role == 'user';
                   final isDeskAdmin = msg.role == 'admin';
@@ -1393,24 +1511,50 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 19),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isHost
-                    ? [const Color(0xFFF59E0B), const Color(0xFFD97706)]
-                    : [const Color(0xFF7C3AED), const Color(0xFFEC4899)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          Stack(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isHost
+                        ? [const Color(0xFFF59E0B), const Color(0xFFD97706)]
+                        : [const Color(0xFF6366F1), const Color(0xFF4F46E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    isHost ? Icons.verified_user_rounded : Icons.headset_mic_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
               ),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isHost ? Icons.verified_user_rounded : Icons.headset_mic_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 11,
+                  height: 11,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1421,18 +1565,18 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   children: [
                     Flexible(
                       child: Text(
-                        isHost ? 'Host Care Desk' : '24/7 Live Support',
+                        isHost ? 'Priya S. • Host Care Lead' : 'Priya S. • Priority Care Lead',
                         style: const TextStyle(
                           color: Color(0xFF0F172A),
                           fontWeight: FontWeight.w800,
-                          fontSize: 15.5,
+                          fontSize: 14.5,
                           letterSpacing: 0.1,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    const Icon(Icons.verified, color: Color(0xFF10B981), size: 15),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -1441,24 +1585,31 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     Container(
                       width: 6.5,
                       height: 6.5,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
+                      decoration: BoxDecoration(
+                        color: _isAdminTyping
+                            ? const Color(0xFF047857)
+                            : (_isSupportTeamActive
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFF59E0B)),
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      _isTyping
-                          ? 'Assistant is typing...'
-                          : (_isSupportTeamActive
-                              ? 'Support Team Connected'
-                              : 'Active 24/7 • Friendoo Official Care'),
-                      style: TextStyle(
-                        color: _isTyping || _isSupportTeamActive
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFF94A3B8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Text(
+                        _isAdminTyping
+                            ? 'Priya is typing... ✍️'
+                            : (_isSupportTeamActive
+                                ? 'Live with Support Executive • Online'
+                                : 'Connecting to Live Support (Avg < 1m)'),
+                        style: TextStyle(
+                          color: _isAdminTyping || _isSupportTeamActive
+                              ? const Color(0xFF047857)
+                              : const Color(0xFFD97706),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1466,8 +1617,276 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
               ],
             ),
           ),
+          // Swiggy End Chat Button
+          TextButton(
+            onPressed: _showEndChatConfirmation,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              backgroundColor: const Color(0xFFFEF2F2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFFECACA)),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.close_rounded, size: 13, color: Color(0xFFEF4444)),
+                SizedBox(width: 3),
+                Text(
+                  'End',
+                  style: TextStyle(
+                    color: Color(0xFFEF4444),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  void _showEndChatConfirmation() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 22),
+            SizedBox(width: 8),
+            Text(
+              'End Support Session?',
+              style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800, fontSize: 17),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to end this conversation with Friendoo Care? You will be invited to rate your experience.',
+          style: TextStyle(color: Color(0xFF475569), fontSize: 13.5, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Stay in Chat', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _showCsatRatingSheet();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: const Text('End & Rate', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCsatRatingSheet() {
+    int rating = 5;
+    final selectedFeedback = <String>{};
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final feedbackTags = [
+              '⚡ Instant Resolution',
+              '😊 Very Polite & Helpful',
+              '🪙 Coins Credited Promptly',
+              '👍 Clear Guidance',
+              '🤝 Fair Call Handling',
+            ];
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(color: Color(0x18000000), blurRadius: 20, offset: Offset(0, -4)),
+                  ],
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 32),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Rate Your Experience',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 19,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'How was your live session with Priya S. (Friendoo Care)?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 5-Star Interactive Rating Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        final starNum = index + 1;
+                        final isFilled = starNum <= rating;
+                        return GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setModalState(() {
+                              rating = starNum;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                              size: 40,
+                              color: isFilled ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      rating == 5
+                          ? 'Exceptional! 🌟 Super happy'
+                          : rating == 4
+                              ? 'Very Good! 👍 Resolved my issue'
+                              : rating == 3
+                                  ? 'Satisfied 😐'
+                                  : rating == 2
+                                      ? 'Needs Improvement 👎'
+                                      : 'Unsatisfied 😡',
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Quick Feedback Chips
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: feedbackTags.map((tag) {
+                        final isSelected = selectedFeedback.contains(tag);
+                        return GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setModalState(() {
+                              if (isSelected) {
+                                selectedFeedback.remove(tag);
+                              } else {
+                                selectedFeedback.add(tag);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Text(
+                              tag,
+                              style: TextStyle(
+                                color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF475569),
+                                fontSize: 11.5,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.of(ctx).pop();
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('🙏 Thank you for rating! Have a wonderful day on Friendoo.'),
+                              backgroundColor: Color(0xFF10B981),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'Submit Rating & Exit',
+                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1513,7 +1932,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     color: const Color(0xFF6366F1),
                   ),
                   const SizedBox(width: 6),
-                  Text(
+                  AppText(
                     label,
                     style: const TextStyle(
                       color: Color(0xFF334155),
@@ -1606,16 +2025,16 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: 'Type query or UTR...',
-                    hintStyle: TextStyle(
+                  decoration: InputDecoration(
+                    hintText: _isSessionResolved ? 'Session resolved. Type to reopen...' : 'Type query or UTR...',
+                    hintStyle: const TextStyle(
                       color: Color(0xFF94A3B8), // Muted gray placeholder
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onSubmitted: _sendUserMessage,
                 ),

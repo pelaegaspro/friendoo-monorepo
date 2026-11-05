@@ -362,7 +362,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                         Row(
                           children: [
                             Text(
-                              '24/7 WhatsApp AI Support Bot',
+                              '24/7 Live Support Executive Desk',
                               style: TextStyle(color: Color(0xFF065F46), fontWeight: FontWeight.w800, fontSize: 13.5),
                             ),
                             SizedBox(width: 6),
@@ -374,7 +374,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Interactive menu for failed recharges, host payouts, coin rates & direct chat.',
+                          'Connect directly with Friendoo Care Executive in real-time. Avg response < 1 min.',
                           style: TextStyle(color: Color(0xFF047857), fontSize: 11.5, height: 1.3),
                         ),
                       ],
