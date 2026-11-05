@@ -207,15 +207,15 @@ class _SupportDeskPageState extends State<SupportDeskPage>
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF161B26),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFFE2E8F0))),
           title: Row(
             children: const [
               Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 24),
               SizedBox(width: 10),
               Text(
                 'Ticket Submitted',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ],
           ),
@@ -223,7 +223,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
             ticketId.isNotEmpty
                 ? 'Your ticket (#${ticketId.substring(0, 8)}) has been registered with our 24/7 Operations Desk. A governance executive will resolve this promptly.'
                 : 'Your ticket has been sent to our 24/7 Support Desk. We will assist you shortly.',
-            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5, height: 1.4),
+            style: const TextStyle(color: Color(0xFF475569), fontSize: 13.5, height: 1.4),
           ),
           actions: [
             TextButton(
@@ -232,7 +232,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                 _tabController.animateTo(1);
                 _loadTickets();
               },
-              child: const Text('View My Tickets', style: TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold)),
+              child: const Text('View My Tickets', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -254,12 +254,12 @@ class _SupportDeskPageState extends State<SupportDeskPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0E17),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0E17),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 19),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
@@ -267,7 +267,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           children: [
             const Text(
               '24/7 Support Desk',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+              style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w900, fontSize: 18),
             ),
             Row(
               children: [
@@ -282,7 +282,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                 const SizedBox(width: 5),
                 const Text(
                   'Live Executive Support Online',
-                  style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: Color(0xFF047857), fontSize: 11, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -290,11 +290,11 @@ class _SupportDeskPageState extends State<SupportDeskPage>
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF7C3AED),
+          indicatorColor: const Color(0xFF6366F1),
           indicatorWeight: 3,
-          labelColor: Colors.white,
+          labelColor: const Color(0xFF0F172A),
           unselectedLabelColor: const Color(0xFF64748B),
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
           tabs: const [
             Tab(text: 'Create Ticket'),
             Tab(text: 'My Reports & Tickets'),
@@ -336,20 +336,23 @@ class _SupportDeskPageState extends State<SupportDeskPage>
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF064E3B), Color(0xFF0F172A)],
+                  colors: [Color(0xFFECFDF5), Color(0xFFF0FDF4)],
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x060E1020), blurRadius: 6, offset: Offset(0, 2)),
+                ],
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF34D399), size: 22),
+                    child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF047857), size: 22),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -360,24 +363,24 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                           children: [
                             Text(
                               '24/7 WhatsApp AI Support Bot',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                              style: TextStyle(color: Color(0xFF065F46), fontWeight: FontWeight.w800, fontSize: 13.5),
                             ),
                             SizedBox(width: 6),
                             Text(
                               '• LIVE',
-                              style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.w800, fontSize: 10),
+                              style: TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.w800, fontSize: 10),
                             ),
                           ],
                         ),
                         SizedBox(height: 2),
                         Text(
                           'Interactive menu for failed recharges, host payouts, coin rates & direct chat.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.3),
+                          style: TextStyle(color: Color(0xFF047857), fontSize: 11.5, height: 1.3),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF34D399), size: 20),
+                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF047857), size: 20),
                 ],
               ),
             ),
@@ -389,20 +392,23 @@ class _SupportDeskPageState extends State<SupportDeskPage>
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF2E1065), Color(0xFF1E1B4B)],
+                colors: [Color(0xFFEEF2FF), Color(0xFFF5F3FF)],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+              border: Border.all(color: const Color(0xFFC7D2FE)),
+              boxShadow: const [
+                BoxShadow(color: Color(0x060E1020), blurRadius: 6, offset: Offset(0, 2)),
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.flash_on_rounded, color: Color(0xFFA78BFA), size: 22),
+                  child: const Icon(Icons.flash_on_rounded, color: Color(0xFF4F46E5), size: 22),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -411,12 +417,12 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                     children: [
                       Text(
                         'Direct Governance Telemetry',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13.5),
+                        style: TextStyle(color: Color(0xFF312E81), fontWeight: FontWeight.w800, fontSize: 13.5),
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Tickets automatically attach your transaction ID and account state so the Admin desk can refund or resolve immediately.',
-                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5, height: 1.3),
+                        style: TextStyle(color: Color(0xFF4338CA), fontSize: 11.5, height: 1.3),
                       ),
                     ],
                   ),
@@ -438,19 +444,22 @@ class _SupportDeskPageState extends State<SupportDeskPage>
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF1E2333) : const Color(0xFF121622),
+                color: isSelected ? const Color(0xFFF8FAFC) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isSelected ? (sc['color'] as Color) : const Color(0xFF262D40),
+                  color: isSelected ? (sc['color'] as Color) : const Color(0xFFE2E8F0),
                   width: isSelected ? 1.6 : 1.0,
                 ),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 1)),
+                ],
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: (sc['color'] as Color).withValues(alpha: 0.15),
+                    color: (sc['color'] as Color).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(sc['icon'] as IconData, color: sc['color'] as Color, size: 20),
@@ -458,8 +467,8 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                 title: Text(
                   sc['title'] as String,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
-                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w700,
                     fontSize: 13.5,
                   ),
                 ),
@@ -469,7 +478,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                 ),
                 trailing: isSelected
                     ? Icon(Icons.check_circle_rounded, color: sc['color'] as Color, size: 20)
-                    : const Icon(Icons.circle_outlined, color: Color(0xFF334155), size: 18),
+                    : const Icon(Icons.circle_outlined, color: Color(0xFFCBD5E1), size: 18),
                 onTap: () {
                   setState(() {
                     _selectedScenario = sc['key'] as String;
@@ -491,9 +500,9 @@ class _SupportDeskPageState extends State<SupportDeskPage>
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.only(bottom: 18),
               decoration: BoxDecoration(
-                color: const Color(0xFF161B26),
+                color: const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                border: Border.all(color: const Color(0xFFFECACA)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,7 +513,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                       SizedBox(width: 8),
                       Text(
                         'Payment Details (Optional if known)',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
+                        style: TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.bold, fontSize: 12.5),
                       ),
                     ],
                   ),
@@ -514,13 +523,15 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                       Expanded(
                         child: TextField(
                           controller: _orderIdController,
-                          style: const TextStyle(color: Colors.white, fontSize: 12.5, fontFamily: 'monospace'),
+                          style: const TextStyle(color: Color(0xFF0F172A), fontSize: 12.5, fontFamily: 'monospace', fontWeight: FontWeight.w600),
                           decoration: InputDecoration(
                             labelText: 'Cashfree Order ID',
                             labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
                             filled: true,
-                            fillColor: const Color(0xFF0B0E17),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
                         ),
@@ -531,13 +542,15 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                         child: TextField(
                           controller: _amountController,
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                          style: const TextStyle(color: Color(0xFF0F172A), fontSize: 12.5, fontWeight: FontWeight.w600),
                           decoration: InputDecoration(
                             labelText: 'Amount (₹)',
                             labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
                             filled: true,
-                            fillColor: const Color(0xFF0B0E17),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
                         ),
@@ -557,23 +570,24 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           const SizedBox(height: 8),
           TextField(
             controller: _subjectController,
-            style: const TextStyle(color: Colors.white, fontSize: 13.5),
+            cursorColor: const Color(0xFF6366F1),
+            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               hintText: 'Brief summary of the issue...',
-              hintStyle: const TextStyle(color: Color(0xFF475569), fontSize: 13),
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
               filled: true,
-              fillColor: const Color(0xFF161B26),
+              fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF262D40)),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF262D40)),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
@@ -584,29 +598,30 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           // Message details
           const Text(
             'DESCRIBE WHAT HAPPENED',
-            style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.8),
+            style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.8),
           ),
           const SizedBox(height: 8),
           TextField(
             controller: _messageController,
+            cursorColor: const Color(0xFF6366F1),
             maxLines: 4,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13.5, fontWeight: FontWeight.w500),
             decoration: InputDecoration(
               hintText: 'Provide any additional context or transaction reference to expedite resolution...',
-              hintStyle: const TextStyle(color: Color(0xFF475569), fontSize: 12.5),
+              hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
               filled: true,
-              fillColor: const Color(0xFF161B26),
+              fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF262D40)),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF262D40)),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFF7C3AED)),
+                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
               ),
               contentPadding: const EdgeInsets.all(16),
             ),
@@ -624,8 +639,8 @@ class _SupportDeskPageState extends State<SupportDeskPage>
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitTicket,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7C3AED),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                backgroundColor: const Color(0xFF6366F1),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
               ),
               child: _isSubmitting
@@ -662,7 +677,7 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           children: [
             Container(
               padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(color: Color(0xFF161B26), shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
               child: const Icon(Icons.confirmation_number_outlined, size: 36, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 16),
@@ -704,9 +719,12 @@ class _SupportDeskPageState extends State<SupportDeskPage>
           return Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF161B26),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF262D40)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [
+                BoxShadow(color: Color(0x060E1020), blurRadius: 6, offset: Offset(0, 2)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -717,9 +735,9 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
+                        color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.25)),
                       ),
                       child: Text(
                         ticket.status.toUpperCase(),
@@ -728,14 +746,14 @@ class _SupportDeskPageState extends State<SupportDeskPage>
                     ),
                     Text(
                       '#${ticket.id.substring(0, 8)}',
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontFamily: 'monospace'),
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontFamily: 'monospace'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Text(
                   ticket.subject,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+                  style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w800, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(

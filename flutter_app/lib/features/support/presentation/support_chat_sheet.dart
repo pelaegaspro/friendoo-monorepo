@@ -649,7 +649,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             await client.from('reports').insert({
               'reporter_id': user.id,
               'reported_user_id': hostId,
-              'reason': 'CRITICAL SAFETY: ' + reason + ' (Host: ' + hostName + ')',
+              'reason': 'CRITICAL SAFETY: $reason (Host: $hostName)',
               'status': 'open',
             });
           } catch (_) {}
@@ -746,11 +746,14 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
+            color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
-              top: BorderSide(color: Color(0xFF334155), width: 1.0),
+              top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
             ),
+            boxShadow: [
+              BoxShadow(color: Color(0x140E1020), blurRadius: 20, offset: Offset(0, -4)),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -761,7 +764,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   width: 38,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: const Color(0xFFE2E8F0),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -770,15 +773,16 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
               const Text(
                 'Upload Payment Proof',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF0F172A),
                   fontWeight: FontWeight.w900,
                   fontSize: 16.5,
+                  letterSpacing: -0.2,
                 ),
               ),
               const SizedBox(height: 4),
               const Text(
                 'Attach screenshot or PDF statement to verify failed recharge',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
               ),
               const SizedBox(height: 20),
               _buildUploadTile(
@@ -825,12 +829,12 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     );
                     if (files.isNotEmpty) {
                       final file = files.first;
-                      final len = (await file.length()) ?? 0;
+                      final bytes = await file.xFile.readAsBytes();
+                      final len = bytes.lengthInBytes;
                       final sizeKb = (len / 1024).toStringAsFixed(0);
                       final sizeStr = len > 1024 * 1024
                           ? '${(len / (1024 * 1024)).toStringAsFixed(1)} MB'
                           : '$sizeKb KB';
-                      final bytes = await file.readAsBytes();
                       _handleRealMediaAttachment(
                         name: file.name,
                         type: 'pdf',
@@ -863,16 +867,19 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
+          color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF334155)),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 1)),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.15),
+                color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 22),
@@ -885,7 +892,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF0F172A),
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                     ),
@@ -893,12 +900,12 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF64748B), size: 14),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF94A3B8), size: 14),
           ],
         ),
       ),
@@ -1105,7 +1112,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     final isHost = widget.isHost;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Deep Slate Navy
+      backgroundColor: const Color(0xFFF8FAFC), // Apple Clean Canvas
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
@@ -1137,9 +1144,14 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                           ),
                           padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
                           decoration: BoxDecoration(
+                            gradient: isUser
+                                ? const LinearGradient(
+                                    colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                                  )
+                                : null,
                             color: isUser
-                                ? const Color(0xFF7C3AED) // Brand Vibrant Purple
-                                : const Color(0xFF1E293B), // Sleek Slate Assistant Bubble
+                                ? null
+                                : Colors.white,
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(16),
                               topRight: const Radius.circular(16),
@@ -1151,13 +1163,15 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                                 : Border.all(
                                     color: isDeskAdmin
                                         ? const Color(0xFF10B981)
-                                        : const Color(0xFF334155),
+                                        : const Color(0xFFE2E8F0),
                                     width: 1.0,
                                   ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                blurRadius: 4,
+                                color: isUser
+                                    ? const Color(0xFF6366F1).withValues(alpha: 0.22)
+                                    : const Color(0x060E1020),
+                                blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -1298,14 +1312,17 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF1E293B).withValues(alpha: 0.85),
+                                          color: isTeam ? const Color(0xFFEEF2FF) : Colors.white,
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
                                             color: isTeam
-                                                ? const Color(0xFF7C3AED)
-                                                : const Color(0xFF334155),
+                                                ? const Color(0xFF6366F1)
+                                                : const Color(0xFFE2E8F0),
                                             width: 1,
                                           ),
+                                          boxShadow: const [
+                                            BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 1)),
+                                          ],
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -1316,7 +1333,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                                                   : (opt.startsWith('Report:')
                                                       ? Icons.shield_outlined
                                                       : Icons.arrow_circle_right_outlined),
-                                              color: isTeam ? const Color(0xFFA78BFA) : const Color(0xFF94A3B8),
+                                              color: isTeam ? const Color(0xFF6366F1) : const Color(0xFF64748B),
                                               size: 14,
                                             ),
                                             const SizedBox(width: 6),
@@ -1324,10 +1341,10 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                                               opt,
                                               style: TextStyle(
                                                 color: isTeam
-                                                    ? const Color(0xFFA78BFA)
-                                                    : const Color(0xFFF8FAFC),
+                                                    ? const Color(0xFF4338CA)
+                                                    : const Color(0xFF1E293B),
                                                 fontSize: 12,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                             ),
                                           ],
@@ -1361,16 +1378,19 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Color(0xFF1E293B), width: 1.0),
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
         ),
+        boxShadow: [
+          BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 1)),
+        ],
       ),
       child: Row(
         children: [
           IconButton(
             tooltip: 'Back',
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFF8FAFC), size: 19),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A), size: 19),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Container(
@@ -1403,7 +1423,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                       child: Text(
                         isHost ? 'Host Care Desk' : '24/7 Live Support',
                         style: const TextStyle(
-                          color: Color(0xFFF8FAFC),
+                          color: Color(0xFF0F172A),
                           fontWeight: FontWeight.w800,
                           fontSize: 15.5,
                           letterSpacing: 0.1,
@@ -1474,12 +1494,15 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.75),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF334155),
+                  color: const Color(0xFFE2E8F0),
                   width: 1.0,
                 ),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x060E1020), blurRadius: 4, offset: Offset(0, 1)),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1487,15 +1510,15 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   Icon(
                     iconData,
                     size: 14,
-                    color: const Color(0xFF94A3B8), // Monochrome line-art icon
+                    color: const Color(0xFF6366F1),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     label,
                     style: const TextStyle(
-                      color: Color(0xFFF8FAFC),
+                      color: Color(0xFF334155),
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -1511,10 +1534,13 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Colors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFF1E293B), width: 1.0),
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
         ),
+        boxShadow: [
+          BoxShadow(color: Color(0x060E1020), blurRadius: 8, offset: Offset(0, -2)),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -1527,13 +1553,13 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF334155)),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: const Icon(
                   Icons.attach_file_rounded,
-                  color: Color(0xFF94A3B8),
+                  color: Color(0xFF475569),
                   size: 20,
                 ),
               ),
@@ -1547,43 +1573,43 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF1F5F9),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF334155)),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: const Icon(
                   Icons.mic_rounded,
-                  color: Color(0xFF94A3B8),
+                  color: Color(0xFF475569),
                   size: 20,
                 ),
               ),
             ),
             const SizedBox(width: 8),
 
-            // Sleek Contrasting Input Container (#1E293B)
+            // Apple Frosted Input Container (Zero Black Boxes)
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: const Color(0xFF334155),
+                    color: const Color(0xFFE2E8F0),
                     width: 1.0,
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
                   controller: _inputController,
-                  cursorColor: const Color(0xFF7C3AED),
+                  cursorColor: const Color(0xFF6366F1),
                   style: const TextStyle(
-                    color: Color(0xFFFFFFFF), // True high-contrast white
+                    color: Color(0xFF0F172A), // Crisp dark slate ink
                     fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                   decoration: const InputDecoration(
                     hintText: 'Type query or UTR...',
                     hintStyle: TextStyle(
-                      color: Color(0xFF64748B), // Muted gray placeholder
+                      color: Color(0xFF94A3B8), // Muted gray placeholder
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -1597,7 +1623,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
             ),
             const SizedBox(width: 8),
 
-            // Paper Airplane Send Icon - Dynamically highlights when text is active
+            // Paper Airplane Send Icon - Dynamically highlights with Apple Indigo
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _inputController,
               builder: (context, value, _) {
@@ -1611,19 +1637,19 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     height: 42,
                     decoration: BoxDecoration(
                       color: hasText
-                          ? const Color(0xFF7C3AED) // Highlighted Brand Purple
-                          : const Color(0xFF1E293B), // Subtle container
+                          ? const Color(0xFF6366F1) // Apple Indigo
+                          : const Color(0xFFF1F5F9),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: hasText
-                            ? const Color(0xFF8B5CF6)
-                            : const Color(0xFF334155),
+                            ? const Color(0xFF4F46E5)
+                            : const Color(0xFFE2E8F0),
                         width: 1.0,
                       ),
                       boxShadow: hasText
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.35),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -1633,8 +1659,8 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     child: Icon(
                       Icons.send_rounded,
                       color: hasText
-                          ? Colors.white // True white icon when active
-                          : const Color(0xFF64748B), // Muted line art when inactive
+                          ? Colors.white
+                          : const Color(0xFF94A3B8),
                       size: 19,
                     ),
                   ),
@@ -1660,8 +1686,8 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
           style: TextStyle(
             fontWeight: isBold ? FontWeight.w800 : FontWeight.w400,
             color: isBold
-                ? (isUser ? Colors.white : const Color(0xFFF8FAFC))
-                : (isUser ? const Color(0xFFEDE9FE) : const Color(0xFFE2E8F0)),
+                ? (isUser ? Colors.white : const Color(0xFF0F172A))
+                : (isUser ? const Color(0xFFF1F5F9) : const Color(0xFF334155)),
             fontSize: 14,
             height: 1.42,
           ),
