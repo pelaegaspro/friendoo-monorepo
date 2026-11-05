@@ -21,15 +21,16 @@ export async function POST(req: NextRequest) {
 
     await supabase.from('host_payouts').insert({
       host_id: hostId,
-      amount_inr: amountInr,
       amount_paise: Math.round(amountInr * 100),
+      upi_id: utr.trim(),
       status: 'paid',
-      payout_method_type: 'upi',
-      idempotency_key: `manual_payout:${hostId}:${Date.now()}`,
       provider: 'manual_admin',
       provider_transfer_id: utr.trim(),
+      provider_reference_id: utr.trim(),
       reviewed_by: actorId,
       reviewed_at: new Date().toISOString(),
+      paid_at: new Date().toISOString(),
+      processed_at: new Date().toISOString(),
     })
 
     return NextResponse.json({ success: true })
@@ -55,10 +56,10 @@ export async function GET() {
     const payouts = (data ?? []).map((d) => ({
       id: d.id,
       hostId: d.host_id,
-      amountInr: d.amount_inr,
+      amountInr: Number(d.amount_paise || 0) / 100,
       status: d.status,
-      utr: d.provider_transfer_id,
-      paidAt: d.reviewed_at || d.created_at,
+      utr: d.provider_transfer_id || d.provider_reference_id || d.upi_id,
+      paidAt: d.paid_at || d.reviewed_at || d.created_at,
     }))
 
     return NextResponse.json({ payouts })

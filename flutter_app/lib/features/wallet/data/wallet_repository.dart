@@ -401,16 +401,15 @@ class WalletRepository {
     }
 
     try {
+      final upiId = (payoutDetails['upi_id'] ?? payoutDetails['upiId'] ?? payoutDetails['account_number'] ?? '').toString();
       final response = await _client.rpc(
-        'request_host_withdrawal',
+        'request_host_payout',
         params: {
-          'p_amount_inr': amountInr,
-          'p_payout_method_type': payoutMethodType,
-          'p_payout_details': payoutDetails,
-          'p_idempotency_key': idempotencyKey,
+          'p_host_id': user.id,
+          'p_amount_paise': amountInr * 100,
+          'p_upi_id': upiId,
         },
       );
-
       final map = Map<String, dynamic>.from(response as Map);
       return HostWithdrawalRequestResult(
         success: (map['success'] as bool?) ?? true,
@@ -422,9 +421,9 @@ class WalletRepository {
     } catch (e) {
       final errStr = e.toString();
       String message = 'Failed to submit withdrawal request. Please try again.';
-      if (errStr.contains('INSUFFICIENT_WITHDRAWAL_BALANCE')) {
+      if (errStr.contains('INSUFFICIENT') || errStr.contains('Insufficient')) {
         message = 'Insufficient available balance for this withdrawal.';
-      } else if (errStr.contains('MINIMUM_WITHDRAWAL_LIMIT')) {
+      } else if (errStr.contains('MINIMUM') || errStr.contains('Minimum')) {
         message = 'Minimum withdrawal amount is ₹100.';
       } else if (errStr.contains('UNAUTHENTICATED')) {
         message = 'Authentication error. Please login again.';
