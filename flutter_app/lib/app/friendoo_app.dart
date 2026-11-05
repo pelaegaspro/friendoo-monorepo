@@ -86,7 +86,7 @@ class AuthGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.watch(supabaseProvider);
-    final hasEntered = ref.watch(hasEnteredAppProvider);
+
     final debugMockSession = ref.watch(debugMockSessionProvider);
     final remoteConfig = ref.watch(appRemoteConfigProvider).asData?.value;
 
@@ -2126,6 +2126,7 @@ class _IncomingCallListenerState extends ConsumerState<IncomingCallListener> {
     );
 
     final decision = await IncomingHostCallDialog.show(context, call: call);
+    if (!mounted) return;
 
     try {
       if (decision == IncomingCallDecision.accept) {
@@ -2830,68 +2831,6 @@ class _HostCallHistoryCard extends StatelessWidget {
               ],
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _HostFilterChip extends StatelessWidget {
-  const _HostFilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  }) : icon = null;
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(99),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
-        decoration: BoxDecoration(
-          color: selected ? FriendooUiColors.ink : Colors.white,
-          borderRadius: BorderRadius.circular(99),
-          border: Border.all(
-            color: selected ? FriendooUiColors.ink : const Color(0xFFE5E7EB),
-          ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: FriendooUiColors.ink.withValues(alpha: 0.18),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 13,
-                color: selected ? Colors.white : const Color(0xFF6B7280),
-              ),
-              const SizedBox(width: 4),
-            ],
-            AppText(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF374151),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

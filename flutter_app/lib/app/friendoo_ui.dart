@@ -861,9 +861,9 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
         return b.rating.compareTo(a.rating);
       });
 
-    final onlineCount = femaleHosts
-        .where((host) => host.isAvailable && host.status != HostStatus.busy)
-        .length;
+
+
+
 
     // Favorites & Recommended Top 6 Hosts: strictly prioritize user preferred language (e.g. Tamil)
     final favIds =
@@ -1588,9 +1588,10 @@ class _DesiHostCard extends StatelessWidget {
 
   String _formatCalls(int totalCalls) {
     if (totalCalls >= 1000) {
-      return '${(totalCalls / 1000).toStringAsFixed(1)}K';
+      final val = (totalCalls / 1000).toStringAsFixed(1).replaceAll('.0', '');
+      return '${val}k';
     }
-    return '$totalCalls';
+    return '1k+';
   }
 
   @override
@@ -1871,7 +1872,7 @@ class _DesiHostCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
-                            host.rating.toStringAsFixed(1),
+                            '${host.rating.toStringAsFixed(1)} (${_formatCalls(host.totalCalls)})',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -4388,8 +4389,8 @@ class _WalletHeader extends StatelessWidget {
 }
 
 /// 3D Vector Wallet & Bursting Gold Coin Illustration with Sparkles
-class _3DWalletIllustration extends StatelessWidget {
-  const _3DWalletIllustration();
+class _Wallet3DIllustration extends StatelessWidget {
+  const _Wallet3DIllustration();
 
   @override
   Widget build(BuildContext context) {
@@ -4555,8 +4556,8 @@ class _3DWalletIllustration extends StatelessWidget {
 }
 
 /// 3D Stack of Gold Coins Graphic
-class _3DCoinStackIllustration extends StatelessWidget {
-  const _3DCoinStackIllustration({
+class _CoinStack3DIllustration extends StatelessWidget {
+  const _CoinStack3DIllustration({
     required this.backgroundColor,
     this.showStar = false,
   });
@@ -4785,7 +4786,7 @@ class _UserBalanceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const _3DWalletIllustration(),
+              const _Wallet3DIllustration(),
             ],
           ),
           const SizedBox(height: 18),
@@ -5054,7 +5055,7 @@ class _ExactPopularPackCard extends StatelessWidget {
                   ),
 
                   // Center Illustration
-                  _3DCoinStackIllustration(
+                  _CoinStack3DIllustration(
                     backgroundColor: illustrationBg,
                     showStar: showStar,
                   ),
@@ -8122,7 +8123,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '★ ${host.rating.toStringAsFixed(1)}',
+                          '★ ${host.rating.toStringAsFixed(1)} (1k+)',
                           style: const TextStyle(
                             color: Color(0xFFD97706),
                             fontSize: 12,
@@ -8982,7 +8983,7 @@ class _ProfileHero extends StatelessWidget {
                   spacing: 6,
                   children: [
                     _DarkPill(label: isHost ? '★ Host' : '✦ Verified Member'),
-
+                    if (isHost) const _DarkPill(label: '1k+ Calls'),
                   ],
                 ),
               ],

@@ -23,22 +23,22 @@ Future<void> main() async {
   final environment = AppEnvironment.fromDotEnv();
   await Supabase.initialize(
     url: environment.supabaseUrl,
-    anonKey: environment.supabasePublishableKey,
+    publishableKey: environment.supabasePublishableKey,
     authOptions: const FlutterAuthClientOptions(
       authFlowType: AuthFlowType.pkce,
     ),
   );
 
-  bool hasSavedSession = false;
+
   String? savedAppLanguageCode;
 
   try {
     final prefs = await SharedPreferences.getInstance();
     savedAppLanguageCode = prefs.getString('friendoo_app_language');
-    final savedHasEntered =
-        prefs.getBool('friendoo_saved_has_entered') ?? false;
-    final authUser = Supabase.instance.client.auth.currentUser;
-    hasSavedSession = authUser != null || savedHasEntered;
+
+
+
+
   } catch (error, stackTrace) {
     debugPrint('Could not load saved app preferences: $error\n$stackTrace');
   }

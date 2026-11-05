@@ -208,7 +208,7 @@ class _NameAndDobSetupPageState extends ConsumerState<NameAndDobSetupPage> {
         await prefs.setString('friendoo_profile_avatar_id', defaultPreset);
         await prefs.setBool('friendoo_saved_is_host', _isHost);
       } catch (_) {}
-
+    if (!mounted) return;
       if (!mounted) return;
 
       // Navigate to avatar selection page where user can optionally customize
@@ -656,6 +656,7 @@ class _StandaloneAvatarSelectionPageState
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('friendoo_saved_is_host', resolvedIsHost);
     } catch (_) {}
+    if (!mounted) return;
     ref.invalidate(currentUserProfileStreamProvider);
 
     if (isDebugMock) {

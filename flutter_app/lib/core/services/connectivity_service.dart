@@ -41,12 +41,12 @@ class ConnectivityService {
 
     if (kIsWeb) {
       try {
-        final res = await _client
+        await _client
             .from('profiles')
             .select('id')
             .limit(1)
             .timeout(const Duration(seconds: 3));
-        reachable = res != null;
+        reachable = true;
       } catch (e) {
         final errStr = e.toString().toLowerCase();
         if (errStr.contains('socketexception') ||

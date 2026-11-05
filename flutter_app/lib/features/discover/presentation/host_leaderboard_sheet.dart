@@ -277,7 +277,7 @@ class HostLeaderboardSheet extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  '⭐ ${host.rating.toStringAsFixed(1)} • ₹${host.effectiveRatePerMinute}/min',
+                                  '⭐ ${host.rating.toStringAsFixed(1)} • 1k+ calls • ₹${host.effectiveRatePerMinute}/min',
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 11.5,

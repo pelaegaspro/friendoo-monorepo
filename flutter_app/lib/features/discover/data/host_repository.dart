@@ -293,7 +293,7 @@ class HostRepository {
       final presenceRows = results[1] as List<dynamic>;
 
       final Map<String, Map<String, dynamic>> presenceMap = {};
-      final nowUtc = DateTime.now().toUtc();
+
       for (final p in presenceRows) {
         if (p is Map<String, dynamic> && p['user_id'] is String) {
           presenceMap[p['user_id'] as String] = p;

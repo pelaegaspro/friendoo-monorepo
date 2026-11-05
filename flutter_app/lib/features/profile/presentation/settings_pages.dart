@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,14 +13,10 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../discover/presentation/desi_avatar.dart';
 import '../data/profile_repository.dart';
 import '../../discover/data/host_repository.dart';
-import '../../notifications/data/notification_repository.dart';
-import '../../notifications/presentation/in_app_notification_banner.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/blocked_callers_service.dart';
-import '../../support/presentation/support_desk_page.dart';
 import '../../support/presentation/support_chat_sheet.dart';
 import 'instagram_profile_form.dart';
-import 'profile_input_widgets.dart';
 
 /// Clean scaffold wrapper for all dedicated settings & profile child pages
 class SettingsPageScaffold extends StatelessWidget {
@@ -49,13 +47,13 @@ class SettingsPageScaffold extends StatelessWidget {
             Icons.arrow_back_rounded,
             color: FriendooUiColors.ink,
           ),
-          tooltip: 'Back',
+          tooltip: context.tr('Back'),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               title,
               style: const TextStyle(
                 color: FriendooUiColors.ink,
@@ -66,7 +64,7 @@ class SettingsPageScaffold extends StatelessWidget {
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 1),
-              Text(
+              AppText(
                 subtitle!,
                 style: const TextStyle(
                   color: Color(0xFF6B7280),
@@ -122,7 +120,7 @@ class SettingsSectionCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null) ...[
-          Text(
+          AppText(
             title!,
             style: const TextStyle(
               color: Color(0xFF374151),
@@ -194,7 +192,7 @@ class SettingsSwitchTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppText(
                   title,
                   style: const TextStyle(
                     color: FriendooUiColors.ink,
@@ -203,7 +201,7 @@ class SettingsSwitchTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
+                AppText(
                   subtitle,
                   style: const TextStyle(
                     color: Color(0xFF6B7280),
@@ -364,19 +362,31 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                 shape: BoxShape.circle,
                 color: Color(0xFFEDE9FE),
               ),
-              child: const Icon(Icons.verified_user_rounded, color: Color(0xFF7C3AED), size: 28),
+              child: const Icon(
+                Icons.verified_user_rounded,
+                color: Color(0xFF7C3AED),
+                size: 28,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
               'Permanent Identity Avatar',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+              ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Your avatar was verified during account creation to keep the Friendoo voice community safe and genuine.\n\nYou can update your Name, Bio, and Languages at any time.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                height: 1.45,
+              ),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -385,10 +395,15 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                 onPressed: () => Navigator.of(ctx).pop(),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7C3AED),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Understood',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -402,7 +417,6 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
 
   Widget _buildRedesignedPage(BuildContext context) {
     final nameCount = _nameController.text.length;
-    final bioCount = _bioController.text.length;
     final canSave = _nameController.text.trim().isNotEmpty && nameCount <= 50;
 
     return Scaffold(
@@ -414,7 +428,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
         leading: Padding(
           padding: const EdgeInsets.all(8),
           child: IconButton(
-            tooltip: 'Back',
+            tooltip: context.tr('Back'),
             icon: const Icon(Icons.arrow_back_rounded),
             color: FriendooUiColors.ink,
             style: IconButton.styleFrom(
@@ -427,7 +441,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        title: const Text(
+        title: const AppText(
           'Edit Profile',
           style: TextStyle(
             color: FriendooUiColors.ink,
@@ -438,7 +452,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
         actions: [
           TextButton(
             onPressed: clearAllFields,
-            child: const Text(
+            child: const AppText(
               'Reset',
               style: TextStyle(
                 color: Color(0xFFEF4444),
@@ -587,7 +601,6 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                         isHost: false,
                         onChanged: (_) => setState(() {}),
                       ),
-
                     ],
                   ),
                 ),
@@ -609,7 +622,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                               ),
                             )
                           : const Icon(Icons.save_rounded),
-                      label: Text(_isSaving ? 'Saving…' : 'Save Changes'),
+                      label: AppText(_isSaving ? 'Saving…' : 'Save Changes'),
                       style: FilledButton.styleFrom(
                         backgroundColor: FriendooUiColors.pink,
                         disabledBackgroundColor: const Color(0xFFE5B6CB),
@@ -659,7 +672,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
                     strokeWidth: 2,
                   ),
                 )
-              : const Text(
+              : const AppText(
                   'Save Changes',
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
                 ),
@@ -940,193 +953,6 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
   }
 }
 
-class _EditProfileSectionHeading extends StatelessWidget {
-  const _EditProfileSectionHeading();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: FriendooUiColors.violet.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const Icon(
-            Icons.person_outline_rounded,
-            color: FriendooUiColors.violet,
-            size: 25,
-          ),
-        ),
-        const SizedBox(width: 14),
-        const Text(
-          'BASIC INFORMATION',
-          style: TextStyle(
-            color: FriendooUiColors.ink,
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EditProfileField extends StatelessWidget {
-  const _EditProfileField({
-    required this.icon,
-    required this.label,
-    required this.child,
-  }) : counter = null, iconColor = FriendooUiColors.violet, alignTop = false;
-
-  final IconData icon;
-  final String label;
-  final Widget child;
-  final String? counter;
-  final Color iconColor;
-  final bool alignTop;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE7E7F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A0E1020),
-            blurRadius: 12,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: alignTop
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: alignTop ? 3 : 0),
-            child: Icon(icon, color: iconColor, size: 25),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: FriendooUiColors.ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                child,
-              ],
-            ),
-          ),
-          if (counter != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              counter!,
-              style: const TextStyle(
-                color: Color(0xFF8790A6),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _EditProfileInfoCard extends StatelessWidget {
-  const _EditProfileInfoCard({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.background,
-    required this.foreground,
-  }) : onTap = null, showArrow = false;
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final Color background;
-  final Color foreground;
-  final VoidCallback? onTap;
-  final bool showArrow;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: foreground.withValues(alpha: 0.16)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.75),
-                ),
-                child: Icon(icon, color: foreground, size: 27),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: foreground,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      message,
-                      style: TextStyle(
-                        color: foreground.withValues(alpha: 0.9),
-                        fontSize: 12,
-                        height: 1.45,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (showArrow)
-                Icon(Icons.chevron_right_rounded, color: foreground, size: 27),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class AppLanguageSettingsPage extends ConsumerWidget {
   const AppLanguageSettingsPage({super.key});
 
@@ -1135,6 +961,7 @@ class AppLanguageSettingsPage extends ConsumerWidget {
     WidgetRef ref,
     AppLanguage language,
   ) async {
+    final languageController = ref.read(appLanguageCodeProvider.notifier);
     try {
       final preferences = await SharedPreferences.getInstance();
       final saved = await preferences.setString(
@@ -1144,12 +971,14 @@ class AppLanguageSettingsPage extends ConsumerWidget {
       if (!saved) {
         throw StateError('The app language preference could not be saved.');
       }
-      ref.read(appLanguageCodeProvider.notifier).state = language.code;
+      languageController.state = language.code;
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF10B981),
-            content: Text('App language changed to ${language.name}'),
+            content: Text(
+              translateAppText('App language updated', language.code),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1157,7 +986,11 @@ class AppLanguageSettingsPage extends ConsumerWidget {
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save language: $error')),
+          SnackBar(
+            content: const AppText(
+              'Could not save language. Please try again.',
+            ),
+          ),
         );
       }
     }
@@ -1175,8 +1008,8 @@ class AppLanguageSettingsPage extends ConsumerWidget {
           children: [
             Padding(
               padding: EdgeInsets.only(bottom: 12),
-              child: Text(
-                'This choice is saved on this device. Some app content may still appear in English.',
+              child: AppText(
+                'Your language choice is saved on this device.',
                 style: TextStyle(
                   color: Color(0xFF6B7280),
                   fontSize: 13,
@@ -1189,16 +1022,19 @@ class AppLanguageSettingsPage extends ConsumerWidget {
         SettingsSectionCard(
           children: AppLanguage.supported.map((language) {
             final isSelected = selectedLanguageCode == language.code;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(language.name),
-              trailing: isSelected
-                  ? const Icon(
-                      Icons.check_circle_rounded,
-                      color: FriendooUiColors.pink,
-                    )
-                  : null,
-              onTap: () => _saveLanguage(context, ref, language),
+            return Material(
+              color: Colors.transparent,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(language.name),
+                trailing: isSelected
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        color: FriendooUiColors.pink,
+                      )
+                    : null,
+                onTap: () => _saveLanguage(context, ref, language),
+              ),
             );
           }).toList(),
         ),
@@ -1242,9 +1078,7 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
         ProfileRepository.currentActiveProfile?.preferredLanguages;
     if (profileLangs != null && profileLangs.isNotEmpty) {
       _selected = profileLangs
-          .where(
-            (language) => language.toLowerCase() != 'english',
-          )
+          .where((language) => language.toLowerCase() != 'english')
           .toSet();
     } else {
       _selected = {'Tamil'};
@@ -1256,9 +1090,7 @@ class _UserLanguagesPageState extends ConsumerState<UserLanguagesPage> {
 
   Future<void> _saveLanguages() async {
     final languages = _selected
-        .where(
-          (language) => language.toLowerCase() != 'english',
-        )
+        .where((language) => language.toLowerCase() != 'english')
         .toList();
     if (widget.isHost) {
       await ref
@@ -1660,7 +1492,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                           ),
                           visualDensity: VisualDensity.compact,
                         ),
-                        child: Text(micGranted ? 'Check' : 'Enable'),
+                        child: AppText(micGranted ? 'Check' : 'Enable'),
                       ),
                     ),
                     const Divider(height: 1),
@@ -1684,7 +1516,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                               : const Color(0xFFDC2626),
                         ),
                       ),
-                      title: const Text(
+                      title: const AppText(
                         'Push Notifications',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
@@ -1716,7 +1548,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                           ),
                           visualDensity: VisualDensity.compact,
                         ),
-                        child: Text(notifGranted ? 'Check' : 'Enable'),
+                        child: AppText(notifGranted ? 'Check' : 'Enable'),
                       ),
                     ),
                     const Divider(height: 1),
@@ -1773,7 +1605,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                           ),
                           visualDensity: VisualDensity.compact,
                         ),
-                        child: Text(storageGranted ? 'Check' : 'Enable'),
+                        child: AppText(storageGranted ? 'Check' : 'Enable'),
                       ),
                     ),
                   ],
@@ -1900,7 +1732,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
+              child: AppText(
                 'Cancel',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
               ),
@@ -1993,7 +1825,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: const AppText(
               'Cancel',
               style: TextStyle(color: Color(0xFF6B7280)),
             ),
@@ -2017,7 +1849,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
                 );
               }
             },
-            child: const Text('Unblock'),
+            child: const AppText('Unblock'),
           ),
         ],
       ),
@@ -2031,7 +1863,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        title: const AppText(
           'Block Caller',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
@@ -2074,7 +1906,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: const AppText(
               'Cancel',
               style: TextStyle(color: Color(0xFF6B7280)),
             ),
@@ -2108,7 +1940,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
                 );
               }
             },
-            child: const Text('Block Caller'),
+            child: const AppText('Block Caller'),
           ),
         ],
       ),
@@ -2258,7 +2090,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         side: const BorderSide(color: Color(0xFFD1D5DB)),
                       ),
-                      child: const Text(
+                      child: const AppText(
                         'Unblock',
                         style: TextStyle(
                           fontSize: 12,
@@ -2389,7 +2221,10 @@ class HelpSupportPage extends StatelessWidget {
                     SizedBox(height: 1),
                     Text(
                       'Support and safety resources for callers across India.',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5),
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 11.5,
+                      ),
                     ),
                   ],
                 ),
@@ -2423,11 +2258,17 @@ class HelpSupportPage extends StatelessWidget {
                 children: [
                   const Text(
                     '24/7 Live Support',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14.5,
+                    ),
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
@@ -2700,7 +2541,7 @@ class AboutFriendooPage extends StatelessWidget {
                 Icons.description_outlined,
                 color: FriendooUiColors.ink,
               ),
-              title: const Text(
+              title: const AppText(
                 'Terms of Service',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
               ),
@@ -2723,7 +2564,7 @@ class AboutFriendooPage extends StatelessWidget {
                 Icons.privacy_tip_outlined,
                 color: FriendooUiColors.ink,
               ),
-              title: const Text(
+              title: const AppText(
                 'Privacy Policy',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
               ),
@@ -2746,7 +2587,7 @@ class AboutFriendooPage extends StatelessWidget {
                 Icons.handshake_outlined,
                 color: FriendooUiColors.ink,
               ),
-              title: const Text(
+              title: const AppText(
                 'Community Guidelines',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
               ),
@@ -2841,7 +2682,7 @@ class _GrievanceRedressalPageState extends State<GrievanceRedressalPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text(
+            child: const AppText(
               'Cancel',
               style: TextStyle(color: Colors.white60),
             ),
@@ -5077,7 +4918,7 @@ class _MetricTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          AppText(
             label,
             style: TextStyle(
               color: textColor.withValues(alpha: 0.8),
@@ -5159,7 +5000,7 @@ class _PeakHourBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
+        AppText(
           label,
           style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
         ),
@@ -5183,7 +5024,7 @@ class _FeedbackBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: const TextStyle(
           color: FriendooUiColors.ink,
@@ -5219,7 +5060,6 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
   String _savedAccountNumber = '';
   String _savedIfsc = '';
   String _savedBankName = '';
-  bool _isLoadingPayout = true;
 
   @override
   void initState() {
@@ -5268,9 +5108,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
         }
       }
     } catch (_) {}
-    if (mounted) {
-      setState(() => _isLoadingPayout = false);
-    }
+    if (mounted) setState(() {});
   }
 
   void _showChangePaymentMethodSheet() {
@@ -5789,26 +5627,32 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                                     });
                                   }
 
-                                  Navigator.of(sheetCtx).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Payment method updated successfully!',
+                                  if (sheetCtx.mounted) {
+                                    Navigator.of(sheetCtx).pop();
+                                  }
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Payment method updated successfully!',
+                                        ),
+                                        backgroundColor: Color(0xFF10B981),
                                       ),
-                                      backgroundColor: Color(0xFF10B981),
-                                    ),
-                                  );
+                                    );
+                                  }
                                 }
                               } catch (e) {
                                 setSheetState(() => isSaving = false);
-                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Failed to update: ${e.toString()}',
+                                if (sheetCtx.mounted) {
+                                  ScaffoldMessenger.of(sheetCtx).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Failed to update: ${e.toString()}',
+                                      ),
+                                      backgroundColor: const Color(0xFFDC2626),
                                     ),
-                                    backgroundColor: const Color(0xFFDC2626),
-                                  ),
-                                );
+                                  );
+                                }
                               }
                             },
                       child: isSaving
@@ -6244,9 +6088,11 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                       Radio<int>(
                         value: 0,
-                        groupValue: _selectedCycle,
+                        // ignore: deprecated_member_use
+groupValue: _selectedCycle,
                         activeColor: FriendooUiColors.violet,
-                        onChanged: (val) {
+                        // ignore: deprecated_member_use
+onChanged: (val) {
                           if (val != null) {
                             setState(() {
                               _selectedCycle = val;
@@ -6371,9 +6217,11 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                       Radio<int>(
                         value: 1,
-                        groupValue: _selectedCycle,
+                        // ignore: deprecated_member_use
+groupValue: _selectedCycle,
                         activeColor: const Color(0xFF10B981),
-                        onChanged: (val) {
+                        // ignore: deprecated_member_use
+onChanged: (val) {
                           if (val != null) {
                             setState(() {
                               _selectedCycle = val;
@@ -6397,7 +6245,8 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
           children: [
             RadioGroup<int>(
               groupValue: _selectedMethodIndex,
-              onChanged: (val) {
+              // ignore: deprecated_member_use
+onChanged: (val) {
                 if (val != null) {
                   setState(() => _selectedMethodIndex = val);
                 }
