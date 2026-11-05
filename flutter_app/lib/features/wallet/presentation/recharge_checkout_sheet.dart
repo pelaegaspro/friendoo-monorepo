@@ -27,29 +27,29 @@ class RechargeCheckoutSheet extends ConsumerStatefulWidget {
 }
 
 class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
-  String _selectedMethod = 'Cashfree';
+  String _selectedMethod = 'upi';
   bool _isProcessing = false;
 
   static const _paymentMethods = [
     {
-      'id': 'CashfreeInApp',
-      'title': 'Option 1: In-App Instant UPI',
+      'id': 'upi',
+      'title': 'Pay by UPI',
       'subtitle': 'Direct 1-tap PhonePe, GPay, Paytm on phone',
       'icon': Icons.flash_on_rounded,
       'badge': 'DIRECT IN-APP',
     },
     {
-      'id': 'CashfreeBrowser',
-      'title': 'Option 2: External Browser Checkout',
-      'subtitle': 'Opens Chrome with UPI, QR, Cards & NetBanking',
-      'icon': Icons.open_in_browser_rounded,
+      'id': 'card',
+      'title': 'Pay by card',
+      'subtitle': 'Enter your card details in the app',
+      'icon': Icons.credit_card_rounded,
       'badge': 'RECOMMENDED',
     },
   ];
 
   Future<void> _processPayment(bool isFirstTimeBuyer) async {
+    if (_isProcessing) return;
     setState(() => _isProcessing = true);
-    final isExternal = _selectedMethod == 'CashfreeBrowser';
     try {
       final order = await ref
           .read(walletRepositoryProvider)
@@ -67,7 +67,6 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
       }
       final sessionId = order?['payment_session_id'] as String?;
       final providerOrderId = order?['provider_order_id'] as String?;
-      final checkoutUrl = order?['checkout_url'] as String?;
       if (sessionId == null ||
           sessionId.isEmpty ||
           providerOrderId == null ||
@@ -90,8 +89,6 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                 widget.package.amountInr,
             coins: (order?['coins'] as num?)?.toInt() ?? widget.package.coins,
             paymentMethod: _selectedMethod,
-            externalBrowserMode: isExternal,
-            checkoutUrl: checkoutUrl,
             verifyPayment: (orderId) => ref
                 .read(walletRepositoryProvider)
                 .confirmCashfreePayment(providerOrderId: orderId),
@@ -122,7 +119,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
         ? (widget.package.coins * 0.5).round()
         : 0;
     final totalCoinsReceiving = widget.package.coins + firstTimeBonusCoins;
-    final approxMinutes = (totalCoinsReceiving / 5).round();
+
     final isAbove800 = widget.package.amountInr >= 800;
 
     return Container(
@@ -312,7 +309,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
                         ],
                         const SizedBox(height: 4),
                         Text(
-                          '≈ $approxMinutes mins of talk time (at 5 coins/min)',
+                          'Available for voice calls',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colors.onSurfaceVariant,
                           ),

@@ -76,7 +76,7 @@ class HostProfile {
     this.languages = const ['Hindi'],
     this.gender = 'unknown',
     this.rating = 4.9,
-    this.totalCalls = 150,
+    this.totalCalls = 0,
     this.age,
     this.city,
     this.avatarUrl,
@@ -207,7 +207,7 @@ class HostProfile {
 
     final isAvailableVal = (map['is_available'] as bool?) ?? false;
     final isBusyVal = (map['is_busy'] as bool?) ?? false;
-    final totalCallsVal = (map['total_calls'] as num?)?.toInt() ?? 150;
+    final totalCallsVal = (map['total_calls'] as num?)?.toInt() ?? 0;
 
     // Resolve VIP Tier based on rating and calls
     HostVipTier resolvedTier = HostVipTier.silver;

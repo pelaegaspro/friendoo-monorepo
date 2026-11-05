@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -167,7 +168,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      const AppText(
                         'Wallet',
                         style: TextStyle(
                           fontSize: 22,
@@ -265,7 +266,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 Text(
-                                  '${(balance * 10).round()} Coins',
+                                  '$balance Coins',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
@@ -619,7 +620,7 @@ class _TransactionsHistoryBottomSheet extends ConsumerWidget {
               data: (txList) {
                 if (txList.isEmpty) {
                   return const Center(
-                    child: Text(
+                    child: AppText(
                       'No transactions yet',
                       style: TextStyle(
                         fontSize: 15,

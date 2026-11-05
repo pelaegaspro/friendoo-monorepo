@@ -1,4 +1,6 @@
+import '../core/localization/app_strings.dart';
 import '../features/support/data/admin_support_notification_service.dart';
+
 // ignore_for_file: unused_element, unused_element_parameter
 import 'dart:async';
 import 'dart:ui';
@@ -17,7 +19,6 @@ import '../features/discover/data/favorites_repository.dart';
 import '../features/discover/presentation/desi_avatar.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
-import '../features/profile/presentation/host_application_page.dart';
 import '../features/profile/data/blocked_callers_service.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import '../features/wallet/presentation/coin_packages_page.dart';
@@ -25,7 +26,6 @@ import '../features/wallet/presentation/recharge_checkout_sheet.dart';
 import '../features/wallet/presentation/select_payment_method_page.dart';
 import '../features/support/presentation/support_desk_page.dart';
 import '../features/ads/presentation/cloud_banner_ad_widget.dart';
-import '../features/ads/presentation/live_ad_banner_widget.dart';
 import '../features/notifications/presentation/notifications_sheet.dart';
 
 abstract final class FriendooUiColors {
@@ -180,7 +180,7 @@ Future<void> showFriendooLanguagePicker(
                       backgroundColor: FriendooUiColors.ink,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Save languages'),
+                    child: const AppText('Save languages'),
                   ),
                 ),
               ],
@@ -279,7 +279,7 @@ Future<void> showFriendooPrivacySheet(BuildContext context) async {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('Close'),
+                child: const AppText('Close'),
               ),
             ),
           ],
@@ -319,7 +319,7 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                AppText(
                   'Help & Support',
                   style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w900),
@@ -371,7 +371,7 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: const StadiumBorder(),
                 ),
-                child: const Text('Close'),
+                child: const AppText('Close'),
               ),
             ),
           ],
@@ -711,7 +711,8 @@ class FriendooDashboardView extends ConsumerStatefulWidget {
   final VoidCallback onOpenWallet;
 
   @override
-  ConsumerState<FriendooDashboardView> createState() => _FriendooDashboardViewState();
+  ConsumerState<FriendooDashboardView> createState() =>
+      _FriendooDashboardViewState();
 }
 
 class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
@@ -860,10 +861,13 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
         return b.rating.compareTo(a.rating);
       });
 
-    final onlineCount = femaleHosts.where((host) => host.isAvailable && host.status != HostStatus.busy).length;
+    final onlineCount = femaleHosts
+        .where((host) => host.isAvailable && host.status != HostStatus.busy)
+        .length;
 
     // Favorites & Recommended Top 6 Hosts: strictly prioritize user preferred language (e.g. Tamil)
-    final favIds = ref.watch(favoriteHostIdsProvider).asData?.value ??
+    final favIds =
+        ref.watch(favoriteHostIdsProvider).asData?.value ??
         ref.watch(favoritesRepositoryProvider).currentFavorites;
 
     final sortedCandidates = [...femaleHosts]
@@ -887,7 +891,6 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
 
     final top6Hosts = sortedCandidates.take(6).toList();
 
-
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
@@ -903,7 +906,10 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
               pressedScale: 0.94,
               onTap: () => CoinPackagesPage.push(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: FriendooUiColors.softGold,
                   borderRadius: BorderRadius.circular(14),
@@ -929,11 +935,9 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                     const SizedBox(width: 5),
                     Text(
                       walletAsync.when(
-                        data: (wallet) => '',
+                        data: (wallet) => '${wallet.coinBalance}',
                         loading: () => '…',
-                        error: (_, _) => walletAsync.hasValue
-                            ? ''
-                            : '0',
+                        error: (_, _) => walletAsync.hasValue ? '${walletAsync.value?.coinBalance ?? 0}' : '0',
                       ),
                       style: const TextStyle(
                         color: Color(0xFFB45309),
@@ -958,7 +962,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
         // ==========================================
         // 2. DISCOVER HEADING
         // ==========================================
-        const Text(
+        const AppText(
           'Discover a Host',
           style: TextStyle(
             color: FriendooUiColors.ink,
@@ -996,7 +1000,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
               ),
               const SizedBox(width: 8),
               const Flexible(
-                child: Text(
+                child: AppText(
                   'Favorites & Recent Hosts',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1017,9 +1021,13 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome_rounded, size: 10, color: Color(0xFF7C3AED)),
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 10,
+                      color: Color(0xFF7C3AED),
+                    ),
                     SizedBox(width: 3),
-                    Text(
+                    AppText(
                       'FEATURED',
                       style: TextStyle(
                         color: Color(0xFF7C3AED),
@@ -1047,7 +1055,10 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
               itemBuilder: (context, pageIdx) {
                 final start = pageIdx * 3;
                 final pageItems = (start < top6Hosts.length)
-                    ? top6Hosts.sublist(start, math.min(start + 3, top6Hosts.length))
+                    ? top6Hosts.sublist(
+                        start,
+                        math.min(start + 3, top6Hosts.length),
+                      )
                     : <HostProfile>[];
 
                 return Row(
@@ -1070,10 +1081,12 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isOnline
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                                  ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.3)
                                   : (isBusy
-                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
-                                      : const Color(0xFFE5E7EB)),
+                                        ? const Color(0xFFF59E0B)
+                                              .withValues(alpha: 0.3)
+                                        : const Color(0xFFE5E7EB)),
                               width: 1.1,
                             ),
                             boxShadow: [
@@ -1094,15 +1107,21 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                                   GestureDetector(
                                     onTap: () {
                                       HapticFeedback.lightImpact();
-                                      final repo = ref.read(favoritesRepositoryProvider);
+                                      final repo = ref.read(
+                                        favoritesRepositoryProvider,
+                                      );
                                       final ok = repo.toggleFavorite(host.id);
                                       if (!ok && context.mounted) {
                                         _showMaxFavoritesReachedDialog(context);
                                       }
                                     },
                                     child: Icon(
-                                      isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                      color: isFav ? const Color(0xFFEC4899) : const Color(0xFF94A3B8),
+                                      isFav
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      color: isFav
+                                          ? const Color(0xFFEC4899)
+                                          : const Color(0xFF94A3B8),
                                       size: 17,
                                     ),
                                   ),
@@ -1148,11 +1167,15 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                                 width: double.infinity,
                                 height: 28,
                                 child: ElevatedButton(
-                                  onPressed: isOnline ? () => widget.onStartCall(host) : null,
+                                  onPressed: isOnline
+                                      ? () => widget.onStartCall(host)
+                                      : null,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: isOnline
                                         ? const Color(0xFF10B981)
-                                        : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB)),
+                                        : (isBusy
+                                              ? const Color(0xFFF59E0B)
+                                              : const Color(0xFFE5E7EB)),
                                     foregroundColor: isOnline || isBusy
                                         ? Colors.white
                                         : const Color(0xFF9CA3AF),
@@ -1162,8 +1185,10 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                  child: Text(
-                                    isOnline ? 'Call' : (isBusy ? 'Busy' : 'Offline'),
+                                  child: AppText(
+                                    isOnline
+                                        ? 'Call'
+                                        : (isBusy ? 'Busy' : 'Offline'),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
@@ -1193,7 +1218,9 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                 width: _favoritesPageIndex == 0 ? 14 : 5,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: _favoritesPageIndex == 0 ? const Color(0xFF7C3AED) : const Color(0xFFCBD5E1),
+                  color: _favoritesPageIndex == 0
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFFCBD5E1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1203,7 +1230,9 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                 width: _favoritesPageIndex == 1 ? 14 : 5,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: _favoritesPageIndex == 1 ? const Color(0xFF7C3AED) : const Color(0xFFCBD5E1),
+                  color: _favoritesPageIndex == 1
+                      ? const Color(0xFF7C3AED)
+                      : const Color(0xFFCBD5E1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -1218,7 +1247,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
         Row(
           children: [
             const Flexible(
-              child: Text(
+              child: AppText(
                 'Available Hosts',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1234,7 +1263,10 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(99),
@@ -1251,7 +1283,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                       size: 8,
                     ),
                     const SizedBox(width: 5),
-                    Text(
+                    AppText(
                       ' Live Now',
                       style: const TextStyle(
                         color: Color(0xFF047857),
@@ -1578,8 +1610,8 @@ class _DesiHostCard extends StatelessWidget {
               : (isOnline
                     ? const Color(0xFF10B981).withValues(alpha: 0.35)
                     : (isBusy
-                        ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
-                        : const Color(0xFFE2E8F0))),
+                          ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+                          : const Color(0xFFE2E8F0))),
           width: host.isStar ? 1.6 : 1.1,
         ),
         boxShadow: [
@@ -1594,8 +1626,8 @@ class _DesiHostCard extends StatelessWidget {
                 : (isOnline
                       ? const Color(0xFF10B981).withValues(alpha: 0.10)
                       : (isBusy
-                          ? const Color(0xFFF59E0B).withValues(alpha: 0.10)
-                          : const Color(0x04000000))),
+                            ? const Color(0xFFF59E0B).withValues(alpha: 0.10)
+                            : const Color(0x04000000))),
             blurRadius: host.isStar ? 20 : 16,
             offset: const Offset(0, 6),
           ),
@@ -1614,14 +1646,20 @@ class _DesiHostCard extends StatelessWidget {
                 alignment: Alignment.topCenter,
                 children: [
                   Container(
-                    padding: host.isStar ? const EdgeInsets.all(2.5) : EdgeInsets.zero,
+                    padding: host.isStar
+                        ? const EdgeInsets.all(2.5)
+                        : EdgeInsets.zero,
                     decoration: host.isStar
                         ? const BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [Color(0xFFF59E0B), Color(0xFFFBBF24), Color(0xFF818CF8)],
+                              colors: [
+                                Color(0xFFF59E0B),
+                                Color(0xFFFBBF24),
+                                Color(0xFF818CF8),
+                              ],
                             ),
                           )
                         : null,
@@ -1661,7 +1699,8 @@ class _DesiHostCard extends StatelessWidget {
                           border: Border.all(color: const Color(0xFFFDE68A)),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                              color: const Color(0xFFF59E0B)
+                                  .withValues(alpha: 0.25),
                               blurRadius: 4,
                               offset: const Offset(0, 1),
                             ),
@@ -1670,7 +1709,11 @@ class _DesiHostCard extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.star_rounded, size: 9.5, color: Color(0xFFB45309)),
+                            Icon(
+                              Icons.star_rounded,
+                              size: 9.5,
+                              color: Color(0xFFB45309),
+                            ),
                             SizedBox(width: 2),
                             Text(
                               'STAR',
@@ -1719,16 +1762,25 @@ class _DesiHostCard extends StatelessWidget {
                         if (host.isStar) ...[
                           const SizedBox(width: 5),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFFBEB),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFFDE68A)),
+                              border: Border.all(
+                                color: const Color(0xFFFDE68A),
+                              ),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star_rounded, size: 10, color: Color(0xFFF59E0B)),
+                                Icon(
+                                  Icons.star_rounded,
+                                  size: 10,
+                                  color: Color(0xFFF59E0B),
+                                ),
                                 SizedBox(width: 2),
                                 Text(
                                   'STAR HOST',
@@ -1819,7 +1871,7 @@ class _DesiHostCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
-                            '${host.rating.toStringAsFixed(1)} (${_formatCalls(host.totalCalls)} calls)',
+                            host.rating.toStringAsFixed(1),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -1858,7 +1910,11 @@ class _DesiHostCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (host.isStar) ...[
-                          const Icon(Icons.monetization_on_rounded, size: 12, color: Color(0xFFF59E0B)),
+                          const Icon(
+                            Icons.monetization_on_rounded,
+                            size: 12,
+                            color: Color(0xFFF59E0B),
+                          ),
                           const SizedBox(width: 2),
                         ],
                         Text(
@@ -1952,15 +2008,16 @@ class _DesiHostCard extends StatelessWidget {
                           color: isOnline
                               ? const Color(0xFFECFDF5)
                               : (isBusy
-                                  ? const Color(0xFFFEF3C7)
-                                  : const Color(0xFFF3F4F6)),
+                                    ? const Color(0xFFFEF3C7)
+                                    : const Color(0xFFF3F4F6)),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isOnline
                                 ? const Color(0xFF10B981).withValues(alpha: 0.3)
                                 : (isBusy
-                                    ? const Color(0xFFF59E0B).withValues(alpha: 0.3)
-                                    : const Color(0xFFE5E7EB)),
+                                      ? const Color(0xFFF59E0B)
+                                            .withValues(alpha: 0.3)
+                                      : const Color(0xFFE5E7EB)),
                           ),
                         ),
                         child: Row(
@@ -1972,11 +2029,11 @@ class _DesiHostCard extends StatelessWidget {
                               color: isOnline
                                   ? const Color(0xFF10B981)
                                   : (isBusy
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFF9CA3AF)),
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFF9CA3AF)),
                             ),
                             const SizedBox(width: 3.5),
-                            Text(
+                            AppText(
                               isOnline
                                   ? 'ONLINE'
                                   : (isBusy ? 'BUSY' : 'OFFLINE'),
@@ -1984,8 +2041,8 @@ class _DesiHostCard extends StatelessWidget {
                                 color: isOnline
                                     ? const Color(0xFF047857)
                                     : (isBusy
-                                        ? const Color(0xFFB45309)
-                                        : const Color(0xFF6B7280)),
+                                          ? const Color(0xFFB45309)
+                                          : const Color(0xFF6B7280)),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 0.3,
@@ -2016,37 +2073,52 @@ class _DesiHostCard extends StatelessWidget {
                       color: (isOnline && host.isStar)
                           ? null
                           : (isOnline
-                              ? const Color(0xFF10B981)
-                              : (isBusy ? const Color(0xFFF59E0B) : const Color(0xFFE5E7EB))),
+                                ? const Color(0xFF10B981)
+                                : (isBusy
+                                      ? const Color(0xFFF59E0B)
+                                      : const Color(0xFFE5E7EB))),
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: isOnline
                           ? [
                               BoxShadow(
-                                color: (host.isStar ? const Color(0xFF7C3AED) : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                                color:
+                                    (host.isStar
+                                            ? const Color(0xFF7C3AED)
+                                            : const Color(0xFF10B981))
+                                        .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                             ]
                           : null,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           isOnline
                               ? Icons.call_rounded
-                              : (isBusy ? Icons.phone_in_talk_rounded : Icons.phone_disabled_rounded),
+                              : (isBusy
+                                    ? Icons.phone_in_talk_rounded
+                                    : Icons.phone_disabled_rounded),
                           size: 15,
-                          color: isOnline || isBusy ? Colors.white : const Color(0xFF9CA3AF),
+                          color: isOnline || isBusy
+                              ? Colors.white
+                              : const Color(0xFF9CA3AF),
                         ),
                         const SizedBox(width: 5),
-                        Text(
+                        AppText(
                           isOnline
                               ? (host.isStar ? 'VIP Call' : 'Call Now')
                               : (isBusy ? 'Busy' : 'Offline'),
                           style: TextStyle(
-                            color: isOnline || isBusy ? Colors.white : const Color(0xFF9CA3AF),
+                            color: isOnline || isBusy
+                                ? Colors.white
+                                : const Color(0xFF9CA3AF),
                             fontWeight: FontWeight.w900,
                             fontSize: 12.5,
                           ),
@@ -2230,7 +2302,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        const AppText(
                           'Filter & Sort Calls',
                           style: TextStyle(
                             fontSize: 19,
@@ -2247,7 +2319,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                               tempConnected = false;
                             });
                           },
-                          child: const Text(
+                          child: const AppText(
                             'Reset',
                             style: TextStyle(
                               color: Color(0xFFEF4444),
@@ -2261,7 +2333,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     const SizedBox(height: 14),
 
                     // SECTION 1: TIME PERIOD
-                    const Text(
+                    const AppText(
                       'TIME PERIOD',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -2308,7 +2380,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     const SizedBox(height: 20),
 
                     // SECTION 2: HOST STATUS
-                    const Text(
+                    const AppText(
                       'HOST AVAILABILITY',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -2359,7 +2431,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     const SizedBox(height: 20),
 
                     // SECTION 3: SORT BY
-                    const Text(
+                    const AppText(
                       'SORT BY',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -2404,7 +2476,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     const SizedBox(height: 20),
 
                     // SECTION 4: ADDITIONAL FILTERS
-                    const Text(
+                    const AppText(
                       'ADDITIONAL FILTERS',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -2415,7 +2487,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     ),
                     const SizedBox(height: 10),
                     FilterChip(
-                      label: const Text('Connected Calls Only (> 0s)'),
+                      label: const AppText('Connected Calls Only (> 0s)'),
                       avatar: const Icon(Icons.phone_in_talk_rounded, size: 16),
                       selected: tempConnected,
                       selectedColor: const Color(0xFFDCFCE7),
@@ -2454,7 +2526,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text(
+                        child: const AppText(
                           'Apply Filters',
                           style: TextStyle(
                             fontSize: 15,
@@ -2639,7 +2711,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
+                            AppText(
                               'Clear',
                               style: TextStyle(
                                 fontSize: 11.5,
@@ -2738,7 +2810,7 @@ class _UserCallsHeader extends StatelessWidget {
       children: [
         // Left Title
         const Expanded(
-          child: Text(
+          child: AppText(
             'Call History',
             style: TextStyle(
               color: FriendooUiColors.ink,
@@ -2787,7 +2859,7 @@ class _UserCallsHeader extends StatelessWidget {
                           : FriendooUiColors.ink,
                     ),
                     const SizedBox(width: 5),
-                    Text(
+                    AppText(
                       activeFilterCount > 0
                           ? 'Filter ($activeFilterCount)'
                           : 'Filter',
@@ -2839,7 +2911,7 @@ class _UserCallsHeader extends StatelessWidget {
                           : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
-                    Text(
+                    AppText(
                       isReportMode ? 'Done' : 'Report',
                       style: TextStyle(
                         fontSize: 12.5,
@@ -3054,7 +3126,7 @@ class _UserCallCard extends StatelessWidget {
                       color: const Color(0xFFF3F4F6),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'Paid',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -3130,7 +3202,7 @@ class _UserCallCard extends StatelessWidget {
                           size: 14,
                           color: Color(0xFFDC2626),
                         ),
-                        label: const Text(
+                        label: const AppText(
                           'Undo',
                           style: TextStyle(
                             color: Color(0xFFDC2626),
@@ -3157,7 +3229,7 @@ class _UserCallCard extends StatelessWidget {
                           size: 14,
                           color: Colors.white,
                         ),
-                        label: const Text(
+                        label: const AppText(
                           'Report',
                           style: TextStyle(
                             color: Colors.white,
@@ -3189,7 +3261,7 @@ class _UserCallCard extends StatelessWidget {
                       size: 15,
                       color: Colors.white,
                     ),
-                    label: Text(
+                    label: AppText(
                       isOnline ? 'Call Again' : 'Offline',
                       style: const TextStyle(
                         color: Colors.white,
@@ -3274,7 +3346,7 @@ class _CallsFilterChip extends StatelessWidget {
               ),
               const SizedBox(width: 5),
             ],
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 color: selected ? Colors.white : const Color(0xFF374151),
@@ -3441,20 +3513,20 @@ class FriendooProfileView extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text(
+        title: const AppText(
           'Sign out of Friendoo?',
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: FriendooUiColors.ink,
           ),
         ),
-        content: const Text(
+        content: const AppText(
           'Are you sure you want to log out of your Friendoo account?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: const AppText(
               'Cancel',
               style: TextStyle(
                 color: Color(0xFF6B7280),
@@ -3473,7 +3545,7 @@ class FriendooProfileView extends ConsumerWidget {
               Navigator.of(ctx).pop();
               onSignOut();
             },
-            child: const Text(
+            child: const AppText(
               'Sign Out',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
@@ -3552,9 +3624,12 @@ class FriendooProfileView extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
+                        child: const AppText(
                           'Cancel',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -3570,7 +3645,9 @@ class FriendooProfileView extends ConsumerWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 backgroundColor: Color(0xFFEF4444),
-                                content: Text('Account deletion initiated. Signing out...'),
+                                content: Text(
+                                  'Account deletion initiated. Signing out...',
+                                ),
                               ),
                             );
                             onSignOut();
@@ -3585,9 +3662,12 @@ class FriendooProfileView extends ConsumerWidget {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
+                        child: const AppText(
                           'Delete',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -3615,7 +3695,7 @@ class FriendooProfileView extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
       children: [
-        const Text('Account & Settings', style: _FriendooTitle()),
+        const AppText('Account & Settings', style: _FriendooTitle()),
         const SizedBox(height: 20),
 
         // 1. Male User Profile Hero Card
@@ -3679,7 +3759,7 @@ class FriendooProfileView extends ConsumerWidget {
                           runSpacing: 4,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Text(
+                            AppText(
                               profile?.phone.isNotEmpty == true
                                   ? profile!.phone
                                   : 'Active Member',
@@ -3736,7 +3816,7 @@ class FriendooProfileView extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text(
+                  label: const AppText(
                     'Edit Profile',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
@@ -3763,7 +3843,7 @@ class FriendooProfileView extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // 3. ACCOUNT & PREFERENCES SECTION
-        const Text(
+        const AppText(
           'ACCOUNT & PREFERENCES',
           style: TextStyle(
             color: Color(0xFF4B5563),
@@ -3796,10 +3876,15 @@ class FriendooProfileView extends ConsumerWidget {
           iconBg: const Color(0xFFE0F2FE),
           iconColor: const Color(0xFF0284C7),
           title: 'Help & Support',
-          subtitle: adminNotice.hasActiveNotice ? 'Message from Support Team' : 'FAQs & safety',
+          subtitle: adminNotice.hasActiveNotice
+              ? 'Message from Support Team'
+              : 'FAQs & safety',
           trailingBadge: adminNotice.hasActiveNotice
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(10),
@@ -3830,7 +3915,9 @@ class FriendooProfileView extends ConsumerWidget {
               : null,
           onTap: () {
             if (adminNotice.hasActiveNotice) {
-              ref.read(adminSupportNoticeProvider.notifier).openSupportChat(context, isHost: false);
+              ref
+                  .read(adminSupportNoticeProvider.notifier)
+                  .openSupportChat(context, isHost: false);
             } else {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -3904,7 +3991,7 @@ class FriendooProfileView extends ConsumerWidget {
         OutlinedButton.icon(
           onPressed: () => _confirmSignOut(context),
           icon: const Icon(Icons.logout_rounded),
-          label: const Text('Sign out of Friendoo'),
+          label: const AppText('Sign out of Friendoo'),
           style: OutlinedButton.styleFrom(
             foregroundColor: FriendooUiColors.pink,
             side: const BorderSide(color: Color(0xFFFFD1DC), width: 1.5),
@@ -3977,7 +4064,7 @@ class _ProfileNavigationRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: const TextStyle(
                         color: FriendooUiColors.ink,
@@ -3986,7 +4073,7 @@ class _ProfileNavigationRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -4270,10 +4357,10 @@ class _WalletHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const _FriendooTitle()),
+              AppText(title, style: const _FriendooTitle()),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(subtitle!, style: const _FriendooMuted()),
+                AppText(subtitle!, style: const _FriendooMuted()),
               ],
             ],
           ),
@@ -4570,7 +4657,7 @@ class _CornerRibbonTag extends StatelessWidget {
           bottomLeft: Radius.circular(8),
         ),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: const TextStyle(
           color: Colors.white,
@@ -4642,7 +4729,7 @@ class _UserBalanceCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              const AppText(
                 'AVAILABLE BALANCE',
                 style: TextStyle(
                   color: Color(0xFFE0E7FF),
@@ -4664,7 +4751,7 @@ class _UserBalanceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       isLoading
                           ? '—'
                           : coins == null
@@ -4681,12 +4768,12 @@ class _UserBalanceCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    AppText(
                       isLoading
                           ? 'Loading balance'
                           : coins == null
                           ? 'Balance unavailable'
-                          : '≈ ${(coins / 5).floor()} mins talk time',
+                          : 'Available balance',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -4722,7 +4809,7 @@ class _UserBalanceCard extends StatelessWidget {
               children: [
                 Icon(Icons.add_rounded, size: 20, color: Color(0xFF4F46E5)),
                 SizedBox(width: 6),
-                Text(
+                AppText(
                   'Add Coins',
                   style: TextStyle(
                     color: Color(0xFF4F46E5),
@@ -4773,7 +4860,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            const AppText(
               'Popular Packs',
               style: TextStyle(
                 fontSize: 20,
@@ -4791,7 +4878,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppText(
                     'View All',
                     style: TextStyle(
                       color: Color(0xFF6366F1),
@@ -4955,7 +5042,7 @@ class _ExactPopularPackCard extends StatelessWidget {
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(
+                      child: AppText(
                         badgeLabel,
                         style: TextStyle(
                           color: badgeText,
@@ -5076,7 +5163,7 @@ class _UserMonthlySummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          const AppText(
             'This Month Summary',
             style: TextStyle(
               fontSize: 16,
@@ -5118,7 +5205,7 @@ class _UserMonthlySummaryCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      const AppText(
                         'Calls',
                         style: TextStyle(
                           color: Color(0xFF64748B),
@@ -5164,7 +5251,7 @@ class _UserMonthlySummaryCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      const AppText(
                         'Total Duration',
                         style: TextStyle(
                           color: Color(0xFF64748B),
@@ -5210,7 +5297,7 @@ class _UserMonthlySummaryCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      const AppText(
                         'Amount Spent',
                         style: TextStyle(
                           color: Color(0xFF64748B),
@@ -5248,14 +5335,14 @@ class _UserRecentTransactionsSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Recent Transactions', style: _SectionTitle()),
+            const AppText('Recent Transactions', style: _SectionTitle()),
             TextButton(
               onPressed: onViewAll,
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-              child: const Text(
+              child: const AppText(
                 'View All →',
                 style: TextStyle(
                   color: Color(0xFF6366F1),
@@ -5663,7 +5750,7 @@ void showTransactionDetailsSheet(
                               color: Color(0xFF4F46E5),
                             ),
                             SizedBox(width: 4),
-                            Text(
+                            AppText(
                               'Copy',
                               style: TextStyle(
                                 color: Color(0xFF4F46E5),
@@ -5788,7 +5875,7 @@ void showTransactionDetailsSheet(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
+                  child: const AppText(
                     'Close',
                     style: TextStyle(
                       fontSize: 15,
@@ -5977,7 +6064,7 @@ class _SupportOptionTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: const TextStyle(
                         fontSize: 13.5,
@@ -5986,7 +6073,7 @@ class _SupportOptionTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       subtitle,
                       style: const TextStyle(
                         fontSize: 11.5,
@@ -6022,7 +6109,7 @@ class _ReceiptRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
+        AppText(
           label,
           style: const TextStyle(
             color: Color(0xFF64748B),
@@ -6110,7 +6197,7 @@ class _HostTotalEarningsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
+              const AppText(
                 'TOTAL EARNINGS',
                 style: TextStyle(
                   color: Colors.white70,
@@ -6154,7 +6241,7 @@ class _HostTotalEarningsCard extends StatelessWidget {
           FilledButton.icon(
             onPressed: onWithdraw,
             icon: const Icon(Icons.account_balance_rounded, size: 18),
-            label: const Text(
+            label: const AppText(
               'Withdraw',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
             ),
@@ -6250,7 +6337,7 @@ class _HostStatCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
-          Text(
+          AppText(
             label,
             style: const TextStyle(
               color: FriendooUiColors.muted,
@@ -6339,7 +6426,7 @@ class _HostEarningsOverviewCardState extends State<_HostEarningsOverviewCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Earnings Overview', style: _CardTitle()),
+              const AppText('Earnings Overview', style: _CardTitle()),
               Row(
                 children: List.generate(_filters.length, (index) {
                   final isSelected = widget.selectedFilter == index;
@@ -6660,7 +6747,7 @@ class _HostHowYouEarnedCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('How You Earned', style: _CardTitle()),
+          const AppText('How You Earned', style: _CardTitle()),
           const SizedBox(height: 14),
           _EarnedBreakdownRow(
             icon: Icons.phone_in_talk_rounded,
@@ -6743,7 +6830,7 @@ class _EarnedBreakdownRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
+          child: AppText(
             label,
             style: const TextStyle(
               color: FriendooUiColors.ink,
@@ -6834,7 +6921,7 @@ class _HostWithdrawalCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
+                child: const AppText(
                   'Withdraw',
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                 ),
@@ -6900,7 +6987,7 @@ class _HostRecentEarningsSection extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-              child: const Text(
+              child: const AppText(
                 'View All',
                 style: TextStyle(
                   color: FriendooUiColors.blue,
@@ -7618,7 +7705,7 @@ Widget _infoBullet({
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            AppText(
               title,
               style: const TextStyle(
                 color: FriendooUiColors.ink,
@@ -8035,7 +8122,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '★ ${host.rating.toStringAsFixed(1)} (${host.totalCalls >= 1000 ? '${(host.totalCalls / 1000).toStringAsFixed(1)}k' : '${host.totalCalls}'} calls)',
+                          '★ ${host.rating.toStringAsFixed(1)}',
                           style: const TextStyle(
                             color: Color(0xFFD97706),
                             fontSize: 12,
@@ -8284,7 +8371,7 @@ class _HostLanguagePill extends StatelessWidget {
         borderRadius: BorderRadius.circular(99),
         border: Border.all(color: const Color(0xFFDDD6FE)),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: const TextStyle(
           color: Color(0xFF6B21A8),
@@ -8409,7 +8496,7 @@ class _TrendCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: labels
                 .map(
-                  (label) => Text(
+                  (label) => AppText(
                     label,
                     style: const TextStyle(
                       color: FriendooUiColors.muted,
@@ -8554,7 +8641,7 @@ class _MetricCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const _FriendooMuted()),
+                AppText(label, style: const _FriendooMuted()),
                 const SizedBox(height: 3),
                 Text(value, style: const _CardValue()),
               ],
@@ -8717,7 +8804,7 @@ class _CoinPackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final minutes = (package.coins / 5).round();
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
@@ -8791,7 +8878,7 @@ class _CoinPackCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text('~$minutes mins audio talk', style: const _FriendooMuted()),
+            const Text('Instant coin recharge', style: _FriendooMuted()),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -8895,7 +8982,7 @@ class _ProfileHero extends StatelessWidget {
                   spacing: 6,
                   children: [
                     _DarkPill(label: isHost ? '★ Host' : '✦ Verified Member'),
-                    _DarkPill(label: '$totalCalls Calls'),
+
                   ],
                 ),
               ],
@@ -9129,9 +9216,9 @@ class _SettingsTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const _CardTitle()),
+                  AppText(title, style: const _CardTitle()),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: const _FriendooMuted()),
+                  AppText(subtitle, style: const _FriendooMuted()),
                 ],
               ),
             ),
@@ -9202,7 +9289,7 @@ class _QuickAction extends StatelessWidget {
               child: Icon(icon, color: Colors.white, size: 22),
             ),
             const SizedBox(height: 9),
-            Text(
+            AppText(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -9235,7 +9322,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Text(title, style: const _SectionTitle());
+      AppText(title, style: const _SectionTitle());
 }
 
 class _UiIconButton extends StatelessWidget {
@@ -9325,9 +9412,13 @@ class _EmptySurface extends StatelessWidget {
             child: Icon(icon, color: FriendooUiColors.blue, size: 26),
           ),
           const SizedBox(height: 14),
-          Text(title, textAlign: TextAlign.center, style: const _CardTitle()),
+          AppText(
+            title,
+            textAlign: TextAlign.center,
+            style: const _CardTitle(),
+          ),
           const SizedBox(height: 6),
-          Text(
+          AppText(
             message,
             textAlign: TextAlign.center,
             style: const _FriendooMuted(),
@@ -9548,7 +9639,7 @@ class _DarkPill extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(99),
       ),
-      child: Text(
+      child: AppText(
         label,
         style: const TextStyle(
           color: Colors.white,

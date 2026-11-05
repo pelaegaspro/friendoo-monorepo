@@ -1,8 +1,12 @@
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import '../core/localization/app_language.dart';
+import '../core/localization/app_strings.dart';
 import '../features/support/data/admin_support_notification_service.dart';
+
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -12,16 +16,13 @@ import '../core/theme/friendoo_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import '../core/models/friendoo_models.dart';
-import '../core/widgets/friendoo_loading_screen.dart';
 import '../core/supabase/supabase_provider.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/calls/application/call_controller.dart';
 import '../features/calls/application/host_call_guard.dart';
 import '../features/calls/data/call_repository.dart';
-import '../features/calls/presentation/call_report_bottom_sheet.dart';
 import '../features/calls/presentation/call_summary_dialog.dart';
 import '../features/calls/presentation/incoming_host_call_dialog.dart';
 import '../features/calls/presentation/live_call_overlay.dart';
@@ -29,7 +30,6 @@ import '../features/discover/data/host_repository.dart';
 import '../features/presence/data/presence_service.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/profile/presentation/settings_pages.dart';
-import '../features/profile/presentation/host_application_page.dart';
 import '../features/profile/data/blocked_callers_service.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import '../features/wallet/presentation/coin_packages_page.dart';
@@ -54,6 +54,11 @@ class FriendooApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Friendoo',
+      locale: Locale(ref.watch(appLanguageCodeProvider)),
+      supportedLocales: AppLanguage.supported.map(
+        (language) => Locale(language.code),
+      ),
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: FriendooTheme.light(),
       builder: (context, child) {
@@ -784,20 +789,20 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 elevation: 0,
                 destinations: isHost
                     ? [
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.dashboard_outlined),
                           selectedIcon: Icon(Icons.dashboard_rounded),
-                          label: 'Dashboard',
+                          label: context.tr('Dashboard'),
                         ),
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.call_outlined),
                           selectedIcon: Icon(Icons.call_rounded),
-                          label: 'Requests',
+                          label: context.tr('Requests'),
                         ),
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.monetization_on_outlined),
                           selectedIcon: Icon(Icons.monetization_on_rounded),
-                          label: 'Earnings',
+                          label: context.tr('Earnings'),
                         ),
                         NavigationDestination(
                           icon: adminNotice.hasActiveNotice
@@ -814,26 +819,26 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                   child: Icon(Icons.badge_rounded),
                                 )
                               : const Icon(Icons.badge_rounded),
-                          label: 'Host Profile',
+                          label: context.tr('Host Profile'),
                         ),
                       ]
                     : [
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.explore_outlined),
                           selectedIcon: Icon(Icons.explore_rounded),
-                          label: 'Discover',
+                          label: context.tr('Discover'),
                         ),
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.call_outlined),
                           selectedIcon: Icon(Icons.call_rounded),
-                          label: 'Calls',
+                          label: context.tr('Calls'),
                         ),
-                        const NavigationDestination(
+                        NavigationDestination(
                           icon: Icon(Icons.account_balance_wallet_outlined),
                           selectedIcon: Icon(
                             Icons.account_balance_wallet_rounded,
                           ),
-                          label: 'Wallet',
+                          label: context.tr('Wallet'),
                         ),
                         NavigationDestination(
                           icon: adminNotice.hasActiveNotice
@@ -850,7 +855,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                   child: Icon(Icons.person_rounded),
                                 )
                               : const Icon(Icons.person_rounded),
-                          label: 'Profile',
+                          label: context.tr('Profile'),
                         ),
                       ],
               ),
@@ -864,89 +869,102 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         child: Stack(
           children: [
             IndexedStack(
-          index: _currentTabIndex,
-          children: isHost
-              ? [
-                  const _HostDashboardTab(),
-                  _CallsTab(onStartCall: _startAudioCall),
-                  const FriendooHostEarningsView(),
-                  _ProfileTab(onSignOut: _signOut),
-                ]
-              : [
-                  // Tab 0: Discover Lounge
-                  RefreshIndicator(
-                    onRefresh: _refreshHosts,
-                    child: FutureBuilder<List<HostProfile>>(
-                      future: _hosts,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState != ConnectionState.done &&
-                            !snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return _DiscoverMessageState(
-                            icon: Icons.wifi_off_rounded,
-                            title: 'Could not load hosts',
-                            message: 'Pull down to reconnect and see who is available.',
-                            onRetry: _refreshHosts,
-                          );
-                        }
+              index: _currentTabIndex,
+              children: isHost
+                  ? [
+                      const _HostDashboardTab(),
+                      _CallsTab(onStartCall: _startAudioCall),
+                      const FriendooHostEarningsView(),
+                      _ProfileTab(onSignOut: _signOut),
+                    ]
+                  : [
+                      // Tab 0: Discover Lounge
+                      RefreshIndicator(
+                        onRefresh: _refreshHosts,
+                        child: FutureBuilder<List<HostProfile>>(
+                          future: _hosts,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState !=
+                                    ConnectionState.done &&
+                                !snapshot.hasData) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return _DiscoverMessageState(
+                                icon: Icons.wifi_off_rounded,
+                                title: 'Could not load hosts',
+                                message: 'Pull down to reconnect and see who is available.',
+                                onRetry: _refreshHosts,
+                              );
+                            }
 
-                        final hosts = snapshot.data ?? const <HostProfile>[];
-                        return FriendooDashboardView(
-                          hosts: hosts,
-                          selectedFilter: _selectedFilter,
-                          filters: _filters,
-                          onFilterSelected: (index) {
-                            setState(() => _selectedFilter = index);
+                            final hosts =
+                                snapshot.data ?? const <HostProfile>[];
+                            return FriendooDashboardView(
+                              hosts: hosts,
+                              selectedFilter: _selectedFilter,
+                              filters: _filters,
+                              onFilterSelected: (index) {
+                                setState(() => _selectedFilter = index);
+                              },
+                              onStartCall: _startAudioCall,
+                              onSignOut: _signOut,
+                              onOpenActivity: () {
+                                setState(() => _currentTabIndex = 1);
+                              },
+                              onOpenWallet: () {
+                                setState(() => _currentTabIndex = 2);
+                              },
+                            );
                           },
-                          onStartCall: _startAudioCall,
-                          onSignOut: _signOut,
-                          onOpenActivity: () {
-                            setState(() => _currentTabIndex = 1);
-                          },
-                          onOpenWallet: () {
-                            setState(() => _currentTabIndex = 2);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  // Tab 1: Calls History
-                  FriendooAnalyticsView(
-                    onExplore: () {
-                      setState(() => _currentTabIndex = 0);
-                    },
-                    onStartCall: _startAudioCall,
-                  ),
-                  // Tab 2: Wallet & Coins Shop
-                  const FriendooWalletView(),
-                  // Tab 3: User Profile & Account Settings
-                  FriendooProfileView(onSignOut: _signOut),
-                ],
+                        ),
+                      ),
+                      // Tab 1: Calls History
+                      FriendooAnalyticsView(
+                        onExplore: () {
+                          setState(() => _currentTabIndex = 0);
+                        },
+                        onStartCall: _startAudioCall,
+                      ),
+                      // Tab 2: Wallet & Coins Shop
+                      const FriendooWalletView(),
+                      // Tab 3: User Profile & Account Settings
+                      FriendooProfileView(onSignOut: _signOut),
+                    ],
             ),
-            if (adminNotice.hasActiveNotice && !adminNotice.isBannerDismissed && adminNotice.message != null)
+            if (adminNotice.hasActiveNotice &&
+                !adminNotice.isBannerDismissed &&
+                adminNotice.message != null)
               Positioned(
                 top: 8,
                 left: 14,
                 right: 14,
                 child: Dismissible(
-                  key: ValueKey('admin_notice_${adminNotice.message}_${adminNotice.timestamp?.millisecondsSinceEpoch}'),
+                  key: ValueKey(
+                    'admin_notice_${adminNotice.message}_${adminNotice.timestamp?.millisecondsSinceEpoch}',
+                  ),
                   direction: DismissDirection.up,
                   onDismissed: (_) {
-                    ref.read(adminSupportNoticeProvider.notifier).dismissTopBanner();
+                    ref
+                        .read(adminSupportNoticeProvider.notifier)
+                        .dismissTopBanner();
                   },
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
-                        ref.read(adminSupportNoticeProvider.notifier).openSupportChat(context, isHost: isHost);
+                        ref
+                            .read(adminSupportNoticeProvider.notifier)
+                            .openSupportChat(context, isHost: isHost);
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 11,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
@@ -955,7 +973,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+                            color: const Color(0xFF38BDF8)
+                                .withValues(alpha: 0.6),
                             width: 1.2,
                           ),
                           boxShadow: [
@@ -971,7 +990,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                             Container(
                               padding: const EdgeInsets.all(7),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                                color: const Color(0xFF0284C7)
+                                    .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
@@ -1001,7 +1021,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                       Text(
                                         'Tap to reply',
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.7),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1025,7 +1047,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                             const SizedBox(width: 8),
                             InkWell(
                               onTap: () {
-                                ref.read(adminSupportNoticeProvider.notifier).dismissTopBanner();
+                                ref
+                                    .read(adminSupportNoticeProvider.notifier)
+                                    .dismissTopBanner();
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
@@ -1241,7 +1265,7 @@ class _DiscoverHome extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         selectedLanguage == 'All'
                             ? 'Available Hosts'
                             : '✨ $selectedLanguage Speaking Hosts (${regionalMatches.length})',
@@ -1601,7 +1625,7 @@ class _HostListCard extends StatelessWidget {
                                 width: 0.8,
                               ),
                             ),
-                            child: Text(
+                            child: AppText(
                               isOnline
                                   ? 'ONLINE'
                                   : (isBusy ? 'BUSY' : 'OFFLINE'),
@@ -1779,9 +1803,9 @@ class _TrustPoint extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: theme.textTheme.labelLarge),
+              AppText(title, style: theme.textTheme.labelLarge),
               const SizedBox(height: 2),
-              Text(detail, style: theme.textTheme.labelMedium),
+              AppText(detail, style: theme.textTheme.labelMedium),
             ],
           ),
         ),
@@ -1831,13 +1855,13 @@ class _DiscoverMessageState extends StatelessWidget {
                 child: Icon(icon, size: 42, color: colors.primary),
               ),
               const SizedBox(height: 20),
-              Text(
+              AppText(
                 title,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 10),
-              Text(
+              AppText(
                 message,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
@@ -1846,7 +1870,7 @@ class _DiscoverMessageState extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Try again'),
+                label: const AppText('Try again'),
               ),
             ],
           ),
@@ -1928,7 +1952,7 @@ class ActiveCallBar extends ConsumerWidget {
                 onPressed: () =>
                     ref.read(activeCallProvider.notifier).endActiveCall(),
                 icon: const Icon(Icons.call_end_rounded, size: 18),
-                label: const Text('End Call'),
+                label: const AppText('End Call'),
               ),
             ],
           ),
@@ -2010,15 +2034,17 @@ class _AuthenticatedSessionState extends ConsumerState<AuthenticatedSession> {
           if (!isHost && !hasAvatar) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(
-                ref.read(profileRepositoryProvider).completeInitialProfile(
-                  avatarConfig: const FriendooAvatarConfig(
-                    gender: 'male',
-                    role: 'user',
-                    presetId: 'user_01',
-                  ),
-                  displayName: profile.displayName,
-                  city: profile.city,
-                ),
+                ref
+                    .read(profileRepositoryProvider)
+                    .completeInitialProfile(
+                      avatarConfig: const FriendooAvatarConfig(
+                        gender: 'male',
+                        role: 'user',
+                        presetId: 'user_01',
+                      ),
+                      displayName: profile.displayName,
+                      city: profile.city,
+                    ),
               );
             });
           }
@@ -2454,7 +2480,7 @@ class _HostCallsHeader extends StatelessWidget {
                       color: FriendooUiColors.ink,
                     ),
                     SizedBox(width: 4),
-                    Text(
+                    AppText(
                       'Filter',
                       style: TextStyle(
                         fontSize: 12,
@@ -2502,7 +2528,7 @@ class _HostCallsHeader extends StatelessWidget {
                           : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
-                    Text(
+                    AppText(
                       isReportMode ? 'Done' : 'Report',
                       style: TextStyle(
                         fontSize: 12,
@@ -2704,7 +2730,7 @@ class _HostCallHistoryCard extends StatelessWidget {
                       size: 14,
                       color: Color(0xFFDC2626),
                     ),
-                    label: const Text(
+                    label: const AppText(
                       'Undo',
                       style: TextStyle(
                         color: Color(0xFFDC2626),
@@ -2733,7 +2759,7 @@ class _HostCallHistoryCard extends StatelessWidget {
                       size: 14,
                       color: Colors.white,
                     ),
-                    label: const Text(
+                    label: const AppText(
                       'Report',
                       style: TextStyle(
                         color: Colors.white,
@@ -2856,7 +2882,7 @@ class _HostFilterChip extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            Text(
+            AppText(
               label,
               style: TextStyle(
                 color: selected ? Colors.white : const Color(0xFF374151),
@@ -2905,7 +2931,7 @@ class _HostFilterOptionTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  AppText(
                     title,
                     style: TextStyle(
                       fontSize: 14.5,
@@ -2916,7 +2942,7 @@ class _HostFilterOptionTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     subtitle,
                     style: const TextStyle(
                       fontSize: 12,
@@ -3073,7 +3099,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  AppText(
                     'AVAILABLE BALANCE',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
@@ -3116,7 +3142,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               const SizedBox(height: 12),
               walletAsync.when(
                 data: (w) {
-                  final approxMins = (w.coinBalance / 5).floor();
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3148,7 +3174,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '≈ $approxMins minutes of voice talk time (at 5 coins/min)',
+                        'Available balance',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12,
@@ -3166,7 +3192,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                error: (_, _) => const Text(
+                error: (_, _) => const AppText(
                   'Balance unavailable',
                   style: TextStyle(
                     color: Colors.white,
@@ -3338,7 +3364,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                             pkg.bonus!.contains('Popular') ||
                             pkg.bonus!.contains('Best Value') ||
                             pkg.bonus!.contains('VIP'));
-                    final approxMins = (pkg.coins / 5).round();
+
 
                     return SizedBox(
                       width: itemWidth,
@@ -3433,7 +3459,7 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
 
                               // Estimated Talk Time
                               Text(
-                                '≈ $approxMins mins talk time',
+                                pkg.bonus ?? 'Instant recharge',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colors.onSurfaceVariant,
                                   fontSize: 11,
@@ -3657,7 +3683,7 @@ class _ProfileTab extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
+            child: const AppText(
               'Cancel',
               style: TextStyle(
                 color: Color(0xFF6B7280),
@@ -3676,7 +3702,7 @@ class _ProfileTab extends ConsumerWidget {
               Navigator.of(ctx).pop();
               onSignOut();
             },
-            child: const Text(
+            child: const AppText(
               'Sign Out',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
@@ -3980,7 +4006,7 @@ class _ProfileTab extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
+                    const AppText(
                       'Earnings',
                       style: TextStyle(
                         color: Color(0xFF6B7280),
@@ -4261,7 +4287,7 @@ class _HostNavigationRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       title,
                       style: const TextStyle(
                         color: FriendooUiColors.ink,
@@ -4270,7 +4296,7 @@ class _HostNavigationRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
+                    AppText(
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -4370,7 +4396,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         size: 6.5,
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      AppText(
                         isOnline ? 'Live' : 'Offline',
                         style: TextStyle(
                           color: isOnline
@@ -4682,7 +4708,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
             // ==========================================
             // 7. HOST PROFILE CARD (Desi Avatar + Age + Badges + Languages)
             // ==========================================
-            const Text(
+            const AppText(
               'Host Profile',
               style: TextStyle(
                 color: FriendooUiColors.ink,
@@ -4880,7 +4906,7 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
+                    child: const AppText(
                       'Edit Profile',
                       style: TextStyle(
                         fontSize: 14,
@@ -5047,7 +5073,7 @@ class _HostStatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
+                child: AppText(
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -5137,7 +5163,7 @@ class _HostActivityTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                AppText(
                   title,
                   style: const TextStyle(
                     color: FriendooUiColors.ink,
@@ -5147,7 +5173,7 @@ class _HostActivityTile extends StatelessWidget {
                 ),
                 if (subtitle != null && subtitle!.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(
+                  AppText(
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
