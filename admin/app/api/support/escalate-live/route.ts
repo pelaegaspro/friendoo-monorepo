@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jprbldvymjhgawzrqvun.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin();
     const body = await req.json();
-    const {
-      userId,
-      name = 'Friendoo User',
-      phone,
-      role = 'user',
-      scenario = 'live_support_request',
-      initialMessage = 'User initiated live 1-on-1 chat with support team',
-    } = body;
+
+    const userId = body.userId;
+    const name = body.name || body.metadata?.name || 'Friendoo User';
+    const phone = body.phone || body.metadata?.phone || null;
+    const role = body.role || body.metadata?.role || (body.category?.includes('host') ? 'host' : 'user');
+    const scenario = body.scenario || body.category || 'live_support_request';
+    const initialMessage =
+      body.initialMessage ||
+      body.message ||
+      body.metadata?.query ||
+      body.subject ||
+      'User initiated live 1-on-1 chat with support team';
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
