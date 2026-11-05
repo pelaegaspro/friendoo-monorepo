@@ -79,9 +79,8 @@ export default function FraudPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
-              Fraud Sentry Bento
+              Activity review
             </h1>
-            <span className="bento-badge text-red-400">Risk Radar</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
             Real-time behavioral anomalies, rapid recharge velocity, and device fingerprint collisions.
@@ -89,7 +88,7 @@ export default function FraudPage() {
         </div>
       </div>
 
-      {/* Row 1: Fraud Bento KPIs */}
+      {/* Key metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Open Risk Incidents"
@@ -125,7 +124,7 @@ export default function FraudPage() {
         />
       </div>
 
-      {/* Row 2: Live Incident Feed Bento */}
+      {/* Incident feed */}
       <div className="bento-card">
         <div className="flex items-center justify-between pb-4 border-b border-white/5">
           <div className="flex items-center gap-2.5">
@@ -165,7 +164,7 @@ export default function FraudPage() {
         </div>
       </div>
 
-      {/* Row 3: Risk Threshold Configuration Bento */}
+      {/* Risk threshold configuration */}
       <div className="bento-card">
         <div className="flex items-center justify-between pb-4 border-b border-white/5">
           <div className="flex items-center gap-2.5">

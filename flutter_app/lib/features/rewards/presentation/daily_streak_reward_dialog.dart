@@ -107,7 +107,7 @@ class _DailyStreakRewardDialogState
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '🎉 +$coins Free Daily Streak Coins added to your wallet!',
+                  '$coins daily reward coins added.',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -365,7 +365,7 @@ class _DailyStreakRewardDialogState
                         )
                       : Text(
                           _claimed
-                              ? 'Claimed! 🎉'
+                              ? 'Claimed'
                               : 'Claim Day ${widget.currentStreakDay} (+$coinsToClaim Coins) ➔',
                           style: const TextStyle(
                             fontSize: 14.5,

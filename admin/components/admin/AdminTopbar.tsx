@@ -56,7 +56,7 @@ export default function AdminTopbar({ onOpenSidebar }: { onOpenSidebar: () => vo
           </button>
 
           <div className="flex items-center gap-2.5 border-l border-white/[0.08] pl-3">
-            <div className="relative flex h-9 w-9 animate-[pulse_4s_ease-in-out_infinite] items-center justify-center rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-cyan-300 shadow-[0_0_24px_rgba(168,85,247,0.42)]">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-[#111827]">
               <span className="absolute inset-[3px] rounded-full bg-[#15101e]" />
               <Sparkles size={15} className="relative z-10 text-violet-100" />
             </div>

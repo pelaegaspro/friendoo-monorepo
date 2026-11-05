@@ -114,7 +114,7 @@ void main() {
       expect(repository, contains("'payment-confirm'"));
     });
 
-    test('all card and UPI choices use hosted Cashfree checkout at the server amount', () {
+    test('all card and UPI choices retain the server order and amount', () {
       final paymentPage = _source(
         'flutter_app/lib/features/wallet/presentation/select_payment_method_page.dart',
       );

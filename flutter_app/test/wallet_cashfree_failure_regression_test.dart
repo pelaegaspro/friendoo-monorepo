@@ -84,8 +84,8 @@ void main() {
       'lib/features/wallet/presentation/cashfree_checkout_page.dart',
     ).readAsStringSync();
 
-    expect(source, contains("'Try Again'"));
-    expect(source, contains("'Go Back'"));
-    expect(source, contains("'Check Status'"));
+    expect(source, contains("'Open UPI app'"));
+    expect(source, contains("'Back to payment methods'"));
+    expect(source, contains("'Check payment status'"));
   });
 }

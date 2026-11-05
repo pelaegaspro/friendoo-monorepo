@@ -66,7 +66,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="flex h-full flex-col justify-between border-r border-white/[0.06] bg-[#0B0C12]/95 p-4 text-slate-300 shadow-[16px_0_60px_-40px_rgba(139,92,246,0.6)] backdrop-blur-2xl select-none overflow-y-auto">
+    <div className="flex h-full flex-col justify-between border-r border-border bg-surface p-4 text-slate-300 select-none overflow-y-auto">
       <div>
         <div className="mb-7 flex items-center justify-between px-2 pt-2">
           <Link
@@ -74,7 +74,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
             className="flex items-center gap-2.5 group"
             onClick={onClose}
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(168,85,247,0.3)] transition-transform group-hover:scale-105">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-[#111827]">
               <span className="font-black text-sm tracking-tighter">FP</span>
             </div>
             <div>
@@ -104,7 +104,7 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
                 className={cn(
                   'flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-all duration-200',
                   active
-                    ? 'border-violet-400/20 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/5 text-white shadow-[inset_2px_0_0_#a78bfa]'
+                    ? 'border-border bg-surface-elevated text-white'
                     : 'border-transparent text-slate-400 hover:border-white/[0.06] hover:bg-white/[0.04] hover:text-white'
                 )}
               >
@@ -128,10 +128,10 @@ function SidebarBody({ onClose }: { onClose: () => void }) {
           href="/crm"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/10 px-3.5 py-2.5 text-xs font-semibold text-purple-200 hover:bg-purple-500/20 transition-colors"
+          className="flex items-center justify-between rounded-lg border border-border bg-surface-elevated px-3.5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-[#293548] transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="flex h-2 w-2 rounded-full bg-emerald-400" />
             <span>CRM Operations</span>
           </div>
           <ExternalLink className="h-3.5 w-3.5 text-purple-400" />

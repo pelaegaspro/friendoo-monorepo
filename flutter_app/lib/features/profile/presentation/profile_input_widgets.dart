@@ -35,15 +35,7 @@ class ModernFormSectionHeader extends StatelessWidget {
               child: Icon(icon, size: 16, color: accentColor),
             ),
             const SizedBox(width: 10),
-            AppText(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-                letterSpacing: 0.3,
-              ),
-            ),
+            Flexible(child: AppText(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: 0.3))),
             if (badgeText != null) ...[
               const SizedBox(width: 8),
               Container(

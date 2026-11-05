@@ -26,7 +26,7 @@ void main() {
 
     expect(
       checkoutSource,
-      contains("errorResponse.getMessage()?.trim() ?? ''"),
+      contains("error.getMessage()?.trim() ?? ''"),
     );
   });
 

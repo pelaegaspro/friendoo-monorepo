@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/models/friendoo_avatar_config.dart';
@@ -1295,7 +1296,7 @@ class _FriendooAvatarEditorPageState extends State<FriendooAvatarEditorPage> {
           TextButton.icon(
             onPressed: _resetToDefault,
             icon: const Icon(Icons.restart_alt_rounded, size: 18),
-            label: const Text(
+            label: const AppText(
               'Reset',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
@@ -1462,7 +1463,7 @@ class _FriendooAvatarEditorPageState extends State<FriendooAvatarEditorPage> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
-        label: Text(
+        label: AppText(
           title,
           style: TextStyle(
             fontSize: 13,

@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'dart:async';
 import 'dart:ui';
 
@@ -246,7 +247,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Call ended • Verified session',
+                      'Call ended',
                       style: TextStyle(
                         color: Color(0xFF94A3B8),
                         fontSize: 12.5,
@@ -710,7 +711,7 @@ class _CallSummaryDialogState extends ConsumerState<CallSummaryDialog> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
+                                    : const AppText(
                                         'Done',
                                         style: TextStyle(
                                           color: Colors.white,

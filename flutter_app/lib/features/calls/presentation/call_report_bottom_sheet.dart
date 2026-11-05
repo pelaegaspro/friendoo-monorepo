@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -390,7 +391,7 @@ class _CallReportBottomSheetState extends ConsumerState<CallReportBottomSheet> {
               onPressed: _isSubmitting
                   ? null
                   : () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const AppText('Cancel'),
             ),
           ],
         ),

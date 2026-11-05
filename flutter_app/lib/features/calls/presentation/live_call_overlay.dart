@@ -1,3 +1,4 @@
+import '../../../core/localization/app_strings.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -459,7 +460,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
           ? 'Ringing on device...'
           : 'Waiting for $displayName...';
     } else {
-      speakingStatusText = 'Establishing secure connection...';
+      speakingStatusText = 'Connecting…';
     }
 
     return Scaffold(
@@ -963,7 +964,7 @@ class _LiveCallOverlayState extends ConsumerState<LiveCallOverlay>
                                     ),
                                   ),
                                   child: const Text(
-                                    'Verified Voice Call',
+                                    'Voice call',
                                     style: TextStyle(
                                       color: Color(0xFF10B981),
                                       fontSize: 11.5,
@@ -1336,7 +1337,7 @@ class _AppleCallDockButton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 7),
-        Text(
+        AppText(
           label,
           style: TextStyle(
             color: isActive ? Colors.white : Colors.white70,
@@ -1400,7 +1401,7 @@ class _AppleCallEndButton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 7),
-        const Text(
+        const AppText(
           'End Call',
           style: TextStyle(
             color: Colors.white,

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { SegmentKey } from "@/lib/types";
+import { Rocket } from "lucide-react";
 
 interface CampaignWizardProps {
   onCreated?: () => void;
@@ -23,18 +24,18 @@ const segmentOptions: Array<{ value: SegmentKey; label: string }> = [
 
 const templatePrompts = [
   {
-    label: "🎁 Welcome Top-up Bonus",
-    title: "Claim your 50 Bonus Coins! 🎁",
+    label: "Welcome top-up bonus",
+    title: "Claim your 50 bonus coins",
     body: "Connect with verified hosts right now. Your bonus coins are waiting inside!",
   },
   {
-    label: "🎧 Star Host Online",
-    title: "Your favorite hosts are live! 🎧",
+    label: "Hosts online",
+    title: "Your favorite hosts are live",
     body: "Jump into friendly audio conversations with top-rated regional hosts.",
   },
   {
-    label: "⚡ Limited Offer",
-    title: "Exclusive 20% Extra Coins ⚡",
+    label: "Limited offer",
+    title: "20% extra coins",
     body: "Recharge now and get 20% extra coins on all voice calls today.",
   },
 ];
@@ -234,7 +235,7 @@ export function CampaignWizard({ onCreated }: CampaignWizardProps) {
           </Button>
         ) : (
           <Button onClick={launch} disabled={creating || sending} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-            {sending ? "Broadcasting..." : creating ? "Creating Campaign..." : "🚀 Launch Campaign"}
+            {sending ? "Broadcasting..." : creating ? "Creating Campaign..." : <><Rocket className="h-4 w-4" /> Launch campaign</>}
           </Button>
         )}
       </div>

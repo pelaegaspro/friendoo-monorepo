@@ -107,9 +107,8 @@ export default function HostsPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
-              Star Hosts Bento Matrix
+              Voice hosts
             </h1>
-            <span className="bento-badge text-amber-400">Roster & Verification</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
             Host earnings telemetry, pending identity reviews, and 24-hour presence heatmaps.
@@ -117,7 +116,7 @@ export default function HostsPage() {
         </div>
       </div>
 
-      {/* Bento KPIs */}
+      {/* Key metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total Hosts"
@@ -153,7 +152,7 @@ export default function HostsPage() {
         />
       </div>
 
-      {/* Bento Grid: Charts & Applications */}
+      {/* Earnings and applications */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-6 items-stretch">
         {/* Earnings Leaderboard (4 cols) */}
         <LiveChart

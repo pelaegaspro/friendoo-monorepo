@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../core/theme/friendoo_theme.dart';
+import '../core/widgets/friendoo_loading_screen.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,7 +74,36 @@ class FriendooApp extends ConsumerWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const AuthGate(),
+      home: const FriendooStartupScreen(),
+    );
+  }
+}
+
+class FriendooStartupScreen extends StatefulWidget {
+  const FriendooStartupScreen({super.key});
+
+  @override
+  State<FriendooStartupScreen> createState() => _FriendooStartupScreenState();
+}
+
+class _FriendooStartupScreenState extends State<FriendooStartupScreen> {
+  bool _showApp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 1900), () {
+      if (mounted) setState(() => _showApp = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 260),
+      child: _showApp
+          ? const AuthGate(key: ValueKey('app'))
+          : const FriendooLoadingScreen(key: ValueKey('opening')),
     );
   }
 }
@@ -167,7 +197,8 @@ class MaintenanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  message ?? 'We are performing scheduled improvements on the Friendoo infrastructure. Voice call sessions will resume shortly.',
+                  message ??
+                      'Friendoo is under maintenance. Please try again later.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 14,
@@ -2481,12 +2512,14 @@ class _HostCallsHeader extends StatelessWidget {
                       color: FriendooUiColors.ink,
                     ),
                     SizedBox(width: 4),
-                    AppText(
-                      'Filter',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: FriendooUiColors.ink,
+                    Flexible(
+                      child: AppText(
+                        'Filter',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: FriendooUiColors.ink,
+                        ),
                       ),
                     ),
                   ],
@@ -2529,14 +2562,16 @@ class _HostCallsHeader extends StatelessWidget {
                           : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
-                    AppText(
-                      isReportMode ? 'Done' : 'Report',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: isReportMode
-                            ? Colors.white
-                            : const Color(0xFFDC2626),
+                    Flexible(
+                      child: AppText(
+                        isReportMode ? 'Done' : 'Report',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isReportMode
+                              ? Colors.white
+                              : const Color(0xFFDC2626),
+                        ),
                       ),
                     ),
                   ],
@@ -2935,7 +2970,7 @@ class _EmptyHostCallsSurface extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            'Go Live from the lounge to receive new incoming user calls.',
+            'Go online to receive calls.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
           ),
@@ -3038,13 +3073,15 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  AppText(
-                    'AVAILABLE BALANCE',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      letterSpacing: 1.1,
+                  Flexible(
+                    child: AppText(
+                      'AVAILABLE BALANCE',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ),
                   Container(
@@ -3081,7 +3118,6 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
               const SizedBox(height: 12),
               walletAsync.when(
                 data: (w) {
-
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3303,7 +3339,6 @@ class _WalletTabState extends ConsumerState<_WalletTab> {
                             pkg.bonus!.contains('Popular') ||
                             pkg.bonus!.contains('Best Value') ||
                             pkg.bonus!.contains('VIP'));
-
 
                     return SizedBox(
                       width: itemWidth,
@@ -4335,14 +4370,16 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
                         size: 6.5,
                       ),
                       const SizedBox(width: 4),
-                      AppText(
-                        isOnline ? 'Live' : 'Offline',
-                        style: TextStyle(
-                          color: isOnline
-                              ? const Color(0xFF047857)
-                              : const Color(0xFF6B7280),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
+                      Flexible(
+                        child: AppText(
+                          isOnline ? 'Live' : 'Offline',
+                          style: TextStyle(
+                            color: isOnline
+                                ? const Color(0xFF047857)
+                                : const Color(0xFF6B7280),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ],
@@ -4424,11 +4461,11 @@ class _HostDashboardTabState extends ConsumerState<_HostDashboardTab> {
 
             // ==========================================
             // 2. HOST DISCOVER TITLE
-            // "Your Voice Lounge"
+            // "Your calls"
             // "Manage your availability and see what's happening"
             // ==========================================
             const Text(
-              'Your Voice Lounge',
+              'Your calls',
               style: TextStyle(
                 color: FriendooUiColors.ink,
                 fontSize: 28,

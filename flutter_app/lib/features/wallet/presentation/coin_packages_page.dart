@@ -168,14 +168,7 @@ class _CoinPackagesPageState extends ConsumerState<CoinPackagesPage> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const AppText(
-                        'Wallet',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0E1020),
-                        ),
-                      ),
+                      const Flexible(child: AppText('Wallet', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0E1020)))),
                       const Spacer(),
                       ApplePressable(
                         pressedScale: 0.94,

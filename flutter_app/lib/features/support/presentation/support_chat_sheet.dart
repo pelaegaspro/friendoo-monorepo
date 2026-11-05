@@ -242,7 +242,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                   SupportChatMessage(
                     role: 'admin',
                     senderName: 'Friendoo Priority Care 🛡️',
-                    content: '✅ This support session has been marked as resolved by our Friendoo Care Executive. Please rate your experience below.',
+                    content: 'Support marked this conversation as resolved. Rate the help you received.',
                     timestamp: DateTime.now(),
                   ),
                 );
@@ -1674,7 +1674,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
           ],
         ),
         content: const Text(
-          'Are you sure you want to end this conversation with Friendoo Care? You will be invited to rate your experience.',
+          'End this support conversation?',
           style: TextStyle(color: Color(0xFF475569), fontSize: 13.5, height: 1.4),
         ),
         actions: [
@@ -1712,7 +1712,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
             final feedbackTags = [
-              '⚡ Instant Resolution',
+              'Support',
               '😊 Very Polite & Helpful',
               '🪙 Coins Credited Promptly',
               '👍 Clear Guidance',
@@ -1937,14 +1937,7 @@ class _SupportChatSheetState extends State<SupportChatSheet> {
                     color: const Color(0xFF6366F1),
                   ),
                   const SizedBox(width: 6),
-                  AppText(
-                    label,
-                    style: const TextStyle(
-                      color: Color(0xFF334155),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Flexible(child: AppText(label, style: const TextStyle(color: Color(0xFF334155), fontSize: 12, fontWeight: FontWeight.w700))),
                 ],
               ),
             ),

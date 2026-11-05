@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -5,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/friendoo_ui.dart';
 import '../../../core/models/friendoo_models.dart';
-import '../../../core/models/notification_model.dart';
 import '../../wallet/presentation/recharge_checkout_sheet.dart';
 import '../../profile/presentation/settings_pages.dart';
 import '../data/notification_repository.dart';
@@ -297,7 +298,7 @@ class _LiveNotificationsSheetContentState
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: const StadiumBorder(),
                   ),
-                  child: const Text('Close'),
+                  child: const AppText('Close'),
                 ),
               ),
             ],

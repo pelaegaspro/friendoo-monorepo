@@ -242,9 +242,8 @@ export default function UsersPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
-              Caller Intelligence Bento
+              Caller intelligence
             </h1>
-            <span className="bento-badge text-purple-400">Callers Only (Voice Hosts Separated)</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
             Caller segment telemetry, coin balances, and lifecycle metrics. Voice hosts are strictly managed in Voice Hosts.
@@ -256,7 +255,7 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      {/* Bento KPIs */}
+      {/* Key metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Caller Population"
@@ -293,7 +292,7 @@ export default function UsersPage() {
         />
       </div>
 
-      {/* Bento Intelligence Matrix */}
+      {/* Caller list and filters */}
       <div className="bento-card">
         <div className="space-y-4">
           <div className="overflow-x-auto pb-1">

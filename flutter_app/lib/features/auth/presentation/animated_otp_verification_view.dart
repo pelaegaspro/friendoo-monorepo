@@ -1,3 +1,5 @@
+import '../../../core/localization/app_strings.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -358,7 +360,7 @@ class _AnimatedOtpVerificationViewState
   Widget _buildPhoneSubtitle(bool isSuccess) {
     if (isSuccess) {
       return const Text(
-        'Identity confirmed successfully',
+        'Phone number verified',
         style: TextStyle(
           color: Color(0xFF10B981),
           fontSize: 13.5,
@@ -606,7 +608,7 @@ class _AnimatedOtpVerificationViewState
                                   height: 5,
                                   decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: const Color(0xFF334155),
+                                    color: Color(0xFF334155),
                                   ),
                                 )),
                   ),
@@ -656,15 +658,7 @@ class _AnimatedOtpVerificationViewState
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Continue',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.3,
-                ),
-              ),
+              Flexible(child: AppText('Continue', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.3))),
               SizedBox(width: 8),
               Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
             ],
@@ -778,7 +772,9 @@ class _AnimatedOtpVerificationViewState
       decoration: BoxDecoration(
         color: const Color(0xFF7F1D1D).withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -786,7 +782,7 @@ class _AnimatedOtpVerificationViewState
           const Icon(Icons.error_rounded, color: Color(0xFFEF4444), size: 16),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(
+            child: AppText(
               message,
               style: const TextStyle(
                 color: Color(0xFFFCA5A5),

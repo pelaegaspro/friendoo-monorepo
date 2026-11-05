@@ -317,7 +317,7 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
             ),
             const SizedBox(height: 18),
             const Text(
-              'Details Saved Successfully!',
+              'Details saved',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -519,7 +519,7 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                         icon: Icons.badge_rounded,
                         hintText: 'e.g. Priya Sharma',
                         helperText:
-                            'Your public name shown to callers on the lounge',
+                            'Your name shown to callers',
                         maxLength: 50,
                         accentColor: const Color(0xFFFF2A85),
                         isRequired: true,
@@ -734,7 +734,7 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                         promptChips: const [
                           '🌟 Friendly host ready to chat',
                           '💬 Life talks & casual chat',
-                          '🎙️ Regional-language voice lounge',
+                          'Calls in your language',
                           '☕ Relaxed evening conversations',
                         ],
                         onChanged: (_) => setState(() {}),
@@ -793,7 +793,7 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'UPI (Instant)',
+                                      'UPI',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 13,
@@ -1113,15 +1113,7 @@ class _HostApplicationPageState extends ConsumerState<HostApplicationPage> {
       children: [
         Icon(icon, size: 18, color: const Color(0xFFFF2A85)),
         const SizedBox(width: 8),
-        AppText(
-          title,
-          style: const TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        Flexible(child: AppText(title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: Color(0xFF1F2937)))),
       ],
     );
   }

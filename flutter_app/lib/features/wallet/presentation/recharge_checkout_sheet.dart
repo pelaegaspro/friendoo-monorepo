@@ -73,7 +73,7 @@ class _RechargeCheckoutSheetState extends ConsumerState<RechargeCheckoutSheet> {
           providerOrderId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Unable to create a secure Cashfree payment order.'),
+            content: Text('Could not start payment. Please try again.'),
           ),
         );
         return;

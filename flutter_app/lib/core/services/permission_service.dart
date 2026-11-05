@@ -1,3 +1,4 @@
+import '../localization/app_strings.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -269,7 +270,7 @@ class AppPermissionService {
               const SizedBox(height: 18),
 
               // Title
-              Text(
+              AppText(
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -306,7 +307,7 @@ class AppPermissionService {
               const SizedBox(height: 14),
 
               // Subtitle
-              Text(
+              AppText(
                 subtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -383,7 +384,7 @@ class AppPermissionService {
               Icon(icon, color: const Color(0xFFFF2A85), size: 24),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
+                child: AppText(
                   title,
                   style: const TextStyle(
                     color: Colors.white,
@@ -394,7 +395,7 @@ class AppPermissionService {
               ),
             ],
           ),
-          content: Text(
+          content: AppText(
             message,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.85),
@@ -405,7 +406,7 @@ class AppPermissionService {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
+              child: AppText(
                 'Cancel',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
               ),

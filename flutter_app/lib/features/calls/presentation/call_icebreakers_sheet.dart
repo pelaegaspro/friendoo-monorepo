@@ -160,7 +160,7 @@ class _CallIcebreakersSheetState extends State<CallIcebreakersSheet> {
                       ),
                       SizedBox(height: 1),
                       Text(
-                        'Lighthearted questions to kick off great conversations effortlessly',
+                        'Questions to start a conversation',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 11,

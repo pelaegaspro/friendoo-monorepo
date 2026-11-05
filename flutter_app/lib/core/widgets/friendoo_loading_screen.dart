@@ -2,19 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../app/friendoo_ui.dart';
-
-/// Beautiful, branded Friendoo Loading Screen with smooth animations.
+/// A short, branded opening screen shown while Friendoo prepares the app.
 class FriendooLoadingScreen extends StatefulWidget {
-  const FriendooLoadingScreen({
-    super.key,
-    this.message = 'Loading Friendoo...',
-    this.showTagline = true,
-    this.isOverlay = false,
-  });
+  const FriendooLoadingScreen({super.key, this.isOverlay = false});
 
-  final String message;
-  final bool showTagline;
   final bool isOverlay;
 
   @override
@@ -23,39 +14,15 @@ class FriendooLoadingScreen extends StatefulWidget {
 
 class _FriendooLoadingScreenState extends State<FriendooLoadingScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _rotateAnimation;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2200),
     )..repeat();
-
-    _pulseAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.0,
-          end: 1.08,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(
-          begin: 1.08,
-          end: 1.0,
-        ).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
-      ),
-    ]).animate(_controller);
-
-    _rotateAnimation = Tween<double>(
-      begin: 0.0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
   }
 
   @override
@@ -66,123 +33,174 @@ class _FriendooLoadingScreenState extends State<FriendooLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final content = Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Animated Logo with glowing backdrop aura
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _pulseAnimation.value,
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [FriendooUiColors.violet, FriendooUiColors.pink],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+    final content = AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final wave = Curves.easeInOut.transform(
+          (math.sin(_controller.value * math.pi * 2) + 1) / 2,
+        );
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF101426),
+                    Color(0xFF26215C),
+                    Color(0xFF4A227B),
+                  ],
+                ),
+              ),
+            ),
+            _GlowOrb(
+              alignment: const Alignment(-1.12, -0.76),
+              color: const Color(0xFF3B82F6),
+              size: 260,
+              opacity: 0.16 + (wave * 0.08),
+            ),
+            _GlowOrb(
+              alignment: const Alignment(1.1, 0.68),
+              color: const Color(0xFFF43F9D),
+              size: 310,
+              opacity: 0.13 + ((1 - wave) * 0.09),
+            ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 204,
+                    height: 204,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _SoundRing(
+                          scale: 1.0 + (wave * 0.16),
+                          opacity: 0.22 - (wave * 0.1),
+                        ),
+                        _SoundRing(
+                          scale: 0.72 + (wave * 0.1),
+                          opacity: 0.2 - (wave * 0.08),
+                        ),
+                        Transform.scale(
+                          scale: 0.96 + (wave * 0.07),
+                          child: Container(
+                            width: 94,
+                            height: 94,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFA78BFA),
+                                  Color(0xFF6D5DFB),
+                                  Color(0xFFD946EF),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFD946EF)
+                                      .withValues(alpha: 0.32 + (wave * 0.16)),
+                                  blurRadius: 34,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.graphic_eq_rounded,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(26),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF2A85).withValues(alpha: 0.35),
-                        blurRadius: 28,
-                        spreadRadius: 6,
-                      ),
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.25),
-                        blurRadius: 36,
-                        spreadRadius: 10,
-                      ),
-                    ],
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.graphic_eq_rounded,
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Friendoo',
+                    style: TextStyle(
                       color: Colors.white,
-                      size: 48,
+                      fontSize: 31,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1.1,
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Friendoo',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: FriendooUiColors.ink,
-              letterSpacing: -0.6,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Custom Dual-Gradient Rotating Ring
-          AnimatedBuilder(
-            animation: _rotateAnimation,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: _rotateAnimation.value,
-                child: SizedBox(
-                  width: 38,
-                  height: 38,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3.2,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFFFF2A85),
-                    ),
-                    backgroundColor: const Color(0xFF6366F1)
-                        .withValues(alpha: 0.25),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 22),
-
-          // Message Text
-          Text(
-            widget.message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1F2937),
-              letterSpacing: -0.2,
-            ),
-          ),
-
-          if (widget.showTagline) ...[
-            const SizedBox(height: 6),
-            const Text(
-              'Private voice calls',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF9CA3AF),
+                ],
               ),
             ),
           ],
-        ],
-      ),
+        );
+      },
     );
 
-    if (widget.isOverlay) {
-      return Container(
-        color: Colors.white.withValues(alpha: 0.88),
-        child: content,
-      );
-    }
+    if (widget.isOverlay) return content;
+    return Scaffold(body: SafeArea(child: content));
+  }
+}
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFC),
-      body: SafeArea(child: content),
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({
+    required this.alignment,
+    required this.color,
+    required this.size,
+    required this.opacity,
+  });
+
+  final Alignment alignment;
+  final Color color;
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: opacity),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: opacity),
+                blurRadius: 90,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SoundRing extends StatelessWidget {
+  const _SoundRing({required this.scale, required this.opacity});
+
+  final double scale;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        width: 158,
+        height: 158,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: opacity),
+            width: 1.2,
+          ),
+        ),
+      ),
     );
   }
 }

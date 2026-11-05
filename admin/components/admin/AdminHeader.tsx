@@ -175,7 +175,7 @@ export default function AdminHeader() {
               className="flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-950/40 px-3 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50 transition shrink-0 ml-1"
               title="Open Dedicated CRM Service"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               <span>CRM</span>
               <ExternalLink className="h-3 w-3 text-purple-400" />
             </a>
@@ -338,7 +338,6 @@ export default function AdminHeader() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2FE5A7] opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2FE5A7]" />
               </span>
               <span className="font-semibold text-[#2FE5A7]">Saltgate desk online</span>

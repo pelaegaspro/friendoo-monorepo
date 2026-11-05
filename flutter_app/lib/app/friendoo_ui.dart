@@ -223,7 +223,7 @@ Future<void> showFriendooPrivacySheet(BuildContext context) async {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Privacy & Safety Vault',
+                  'Privacy & safety',
                   style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w900),
                 ),
@@ -319,11 +319,7 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
                   ),
                 ),
                 const SizedBox(width: 12),
-                AppText(
-                  'Help & Support',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w900),
-                ),
+                Flexible(child: AppText('Help & Support', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900))),
               ],
             ),
             const SizedBox(height: 14),
@@ -334,7 +330,7 @@ Future<void> showFriendooSupportSheet(BuildContext context) async {
                 color: FriendooUiColors.blue,
               ),
               title: const Text(
-                'Direct Concierge Support',
+                'Contact support',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: const Text('support@friendoo.app'),
@@ -1027,15 +1023,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                       color: Color(0xFF7C3AED),
                     ),
                     SizedBox(width: 3),
-                    AppText(
-                      'FEATURED',
-                      style: TextStyle(
-                        color: Color(0xFF7C3AED),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 9.5,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
+                    Flexible(child: AppText('FEATURED', style: TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.w900, fontSize: 9.5, letterSpacing: 0.3))),
                   ],
                 ),
               ),
@@ -1244,22 +1232,12 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
         // ==========================================
         // 5. AVAILABLE HOSTS HEADER & COUNTER
         // ==========================================
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Flexible(
-              child: AppText(
-                'Available Hosts',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: FriendooUiColors.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
+            const AppText('Available Hosts', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: FriendooUiColors.ink, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Container(
@@ -1283,14 +1261,7 @@ class _FriendooDashboardViewState extends ConsumerState<FriendooDashboardView> {
                       size: 8,
                     ),
                     const SizedBox(width: 5),
-                    AppText(
-                      ' Live Now',
-                      style: const TextStyle(
-                        color: Color(0xFF047857),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+                    Flexible(child: AppText(' Live Now', style: const TextStyle(color: Color(0xFF047857), fontSize: 11.5, fontWeight: FontWeight.w900))),
                   ],
                 ),
               ),
@@ -1818,7 +1789,9 @@ class _DesiHostCard extends StatelessWidget {
                     const SizedBox(height: 2),
 
                     // Age & Languages
-                    Row(
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 2,
                       children: [
                         Text(
                           '${host.displayAge} yrs',
@@ -1837,18 +1810,7 @@ class _DesiHostCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            languagesText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: FriendooUiColors.violet,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
+                        Text(languagesText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: FriendooUiColors.violet, fontSize: 12.5, fontWeight: FontWeight.w700)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -1957,10 +1919,12 @@ class _DesiHostCard extends StatelessWidget {
           ],
 
           // Footer Row: City + Availability + Call Now CTA
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // City + Availability
-              Expanded(
+              SizedBox(
+                width: double.infinity,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2026,21 +1990,7 @@ class _DesiHostCard extends StatelessWidget {
                                         : const Color(0xFF9CA3AF)),
                             ),
                             const SizedBox(width: 3.5),
-                            AppText(
-                              isOnline
-                                  ? 'ONLINE'
-                                  : (isBusy ? 'BUSY' : 'OFFLINE'),
-                              style: TextStyle(
-                                color: isOnline
-                                    ? const Color(0xFF047857)
-                                    : (isBusy
-                                          ? const Color(0xFFB45309)
-                                          : const Color(0xFF6B7280)),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
+                            Flexible(child: AppText(isOnline ? 'ONLINE' : (isBusy ? 'BUSY' : 'OFFLINE'), style: TextStyle(color: isOnline ? const Color(0xFF047857) : (isBusy ? const Color(0xFFB45309) : const Color(0xFF6B7280)), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.3))),
                           ],
                         ),
                       ),
@@ -2048,7 +1998,7 @@ class _DesiHostCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 10),
 
               // [ Call Now / Busy / Offline ] Button (Elevated Radiant Gradient for Star Host)
               FittedBox(
@@ -2104,18 +2054,7 @@ class _DesiHostCard extends StatelessWidget {
                               : const Color(0xFF9CA3AF),
                         ),
                         const SizedBox(width: 5),
-                        AppText(
-                          isOnline
-                              ? (host.isStar ? 'VIP Call' : 'Call Now')
-                              : (isBusy ? 'Busy' : 'Offline'),
-                          style: TextStyle(
-                            color: isOnline || isBusy
-                                ? Colors.white
-                                : const Color(0xFF9CA3AF),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12.5,
-                          ),
-                        ),
+                        Flexible(child: AppText(isOnline ? (host.isStar ? 'VIP Call' : 'Call Now') : (isBusy ? 'Busy' : 'Offline'), style: TextStyle(color: isOnline || isBusy ? Colors.white : const Color(0xFF9CA3AF), fontWeight: FontWeight.w900, fontSize: 12.5))),
                       ],
                     ),
                   ),
@@ -2295,14 +2234,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const AppText(
-                          'Filter & Sort Calls',
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
-                            color: FriendooUiColors.ink,
-                          ),
-                        ),
+                        const Flexible(child: AppText('Filter & Sort Calls', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: FriendooUiColors.ink))),
                         TextButton(
                           onPressed: () {
                             setSheetState(() {
@@ -2704,14 +2636,7 @@ class _FriendooAnalyticsViewState extends ConsumerState<FriendooAnalyticsView> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            AppText(
-                              'Clear',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFFEF4444),
-                              ),
-                            ),
+                            Flexible(child: AppText('Clear', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFFEF4444)))),
                             SizedBox(width: 2),
                             Icon(
                               Icons.close_rounded,
@@ -2798,11 +2723,12 @@ class _UserCallsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Left Title
-        const Expanded(
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12),
           child: AppText(
             'Call History',
             style: TextStyle(
@@ -2816,8 +2742,9 @@ class _UserCallsHeader extends StatelessWidget {
         ),
 
         // Right Actions: [ Filter ] [ Report ]
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             // [ Filter ]
             InkWell(
@@ -2852,23 +2779,11 @@ class _UserCallsHeader extends StatelessWidget {
                           : FriendooUiColors.ink,
                     ),
                     const SizedBox(width: 5),
-                    AppText(
-                      activeFilterCount > 0
-                          ? 'Filter ($activeFilterCount)'
-                          : 'Filter',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: activeFilterCount > 0
-                            ? FriendooUiColors.violet
-                            : FriendooUiColors.ink,
-                      ),
-                    ),
+                    Flexible(child: AppText(activeFilterCount > 0 ? 'Filter ($activeFilterCount)' : 'Filter', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: activeFilterCount > 0 ? FriendooUiColors.violet : FriendooUiColors.ink))),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
 
             // [ Report ] / [ Done ]
             InkWell(
@@ -2904,16 +2819,7 @@ class _UserCallsHeader extends StatelessWidget {
                           : const Color(0xFFDC2626),
                     ),
                     const SizedBox(width: 4),
-                    AppText(
-                      isReportMode ? 'Done' : 'Report',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: isReportMode
-                            ? Colors.white
-                            : const Color(0xFFDC2626),
-                      ),
-                    ),
+                    Flexible(child: AppText(isReportMode ? 'Done' : 'Report', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: isReportMode ? Colors.white : const Color(0xFFDC2626)))),
                   ],
                 ),
               ),
@@ -3339,14 +3245,7 @@ class _CallsFilterChip extends StatelessWidget {
               ),
               const SizedBox(width: 5),
             ],
-            AppText(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF374151),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+            Flexible(child: AppText(label, style: TextStyle(color: selected ? Colors.white : const Color(0xFF374151), fontSize: 12.5, fontWeight: FontWeight.w800))),
             if (count != null && count! > 0) ...[
               const SizedBox(width: 5),
               Container(
@@ -4722,15 +4621,7 @@ class _UserBalanceCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const AppText(
-                'AVAILABLE BALANCE',
-                style: TextStyle(
-                  color: Color(0xFFE0E7FF),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Flexible(child: AppText('AVAILABLE BALANCE', style: TextStyle(color: Color(0xFFE0E7FF), fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8))),
             ],
           ),
           const SizedBox(height: 14),
@@ -4802,15 +4693,7 @@ class _UserBalanceCard extends StatelessWidget {
               children: [
                 Icon(Icons.add_rounded, size: 20, color: Color(0xFF4F46E5)),
                 SizedBox(width: 6),
-                AppText(
-                  'Add Coins',
-                  style: TextStyle(
-                    color: Color(0xFF4F46E5),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                    letterSpacing: 0.2,
-                  ),
-                ),
+                Flexible(child: AppText('Add Coins', style: TextStyle(color: Color(0xFF4F46E5), fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.2))),
               ],
             ),
           ),
@@ -4850,18 +4733,11 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
           children: [
-            const AppText(
-              'Popular Packs',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.4,
-              ),
-            ),
+            const AppText('Popular Packs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.4)),
             TextButton(
               onPressed: onViewAll,
               style: TextButton.styleFrom(
@@ -4871,14 +4747,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AppText(
-                    'View All',
-                    style: TextStyle(
-                      color: Color(0xFF6366F1),
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
-                  ),
+                  Flexible(child: AppText('View All', style: TextStyle(color: Color(0xFF6366F1), fontWeight: FontWeight.w800, fontSize: 14))),
                   SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right_rounded,
@@ -4892,7 +4761,7 @@ class _PopularPacksHorizontalSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 220,
+          height: 260 * MediaQuery.textScalerOf(context).scale(1),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
@@ -5325,8 +5194,9 @@ class _UserRecentTransactionsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
           children: [
             const AppText('Recent Transactions', style: _SectionTitle()),
             TextButton(
@@ -5601,8 +5471,8 @@ void showTransactionDetailsSheet(
           : isWithdrawal
           ? 'Host Payout Withdrawal'
           : isCredit
-          ? 'Coins Added to Vault'
-          : 'Voice Lounge Call Spend';
+          ? 'Coins added'
+          : 'Call charge';
 
       return SafeArea(
         child: Padding(
@@ -5743,14 +5613,7 @@ void showTransactionDetailsSheet(
                               color: Color(0xFF4F46E5),
                             ),
                             SizedBox(width: 4),
-                            AppText(
-                              'Copy',
-                              style: TextStyle(
-                                color: Color(0xFF4F46E5),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                            Flexible(child: AppText('Copy', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.w800))),
                           ],
                         ),
                       ),
@@ -5810,7 +5673,7 @@ void showTransactionDetailsSheet(
                     ],
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
                     _ReceiptRow(
-                      label: 'Vault Balance After',
+                      label: 'Balance after payment',
                       value: '${transaction.balanceAfter} Coins',
                     ),
                     if (transaction.description != null) ...[
@@ -6102,14 +5965,7 @@ class _ReceiptRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        AppText(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Flexible(child: AppText(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600))),
         if (valueWidget != null)
           valueWidget!
         else
@@ -6190,15 +6046,7 @@ class _HostTotalEarningsCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const AppText(
-                'TOTAL EARNINGS',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Flexible(child: AppText('TOTAL EARNINGS', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.8))),
             ],
           ),
           const SizedBox(height: 14),
@@ -6419,7 +6267,7 @@ class _HostEarningsOverviewCardState extends State<_HostEarningsOverviewCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const AppText('Earnings Overview', style: _CardTitle()),
+              const Flexible(child: AppText('Earnings Overview', style: _CardTitle())),
               Row(
                 children: List.generate(_filters.length, (index) {
                   final isSelected = widget.selectedFilter == index;
@@ -6876,8 +6724,9 @@ class _HostWithdrawalCard extends StatelessWidget {
         children: [
           const Text('Withdrawal', style: _CardTitle()),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -6970,8 +6819,9 @@ class _HostRecentEarningsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
           children: [
             const Text('Recent Earnings', style: _SectionTitle()),
             TextButton(
@@ -7253,7 +7103,7 @@ void _showWalletSupportSheet(BuildContext context) {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Instant resolution & coin credits',
+                            'Payment and coin support',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
@@ -7754,7 +7604,7 @@ void _showAllPackagesSheet(BuildContext context, List<CoinPackage> packages) {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Choose a talk pack to top up your coin vault',
+                'Choose a coin pack',
                 style: _FriendooMuted(),
               ),
               const SizedBox(height: 16),
@@ -8871,7 +8721,7 @@ class _CoinPackCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text('Instant coin recharge', style: _FriendooMuted()),
+            const Text('Add coins', style: _FriendooMuted()),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,

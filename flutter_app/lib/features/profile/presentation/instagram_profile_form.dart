@@ -352,7 +352,7 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Enter a hobby, vibe, or interest to draft your profile bio',
+                                'Enter an interest for your bio',
                                 style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                               ),
                             ],
@@ -407,8 +407,8 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
                                 } catch (_) {
                                   // Fallback locally
                                   final fallback = widget.isHost
-                                      ? 'Warm host passionate about meaningful conversations. Always ready for a great chat!'
-                                      : 'Into $userVibe and always up for good conversations and positive vibes.';
+                                      ? 'I enjoy meeting people and chatting.'
+                                      : 'I enjoy $userVibe.';
                                   widget.controller.text = fallback;
                                   widget.onChanged?.call(fallback);
                                   if (ctx.mounted) Navigator.of(ctx).pop();
@@ -470,16 +470,16 @@ class _InstagramBioFieldState extends State<InstagramBioField> {
     final lower = userPrompt.toLowerCase();
     if (lower.contains('game') || lower.contains('gaming')) {
       return isHost
-        ? 'Passionate gamer host who loves teaming up and chatting about games, anime, and great vibes.'
-        : 'Casual gamer looking for good company and fun conversations while leveling up!';
+        ? 'I enjoy games and anime.'
+        : 'I play games and enjoy chatting.';
     } else if (lower.contains('music') || lower.contains('movie') || lower.contains('song')) {
-      return "Melody and cinema lover with a soundtrack for every mood. Let's talk favorites!";
+      return "I enjoy music and movies.";
     } else if (lower.contains('night') || lower.contains('owl')) {
-      return 'Night owl always up for deep late-night chats, stories, and relaxing banter.';
+      return 'I enjoy late-night conversations.';
     }
     return isHost
-      ? 'Passionate about $userPrompt. Warm conversationalist always ready for a great chat!'
-      : 'Into $userPrompt and always up for genuine conversations and positive energy.';
+      ? 'I enjoy $userPrompt.'
+      : 'I enjoy $userPrompt.';
   }
 
   @override

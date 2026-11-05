@@ -82,6 +82,39 @@ h1, h2, .apple-display {
 }
 
 @layer components {
+  .crm-card,
+  .bento-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+  }
+
+  .bento-card-spotlight {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+  }
+
+  .bento-badge {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-elevated);
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .bento-pill-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
   /* Minimal hairline card - 12px border radius, no shadow */
   .crm-clean-card {
     background-color: var(--card);

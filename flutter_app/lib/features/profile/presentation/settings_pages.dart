@@ -55,6 +55,8 @@ class SettingsPageScaffold extends StatelessWidget {
           children: [
             AppText(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: FriendooUiColors.ink,
                 fontSize: 18,
@@ -66,6 +68,8 @@ class SettingsPageScaffold extends StatelessWidget {
               const SizedBox(height: 1),
               AppText(
                 subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF6B7280),
                   fontSize: 12,
@@ -332,7 +336,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
 
     if (!mounted) return;
     setState(() => _isSaving = false);
-    _showMessage('Profile details updated successfully!', success: true);
+    _showMessage('Profile updated.', success: true);
     Navigator.of(context).pop();
   }
 
@@ -370,7 +374,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Permanent Identity Avatar',
+              'Profile avatar',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 17,
@@ -380,7 +384,7 @@ class _EditUserProfilePageState extends ConsumerState<EditUserProfilePage> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your avatar was verified during account creation to keep the Friendoo voice community safe and genuine.\n\nYou can update your Name, Bio, and Languages at any time.',
+              'Your avatar is set during signup. You can edit your name, bio, and languages.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -1394,7 +1398,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
               icon: Icons.visibility_off_outlined,
               title: 'Incognito Mode (Hide Online Status)',
               subtitle:
-                  'Do not broadcast when you are browsing the Discover lounge',
+                  'Hide your browsing activity',
               value: _hideOnlineStatus,
               onChanged: (v) {
                 setState(() => _hideOnlineStatus = v);
@@ -1468,7 +1472,7 @@ class _UserPrivacySafetyPageState extends State<UserPrivacySafetyPage> {
                       ),
                       subtitle: Text(
                         micGranted
-                            ? 'Granted • Ready for Voice Lounge calls'
+                            ? 'Microphone access allowed'
                             : 'Denied • Required for audio calling',
                         style: TextStyle(
                           fontSize: 12,
@@ -1820,7 +1824,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         content: Text(
-          'Are you sure you want to unblock ${item.name}? Once unblocked, they will be able to see you in the Discover lounge when you are online.',
+          'Unblock ${item.name}? They will be able to see you when you are online.',
         ),
         actions: [
           TextButton(
@@ -1844,7 +1848,7 @@ class _HostBlockedUsersPageState extends State<HostBlockedUsersPage> {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${item.name} unblocked successfully.'),
+                    content: Text('${item.name} unblocked.'),
                   ),
                 );
               }
@@ -2148,7 +2152,7 @@ class _UserNotificationSettingsPageState
               icon: Icons.ring_volume_outlined,
               title: 'Incoming Call Ringtone & Vibration',
               subtitle:
-                  'Sound audio ring when a direct voice lounge session starts',
+                  'Play a ringtone for incoming calls',
               value: _callRinging,
               onChanged: (v) => setState(() => _callRinging = v),
             ),
@@ -2401,7 +2405,7 @@ class HelpSupportPage extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'No. Your real phone number is 100% private and encrypted. Neither callers nor hosts can ever see your phone number or banking details.',
+                    'Your phone number and banking details are not shown to other callers or hosts.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2422,7 +2426,7 @@ class HelpSupportPage extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Hosts can request payouts once their wallet reaches the minimum ₹500 balance. Payouts are transferred directly to your verified UPI ID or IMPS bank account within 24–48 business hours.',
+                    'Open Withdrawal to see your available balance, minimum amount, and payout options.',
                     style: TextStyle(
                       color: Color(0xFF4B5563),
                       fontSize: 13,
@@ -2940,7 +2944,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     _nameController = TextEditingController(text: '');
     _ageController = TextEditingController(text: '24');
     _bioController = TextEditingController(
-      text: 'Verified Star Host on Friendoo. Always happy to talk about cinema, everyday life, and listen with an open heart.',
+      text: 'I enjoy conversations about movies and everyday life.',
     );
     _loadAvatarSelection();
   }
@@ -2999,7 +3003,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: Color(0xFF10B981),
-        content: Text('Host profile updated successfully!'),
+        content: Text('Profile updated.'),
       ),
     );
     Navigator.of(context).pop();
@@ -3009,7 +3013,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
   Widget build(BuildContext context) {
     return SettingsPageScaffold(
       title: 'Edit Host Profile',
-      subtitle: 'Update your verified female host identity',
+      subtitle: 'Edit your host profile',
       bottomAction: SizedBox(
         width: double.infinity,
         child: FilledButton(
@@ -3075,7 +3079,7 @@ class _EditHostProfilePageState extends ConsumerState<EditHostProfilePage> {
               controller: _nameController,
               label: 'Name',
               hintText: 'Host Display Name',
-              helperText: 'Displayed to callers in lounge & live audio spaces',
+              helperText: 'Shown on your public profile',
               maxLength: 50,
               accentColor: FriendooUiColors.pink,
               isRequired: true,
@@ -3563,7 +3567,7 @@ class _HostProfileDetailsPageState extends State<HostProfileDetailsPage> {
         messenger.showSnackBar(
           const SnackBar(
             backgroundColor: Color(0xFF10B981),
-            content: Text('Host profile details updated successfully!'),
+            content: Text('Profile updated.'),
           ),
         );
       }
@@ -3642,7 +3646,7 @@ class _HostProfileDetailsPageState extends State<HostProfileDetailsPage> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Your updated name, age, and languages will be shown to callers on the lounge.',
+                          'Your name, age, and languages are visible to callers.',
                           style: TextStyle(
                             color: Color(0xFF5B21B6),
                             fontSize: 12,
@@ -3661,7 +3665,7 @@ class _HostProfileDetailsPageState extends State<HostProfileDetailsPage> {
                   label: 'Name',
                   hintText: 'Host Display Name (e.g. Priya Sharma)',
                   helperText:
-                      'Displayed to callers in lounge & live audio spaces',
+                      'Shown on your public profile',
                   maxLength: 50,
                   accentColor: const Color(0xFFFF2A85),
                   isRequired: true,
@@ -4073,7 +4077,7 @@ class _HostPayoutBankDetailsPageState extends State<HostPayoutBankDetailsPage> {
           messenger.showSnackBar(
             const SnackBar(
               backgroundColor: Color(0xFF10B981),
-              content: Text('Payout information updated successfully!'),
+              content: Text('Payout details saved.'),
             ),
           );
         }
@@ -5198,7 +5202,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'UPI (Instant)',
+                                  'UPI',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
@@ -5634,7 +5638,7 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                          'Payment method updated successfully!',
+                                          'Payment method saved.',
                                         ),
                                         backgroundColor: Color(0xFF10B981),
                                       ),
@@ -5804,8 +5808,8 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
               result.isDuplicate
                   ? 'Withdrawal request already recorded.'
                   : (_selectedCycle == 1
-                        ? 'Monthly full balance settlement for ₹$amount submitted successfully.'
-                        : 'Weekly withdrawal request for ₹$amount submitted successfully.'),
+                        ? 'Monthly withdrawal of ₹$amount requested.'
+                        : 'Weekly withdrawal of ₹$amount requested.'),
             ),
           ),
         );
@@ -6088,10 +6092,12 @@ class _HostWithdrawalPageState extends ConsumerState<HostWithdrawalPage> {
                       ),
                       Radio<int>(
                         value: 0,
-                        // ignore: deprecated_member_use
+                        // ignore: deprecated_member_use
+
 groupValue: _selectedCycle,
                         activeColor: FriendooUiColors.violet,
-                        // ignore: deprecated_member_use
+                        // ignore: deprecated_member_use
+
 onChanged: (val) {
                           if (val != null) {
                             setState(() {
@@ -6217,10 +6223,12 @@ onChanged: (val) {
                       ),
                       Radio<int>(
                         value: 1,
-                        // ignore: deprecated_member_use
+                        // ignore: deprecated_member_use
+
 groupValue: _selectedCycle,
                         activeColor: const Color(0xFF10B981),
-                        // ignore: deprecated_member_use
+                        // ignore: deprecated_member_use
+
 onChanged: (val) {
                           if (val != null) {
                             setState(() {
@@ -6245,7 +6253,8 @@ onChanged: (val) {
           children: [
             RadioGroup<int>(
               groupValue: _selectedMethodIndex,
-              // ignore: deprecated_member_use
+              // ignore: deprecated_member_use
+
 onChanged: (val) {
                 if (val != null) {
                   setState(() => _selectedMethodIndex = val);
@@ -6272,7 +6281,7 @@ onChanged: (val) {
                         ),
                       ),
                       title: const Text(
-                        'UPI (Instant Transfer)',
+                        'UPI transfer',
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 14,

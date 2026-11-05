@@ -189,33 +189,8 @@ class UpiPaymentService {
       }
     }
 
-    // Default fallback list
-    return const [
-      UpiInstalledAppInfo(
-        id: 'gpay',
-        displayName: 'GPay',
-        packageName: 'com.google.android.apps.nbu.paisa.user',
-        brandColor: Color(0xFF4285F4),
-        brandAccentColor: Color(0xFF34A853),
-        shortName: 'GPay',
-      ),
-      UpiInstalledAppInfo(
-        id: 'amazonpay',
-        displayName: 'Amazon Pay',
-        packageName: 'in.amazon.mShop.android.shopping',
-        brandColor: Color(0xFFFF9900),
-        brandAccentColor: Color(0xFF146EB4),
-        shortName: 'Amazon Pay',
-      ),
-      UpiInstalledAppInfo(
-        id: 'kotak',
-        displayName: 'Kotak811',
-        packageName: 'com.msf.kbank.mobile',
-        brandColor: Color(0xFFEE1C25),
-        brandAccentColor: Color(0xFF003366),
-        shortName: 'Kotak811',
-      ),
-    ];
+    // Never advertise apps that are not installed.
+    return const [];
   }
 
   /// Launches direct targeted UPI Intent on Android using native intent.setPackage(packageName)
