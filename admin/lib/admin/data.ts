@@ -96,8 +96,6 @@ function normalizeBannerAd(value: unknown): BannerAdRecord {
   }
 }
 
-
-
 function sortByNewest<T extends { createdAt?: string | null }>(items: T[]): T[] {
   return items.sort((a, b) => {
     const at = a.createdAt ? new Date(a.createdAt).getTime() : 0
