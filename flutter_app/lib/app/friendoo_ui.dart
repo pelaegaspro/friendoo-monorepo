@@ -1586,14 +1586,6 @@ class _DesiHostCard extends StatelessWidget {
     );
   }
 
-  String _formatCalls(int totalCalls) {
-    if (totalCalls >= 1000) {
-      final val = (totalCalls / 1000).toStringAsFixed(1).replaceAll('.0', '');
-      return '${val}k';
-    }
-    return '1k+';
-  }
-
   @override
   Widget build(BuildContext context) {
     final languagesText = host.languages.join(' · ');
@@ -1872,7 +1864,7 @@ class _DesiHostCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
-                            '${host.rating.toStringAsFixed(1)} (${_formatCalls(host.totalCalls)})',
+                            host.rating.toStringAsFixed(1),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -8123,7 +8115,7 @@ class _PolishedHostPreviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '★ ${host.rating.toStringAsFixed(1)} (1k+)',
+                          '★ ${host.rating.toStringAsFixed(1)}',
                           style: const TextStyle(
                             color: Color(0xFFD97706),
                             fontSize: 12,
@@ -8983,7 +8975,6 @@ class _ProfileHero extends StatelessWidget {
                   spacing: 6,
                   children: [
                     _DarkPill(label: isHost ? '★ Host' : '✦ Verified Member'),
-                    if (isHost) const _DarkPill(label: '1k+ Calls'),
                   ],
                 ),
               ],
