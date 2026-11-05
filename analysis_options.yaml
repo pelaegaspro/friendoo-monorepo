@@ -1,0 +1,9 @@
+analyzer:
+  exclude:
+    - "artifacts/**"
+    - "scripts/**"
+    - ".agents/**"
+    - "admin/**"
+    - "backend/**"
+    - "docs/**"
+
